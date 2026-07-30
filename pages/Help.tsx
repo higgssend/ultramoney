@@ -424,7 +424,7 @@ const categories: Category[] = [
             <p>La API de UltraMoney (v1) te permite conectar tu software contable, scripts o aplicaciones de terceros directamente con tu base de datos de manera segura.</p>
             <div className="bg-slate-900 text-slate-300 p-4 rounded-xl text-sm font-mono overflow-x-auto">
               <span className="text-slate-500">// URL Base de la API</span><br/>
-              <span className="text-emerald-400">GET</span> https://api.ultramoney.app/functions/v1/api
+              <span className="text-emerald-400">GET</span> https://api.ultramoney.app/v1
             </div>
             <p className="font-bold text-slate-800">Autenticación</p>
             <p>Todas las peticiones deben incluir un header de autorización con tu API Key:</p>
@@ -453,13 +453,13 @@ const categories: Category[] = [
             <h4 className="font-bold mt-4">Ejemplo en cURL (Obtener clientes)</h4>
             <div className="bg-slate-900 text-slate-300 p-4 rounded-xl text-sm font-mono overflow-x-auto whitespace-pre">
 {`curl -X GET \\
-  'https://api.ultramoney.app/functions/v1/api?resource=clients' \\
+  'https://api.ultramoney.app/v1?resource=clients' \\
   -H 'Authorization: Bearer sk_ultra_abc123...'`}
             </div>
 
             <h4 className="font-bold mt-4">Ejemplo en JavaScript (fetch)</h4>
             <div className="bg-slate-900 text-slate-300 p-4 rounded-xl text-sm font-mono overflow-x-auto whitespace-pre">
-{`const response = await fetch('https://api.ultramoney.app/functions/v1/api?resource=loans', {
+{`const response = await fetch('https://api.ultramoney.app/v1?resource=loans', {
   headers: {
     'Authorization': 'Bearer sk_ultra_abc123...'
   }

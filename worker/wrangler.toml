@@ -1,0 +1,9 @@
+name = "ultramoney-api-proxy"
+main = "index.js"
+compatibility_date = "2024-02-08"
+account_id = "9072c9683a0edc86359887cd9ea94991"
+
+# Bind the worker to the custom domain
+routes = [
+  { pattern = "api.ultramoney.app/*", zone_id = "f31d62db5d77fa99ba078a80da7bf2c4" }
+]
