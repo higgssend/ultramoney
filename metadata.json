@@ -1,0 +1,8 @@
+{
+  "name": "Ultramoney",
+  "description": "Sistema integral de administración de préstamos, cobranza y contabilidad.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

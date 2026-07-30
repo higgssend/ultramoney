@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <title>Ultramoney | Sistema de Gestión de Préstamos y Cobranza</title>
+    <meta name="title" content="Ultramoney | Sistema de Gestión de Préstamos y Cobranza">
+    <meta name="description" content="Plataforma integral para financieras. Administra préstamos, automatiza la cobranza, controla la contabilidad y evalúa clientes en tiempo real.">
+    <meta name="keywords" content="prestamos, software financiero, cobranza, contabilidad, fintech, republica dominicana, gestion de cartera, amortizacion">
+    <meta name="author" content="Ultramoney Inc.">
+    <meta name="application-name" content="Ultramoney">
+
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ultramoney">
+    <link rel="manifest" href="/manifest.json">
+
+    <link rel="icon" type="image/svg+xml" href="/logoultramoney_logooriginaldegradadomorado.svg" />
+    <!-- Apple Touch Icon: Square image (iOS applies the rounding automatically) -->
+    <link rel="apple-touch-icon" href="/logoultramoney_logooriginaldegradadomorado.svg">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ultramoney.app/">
+    <meta property="og:title" content="Ultramoney - Tu Financiera en Piloto Automático">
+    <meta property="og:description" content="Olvídate de Excel. Controla préstamos, cobranza y contabilidad en una sola app moderna y segura.">
+    <meta property="og:image" content="/logoultramoney_logooriginaldegradadomorado.svg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ultramoney.app/">
+    <meta property="twitter:title" content="Ultramoney - Software de Préstamos">
+    <meta property="twitter:description" content="Gestiona tu cartera de crédito desde cualquier lugar. Notificaciones automáticas, reportes financieros y más.">
+    <meta property="twitter:image" content="/logoultramoney_logooriginaldegradadomorado.svg">
+
+
+    <!-- Custom Styles (Tailwind will be injected here via index.css) -->
+    <style>
+      /* Base styles override */
+      body {
+        font-family: '"DM Sans"', sans-serif;
+        background-color: #f8fafc; 
+        color: #1e293b;
+      }
+      .dark body {
+        background-color: #0f172a;
+        color: #f8fafc;
+      }
+      
+      /* Utilities */
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+
+      /* Noise Texture Overlay */
+      .bg-noise {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 50;
+        opacity: 0.03;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+      
+      /* 3D Perspective Utilities */
+      .perspective-1000 {
+        perspective: 1000px;
+      }
+      .transform-style-3d {
+        transform-style: preserve-3d;
+      }
+      .rotate-x-12 {
+        transform: rotateX(12deg) rotateY(-4deg) rotateZ(2deg);
+      }
+      
+      /* Animations */
+      @keyframes shimmer {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+      }
+
+      .text-gradient {
+        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: shimmer 5s linear infinite;
+      }
+      
+      .glass-nav {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      }
+      .dark .glass-nav {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div class="bg-noise"></div>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

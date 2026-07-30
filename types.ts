@@ -1,0 +1,308 @@
+
+export enum LoanStatus {
+  PENDING = 'Pendiente',
+  ACTIVE = 'Activo',
+  PAID = 'Pagado',
+  OVERDUE = 'Atrasado',
+  REJECTED = 'Rechazado'
+}
+
+export type LoanType = 'Amortizado' | 'Rédito';
+export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
+
+export interface Collateral {
+  type: 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Sin Garantía';
+  description: string;
+  refNumber: string;        // Matrícula, título, serial
+  estimatedValue?: number;  // Valor estimado
+  documentIds?: string[];   // IDs de ClientDocument adjuntos
+  ownerName?: string;       // Nombre del dueño (si es un tercero)
+}
+
+export interface ClientReference {
+  id: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  address?: string;
+  type: 'Familiar' | 'Personal' | 'Comercial';
+}
+
+export interface Client {
+  id: string;
+  clientCode?: string;
+  name: string;
+  lastName?: string;
+  sex: 'Masculino' | 'Femenino' | 'Otro';
+  birthDate?: string;
+  maritalStatus?: 'Soltero/a' | 'Casado/a' | 'Divorciado/a' | 'Viudo/a' | 'Unión Libre';
+  occupation: string;
+  phone: string; // Celular
+  whatsapp?: string; // WhatsApp
+  phoneHome?: string; // Teléfono Casa
+  cedula: string;
+  address: string;
+  province?: string;
+  municipality?: string;
+  sector?: string;
+  referenceAddress?: string;
+  coordinates?: { lat: number; lng: number }; // Geolocalización
+  
+  // Informacion laboral
+  companyName?: string;
+  jobPosition?: string;
+  income: number; // Ingresos mensuales
+  seniorityYears?: number;
+
+  creditScore: number; // 0 - 100
+  status: 'Activo' | 'Bloqueado';
+  email?: string;
+  joinedDate: string;
+  clientPin?: string; // 4-digit PIN para el portal del cliente
+  avatarUrl?: string;
+  references?: ClientReference[];
+}
+
+export interface BankAccount {
+  id: string;
+  clientId: string;
+  bankName: string;
+  accountNumber: string;
+  accountType: 'Ahorro' | 'Corriente';
+  holderName: string;
+}
+
+export interface ClientNote {
+  id: string;
+  clientId: string;
+  content: string;
+  date: string;
+  createdBy: string;
+}
+
+export interface ClientDocument {
+  id: string;
+  clientId: string;
+  title: string; // e.g., "Cédula Frontal", "Contrato Firmado"
+  type: 'Cedula' | 'Contrato' | 'Garantia' | 'Comprobante' | 'Fotografia' | 'Otro';
+  fileUrl: string; // URL o DataURI
+  fileType: string; // mime type e.g., 'image/jpeg', 'application/pdf'
+  uploadDate: string;
+}
+
+export interface Loan {
+  id: string;
+  clientId: string;
+  clientName: string;
+  amount: number; // Capital Inicial
+  interestRate: number; // Percentage (e.g., 10 for 10%)
+  durationWeeks: number;
+  frequency: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
+  startDate: string;
+  status: LoanStatus;
+  loanType: LoanType;
+  loanCategory?: 'Personal' | 'Comercial' | 'Microcrédito' | 'Préstamo Diario' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Con Garantía' | 'Hipotecario' | 'Vehículo' | 'Refinanciamiento';
+  
+  // Specific for Monthly loans
+  paymentDay?: number; // 1-31
+
+  // Closing Costs
+  closingCost?: number;
+  closingCostMode?: ClosingCostMode;
+
+  totalToPay: number;
+  remainingBalance: number;
+  nextPaymentDate: string;
+  // Garantía
+  collateral?: Collateral;
+}
+
+export interface LoanRequest {
+  id: string;
+  clientId: string;
+  clientName: string;
+  amount: number;
+  interestRate: number;
+  durationWeeks: number;
+  frequency: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
+  loanType: LoanType;
+  closingCost?: number;
+  closingCostMode?: ClosingCostMode;
+  paymentDay?: number;
+  requestDate: string;
+  status: 'Pendiente' | 'En evaluación' | 'Aprobado' | 'Rechazado' | 'Cancelado';
+  collateral?: Collateral;
+  loanDestination?: string;
+  observations?: string;
+}
+
+export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
+
+export interface Transaction {
+  id: string;
+  type: 'Ingreso' | 'Gasto';
+  category: 'Pago Préstamo' | 'Desembolso' | 'Operativo' | 'Nómina' | 'Capital' | 'Cierre' | 'Combustible' | 'Papelería' | 'Servicios' | 'Mantenimiento' | 'Otro';
+  amount: number;
+  date: string;
+  invoiceDate?: string;
+  description: string;
+  referenceId?: string; // ID of loan or client related
+  paymentType?: 'Interes' | 'Capital' | 'Mixto';
+  paymentMethod?: PaymentMethod;
+}
+
+export interface CashShift {
+  id: string;
+  userId: string;
+  userName: string;
+  openedAt: string;
+  closedAt?: string;
+  initialAmount: number;
+  expectedAmount?: number;
+  finalCashCount?: number;
+  difference?: number;
+  status: 'Abierta' | 'Cerrada';
+  notes?: string;
+}
+
+export interface CashReconciliation {
+  bills2000: number;
+  bills1000: number;
+  bills500: number;
+  bills200: number;
+  bills100: number;
+  bills50: number;
+  coins25: number;
+  coins10: number;
+  coins5: number;
+  total: number;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  role: 'Admin' | 'Collector' | 'Secretary' | 'Manager' | 'Cashier' | 'Supervisor';
+  phone?: string;
+  assignedRoute?: string;
+  performance: number;
+  activeRoutes: number;
+  collections: number;
+  username?: string;
+  employeePin?: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface Invoice {
+  id: string;
+  date: string;
+  reference: string;
+  clientName: string;
+  status: 'Emitida' | 'Anulada' | 'Completada';
+  paymentStatus: 'Pagado' | 'Pendiente' | 'Parcial';
+  items: InvoiceItem[];
+  subtotal: number;
+  total: number;
+  totalPaid: number;
+  totalPending: number;
+  seller: string;
+  createdBy: string;
+  updatedBy: string;
+  updatedAt: string;
+  warrantyInfo: string;
+}
+
+// --- Auth & Settings Types ---
+
+export type Permission = 'manage_loans' | 'manage_clients' | 'manage_users' | 'view_reports' | 'manage_settings' | 'approve_loans' | 'manage_cash';
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email?: string;
+  username?: string;
+  password?: string;
+  roleId: string;
+  avatarUrl?: string;
+  status: 'Active' | 'Inactive';
+}
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  createdAt: string;
+  lastUsed?: string;
+}
+
+export interface CollectorVisit {
+  id: string;
+  collectorId: string;
+  collectorName: string;
+  clientId: string;
+  clientName: string;
+  loanId?: string;
+  date: string;
+  status: 'Cobrado' | 'Ausente' | 'Promesa de Pago' | 'No Pagó';
+  promisedDate?: string;
+  amountCollected?: number;
+  notes?: string;
+  coordinates?: { lat: number; lng: number };
+}
+
+export interface NumberSeriesSettings {
+  contractPrefix: string;
+  receiptPrefix: string;
+  invoicePrefix: string;
+  nextContractNumber: number;
+  nextReceiptNumber: number;
+  nextInvoiceNumber: number;
+}
+
+export interface CompanySettings {
+  name: string;
+  rnc: string;
+  address: string;
+  phone: string;
+  email: string;
+  website?: string;
+  logoUrl?: string;
+  slogan?: string;
+  currency: string;
+  termsAndConditions: string;
+  defaultLateFeePercent?: number;
+  numberSeries?: NumberSeriesSettings;
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  details: string;
+  timestamp: string;
+  ipAddress?: string;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  link?: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+}
