@@ -166,6 +166,7 @@ const Login: React.FC = () => {
                     <p className="font-bold text-slate-800 text-sm group-hover:text-indigo-700">Entrar con Apple</p>
                     <p className="text-xs text-slate-400">Acceso con tu Apple ID</p>
                   </div>
+                </button>
                 {/* Divider */}
                 <div className="relative py-2">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
