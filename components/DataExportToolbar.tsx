@@ -4,7 +4,6 @@ import { useToast } from '../context/ToastContext';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import html2canvas from 'html2canvas';
 

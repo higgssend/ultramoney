@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loan, CompanySettings } from '../types';
+import { Loan, CompanySettings, PaymentMethod } from '../types';
 
 // WhatsApp Official Icon SVG
 const WhatsAppIcon = () => (

@@ -8,7 +8,6 @@ import {
   Calendar, PieChart, UserPlus, CreditCard, Award
 } from 'lucide-react';
 import gsap from 'gsap';
-import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useStore } from '../context/StoreContext';
 
