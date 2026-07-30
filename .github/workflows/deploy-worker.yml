@@ -3,7 +3,7 @@ name: Deploy API Proxy Worker
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'worker/**'
   workflow_dispatch:
