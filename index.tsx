@@ -11,11 +11,12 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Register PWA Service Worker for auto updates
+// Register PWA Service Worker for automatic background updates
 const updateSW = registerSW({
+  immediate: true,
   onNeedRefresh() {
-    console.log('New content available, please refresh.');
-    // Optionally trigger a toast notification here in the future
+    console.log('Nueva versión detectada. Actualizando silenciosamente...');
+    updateSW(true); // Forzar actualización automática sin preguntar
   },
   onOfflineReady() {
     console.log('App is ready for offline use.');
