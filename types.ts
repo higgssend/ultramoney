@@ -126,6 +126,8 @@ export interface Loan {
   closingCostMode?: ClosingCostMode;
 
   totalToPay: number;
+  lateFeePercentage?: number;
+  graceDays?: number;
   remainingBalance: number;
   nextPaymentDate: string;
   // Garantía

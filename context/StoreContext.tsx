@@ -300,6 +300,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     collateralRef: l.collateralref || l.collateralRef || l.collateral_ref,
     collateralDescription: l.collateraldescription || l.collateralDescription || l.collateral_description,
     collateralData: l.collateraldata || l.collateralData || l.collateral_data,
+    lateFeePercentage: l.latefeepercentage ?? l.lateFeePercentage,
+    graceDays: l.gracedays ?? l.graceDays,
     collateral: l.guarantees ? (typeof l.guarantees === 'string' ? JSON.parse(l.guarantees) : l.guarantees) : undefined
   });
 
