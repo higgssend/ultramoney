@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, MapPin, TrendingUp, Award, Plus, X, Phone, Briefcase, Trash2, ChevronLeft, Calendar, CheckCircle2, Clock, Crosshair, AlertCircle } from 'lucide-react';
+import { User, MapPin, TrendingUp, Award, Plus, X, ChevronDown, Phone, Briefcase, Trash2, ChevronLeft, Calendar, CheckCircle2, Clock, Crosshair, AlertCircle } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ const Employees: React.FC = () => {
   const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit } = useStore();
   const [activeTab, setActiveTab] = useState<'employees' | 'visits'>('employees');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const navigate = useNavigate();
   
@@ -288,16 +289,43 @@ const Employees: React.FC = () => {
                           <div>
                               <label className="block text-sm font-bold text-slate-700 mb-1">Rol</label>
                               <div className="relative">
-                                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                                  <select 
-                                    className="w-full pl-10 pr-2 py-2 border rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
-                                    value={newEmp.role}
-                                    onChange={e => setNewEmp({...newEmp, role: e.target.value as any})}
+                                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 z-10 pointer-events-none" />
+                                  
+                                  <div 
+                                      className="w-full pl-10 pr-10 py-2 border border-slate-200 rounded-xl bg-white cursor-pointer hover:border-indigo-300 transition-colors flex items-center justify-between"
+                                      onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
                                   >
-                                      <option value="Collector">Cobrador</option>
-                                      <option value="Secretary">Secretaria</option>
-                                      <option value="Admin">Admin</option>
-                                  </select>
+                                      <span className="text-slate-700">
+                                          {newEmp.role === 'Collector' ? 'Cobrador' : newEmp.role === 'Secretary' ? 'Secretaria' : 'Admin'}
+                                      </span>
+                                      <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+                                  </div>
+
+                                  {isRoleDropdownOpen && (
+                                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+                                          {[
+                                              { value: 'Collector', label: 'Cobrador' },
+                                              { value: 'Secretary', label: 'Secretaria' },
+                                              { value: 'Admin', label: 'Admin' }
+                                          ].map(option => (
+                                              <div 
+                                                  key={option.value}
+                                                  className={`px-4 py-2.5 cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${newEmp.role === option.value ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
+                                                  onClick={() => {
+                                                      setNewEmp({...newEmp, role: option.value as any});
+                                                      setIsRoleDropdownOpen(false);
+                                                  }}
+                                              >
+                                                  {option.label}
+                                              </div>
+                                          ))}
+                                      </div>
+                                  )}
+                                  
+                                  {/* Overlay invisible para cerrar al hacer click fuera */}
+                                  {isRoleDropdownOpen && (
+                                      <div className="fixed inset-0 z-40" onClick={() => setIsRoleDropdownOpen(false)}></div>
+                                  )}
                               </div>
                           </div>
                           <div>
