@@ -803,7 +803,15 @@ const PaymentSuccessModal: React.FC<{
     };
 
     // Construct WhatsApp Message
-    const message = `*${company.name}*\nRecibo: ${data.transactionId}\nCliente: ${data.clientName}\n\nLink web para descargar su recibo:\n${receiptWebLink}`;
+    const message = `🏢 *${company.name}*
+📄 *Recibo de Pago*: ${data.transactionId}
+👤 *Cliente*: ${data.clientName}
+💰 *Monto Pagado*: RD$ ${data.amount.toLocaleString()}
+
+Link web para descargar o imprimir su recibo:
+${receiptWebLink}
+
+Gracias por su pago.`;
     const encodedMessage = encodeURIComponent(message);
     const whatsappLink = `https://wa.me/?text=${encodedMessage}`;
     const mailLink = `mailto:?subject=Recibo de Pago ${data.transactionId}&body=${encodedMessage}`;
