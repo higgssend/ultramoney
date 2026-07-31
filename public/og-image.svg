@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#Degradado_sin_nombre_103-2);
+      }
+
+      .cls-2 {
+        fill: url(#Degradado_sin_nombre_103);
+      }
+    </style>
+    <linearGradient id="Degradado_sin_nombre_103" data-name="Degradado sin nombre 103" x1="32.4" y1="121.17" x2="92.16" y2="121.17" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00119f"/>
+      <stop offset="1" stop-color="#cc3fdf"/>
+    </linearGradient>
+    <linearGradient id="Degradado_sin_nombre_103-2" data-name="Degradado sin nombre 103" x1="92.16" y1="120.96" x2="209.52" y2="120.96" xlink:href="#Degradado_sin_nombre_103"/>
+  </defs>
+  <rect width="1200" height="630" fill="#0f172a" />
+  
+  <g transform="translate(150, 194)">
+    <g transform="scale(1) translate(0, 0)">
+       <path class="cls-2" d="M49.59,55.57l37.61,24.92c3.1,2.05,4.96,5.52,4.96,9.23v64.24c0,3.81-1.96,7.36-5.2,9.39l-37.61,23.56c-7.38,4.62-16.95-.68-16.95-9.39v-112.73c0-8.83,9.83-14.11,17.19-9.23Z"/>
+<path class="cls-1" d="M149.76,115V50.25c0-3.78,1.93-7.3,5.11-9.33l37.61-24.02c7.37-4.71,17.04.59,17.04,9.33v125.79c0,3.7-1.85,7.15-4.92,9.21l-95.21,63.67c-7.36,4.92-17.23-.35-17.23-9.21v-49.74c0-3.66,1.81-7.09,4.84-9.15l47.92-32.65c3.03-2.06,4.84-5.49,4.84-9.15Z"/>
+    </g>
+
+    <g transform="translate(320, 100)">
+       <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="80" font-weight="bold" fill="#ffffff">UltraMoney</text>
+       <text x="0" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="32" font-weight="normal" fill="#94a3b8">Sistema Moderno de Préstamos</text>
+       
+       <rect x="0" y="110" width="130" height="40" rx="20" fill="#312e81" />
+       <text x="65" y="137" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="600" fill="#e0e7ff" text-anchor="middle">Finanzas</text>
+       
+       <rect x="145" y="110" width="150" height="40" rx="20" fill="#164e63" />
+       <text x="220" y="137" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="600" fill="#cffafe" text-anchor="middle">Automatización</text>
+       
+       <rect x="310" y="110" width="150" height="40" rx="20" fill="#701a75" />
+       <text x="385" y="137" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="600" fill="#fae8ff" text-anchor="middle">Analíticas</text>
+    </g>
+  </g>
+</svg>
