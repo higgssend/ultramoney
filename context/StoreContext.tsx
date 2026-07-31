@@ -1179,7 +1179,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!currentUser) return;
         const key = `sk_ultra_${Math.random().toString(36).substr(2, 9)}${Math.random().toString(36).substr(2, 9)}`;
         const { error, data } = await insforge.database.from('api_keys').insert({
-          lender_id: currentUser.id,
+          user_id: currentUser.id,
           name,
           key,
           created_at: new Date().toISOString()
