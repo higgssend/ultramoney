@@ -43,6 +43,7 @@ interface StoreContextType {
   apiKeys: ApiKey[];
   generateApiKey: (name: string) => void;
   deleteApiKey: (id: string) => void;
+  updateApiKey: (id: string, newName: string) => void;
 
   // Domain Actions
   addClient: (client: Client) => void;
@@ -1190,6 +1191,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           addToast('API Key generada exitosamente', 'success');
         } else {
           addToast('Error al guardar API Key en base de datos', 'error');
+        }
+      },
+      updateApiKey: async (id: string, newName: string) => {
+        if (!currentUser) return;
+        const { error } = await insforge.database.from('api_keys').update({ name: newName }).eq('id', id);
+        if (!error) {
+          setApiKeys(prev => prev.map(k => k.id === id ? { ...k, name: newName } : k));
+          addToast('API Key actualizada correctamente', 'success');
+        } else {
+          addToast('Error al actualizar API Key', 'error');
         }
       },
       deleteApiKey: async (id: string) => {

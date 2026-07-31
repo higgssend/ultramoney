@@ -14,7 +14,9 @@ import {
   Eye,
   EyeOff,
   X,
-  Plus
+  Plus,
+  Edit2,
+  Save
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useStore } from '../../context/StoreContext';
@@ -22,13 +24,15 @@ import { ApiKey } from '../../types';
 
 export const ApiDocsTab: React.FC = () => {
   const { addToast } = useToast();
-  const { apiKeys, generateApiKey, deleteApiKey } = useStore();
+  const { apiKeys, generateApiKey, deleteApiKey, updateApiKey } = useStore();
   
   // UI State
   const [isGenerating, setIsGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
+  const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   const handleGenerateKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,9 +159,50 @@ export const ApiDocsTab: React.FC = () => {
                               </td>
                           </tr>
                       ) : apiKeys.map(key => (
-                          <tr key={key.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <tr key={key.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                               <td className="px-6 py-4">
-                                  <p className="font-bold text-slate-800 dark:text-slate-200">{key.name}</p>
+                                  {editingKeyId === key.id ? (
+                                      <div className="flex items-center gap-2">
+                                          <input 
+                                              type="text" 
+                                              value={editingName} 
+                                              onChange={(e) => setEditingName(e.target.value)}
+                                              className="px-2 py-1 border rounded focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                          />
+                                          <button 
+                                              onClick={() => {
+                                                  if(editingName.trim()) {
+                                                      updateApiKey(key.id, editingName.trim());
+                                                      setEditingKeyId(null);
+                                                  }
+                                              }}
+                                              className="text-emerald-600 hover:text-emerald-700"
+                                              title="Guardar Nombre"
+                                          >
+                                              <Save className="w-4 h-4" />
+                                          </button>
+                                          <button 
+                                              onClick={() => setEditingKeyId(null)}
+                                              className="text-slate-400 hover:text-slate-600"
+                                          >
+                                              <X className="w-4 h-4" />
+                                          </button>
+                                      </div>
+                                  ) : (
+                                      <div className="flex items-center gap-2">
+                                          <p className="font-bold text-slate-800 dark:text-slate-200">{key.name}</p>
+                                          <button 
+                                              onClick={() => {
+                                                  setEditingKeyId(key.id);
+                                                  setEditingName(key.name);
+                                              }}
+                                              className="text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                              title="Editar Nombre"
+                                          >
+                                              <Edit2 className="w-3.5 h-3.5" />
+                                          </button>
+                                      </div>
+                                  )}
                               </td>
                               <td className="px-6 py-4">
                                   <div className="flex items-center gap-3">
