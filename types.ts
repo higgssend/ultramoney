@@ -51,6 +51,7 @@ export interface Client {
   whatsapp?: string; // WhatsApp
   phoneHome?: string; // Teléfono Casa
   cedula: string;
+documentType?: 'Cedula' | 'Pasaporte' | 'Licencia' | 'ID' | 'Otro';
   address: string;
   province?: string;
   municipality?: string;
