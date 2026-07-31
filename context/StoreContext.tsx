@@ -14,6 +14,7 @@ interface StoreContextType {
   clientNotes: ClientNote[];
   clientDocuments: ClientDocument[];
   employees: Employee[];
+  routes: Route[];
   auditLogs: AuditLog[];
   cashShifts: CashShift[];
   activeCashShift: CashShift | null;
@@ -1194,7 +1195,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       globalCurrency, setGlobalCurrency,
       pdfQueue, enqueuePdf, removePdfJob,
       clients, loans, loanProducts, loanRequests, transactions, bankAccounts,
-      clientNotes, clientDocuments, employees, auditLogs,
+      clientNotes, clientDocuments, employees, routes, auditLogs,
       cashShifts, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary,
       collectorVisits, addCollectorVisit, exportSystemBackup, importSystemBackup,
       currentUser, isLoadingAuth, users, roles, companySettings,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreHorizontal, Phone, MapPin, X, Edit, User, Eye, Crosshair, ChevronLeft, Globe } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Phone, MapPin, X, Edit, User, Eye, Crosshair, ChevronLeft, Globe, Map, Hash } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { DataExportToolbar } from '../components/DataExportToolbar';
 import { useToast } from '../context/ToastContext';
 
 const Clients: React.FC = () => {
-  const { clients, addClient, updateClient, loans, addClientDocument } = useStore();
+  const { clients, addClient, updateClient, loans, addClientDocument, routes } = useStore();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
