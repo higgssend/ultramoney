@@ -152,9 +152,20 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [collectorVisits, setCollectorVisits] = useState<CollectorVisit[]>([]);
   
   // Notifications State
-  const [notifications, setNotifications] = useState<AppNotification[]>([
-    { id: '1', title: 'Bienvenido', message: 'Bienvenido a Ultramoney. Aquí aparecerán tus alertas.', date: new Date().toISOString(), read: false, type: 'info' }
-  ]);
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    const saved = localStorage.getItem('um_notifications');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: '1', title: 'Bienvenido', message: 'Bienvenido a Ultramoney. Aqu apareceran tus alertas.', date: new Date().toISOString(), read: false, type: 'info' }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('um_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
 
   const addNotification = (notif: Omit<AppNotification, 'id' | 'date' | 'read'>) => {
     const newNotif: AppNotification = { ...notif, id: `notif-${Date.now()}`, date: new Date().toISOString(), read: false };
