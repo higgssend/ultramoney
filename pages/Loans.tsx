@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Plus, Filter, Clock, X, Banknote, Calendar, CreditCard, DollarSign, FileText, Printer, RefreshCw, Calculator, ChevronRight, CheckCircle, Tag, Infinity, ChevronLeft, Shield } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { toast } from 'sonner';
-import { LoanStatus, Loan } from '../types';
+import { LoanStatus, Loan, formatLoanId } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 
@@ -246,7 +246,7 @@ const Loans: React.FC = () => {
                          <div>
                             <h3 className="font-bold text-xl text-slate-800">{selectedLoan.clientName}</h3>
                             <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
-                                Préstamo #{selectedLoan.id} • {selectedLoan.frequency}
+                                Préstamo #{formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType)} • {selectedLoan.frequency}
                                 <span className="ml-2 bg-slate-100 px-2 py-0.5 rounded text-slate-600">{selectedLoan.loanType}</span>
                             </p>
                          </div>

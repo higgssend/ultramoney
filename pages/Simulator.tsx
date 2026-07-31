@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Calculator, RefreshCw, DollarSign, Calendar, ChevronLeft, CheckSquare, Square, Layers, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
+import { formatLoanId } from '../types';
 
 const Simulator: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, loans, createLoan, refinanceLoan } = useStore();
+  const { clients, loans, createLoan, refinanceLoan, loanProducts } = useStore();
 
   const [activeTab, setActiveTab] = useState<'simulation' | 'refinance'>('simulation');
 
@@ -16,6 +17,7 @@ const Simulator: React.FC = () => {
   const [interest, setInterest] = useState(10);
   const [frequency, setFrequency] = useState('Semanal');
   const [type, setType] = useState<'Amortizado' | 'Rédito'>('Amortizado');
+  const [selectedProductId, setSelectedProductId] = useState('');
 
   const [result, setResult] = useState({
       installment: 0,
@@ -218,7 +220,7 @@ const Simulator: React.FC = () => {
                           <div className="flex items-center gap-3">
                             {selectedLoanIds.includes(l.id) ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5 text-slate-300" />}
                             <div>
-                              <p className="font-bold text-xs">Préstamo #{l.id}</p>
+                              <p className="font-bold text-xs">Préstamo #{formatLoanId(l.id, l.loanCategory, l.loanType)}</p>
                               <p className="text-[11px] text-slate-500">{l.frequency} • {l.loanType}</p>
                             </div>
                           </div>

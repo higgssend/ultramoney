@@ -21,33 +21,40 @@ export const ClientPortal: React.FC = () => {
     // Initial Auth Check
     useEffect(() => {
         if (!clientId) return;
-        const foundClient = clients.find(c => c.id === clientId);
-        if (foundClient) {
-            setClient(foundClient);
-            if (!foundClient.clientPin) {
-                // Auto-login si no tiene PIN
-                setClientLoans(loans.filter(l => l.clientId === foundClient.id));
-                const myLoanIds = loans.filter(l => l.clientId === foundClient.id).map(l => l.id);
-                setClientTransactions(transactions.filter(t => myLoanIds.includes(t.referenceId)).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-                setIsAuthenticated(true);
+        
+        async function fetchClientData() {
+            try {
+                // We use dynamic import for insforge to avoid circular dependencies if any
+                const { insforge } = await import('../lib/insforge');
+                const { data: cData } = await insforge.database.from('clients').select('*').eq('id', clientId).single();
+                
+                if (cData) {
+                    const foundClient = cData as unknown as Client;
+                    setClient(foundClient);
+                    
+                    const { data: lData } = await insforge.database.from('loans').select('*').eq('clientId', clientId);
+                    if (lData) {
+                        setClientLoans(lData as unknown as Loan[]);
+                        const lIds = lData.map((l: any) => l.id);
+                        if (lIds.length > 0) {
+                            const { data: tData } = await insforge.database.from('transactions').select('*').in('referenceId', lIds);
+                            if (tData) {
+                                setClientTransactions(tData.sort((a: any,b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()) as unknown as Transaction[]);
+                            }
+                        }
+                    }
+
+                    if (!foundClient.clientPin) {
+                        // Auto-login si no tiene PIN
+                        setIsAuthenticated(true);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching client for portal:", err);
             }
         }
-    }, [clientId, clients]);
-
-    // Realtime update via StoreContext (InsForge subscriptions)
-    useEffect(() => {
-        if (!isAuthenticated || !client) return;
-        
-        const updatedClient = clients.find(c => c.id === client.id);
-        if (updatedClient) {
-            setClient(updatedClient);
-            setClientLoans(loans.filter(l => l.clientId === client.id));
-            
-            // Get all transactions for all loans of this client
-            const myLoanIds = loans.filter(l => l.clientId === client.id).map(l => l.id);
-            setClientTransactions(transactions.filter(t => myLoanIds.includes(t.referenceId)).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        }
-    }, [clients, loans, transactions, isAuthenticated, client?.id]);
+        fetchClientData();
+    }, [clientId]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -258,12 +265,11 @@ export const ClientPortal: React.FC = () => {
                                 <div>
                                     <div className="flex justify-between text-[10px] text-slate-400 mb-1">
                                         <span>Progreso</span>
-                                        <span>{loan.installments.filter(i => i.status === 'Pagada').length} / {loan.installments.length} Cuotas</span>
+                                        <span>{(loan.installments || []).filter(i => i.status === 'Pagada').length} / {(loan.installments || []).length} Cuotas</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5">
-                                        <div 
-                                            className="bg-indigo-500 h-1.5 rounded-full" 
-                                            style={{width: `${Math.min(100, (loan.installments.filter(i => i.status === 'Pagada').length / loan.installments.length) * 100)}%`}}
+                                    <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+                                        <div className="bg-indigo-600 h-1.5 rounded-full" 
+                                            style={{width: `${Math.min(100, ((loan.installments || []).filter(i => i.status === 'Pagada').length / Math.max((loan.installments || []).length, 1)) * 100)}%`}}
                                         ></div>
                                     </div>
                                 </div>

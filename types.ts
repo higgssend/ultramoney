@@ -138,6 +138,22 @@ export interface LoanRequest {
 
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
+export function formatLoanId(id: string, category?: string, type?: string): string {
+  if (!id) return '';
+  // Try to use category first (e.g. Personal -> PER), then type (e.g. Amortizado -> AMO)
+  let prefix = 'PRE';
+  if (category) {
+    prefix = category.substring(0, 3).toUpperCase();
+  } else if (type) {
+    prefix = type.substring(0, 3).toUpperCase();
+  }
+  
+  // Use the last 6 characters of the UUID to make it look like a short identifier
+  const shortHash = id.split('-').pop()?.substring(0, 6).toUpperCase() || id.substring(0, 6).toUpperCase();
+  
+  return `${prefix}-${shortHash}`;
+}
+
 export interface Transaction {
   id: string;
   type: 'Ingreso' | 'Gasto';
@@ -305,4 +321,33 @@ export interface AppNotification {
   read: boolean;
   link?: string;
   type: 'info' | 'success' | 'warning' | 'error';
+}
+
+export interface LoanProduct {
+  id: string;
+  name: string;
+  description: string;
+  minAmount: number;
+  maxAmount: number;
+  interestRate: number;
+  interestType: 'Fijo' | 'Simple' | 'Compuesto';
+  frequency: 'Diario' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Anual';
+  termMonths: number;
+  defaultInstallments: number;
+  requiresCollateral: boolean;
+  collateralType?: string;
+  disbursementFee: number;
+  lateFeePercentage: number;
+  graceDays: number;
+  prepaymentAllowed: boolean;
+  autoCalculateInterest: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Advanced Financial Engine Fields
+  amortizationMethod: 'Amortizado' | 'Flat' | 'DecliningBalance' | 'Open' | 'Bullet' | 'Maturity' | 'CreditLine';
+  paymentOrder: 'Mora_Expenses_Interest_Capital' | 'Interest_Capital_Mora_Expenses';
+  recalculateInterestOnEarlyPayoff: boolean;
+  capitalizationFrequency: 'Diario' | 'Mensual' | 'Ninguno';
 }

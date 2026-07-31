@@ -35,6 +35,21 @@ import HelpPage from './pages/Help';
 import MigrationCenter from './pages/MigrationCenter';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { ToastProvider } from './context/ToastContext';
+import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
+
+// Initialize Core Web Vitals reporting
+function reportWebVitals(metric: any) {
+  // En producción, aquí podrías enviar estas métricas a Google Analytics (GA4) o tu propio servidor.
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(metric.name, Math.round(metric.value));
+  }
+}
+onCLS(reportWebVitals);
+onINP(reportWebVitals);
+onLCP(reportWebVitals);
+onFCP(reportWebVitals);
+onTTFB(reportWebVitals);
+
 
 // Feature Pages Imports
 import CreditFeature from './pages/features/CreditFeature';

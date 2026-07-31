@@ -9,7 +9,7 @@ const Settings: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { companySettings, updateCompanySettings, roles, addRole, deleteRole, users, registerUser, auditLogs, currentUser, updateUser, exportSystemBackup, importSystemBackup, apiKeys, generateApiKey, deleteApiKey } = useStore();
-  const [activeTab, setActiveTab] = useState<'company' | 'roles' | 'users' | 'audit' | 'security' | 'backup' | 'api'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'products' | 'roles' | 'users' | 'audit' | 'security' | 'backup' | 'api'>('company');
 
   // Handle incoming navigation state (e.g. from Sidebar edit profile)
   useEffect(() => {
@@ -186,6 +186,13 @@ const Settings: React.FC = () => {
            >
              <Building2 className="w-5 h-5" /> Datos del Negocio
            </button>
+
+           <button 
+             onClick={() => setActiveTab('products')}
+             className={`p-3 rounded-lg text-left font-medium flex items-center gap-3 transition-colors ${activeTab === 'products' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+           >
+             <Briefcase className="w-5 h-5" /> Productos de Préstamo
+           </button>
            <button 
              onClick={() => setActiveTab('security')}
              className={`p-3 rounded-lg text-left font-medium flex items-center gap-3 transition-colors ${activeTab === 'security' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
@@ -324,6 +331,11 @@ const Settings: React.FC = () => {
                   </div>
                </form>
             </div>
+          )}
+
+
+          {activeTab === 'products' && (
+              <LoanProductsTab />
           )}
 
           {/* Security & Profile Settings */}

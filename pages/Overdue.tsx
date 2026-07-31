@@ -4,7 +4,7 @@ import { Phone, AlertTriangle, Clock, ChevronLeft, FileText, Send } from 'lucide
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { DocumentGenerator } from '../components/DocumentGenerator';
-import { Client, Loan } from '../types';
+import { Client, Loan, formatLoanId } from '../types';
 
 // WhatsApp Official Icon SVG
 const WhatsAppIcon = () => (
@@ -68,7 +68,7 @@ const Overdue: React.FC = () => {
                     <div className="flex justify-between items-start mb-6 relative z-10">
                         <div>
                             <h3 className="font-bold text-lg text-slate-800">{loan.clientName}</h3>
-                            <p className="text-sm text-slate-400 font-mono">Préstamo #{loan.id}</p>
+                            <p className="text-sm text-slate-400 font-mono">Préstamo #{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}</p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${daysLate > 15 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
                             {daysLate} días de mora

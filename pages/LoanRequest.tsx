@@ -3,6 +3,7 @@ import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, 
 import { useStore } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
 import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral } from '../types';
 import { CollateralForm } from './features/CollateralForm';
 
@@ -18,6 +19,7 @@ const LoanRequest: React.FC = () => {
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
   // Form State
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
   const [amount, setAmount] = useState(10000);
   const [weeks, setWeeks] = useState(12); // Duración
@@ -45,8 +47,32 @@ const LoanRequest: React.FC = () => {
   // Portal Access Options
   const [enablePortal, setEnablePortal] = useState(true);
   const [portalPin, setPortalPin] = useState('');
+  const [schedulePreview, setSchedulePreview] = useState<InstallmentPreview[]>([]);
+  const [activeProduct, setActiveProduct] = useState<any>(null);
 
   const selectedClient = clients.find(c => c.id === selectedClientId);
+
+
+  
+  const handleProductSelect = (productId: string) => {
+      setSelectedProductId(productId);
+      const product = loanProducts?.find(p => p.id === productId);
+      if (product) {
+          setActiveProduct(product);
+          setAmount(product.minAmount);
+          setInterest(product.interestRate);
+          setFrequency(product.frequency === 'Mensual' ? 'Mensual' : product.frequency === 'Quincenal' ? 'Quincenal' : product.frequency === 'Diario' ? 'Diario' : 'Semanal');
+          setWeeks(product.defaultInstallments);
+          setClosingCost(product.disbursementFee);
+          if (product.requiresCollateral) {
+              setCollateral({ type: 'Vehículo', description: '', refNumber: '' });
+          } else {
+              setCollateral(undefined);
+          }
+      } else {
+          setActiveProduct(null);
+      }
+  };
 
   // --- Core Calculation Logic ---
 
@@ -70,25 +96,17 @@ const LoanRequest: React.FC = () => {
     }
   }, [amount, interest, targetInstallment, calcMode, loanType, closingCost, closingCostMode]);
 
+  
   const calculateTotal = () => {
-    const principal = getPrincipalForCalculation();
-    if (loanType === 'Amortizado') {
-        const totalInterest = principal * (interest / 100);
-        return principal + totalInterest;
-    } else {
-        return principal; 
-    }
+      if (schedulePreview.length === 0) return 0;
+      return schedulePreview.reduce((sum, item) => sum + item.total, 0);
   };
 
   const calculateInstallment = () => {
-    const principal = getPrincipalForCalculation();
-    if (loanType === 'Amortizado') {
-        if (calcMode === 'installment') return targetInstallment; 
-        return calculateTotal() / weeks; 
-    } else {
-        return principal * (interest / 100);
-    }
+      if (schedulePreview.length === 0) return 0;
+      return schedulePreview[0].total; // Simplified
   };
+
 
   const getNetDisbursement = () => {
       if (closingCostMode === 'Descontado') {

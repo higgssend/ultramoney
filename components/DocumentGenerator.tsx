@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Printer, Download, CheckCircle, X, Shield, FileCheck, AlertCircle, CloudUpload, MessageCircle } from 'lucide-react';
-import { Loan, Client, CompanySettings, Transaction } from '../types';
+import { Loan, Client, CompanySettings, Transaction, formatLoanId } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
@@ -352,7 +352,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="border p-2 font-mono font-bold">{loan.id}</td>
+                          <td className="border p-2 font-mono font-bold">{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}</td>
                           <td className="border p-2">RD$ {loan.amount.toLocaleString()}</td>
                           <td className="border p-2">RD$ {loan.totalToPay.toLocaleString()}</td>
                           <td className="border p-2 font-bold text-indigo-700">RD$ {loan.remainingBalance.toLocaleString()}</td>

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loan, CompanySettings, PaymentMethod } from '../types';
+import { LoanEngine } from '../utils/LoanEngine';
+import { Loan, CompanySettings, PaymentMethod, formatLoanId } from '../types';
 
 // WhatsApp Official Icon SVG
 const WhatsAppIcon = () => (
@@ -252,6 +253,11 @@ const Payments: React.FC = () => {
     const overdueInsts = allInstallments.filter(i => i.status === 'Atrasado' || (i.status !== 'Pagado' && new Date(i.date) < new Date()));
     const overdueAmount = overdueInsts.reduce((sum, i) => sum + (i.amount - i.paidAmount), 0);
     
+    // Engine Distribution logic for detailed receipt
+    const distribution = LoanEngine.applyPaymentDistribution(amountVal, overdueAmount > 0 ? (overdueAmount * 0.1) : 0, 0, (selectedLoan.remainingBalance * 0.05), amountVal);
+    // Overdue Mora estimated as 10% of overdue amount, Interest estimated as 5% of remaining balance for receipt demo.
+
+    
     // Other loans active for client
     const otherActiveLoans = loans
         .filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoanId && l.status !== 'Pagado')
@@ -426,7 +432,7 @@ const Payments: React.FC = () => {
                                 <div>
                                     <h4 className="font-bold text-lg text-slate-800">{selectedLoan.clientName}</h4>
                                     <p className="text-sm text-slate-500 flex items-center gap-2">
-                                        Préstamo #{selectedLoan.id}
+                                        Préstamo #{formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType)}
                                         <span className="bg-white border border-indigo-100 px-2 py-0.5 rounded text-xs font-medium text-indigo-600">{selectedLoan.frequency}</span>
                                     </p>
                                 </div>
@@ -682,7 +688,7 @@ const Payments: React.FC = () => {
               ) : (
                   clientGroups.map((group) => {
                       const isExpanded = expandedClients.includes(group.clientId);
-                      const overdueCount = group.loans.reduce((acc, l) => acc + l.installments.filter(i => i.status === 'Atrasado').length, 0);
+                      const overdueCount = group.loans.reduce((acc, l) => acc + (l.installments || []).filter(i => i.status === 'Atrasado').length, 0);
                       return (
                           <div key={group.clientId} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all hover:shadow-md">
                               <div onClick={() => toggleClientExpand(group.clientId)} className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
@@ -692,7 +698,7 @@ const Payments: React.FC = () => {
                                   </div>
                                   <div className="text-right flex items-center gap-4"><div><p className="text-xs text-slate-500 uppercase font-bold">Total Pendiente</p><p className="text-xl font-bold text-slate-800">RD${group.totalPending.toLocaleString()}</p></div><div className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}><ChevronDown className="w-6 h-6 text-slate-400" /></div></div>
                               </div>
-                              {isExpanded && (<div className="border-t border-slate-100 bg-slate-50/50 p-4 space-y-4 animate-fade-in">{group.loans.map((loanGroup) => (<div key={loanGroup.loan.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden"><div className="px-4 py-2 bg-slate-100/50 border-b border-slate-200 flex justify-between items-center"><span className="text-xs font-bold text-slate-600 uppercase flex items-center gap-2">Préstamo #{loanGroup.loan.id} <span className="text-slate-400">•</span>{loanGroup.loan.frequency}</span><button onClick={() => {setActiveTab('registrar');setSelectedLoanId(loanGroup.loan.id);}} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline">Ir a Pagar</button></div><div className="divide-y divide-slate-100">{loanGroup.installments.map(inst => (<div key={`${loanGroup.loan.id}-${inst.number}`} className="flex justify-between items-center p-3 hover:bg-indigo-50/30 transition-colors"><div className="flex items-center gap-4"><div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold font-mono">#{inst.number}</div><div><p className="text-sm font-bold text-slate-700">{inst.date}</p><p className="text-xs text-slate-400">Vencimiento</p></div></div><div className="text-right flex items-center gap-4"><div><p className="font-bold text-slate-700">RD${(inst.amount - inst.paidAmount).toLocaleString()}</p><span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${inst.status === 'Atrasado' ? 'bg-rose-100 text-rose-600' : inst.status === 'Parcial' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>{inst.status}</span></div><button onClick={() => {setActiveTab('registrar');setSelectedLoanId(loanGroup.loan.id);setPaymentMode('cuotas');setPayAmount((inst.amount - inst.paidAmount).toFixed(2));setPayNote(`Pago cuota #${inst.number}`);}} className="p-2 border border-indigo-200 text-indigo-600 rounded hover:bg-indigo-600 hover:text-white transition-colors" title="Cobrar esta cuota"><CreditCard className="w-4 h-4" /></button></div></div>))}</div></div>))}</div>)}
+                              {isExpanded && (<div className="border-t border-slate-100 bg-slate-50/50 p-4 space-y-4 animate-fade-in">{group.loans.map((loanGroup) => (<div key={loanGroup.loan.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden"><div className="px-4 py-2 bg-slate-100/50 border-b border-slate-200 flex justify-between items-center"><span className="text-xs font-bold text-slate-600 uppercase flex items-center gap-2">Préstamo #{formatLoanId(loanGroup.loan.id, loanGroup.loan.loanCategory, loanGroup.loan.loanType)} <span className="text-slate-400">•</span>{loanGroup.loan.frequency}</span><button onClick={() => {setActiveTab('registrar');setSelectedLoanId(loanGroup.loan.id);}} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline">Ir a Pagar</button></div><div className="divide-y divide-slate-100">{(loanGroup.installments || []).map(inst => (<div key={`${loanGroup.loan.id}-${inst.number}`} className="flex justify-between items-center p-3 hover:bg-indigo-50/30 transition-colors"><div className="flex items-center gap-4"><div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold font-mono">#{inst.number}</div><div><p className="text-sm font-bold text-slate-700">{inst.date}</p><p className="text-xs text-slate-400">Vencimiento</p></div></div><div className="text-right flex items-center gap-4"><div><p className="font-bold text-slate-700">RD${(inst.amount - inst.paidAmount).toLocaleString()}</p><span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${inst.status === 'Atrasado' ? 'bg-rose-100 text-rose-600' : inst.status === 'Parcial' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>{inst.status}</span></div><button onClick={() => {setActiveTab('registrar');setSelectedLoanId(loanGroup.loan.id);setPaymentMode('cuotas');setPayAmount((inst.amount - inst.paidAmount).toFixed(2));setPayNote(`Pago cuota #${inst.number}`);}} className="p-2 border border-indigo-200 text-indigo-600 rounded hover:bg-indigo-600 hover:text-white transition-colors" title="Cobrar esta cuota"><CreditCard className="w-4 h-4" /></button></div></div>))}</div></div>))}</div>)}
                           </div>
                       );
                   })

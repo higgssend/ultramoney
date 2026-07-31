@@ -182,10 +182,18 @@ const ClientDetail: React.FC = () => {
                     <span className={`text-xs font-bold ${client.status === 'Activo' ? 'text-emerald-500' : 'text-rose-500'}`}>{client.status}</span>
                   </p>
                </div>
+           </div>
+           <div className="flex items-center gap-3">
+              <button onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/portal/${client.id}`);
+                  toast.success('Link copiado al portapapeles');
+              }} className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl text-sm border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors">
+                  Copiar Link Portal
+              </button>
+              <button onClick={() => window.open(`/portal/${client.id}`, '_blank')} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm hover:bg-indigo-700 transition-colors shadow-sm">
+                  Abrir Portal
+              </button>
           </div>
-          <button className="p-2 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
-              <MoreHorizontal className="w-6 h-6" />
-          </button>
       </div>
 
       {/* Profile Card with Gradient Accent */}

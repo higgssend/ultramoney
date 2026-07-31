@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey } from '../types';
+import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct } from '../types';
 import { useToast } from './ToastContext';
 import { insforge } from '../lib/insforge';
 
@@ -7,6 +7,7 @@ interface StoreContextType {
   // Data
   clients: Client[];
   loans: Loan[];
+  loanProducts: LoanProduct[];
   loanRequests: LoanRequest[]; 
   transactions: Transaction[];
   bankAccounts: BankAccount[];
@@ -110,6 +111,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   const [clients, setClients] = useState<Client[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [loanProducts, setLoanProducts] = useState<LoanProduct[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [companySettings, setCompanySettings] = useState<CompanySettings>(initialCompanySettings);
@@ -293,7 +295,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser) {
       setClients([]); setLoans([]); setTransactions([]); setBankAccounts([]);
       setClientNotes([]); setClientDocuments([]); setEmployees([]);
-      setCashShifts([]); setCollectorVisits([]); setLoanRequests([]);
+      setCashShifts([]); setCollectorVisits([]); setLoanRequests([]); setLoanProducts([]);
       return;
     }
 
@@ -302,7 +304,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const [
           clientsRes, loansRes, trxRes, settingsRes,
           employeesRes, visitsRes, requestsRes, shiftsRes,
-          notesRes, docsRes, banksRes, rolesRes, usersRes, apiKeysRes
+          notesRes, docsRes, loanProductsRes, banksRes, rolesRes, usersRes, apiKeysRes
         ] = await Promise.all([
           insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
           insforge.database.from('loans').select('*').order('created_at', { ascending: false }),
@@ -314,6 +316,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           insforge.database.from('loan_requests').select('*').order('created_at', { ascending: false }),
           insforge.database.from('cash_shifts').select('*').order('created_at', { ascending: false }),
           insforge.database.from('client_notes').select('*').order('created_at', { ascending: false }),
+          insforge.database.from('loan_products').select('*').order('created_at', { ascending: false }),
           insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
           insforge.database.from('bank_accounts').select('*').order('created_at', { ascending: false }),
           insforge.database.from('roles').select('*').order('name'),
@@ -340,7 +343,21 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (requestsRes.data) setLoanRequests(requestsRes.data.map((r: any) => ({...r, clientId: r.client_id, clientName: r.client_name, interestRate: r.interest_rate, durationWeeks: r.duration_weeks, loanType: r.loan_type, closingCost: r.closing_cost, closingCostMode: r.closing_cost_mode, paymentDay: r.payment_day, requestDate: r.request_date, loanDestination: r.loan_destination})) as unknown as LoanRequest[]);
         if (shiftsRes.data) setCashShifts(shiftsRes.data.map((s: any) => ({...s, userId: s.user_id, userName: s.user_name, openedAt: s.opened_at, closedAt: s.closed_at, initialAmount: s.initial_amount, expectedAmount: s.expected_amount, finalCashCount: s.final_cash_count})) as unknown as CashShift[]);
         if (notesRes.data) setClientNotes(notesRes.data.map((n: any) => ({...n, clientId: n.client_id, createdBy: n.created_by})) as unknown as ClientNote[]);
+
         if (docsRes.data) setClientDocuments(docsRes.data.map((d: any) => ({...d, clientId: d.client_id, fileUrl: d.file_url, fileType: d.file_type, uploadDate: d.upload_date})) as unknown as ClientDocument[]);
+        if (loanProductsRes.data) {
+          setLoanProducts(loanProductsRes.data.map((p: any) => ({
+            ...p,
+            minAmount: p.min_amount, maxAmount: p.max_amount, interestRate: p.interest_rate,
+            interestType: p.interest_type, termMonths: p.term_months, defaultInstallments: p.default_installments,
+            requiresCollateral: p.requires_collateral, collateralType: p.collateral_type,
+            disbursementFee: p.disbursement_fee, lateFeePercentage: p.late_fee_percentage,
+            graceDays: p.grace_days, prepaymentAllowed: p.prepayment_allowed,
+            autoCalculateInterest: p.auto_calculate_interest, isActive: p.is_active,
+            createdAt: p.created_at, updatedAt: p.updated_at
+          })) as unknown as LoanProduct[]);
+        }
+
         if (banksRes.data) setBankAccounts(banksRes.data.map((b: any) => ({...b, clientId: b.client_id, bankName: b.bank_name, accountNumber: b.account_number, accountType: b.account_type, holderName: b.holder_name})) as unknown as BankAccount[]);
         if (rolesRes.data) setRoles(rolesRes.data as unknown as Role[]);
         if (usersRes.data) setUsers(usersRes.data.map((u: any) => ({...u, roleId: u.role_id, employeeId: u.employee_id, status: 'Active'})) as unknown as User[]);
@@ -386,7 +403,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         insforge.realtime.on('loan_requests_delete', (p: any) => setLoanRequests(prev => prev.filter(r => r.id !== p.id)));
 
         insforge.realtime.on('client_notes_insert', (n: any) => setClientNotes(prev => [{...n, clientId: n.client_id, createdBy: n.created_by} as unknown as ClientNote, ...prev]));
+
         insforge.realtime.on('client_documents_insert', (d: any) => setClientDocuments(prev => [{...d, clientId: d.client_id, fileUrl: d.file_url, fileType: d.file_type, uploadDate: d.upload_date} as unknown as ClientDocument, ...prev]));
+
+        insforge.realtime.on('loan_products_insert', (p: any) => setLoanProducts(prev => [{...p, minAmount: p.min_amount, maxAmount: p.max_amount, interestRate: p.interest_rate, interestType: p.interest_type, termMonths: p.term_months, defaultInstallments: p.default_installments, requiresCollateral: p.requires_collateral, collateralType: p.collateral_type, disbursementFee: p.disbursement_fee, lateFeePercentage: p.late_fee_percentage, graceDays: p.grace_days, prepaymentAllowed: p.prepayment_allowed, autoCalculateInterest: p.auto_calculate_interest, isActive: p.is_active, createdAt: p.created_at, updatedAt: p.updated_at} as unknown as LoanProduct, ...prev]));
+        insforge.realtime.on('loan_products_update', (p: any) => setLoanProducts(prev => prev.map(prod => prod.id === p.id ? {...p, minAmount: p.min_amount, maxAmount: p.max_amount, interestRate: p.interest_rate, interestType: p.interest_type, termMonths: p.term_months, defaultInstallments: p.default_installments, requiresCollateral: p.requires_collateral, collateralType: p.collateral_type, disbursementFee: p.disbursement_fee, lateFeePercentage: p.late_fee_percentage, graceDays: p.grace_days, prepaymentAllowed: p.prepayment_allowed, autoCalculateInterest: p.auto_calculate_interest, isActive: p.is_active, createdAt: p.created_at, updatedAt: p.updated_at} as unknown as LoanProduct : prod)));
+        insforge.realtime.on('loan_products_delete', (p: any) => setLoanProducts(prev => prev.filter(prod => prod.id !== p.id)));
+
         insforge.realtime.on('client_documents_delete', (p: any) => setClientDocuments(prev => prev.filter(d => d.id !== p.id)));
         
         insforge.realtime.on('bank_accounts_insert', (b: any) => setBankAccounts(prev => [{...b, clientId: b.client_id, bankName: b.bank_name, accountNumber: b.account_number, accountType: b.account_type, holderName: b.holder_name} as unknown as BankAccount, ...prev]));
@@ -945,15 +968,108 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setCurrentUser(null);
   };
 
+
+  const addLoanProduct = async (product: Omit<LoanProduct, 'id' | 'createdAt'>) => {
+    if (!currentUser) return;
+    try {
+        const { data, error } = await insforge.database.from('loan_products').insert({
+            name: product.name,
+            description: product.description,
+            min_amount: product.minAmount,
+            max_amount: product.maxAmount,
+            interest_rate: product.interestRate,
+            interest_type: product.interestType,
+            frequency: product.frequency,
+            default_installments: product.defaultInstallments,
+            requires_collateral: product.requiresCollateral,
+            collateral_type: product.collateralType,
+            disbursement_fee: product.disbursementFee,
+            late_fee: product.lateFeePercentage,
+            grace_period_days: product.graceDays,
+            allow_early_payoff: product.prepaymentAllowed,
+            auto_calculate_interest: product.autoCalculateInterest,
+            is_active: product.isActive,
+            amortization_method: product.amortizationMethod,
+            payment_order: product.paymentOrder,
+            recalculate_interest_on_early_payoff: product.recalculateInterestOnEarlyPayoff,
+            capitalization_frequency: product.capitalizationFrequency,
+            lender_id: currentUser.id
+        }).select().single();
+        if (error) throw error;
+        const newProduct = {
+            id: data.id,
+            name: data.name, description: data.description, minAmount: data.min_amount, maxAmount: data.max_amount,
+            interestRate: data.interest_rate, interestType: data.interest_type, frequency: data.frequency,
+            defaultInstallments: data.default_installments, requiresCollateral: data.requires_collateral,
+            collateralType: data.collateral_type, disbursementFee: data.disbursement_fee, lateFeePercentage: data.late_fee,
+            graceDays: data.grace_period_days, prepaymentAllowed: data.allow_early_payoff,
+            autoCalculateInterest: data.auto_calculate_interest, isActive: data.is_active, 
+            amortizationMethod: data.amortization_method, paymentOrder: data.payment_order, 
+            recalculateInterestOnEarlyPayoff: data.recalculate_interest_on_early_payoff,
+            capitalizationFrequency: data.capitalization_frequency,
+            createdAt: data.created_at
+        };
+        setLoanProducts(prev => [newProduct as LoanProduct, ...prev]);
+        addToast('Producto de préstamo creado.', 'success');
+    } catch (e: any) {
+        addToast('Error al crear producto: ' + e.message, 'error');
+    }
+  };
+
+  const updateLoanProduct = async (id: string, updates: Partial<LoanProduct>) => {
+      try {
+          const dbUpdates: any = {};
+          if (updates.name !== undefined) dbUpdates.name = updates.name;
+          if (updates.description !== undefined) dbUpdates.description = updates.description;
+          if (updates.minAmount !== undefined) dbUpdates.min_amount = updates.minAmount;
+          if (updates.maxAmount !== undefined) dbUpdates.max_amount = updates.maxAmount;
+          if (updates.interestRate !== undefined) dbUpdates.interest_rate = updates.interestRate;
+          if (updates.interestType !== undefined) dbUpdates.interest_type = updates.interestType;
+          if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
+          if (updates.defaultInstallments !== undefined) dbUpdates.default_installments = updates.defaultInstallments;
+          if (updates.requiresCollateral !== undefined) dbUpdates.requires_collateral = updates.requiresCollateral;
+          if (updates.collateralType !== undefined) dbUpdates.collateral_type = updates.collateralType;
+          if (updates.disbursementFee !== undefined) dbUpdates.disbursement_fee = updates.disbursementFee;
+          if (updates.lateFeePercentage !== undefined) dbUpdates.late_fee = updates.lateFeePercentage;
+          if (updates.graceDays !== undefined) dbUpdates.grace_period_days = updates.graceDays;
+          if (updates.prepaymentAllowed !== undefined) dbUpdates.allow_early_payoff = updates.prepaymentAllowed;
+          if (updates.autoCalculateInterest !== undefined) dbUpdates.auto_calculate_interest = updates.autoCalculateInterest;
+          if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+          if (updates.amortizationMethod !== undefined) dbUpdates.amortization_method = updates.amortizationMethod;
+          if (updates.paymentOrder !== undefined) dbUpdates.payment_order = updates.paymentOrder;
+          if (updates.recalculateInterestOnEarlyPayoff !== undefined) dbUpdates.recalculate_interest_on_early_payoff = updates.recalculateInterestOnEarlyPayoff;
+          if (updates.capitalizationFrequency !== undefined) dbUpdates.capitalization_frequency = updates.capitalizationFrequency;
+
+          const { error } = await insforge.database.from('loan_products').update(dbUpdates).eq('id', id);
+          if (error) throw error;
+          setLoanProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+          addToast('Producto actualizado.', 'success');
+      } catch (e: any) {
+          addToast('Error al actualizar producto: ' + e.message, 'error');
+      }
+  };
+
+  const deleteLoanProduct = async (id: string) => {
+      try {
+          const { error } = await insforge.database.from('loan_products').delete().eq('id', id);
+          if (error) throw error;
+          setLoanProducts(prev => prev.filter(p => p.id !== id));
+          addToast('Producto eliminado.', 'success');
+      } catch (e: any) {
+          addToast('Error al eliminar producto: ' + e.message, 'error');
+      }
+  };
+
   return (
     <StoreContext.Provider value={{
-      clients, loans, loanRequests, transactions, bankAccounts,
+      clients, loans, loanProducts, loanRequests, transactions, bankAccounts,
       clientNotes, clientDocuments, employees, auditLogs,
       cashShifts, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary,
       collectorVisits, addCollectorVisit, exportSystemBackup, importSystemBackup,
       currentUser, isLoadingAuth, users, roles, companySettings,
       notifications, addNotification, markNotificationAsRead, markAllNotificationsAsRead, addAuditLog,
       login, logout, loginEmployee, logoutSystem, registerUser, updateUser, updateCompanySettings, addRole, deleteRole,
+      addLoanProduct, updateLoanProduct, deleteLoanProduct,
       apiKeys,
       generateApiKey: async (name: string) => {
         if (!currentUser) return;
