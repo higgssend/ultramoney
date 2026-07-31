@@ -195,8 +195,8 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ToastProvider>
-          <HiddenDocumentRenderer />
       <StoreProvider>
+        <HiddenDocumentRenderer />
         <AppContent />
       </StoreProvider>
     </ToastProvider>

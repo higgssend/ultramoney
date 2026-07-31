@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct, Route } from '../types';
+import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct, Route, PdfJob } from '../types';
 import { useToast } from './ToastContext';
 import { insforge } from '../lib/insforge';
 
@@ -763,8 +763,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     addToast(`Préstamo desembolsado correctamente`, 'success');
-    enqueuePdf({ type: 'contrato', client, loan: newLoan });
-    enqueuePdf({ type: 'pagare', client, loan: newLoan });
+    enqueuePdf({ type: 'contrato', client, loan: insertedLoan as any });
+    enqueuePdf({ type: 'pagare', client, loan: insertedLoan as any });
   };
 
   const refinanceLoan = async (oldLoanId: string, newLoanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => {

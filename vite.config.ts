@@ -23,11 +23,12 @@ export default defineConfig(({ mode }) => {
         }),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'logoultramoney_logooriginaldegradadomorado.svg', 'og-image.svg', 'pwa-icon.svg'],
+          includeAssets: ['logoultramoney_logooriginaldegradadomorado.svg', 'og-image.svg', 'pwa-icon.svg'],
+          manifestFilename: 'manifest.json',
           manifest: {
             name: 'UltraMoney',
             short_name: 'UltraMoney',
-            description: 'Sistema para administración de préstamos.',
+            description: 'UltraMoney es una plataforma moderna para administrar préstamos, clientes, pagos, caja y cartera. Diseñada para prestamistas y financieras.',
             theme_color: '#4F46E5',
             background_color: '#ffffff',
             display: 'standalone',
@@ -37,8 +38,9 @@ export default defineConfig(({ mode }) => {
             icons: [
               {
                 src: '/pwa-icon.svg',
-                sizes: '192x192 512x512',
-                type: 'image/svg+xml'
+                sizes: '192x192',
+                type: 'image/svg+xml',
+                purpose: 'any'
               },
               {
                 src: '/pwa-icon.svg',

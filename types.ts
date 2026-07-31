@@ -372,3 +372,12 @@ export interface LoanProduct {
   recalculateInterestOnEarlyPayoff: boolean;
   capitalizationFrequency: 'Diario' | 'Mensual' | 'Ninguno';
 }
+
+
+export interface PdfJob {
+    id: string;
+    type: 'contrato' | 'pagare' | 'recibo';
+    client: Client;
+    loan?: Loan;
+    transaction?: Transaction;
+}
