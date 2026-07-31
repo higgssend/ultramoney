@@ -247,28 +247,39 @@ export const ApiDocsTab: React.FC = () => {
               <p>
                   Para interactuar con la API de UltraMoney, necesitas incluir tu API Key en los headers de tus peticiones HTTP. 
                   Esto garantiza que las solicitudes estén autenticadas de forma segura.
-              </p>
-              
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Base URL</h4>
-                  <code className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg font-mono text-sm font-bold">
-                      https://sxwv82iw.us-east.insforge.app/api
-                  </code>
+              </p>              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Base URLs</h4>
+                  <div className="space-y-3">
+                      <div>
+                          <p className="text-xs text-slate-500 mb-1">Para acceso directo a la Base de Datos (PostgREST):</p>
+                          <code className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:emerald-400 rounded-lg font-mono text-sm font-bold block">
+                              https://sxwv82iw.us-east.insforge.app/rest/v1
+                          </code>
+                      </div>
+                      <div>
+                          <p className="text-xs text-slate-500 mb-1">Para lógicas complejas y conectores (Edge Functions):</p>
+                          <code className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg font-mono text-sm font-bold block">
+                              https://sxwv82iw.us-east.insforge.app/functions/v1
+                          </code>
+                      </div>
+                  </div>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                   <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Autenticación (Headers)</h4>
-                  <p className="mb-2">Añade los siguientes headers en todas tus llamadas REST:</p>
+                  <p className="mb-2">Añade los siguientes headers en todas tus llamadas REST y Edge Functions:</p>
                   <pre className="bg-slate-900 text-slate-300 p-3 rounded-lg overflow-x-auto text-xs font-mono">
-{`Authorization: Bearer <TU_API_KEY_AQUI>
+{`apikey: <TU_API_KEY_AQUI>
+Authorization: Bearer <TU_API_KEY_AQUI>
 Content-Type: application/json`}
                   </pre>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Ejemplo en cURL</h4>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Ejemplo en cURL (Leer Clientes)</h4>
                   <pre className="bg-slate-900 text-slate-300 p-3 rounded-lg overflow-x-auto text-xs font-mono">
-{`curl -X GET "https://sxwv82iw.us-east.insforge.app/api/clients" \\
+{`curl -X GET "https://sxwv82iw.us-east.insforge.app/rest/v1/clients?select=*" \\
+  -H "apikey: sk_ultra_abc123" \\
   -H "Authorization: Bearer sk_ultra_abc123" \\
   -H "Content-Type: application/json"`}
                   </pre>
