@@ -275,6 +275,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   // Helper: map DB lowercase columns to camelCase for Loan objects
+  
+  // Helper: map DB lowercase columns to camelCase for Client objects
+  const mapClient = (c: any) => ({
+    ...c,
+    phoneHome: c.phonehome ?? c.phoneHome,
+    creditScore: c.creditscore ?? c.creditScore,
+    joinedDate: c.joineddate ?? c.joinedDate,
+    clientPin: c.clientpin ?? c.clientPin
+  });
+
   const mapLoan = (l: any) => ({
     ...l,
     clientId: l.clientid || l.clientId || l.client_id,
@@ -327,7 +337,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           insforge.database.from('api_keys').select('*').order('created_at', { ascending: false })
         ]);
 
-        if (clientsRes.data) setClients(clientsRes.data as unknown as Client[]);
+        if (clientsRes.data) setClients(clientsRes.data.map(mapClient) as unknown as Client[]);
         if (loansRes.data) {
           setLoans(loansRes.data.map(mapLoan) as unknown as Loan[]);
         }
@@ -380,8 +390,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         await insforge.realtime.subscribe(CHANNEL);
 
         // A generic helper could be used, but explicit maps are safer for snake_case conversion
-        insforge.realtime.on('clients_insert', (p: any) => setClients(prev => [p as unknown as Client, ...prev]));
-        insforge.realtime.on('clients_update', (p: any) => setClients(prev => prev.map(c => c.id === p.id ? p as unknown as Client : c)));
+        insforge.realtime.on('clients_insert', (p: any) => setClients(prev => [mapClient(p) as unknown as Client, ...prev]));
+        insforge.realtime.on('clients_update', (p: any) => setClients(prev => prev.map(c => c.id === p.id ? mapClient(p) as unknown as Client : c)));
         insforge.realtime.on('clients_delete', (p: any) => setClients(prev => prev.filter(c => c.id !== p.id)));
 
         insforge.realtime.on('loans_insert', (p: any) => {
@@ -489,15 +499,15 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       cedula: client.cedula,
       email: client.email,
       phone: client.phone,
-      phoneHome: client.phoneHome,
+      phonehome: client.phoneHome,
       address: client.address,
       occupation: client.occupation,
       sex: client.sex,
       income: client.income,
-      creditScore: client.creditScore,
-      joinedDate: client.joinedDate,
+      creditscore: client.creditScore,
+      joineddate: client.joinedDate,
       status: client.status,
-      clientPin: client.clientPin
+      clientpin: client.clientPin
     });
     if (error) {
       addToast("Error al registrar cliente", 'error');
@@ -510,9 +520,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser) return;
     const { error } = await insforge.database.from('clients').update({
       name: updatedClient.name, cedula: updatedClient.cedula, email: updatedClient.email,
-      phone: updatedClient.phone, phoneHome: updatedClient.phoneHome, address: updatedClient.address,
+      phone: updatedClient.phone, phonehome: updatedClient.phoneHome, address: updatedClient.address,
       occupation: updatedClient.occupation, sex: updatedClient.sex, income: updatedClient.income,
-      status: updatedClient.status, clientPin: updatedClient.clientPin
+      status: updatedClient.status, clientpin: updatedClient.clientPin
     }).eq('id', updatedClient.id);
     
     if (error) { addToast("Error al actualizar", 'error'); } 
@@ -964,7 +974,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const generateClientPin = (clientId: string) => {
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
     if (currentUser) {
-       insforge.database.from('clients').update({ clientPin: pin }).eq('id', clientId);
+       insforge.database.from('clients').update({ clientpin: pin }).eq('id', clientId);
     }
     return pin;
   };
