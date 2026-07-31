@@ -524,7 +524,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       creditscore: client.creditScore,
       joineddate: client.joinedDate,
       status: client.status,
-      clientpin: client.clientPin
+      clientpin: client.clientPin,
+      portal_alias: client.portalAlias,
+      portal_active: client.portalActive
     });
     if (error) {
       addToast("Error al registrar cliente", 'error');
@@ -539,7 +541,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       name: updatedClient.name, cedula: updatedClient.cedula, email: updatedClient.email,
       phone: updatedClient.phone, phonehome: updatedClient.phoneHome, address: updatedClient.address,
       occupation: updatedClient.occupation, sex: updatedClient.sex, income: updatedClient.income,
-      status: updatedClient.status, clientpin: updatedClient.clientPin
+      status: updatedClient.status, clientpin: updatedClient.clientPin,
+      portal_alias: updatedClient.portalAlias, portal_active: updatedClient.portalActive
     }).eq('id', updatedClient.id);
     
     if (error) { addToast("Error al actualizar", 'error'); } 

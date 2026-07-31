@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   User, Phone, MapPin, ArrowLeft, Banknote, 
   Receipt, MoreHorizontal, FileText, 
-  File as FileIcon, Image as ImageIcon, Upload, FileCheck, Edit, Plus, Trash2, X, Save,
+  File as FileIcon, Image as ImageIcon, Upload, FileCheck, Edit, Plus, Trash2, X, Save, Globe,
   Briefcase, DollarSign, Lock, Mail, Clock, Camera, Shield, MessageCircle
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -269,6 +269,14 @@ const ClientDetail: React.FC = () => {
                      <DetailRow label="Sexo" value={client.sex} />
                      <DetailRow label="Ocupación" value={client.occupation} />
                  </DetailGroup>
+                 
+                 <DetailGroup icon={Globe} title="Portal Web de Cliente">
+                     <DetailRow label="Enlace Corto" value={client.portalAlias ? `https://ultramoney.app/portal/${client.portalAlias}` : `https://ultramoney.app/portal/${client.id}`} highlight />
+                     <DetailRow label="Alias" value={client.portalAlias || 'No configurado'} />
+                     <DetailRow label="PIN" value={client.clientPin || 'Sin PIN'} />
+                     <DetailRow label="Estado" value={client.portalActive !== false ? 'Activo' : 'Desactivado'} />
+                 </DetailGroup>
+
                  <DetailGroup icon={Phone} title="Contacto">
                      <DetailRow label="Celular" value={client.phone} highlight />
                      <DetailRow label="Tel. Casa" value={client.phoneHome || '-'} />

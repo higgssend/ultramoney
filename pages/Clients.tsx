@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreHorizontal, Phone, MapPin, X, Edit, User, Eye, Crosshair, ChevronLeft } from 'lucide-react';
+import { Search, Plus, Filter, MoreHorizontal, Phone, MapPin, X, Edit, User, Eye, Crosshair, ChevronLeft, Globe } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate } from 'react-router-dom';

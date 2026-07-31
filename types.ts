@@ -74,6 +74,8 @@ export interface Client {
   email?: string;
   joinedDate: string;
   clientPin?: string; // 4-digit PIN para el portal del cliente
+  portalAlias?: string;
+  portalActive?: boolean;
   avatarUrl?: string;
   references?: ClientReference[];
 }
