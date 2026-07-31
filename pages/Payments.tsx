@@ -4,6 +4,7 @@ import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSq
 import { useStore } from '../context/StoreContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
 import { LoanEngine } from '../utils/LoanEngine';
 import { Loan, CompanySettings, PaymentMethod, formatLoanId } from '../types';
 
@@ -799,7 +800,7 @@ const PaymentSuccessModal: React.FC<{
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(receiptWebLink).then(() => {
-            addToast("Link de recibo copiado al portapapeles", "info");
+            toast.info("Link de recibo copiado al portapapeles");
         });
     };
 

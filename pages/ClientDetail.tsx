@@ -202,7 +202,7 @@ const ClientDetail: React.FC = () => {
            <div className="flex items-center gap-3">
               <button onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/portal/${client.id}`);
-                  toast.success('Link copiado al portapapeles');
+                  addToast('Link copiado al portapapeles', 'success');
               }} className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl text-sm border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-colors">
                   Copiar Link Portal
               </button>
