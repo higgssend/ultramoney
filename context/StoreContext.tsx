@@ -307,6 +307,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     interestRate: l.interestrate ?? l.interestRate ?? l.interest_rate,
     durationWeeks: l.durationweeks ?? l.durationWeeks ?? l.duration_weeks,
     startDate: l.startdate || l.startDate || l.start_date,
+    nextPaymentDate: l.nextpaymentdate || l.nextPaymentDate || l.next_payment_date || (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7); // Default fallback if missing in DB
+        return d.toISOString().split('T')[0];
+    })(),
     installmentAmount: l.installmentamount ?? l.installmentAmount ?? l.installment_amount,
     remainingBalance: l.remainingbalance ?? l.remainingBalance ?? l.remaining_balance,
     totalToPay: l.totaltopay ?? l.totalToPay ?? l.total_to_pay,
@@ -717,6 +722,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       clientId: loanData.clientId, clientName: loanData.clientName, amount: finalPrincipal,
       interestRate: loanData.interestRate, durationWeeks: loanData.durationWeeks,
       frequency: loanData.frequency, startDate: loanData.startDate, status: LoanStatus.ACTIVE,
+      next_payment_date: nextPaymentDate, nextPaymentDate: nextPaymentDate,
       installmentAmount: loanData.loanType === 'Amortizado' ? (totalToPay / loanData.durationWeeks) : (finalPrincipal * (loanData.interestRate/100)),
       remainingBalance: initialBalance, totalToPay, loanType: loanData.loanType,
       collateralType: loanData.collateral?.type || 'Sin Garantía', collateralRef: loanData.collateral?.refNumber || '',
