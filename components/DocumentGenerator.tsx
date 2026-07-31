@@ -61,7 +61,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       const fileName = `${client.id}_${docType}_${Date.now()}.pdf`;
       
       // Cast to any to bypass the SDK type definition missing the 3rd argument
-      const { data, error } = await (insforge.storage.from('documents').upload as any)(
+      const { data, error } = await (insforge.storage.from('client-documents').upload as any)(
         fileName, 
         pdfBlob, 
         { contentType: 'application/pdf', upsert: true }
@@ -69,7 +69,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
       if (error) throw error;
       
-      const { data: publicData } = insforge.storage.from('documents').getPublicUrl(fileName);
+      const { data: publicData } = insforge.storage.from('client-documents').getPublicUrl(fileName);
       const docLink = publicData.publicUrl;
       setDocumentUrl(docLink);
       
