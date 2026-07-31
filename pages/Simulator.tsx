@@ -7,7 +7,7 @@ import { formatLoanId } from '../types';
 
 const Simulator: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, loans, createLoan, refinanceLoan, loanProducts } = useStore();
+  const { clients, loans, createLoan, refinanceLoan, loanProducts, globalCurrency } = useStore();
 
   const [activeTab, setActiveTab] = useState<'simulation' | 'refinance'>('simulation');
 
@@ -83,7 +83,8 @@ const Simulator: React.FC = () => {
       startDate: new Date().toISOString().split('T')[0],
       loanType: 'Amortizado',
       nextPaymentDate: new Date().toISOString().split('T')[0],
-      loanCategory: 'Refinanciamiento'
+      loanCategory: 'Refinanciamiento',
+      currency: globalCurrency
     });
 
     navigate('/prestamos');

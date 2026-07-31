@@ -138,6 +138,7 @@ export interface LoanRequest {
   id: string;
   clientId: string;
   clientName: string;
+  currency?: 'DOP' | 'USD';
   amount: number;
   interestRate: number;
   durationWeeks: number;
@@ -190,6 +191,7 @@ export interface CashShift {
   userName: string;
   openedAt: string;
   closedAt?: string;
+  currency?: 'DOP' | 'USD';
   initialAmount: number;
   expectedAmount?: number;
   finalCashCount?: number;

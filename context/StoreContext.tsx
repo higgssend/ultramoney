@@ -58,6 +58,8 @@ interface StoreContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   addAuditLog: (action: string, details: string) => void;
+  globalCurrency: 'DOP' | 'USD';
+  setGlobalCurrency: (currency: 'DOP' | 'USD') => void;
 
   // Cash Shift Actions
   openCashShift: (initialAmount: number, notes?: string) => void;
@@ -108,6 +110,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [globalCurrency, setGlobalCurrency] = useState<'DOP' | 'USD'>('DOP');
   
   const [clients, setClients] = useState<Client[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -224,11 +227,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const shiftStartTime = new Date(activeCashShift.openedAt).getTime();
     
     const cashCollected = transactions
-      .filter(t => t.type === 'Ingreso' && new Date(t.date).getTime() >= shiftStartTime && (t.paymentMethod === 'Efectivo' || !t.paymentMethod))
+      .filter(t => (t.currency || 'DOP') === globalCurrency && t.type === 'Ingreso' && new Date(t.date).getTime() >= shiftStartTime && (t.paymentMethod === 'Efectivo' || !t.paymentMethod))
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const cashExpenses = transactions
-      .filter(t => t.type === 'Gasto' && new Date(t.date).getTime() >= shiftStartTime && (t.paymentMethod === 'Efectivo' || !t.paymentMethod))
+      .filter(t => (t.currency || 'DOP') === globalCurrency && t.type === 'Gasto' && new Date(t.date).getTime() >= shiftStartTime && (t.paymentMethod === 'Efectivo' || !t.paymentMethod))
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const expectedAmount = activeCashShift.initialAmount + cashCollected - cashExpenses;
@@ -1137,6 +1140,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   return (
     <StoreContext.Provider value={{
+      globalCurrency, setGlobalCurrency,
       clients, loans, loanProducts, loanRequests, transactions, bankAccounts,
       clientNotes, clientDocuments, employees, auditLogs,
       cashShifts, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary,

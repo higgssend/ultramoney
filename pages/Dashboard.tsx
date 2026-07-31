@@ -10,7 +10,7 @@ import { LoanStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { loans, clients, transactions, getFinancialStats } = useStore();
+  const { loans, clients, transactions, getFinancialStats, globalCurrency } = useStore();
   const navigate = useNavigate();
   const stats = getFinancialStats();
 
@@ -18,9 +18,10 @@ const Dashboard: React.FC = () => {
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year'>('month');
 
   // Metrics Logic (Filtered could be implemented here based on dateRange)
-  const totalPortfolio = loans.reduce((sum, loan) => sum + (Number(loan.remainingBalance) || 0), 0);
+  const currencyLoans = loans.filter(l => (l.currency || 'DOP') === globalCurrency);
+  const totalPortfolio = currencyLoans.reduce((sum, loan) => sum + (Number(loan.remainingBalance) || 0), 0);
   const activeClientsCount = clients.filter(c => c.status === 'Activo').length; 
-  const overdueAmount = loans
+  const overdueAmount = currencyLoans
     .filter(l => l.status === LoanStatus.OVERDUE)
     .reduce((sum, l) => sum + l.remainingBalance, 0);
   const balance = stats.balance;
@@ -38,7 +39,7 @@ const Dashboard: React.FC = () => {
     chartDataMap.set(m, { income: 0, expense: 0 });
   }
 
-  transactions.forEach(t => {
+  transactions.filter(t => (t.currency || 'DOP') === globalCurrency).forEach(t => {
     const dateObj = new Date(t.date);
     // Only include transactions from the last 6 months to avoid year overlap issues for this simple view
     const diffMonths = (new Date().getFullYear() - dateObj.getFullYear()) * 12 + (currentMonth - dateObj.getMonth());

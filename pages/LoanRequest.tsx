@@ -8,7 +8,7 @@ import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral } fr
 import { CollateralForm } from './features/CollateralForm';
 
 const LoanRequest: React.FC = () => {
-  const { addLoanRequest, createLoan, deleteLoanRequest, updateClient, clients, loanRequests } = useStore();
+  const { addLoanRequest, createLoan, deleteLoanRequest, updateClient, clients, loanRequests, globalCurrency } = useStore();
   const navigate = useNavigate();
   
   // View State

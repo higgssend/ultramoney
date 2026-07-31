@@ -16,7 +16,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { currentUser, logout, companySettings } = useStore();
+  const { currentUser, logout, companySettings, globalCurrency, setGlobalCurrency } = useStore();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
       return localStorage.getItem('theme') === 'dark';
@@ -125,12 +125,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 mb-16 md:mb-0 shrink-0 bg-slate-50/50 dark:bg-slate-800/30">
           <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preferencia</span>
-              <button 
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-              >
-                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setGlobalCurrency(globalCurrency === 'DOP' ? 'USD' : 'DOP')}
+                  className="px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1"
+                >
+                  <DollarSign className="w-3 h-3" /> {globalCurrency}
+                </button>
+                <button 
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="p-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                    {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+              </div>
           </div>
 
           <div className="flex items-center justify-between mb-4 px-2 group">

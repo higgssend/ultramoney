@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, PlusCircle } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, PlusCircle, Eye, EyeOff } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { useStore } from '../context/StoreContext';
 import StatCard from '../components/StatCard';
@@ -16,6 +16,7 @@ const Accounting: React.FC = () => {
   const recentTransactions = transactions.slice(0, 10);
   
   const [activeTab, setActiveTab] = useState<'overview' | 'shift' | 'expense'>('overview');
+  const [showSystemSummary, setShowSystemSummary] = useState(false);
 
   // Open Shift Form State
   const [initialCashAmount, setInitialCashAmount] = useState('5000');
