@@ -6,7 +6,7 @@ import {
   CalendarClock, AlertTriangle, Wallet, Briefcase, 
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
-  Edit, Calculator, Moon, Sun, Database, ShieldCheck
+  Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
