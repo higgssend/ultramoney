@@ -4,6 +4,7 @@ import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Pho
 import { useStore } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { Permission, User, ApiKey } from '../types';
+import { LoanProductsTab } from '../components/LoanProductsTab';
 
 const Settings: React.FC = () => {
   const location = useLocation();
