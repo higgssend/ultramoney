@@ -268,6 +268,25 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return () => unsubscribe();
   }, []);
 
+  // Helper: map DB lowercase columns to camelCase for Loan objects
+  const mapLoan = (l: any) => ({
+    ...l,
+    clientId: l.clientid || l.clientId || l.client_id,
+    clientName: l.clientname || l.clientName || l.client_name || '',
+    interestRate: l.interestrate ?? l.interestRate ?? l.interest_rate,
+    durationWeeks: l.durationweeks ?? l.durationWeeks ?? l.duration_weeks,
+    startDate: l.startdate || l.startDate || l.start_date,
+    installmentAmount: l.installmentamount ?? l.installmentAmount ?? l.installment_amount,
+    remainingBalance: l.remainingbalance ?? l.remainingBalance ?? l.remaining_balance,
+    totalToPay: l.totaltopay ?? l.totalToPay ?? l.total_to_pay,
+    loanType: l.loantype || l.loanType || l.loan_type,
+    collateralType: l.collateraltype || l.collateralType || l.collateral_type,
+    collateralRef: l.collateralref || l.collateralRef || l.collateral_ref,
+    collateralDescription: l.collateraldescription || l.collateralDescription || l.collateral_description,
+    collateralData: l.collateraldata || l.collateralData || l.collateral_data,
+    collateral: l.guarantees ? (typeof l.guarantees === 'string' ? JSON.parse(l.guarantees) : l.guarantees) : undefined
+  });
+
   // 2. Data Fetching & Realtime Subscriptions
   useEffect(() => {
     if (!currentUser) {
@@ -303,11 +322,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         if (clientsRes.data) setClients(clientsRes.data as unknown as Client[]);
         if (loansRes.data) {
-          const mappedLoans = loansRes.data.map((l: any) => ({
-            ...l,
-            collateral: l.guarantees ? (typeof l.guarantees === 'string' ? JSON.parse(l.guarantees) : l.guarantees) : undefined
-          }));
-          setLoans(mappedLoans as unknown as Loan[]);
+          setLoans(loansRes.data.map(mapLoan) as unknown as Loan[]);
         }
         if (trxRes.data) setTransactions(trxRes.data as unknown as Transaction[]);
         if (settingsRes.data) {
@@ -349,11 +364,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         insforge.realtime.on('clients_delete', (p: any) => setClients(prev => prev.filter(c => c.id !== p.id)));
 
         insforge.realtime.on('loans_insert', (p: any) => {
-          const l = { ...p, collateral: p.guarantees ? (typeof p.guarantees === 'string' ? JSON.parse(p.guarantees) : p.guarantees) : undefined };
-          setLoans(prev => [l as unknown as Loan, ...prev]);
+          setLoans(prev => [mapLoan(p) as unknown as Loan, ...prev]);
         });
         insforge.realtime.on('loans_update', (p: any) => {
-          const l = { ...p, collateral: p.guarantees ? (typeof p.guarantees === 'string' ? JSON.parse(p.guarantees) : p.guarantees) : undefined };
+          const l = mapLoan(p);
           setLoans(prev => prev.map(loan => loan.id === l.id ? l as unknown as Loan : loan));
         });
         insforge.realtime.on('loans_delete', (p: any) => setLoans(prev => prev.filter(l => l.id !== p.id)));
