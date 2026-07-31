@@ -36,6 +36,7 @@ interface StoreContextType {
   updateUser: (user: User) => void;
   updateCompanySettings: (settings: CompanySettings) => void;
   addRole: (role: Role) => void;
+  updateRole: (id: string, role: Partial<Role>) => void;
   deleteRole: (id: string) => void;
   exportSystemBackup: () => string;
   importSystemBackup: (jsonContent: string) => boolean;
@@ -515,6 +516,21 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
   
+  const updateRole = async (id: string, role: Partial<Role>) => {
+    const { data, error } = await insforge.database.from('roles').update({
+      name: role.name,
+      description: role.description,
+      permissions: role.permissions
+    }).eq('id', id).select();
+    
+    if (!error && data) {
+      setRoles(prev => prev.map(r => r.id === id ? (data[0] as unknown as Role) : r));
+      addToast("Rol actualizado exitosamente", "success");
+    } else {
+      addToast("Error al actualizar rol", "error");
+    }
+  };
+
   const deleteRole = async (id: string) => {
     const { error } = await insforge.database.from('roles').delete().eq('id', id);
     if (!error) {
@@ -1183,7 +1199,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       collectorVisits, addCollectorVisit, exportSystemBackup, importSystemBackup,
       currentUser, isLoadingAuth, users, roles, companySettings,
       notifications, addNotification, markNotificationAsRead, markAllNotificationsAsRead, addAuditLog,
-      login, logout, loginEmployee, logoutSystem, registerUser, updateUser, updateCompanySettings, addRole, deleteRole,
+      login, logout, loginEmployee, logoutSystem, registerUser, updateUser, updateCompanySettings, addRole, updateRole, deleteRole,
       addLoanProduct, updateLoanProduct, deleteLoanProduct,
       apiKeys,
       generateApiKey: async (name: string) => {

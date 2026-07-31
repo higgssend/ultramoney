@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Phone, MapPin, CreditCard, Upload, Image as ImageIcon, Activity, Smartphone, Key, UserCheck, User as UserIcon, ChevronLeft, Database, Download, FileJson, Eye, EyeOff, Copy, Briefcase } from 'lucide-react';
+import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Phone, MapPin, CreditCard, Upload, Image as ImageIcon, Activity, Smartphone, Key, UserCheck, User as UserIcon, ChevronLeft, Database, Download, FileJson, Eye, EyeOff, Copy, Briefcase, Edit2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { Permission, User, ApiKey } from '../types';
@@ -9,7 +9,7 @@ import { LoanProductsTab } from '../components/LoanProductsTab';
 const Settings: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { companySettings, updateCompanySettings, roles, addRole, deleteRole, users, registerUser, auditLogs, currentUser, updateUser, exportSystemBackup, importSystemBackup, apiKeys, generateApiKey, deleteApiKey } = useStore();
+  const { companySettings, updateCompanySettings, roles, addRole, updateRole, deleteRole, users, registerUser, auditLogs, currentUser, updateUser, exportSystemBackup, importSystemBackup, apiKeys, generateApiKey, deleteApiKey } = useStore();
   const [activeTab, setActiveTab] = useState<'company' | 'products' | 'roles' | 'users' | 'audit' | 'security' | 'backup' | 'api'>('company');
 
   // Handle incoming navigation state (e.g. from Sidebar edit profile)
@@ -34,6 +34,7 @@ const Settings: React.FC = () => {
 
   // Role Form State
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<{name: string, description: string, permissions: Permission[]}>({
     name: '', description: '', permissions: []
   });
@@ -470,7 +471,7 @@ const Settings: React.FC = () => {
                     <h3 className="font-bold text-slate-800">Roles y Permisos</h3>
                     <p className="text-sm text-slate-500">Define quién puede hacer qué en el sistema.</p>
                   </div>
-                  <button onClick={() => setIsRoleModalOpen(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2">
+                  <button onClick={() => { setEditingRoleId(null); setNewRole({ name: '', description: '', permissions: [] }); setIsRoleModalOpen(true); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2">
                     <Plus className="w-4 h-4" /> Crear Rol
                   </button>
                </div>
@@ -485,11 +486,18 @@ const Settings: React.FC = () => {
                             </h4>
                             <p className="text-sm text-slate-500">{role.description}</p>
                           </div>
-                          {role.id !== 'admin' && (
-                            <button onClick={() => deleteRole(role.id)} className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors">
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          )}
+                          <div className="flex gap-2">
+                            {role.id !== 'admin' && (
+                              <button onClick={() => { setEditingRoleId(role.id); setNewRole({ name: role.name, description: role.description, permissions: role.permissions }); setIsRoleModalOpen(true); }} className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors">
+                                <Edit2 className="w-5 h-5" />
+                              </button>
+                            )}
+                            {role.id !== 'admin' && (
+                              <button onClick={() => deleteRole(role.id)} className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors">
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
                        </div>
                        
                        <div className="flex flex-wrap gap-2">
@@ -692,7 +700,7 @@ const Settings: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-fade-in">
              <div className="flex justify-between items-center mb-6">
-               <h3 className="font-bold text-lg text-slate-800">Crear Nuevo Rol</h3>
+               <h3 className="font-bold text-lg text-slate-800">{editingRoleId ? 'Editar Rol' : 'Crear Nuevo Rol'}</h3>
                <button onClick={() => setIsRoleModalOpen(false)}><X className="w-5 h-5 text-slate-400" /></button>
              </div>
              
