@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Globe, 
   Key, 
@@ -9,57 +9,63 @@ import {
   Server, 
   ExternalLink,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Eye,
+  EyeOff,
+  X,
+  Plus
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import { insforge } from '../../lib/insforge';
-import { useEffect, useState } from 'react';
+import { useStore } from '../../context/StoreContext';
+import { ApiKey } from '../../types';
 
 export const ApiDocsTab: React.FC = () => {
   const { addToast } = useToast();
-  const [apiKey, setApiKey] = useState<string>('cargando...');
+  const { apiKeys, generateApiKey, deleteApiKey } = useStore();
+  
+  // UI State
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const fetchKey = async () => {
-      const { data } = await insforge.database.from('api_keys').select('key').order('created_at', { ascending: false }).limit(1).single();
-      if (data) {
-        setApiKey(data.key);
-      } else {
-        setApiKey('Aún no tienes una clave de API.');
-      }
-    };
-    fetchKey();
-  }, []);
-
-  const handleGenerateKey = async () => {
+  const handleGenerateKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) {
+        addToast('Debes ingresar un nombre para la API Key', 'error');
+        return;
+    }
+    
     setIsGenerating(true);
     try {
-      const { data: userData } = await insforge.auth.getCurrentUser();
-      if (!userData?.user) throw new Error('Usuario no autenticado');
-      
-      const newKey = 'um_live_mig_' + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      const { error } = await insforge.database.from('api_keys').insert([{
-        user_id: userData.user.id,
-        name: 'Producción Key',
-        key: newKey
-      }]);
-
-      if (error) throw error;
-      
-      setApiKey(newKey);
-      addToast('Nueva API Key generada con éxito', 'success');
+        await generateApiKey(newKeyName.trim());
+        setIsModalOpen(false);
+        setNewKeyName('');
     } catch (err: any) {
-      addToast('Error generando API Key: ' + err.message, 'error');
+        addToast('Error generando API Key: ' + err.message, 'error');
     } finally {
-      setIsGenerating(false);
+        setIsGenerating(false);
     }
   };
 
   const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
-    addToast('Endpoint / Código copiado al portapapeles', 'info');
+    addToast('API Key copiada al portapapeles', 'info');
+  };
+
+  const toggleVisibility = (id: string) => {
+      setVisibleKeys(prev => ({
+          ...prev,
+          [id]: !prev[id]
+      }));
+  };
+
+  const maskKey = (key: string, isVisible: boolean) => {
+      if (isVisible) return key;
+      const prefix = key.substring(0, 8); // e.g. sk_ultra_
+      const suffix = key.substring(key.length - 4);
+      return `${prefix}${'•'.repeat(16)}${suffix}`;
   };
 
   const endpointsList = [
@@ -93,7 +99,7 @@ export const ApiDocsTab: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in relative">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
         <div>
@@ -113,36 +119,81 @@ export const ApiDocsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* API Key Box */}
-      <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Key className="w-5 h-5 text-indigo-400" />
-            <h4 className="font-bold text-sm">Clave de API de Migración (Live Key)</h4>
+      {/* API Keys Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                  <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <Key className="w-5 h-5 text-indigo-500" /> Historial de API Keys Activas
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">Gestiona las llaves para acceder a la API de UltraMoney</p>
+              </div>
+              <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-bold flex items-center gap-2 shadow-sm transition-all hover:shadow-indigo-500/20"
+              >
+                  <Plus className="w-4 h-4" /> Nueva API Key
+              </button>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleGenerateKey}
-              disabled={isGenerating}
-              className="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-              <span>{isGenerating ? 'Generando...' : 'Generar Nueva'}</span>
-            </button>
-            <button
-              onClick={() => handleCopy(apiKey)}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Copiar Key</span>
-            </button>
+          
+          <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre de API Key</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Clave Oculta</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Creación</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
+                      </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {apiKeys.length === 0 ? (
+                          <tr>
+                              <td colSpan={4} className="p-8 text-center text-slate-500">
+                                  <Key className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                                  <p className="font-medium">No hay llaves de API activas</p>
+                              </td>
+                          </tr>
+                      ) : apiKeys.map(key => (
+                          <tr key={key.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                              <td className="px-6 py-4">
+                                  <p className="font-bold text-slate-800 dark:text-slate-200">{key.name}</p>
+                              </td>
+                              <td className="px-6 py-4">
+                                  <div className="flex items-center gap-3">
+                                      <code className="bg-slate-100 dark:bg-slate-950 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 font-mono text-sm border border-slate-200 dark:border-slate-800 min-w-[280px]">
+                                          {maskKey(key.key, !!visibleKeys[key.id])}
+                                      </code>
+                                      <button onClick={() => toggleVisibility(key.id)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Mostrar/Ocultar">
+                                          {visibleKeys[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                      </button>
+                                      <button onClick={() => handleCopy(key.key)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Copiar">
+                                          <Copy className="w-4 h-4" />
+                                      </button>
+                                  </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                  <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                                      {new Date(key.createdAt).toLocaleDateString()}
+                                  </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                  <button 
+                                      onClick={() => {
+                                          if(window.confirm(`¿Seguro que deseas revocar y eliminar la llave "${key.name}"? Cualquier integración usando esta llave dejará de funcionar inmediatamente.`)) {
+                                              deleteApiKey(key.id);
+                                          }
+                                      }}
+                                      className="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 dark:text-rose-400 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1.5 border border-rose-100 dark:border-rose-900/50"
+                                  >
+                                      <Trash2 className="w-3.5 h-3.5" /> Revocar
+                                  </button>
+                              </td>
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
           </div>
-        </div>
-
-        <div className="p-3 bg-slate-950 rounded-xl font-mono text-xs text-indigo-300 border border-slate-800 flex items-center justify-between">
-          <span>{apiKey}</span>
-          <span className="text-slate-500 text-xs">Cifrado AES-256</span>
-        </div>
       </div>
 
       {/* Endpoints Catalog */}
@@ -174,6 +225,55 @@ export const ApiDocsTab: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Modal Nueva API Key */}
+      {isModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                      <h3 className="font-bold text-lg text-slate-800 dark:text-white">Generar Nueva API Key</h3>
+                      <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
+                  </div>
+                  <form onSubmit={handleGenerateKey} className="p-6">
+                      <div className="mb-6">
+                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                              Nombre de la Conexión
+                          </label>
+                          <input 
+                              type="text" 
+                              required
+                              placeholder="Ej. Conector Zapier, CRM Externo..."
+                              value={newKeyName}
+                              onChange={e => setNewKeyName(e.target.value)}
+                              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-white"
+                          />
+                          <p className="text-xs text-slate-500 mt-2">
+                              Usa un nombre descriptivo para identificar rápidamente el sistema que utilizará esta llave en el futuro.
+                          </p>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                          <button 
+                              type="button"
+                              onClick={() => setIsModalOpen(false)}
+                              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                          >
+                              Cancelar
+                          </button>
+                          <button 
+                              type="submit"
+                              disabled={isGenerating}
+                              className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 transition-all flex justify-center items-center gap-2 disabled:opacity-70"
+                          >
+                              {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                              {isGenerating ? 'Generando...' : 'Generar Key'}
+                          </button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      )}
+
     </div>
   );
 };

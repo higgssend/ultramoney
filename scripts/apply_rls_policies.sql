@@ -69,3 +69,9 @@ CREATE POLICY "Employees can view roles" ON public.roles FOR SELECT USING (publi
 CREATE POLICY "Fallback read own data" ON public.clients FOR SELECT USING (lender_id = auth.uid());
 CREATE POLICY "Fallback read own loans" ON public.loans FOR SELECT USING (lender_id = auth.uid());
 CREATE POLICY "Fallback read own transactions" ON public.transactions FOR SELECT USING (lender_id = auth.uid());
+
+
+-- 7. API Keys
+ALTER TABLE public.api_keys ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins have full access to api keys" ON public.api_keys FOR ALL USING (public.get_user_role() = 'Admin');
+CREATE POLICY "Fallback access own api keys" ON public.api_keys FOR ALL USING (lender_id = auth.uid());
