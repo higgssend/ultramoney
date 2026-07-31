@@ -22,8 +22,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const today = new Date().toISOString().split('T')[0];
-
     // Get all active loans
     const { data: loans, error: loansError } = await supabase
       .from('loans')
@@ -32,66 +30,52 @@ serve(async (req) => {
 
     if (loansError) throw loansError;
 
-    const overdueLoans: any[] = [];
-    const updatedIds: string[] = [];
-    let totalAtRisk = 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const overdueLoans = [];
+    let updatedCount = 0;
 
     for (const loan of (loans || [])) {
       const nextPayment = loan.nextpaymentdate || loan.startdate;
       if (!nextPayment) continue;
 
-      // If the next payment date has passed, this loan is overdue
-      if (nextPayment < today) {
-        const daysOverdue = Math.floor(
-          (new Date(today).getTime() - new Date(nextPayment).getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        const balance = Number(loan.remainingbalance || 0);
-        totalAtRisk += balance;
+      if (nextPayment < todayStr) {
+        // Calculate days overdue
+        const diffTime = Math.abs(new Date(todayStr).getTime() - new Date(nextPayment).getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        let severity = 'Leve'; // 1-7 days
+        if (diffDays > 30) severity = 'Grave'; // > 30 days
+        else if (diffDays > 7) severity = 'Moderado'; // 8-30 days
 
         overdueLoans.push({
           loan_id: loan.id,
           client_id: loan.clientid,
-          client_name: loan.clientname || 'Desconocido',
-          amount: loan.amount,
-          remaining_balance: balance,
-          installment_amount: loan.installmentamount,
-          next_payment_date: nextPayment,
-          days_overdue: daysOverdue,
-          loan_type: loan.loantype,
-          frequency: loan.frequency
+          client_name: loan.clientname || 'Cliente',
+          lender_id: loan.lender_id,
+          expected_date: nextPayment,
+          days_overdue: diffDays,
+          severity,
+          amount: loan.installmentamount || 0,
+          balance: loan.remainingbalance || 0
         });
 
-        updatedIds.push(loan.id);
+        // Update status to Vencido
+        await supabase
+          .from('loans')
+          .update({ status: 'Vencido' })
+          .eq('id', loan.id);
+          
+        updatedCount++;
       }
     }
 
-    // Update overdue loans status to 'Vencido' (only if they were 'Activo')
-    if (updatedIds.length > 0) {
-      const { error: updateError } = await supabase
-        .from('loans')
-        .update({ status: 'Vencido' })
-        .in('id', updatedIds);
-
-      if (updateError) {
-        console.error('Error updating overdue loans:', updateError);
-      }
-    }
-
-    // Build severity breakdown
-    const severity = {
-      leve: overdueLoans.filter(l => l.days_overdue <= 7).length,       // 1-7 days
-      moderado: overdueLoans.filter(l => l.days_overdue > 7 && l.days_overdue <= 30).length, // 8-30 days
-      grave: overdueLoans.filter(l => l.days_overdue > 30).length       // 30+ days
-    };
+    // Optional: Log this check in an audit table or send notifications to lenders
 
     return new Response(JSON.stringify({
-      check_date: today,
-      total_overdue: overdueLoans.length,
-      total_at_risk: totalAtRisk,
-      severity,
-      status_updated: updatedIds.length,
-      overdue_loans: overdueLoans
+      scanned_total: loans?.length || 0,
+      overdue_found: overdueLoans.length,
+      status_updated: updatedCount,
+      report: overdueLoans
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

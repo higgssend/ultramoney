@@ -50,7 +50,7 @@ interface MigrationWizardProps {
 }
 
 export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, onCancel }) => {
-  const { addClient, createLoan, registerPayment, currentUser } = useStore();
+  const { addClient, createLoan, registerPayment, addTransaction, currentUser } = useStore();
   const { addToast } = useToast();
 
   // Wizard Step State (1 to 8)
@@ -235,7 +235,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
             }
 
             try {
-              if (rec.entity === 'clientes') {
+              if (selectedEntities.clientes) {
                 addClient({
                   id: `CLI-MIG-${rec.rowIndex}-${Date.now().toString().slice(-4)}`,
                   clientCode: rec.mappedData.clientCode || `CLI-${1000 + rec.rowIndex}`,
@@ -252,10 +252,12 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                   joinedDate: new Date().toISOString().split('T')[0]
                 });
                 importedCnt++;
-              } else if (rec.entity === 'prestamos') {
+              }
+              
+              if (selectedEntities.prestamos) {
                 createLoan({
                   clientId: rec.mappedData.clientId || `CLI-MIG-1`,
-                  clientName: rec.mappedData.clientName || 'RAMON EMILIO MERCEDES',
+                  clientName: rec.mappedData.name || rec.mappedData.clientName || 'RAMON EMILIO MERCEDES',
                   amount: Number(rec.mappedData.amount) || 50000,
                   interestRate: Number(rec.mappedData.interestRate) || 10,
                   durationWeeks: Number(rec.mappedData.durationWeeks) || 12,
@@ -264,6 +266,28 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                   loanType: rec.mappedData.loanType || 'Amortizado',
                   closingCost: rec.mappedData.closingCost || 2500
                 });
+                importedCnt++;
+              }
+              
+              if (selectedEntities.pagos) {
+                registerPayment(
+                  rec.mappedData.loanId || 'PR-001',
+                  Number(rec.mappedData.amount) || 1000,
+                  rec.mappedData.concept || 'Pago Migrado',
+                  rec.mappedData.date || new Date().toISOString().split('T')[0]
+                );
+                importedCnt++;
+              }
+              
+              if (selectedEntities.gastos || selectedEntities.caja) {
+                addTransaction({
+                  date: rec.mappedData.date || new Date().toISOString().split('T')[0],
+                  amount: Number(rec.mappedData.amount) || 1000,
+                  type: (rec.mappedData.txType === 'Ingreso' ? 'Ingreso' : 'Gasto'),
+                  description: rec.mappedData.concept || 'Transacción Migrada',
+                  category: selectedEntities.gastos ? 'Gastos Operativos' : 'Otro',
+                  lender_id: currentUser?.id || 'usr-1'
+                } as any);
                 importedCnt++;
               }
             } catch (err) {
@@ -727,10 +751,14 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                           <option value="address">Dirección</option>
                           <option value="income">Ingreso Mensual</option>
                           <option value="id">Código Préstamo</option>
-                          <option value="amount">Monto Capital</option>
+                          <option value="amount">Monto Capital / Pago / Gasto</option>
                           <option value="interestRate">Tasa Interés (%)</option>
                           <option value="frequency">Frecuencia Pago</option>
                           <option value="loanType">Tipo Préstamo</option>
+                          <option value="loanId">ID Préstamo (Para Pagos)</option>
+                          <option value="date">Fecha (Pagos/Gastos)</option>
+                          <option value="concept">Concepto/Descripción</option>
+                          <option value="txType">Tipo (Ingreso/Gasto)</option>
                         </select>
                       </td>
                       <td className="py-3 px-4">

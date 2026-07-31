@@ -86,6 +86,7 @@ interface StoreContextType {
   removeClientDocument: (id: string) => void;
   generateClientPin: (clientId: string) => string;
   getFinancialStats: () => { balance: number; incomeToday: number; expenseToday: number };
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -632,6 +633,19 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           referenceId: (insertedLoan as any).id
         });
     }
+    
+    // WhatsApp Notification (Fire and forget)
+    const client = clients.find(c => c.id === loanData.clientId);
+    if (client && client.phone) {
+      insforge.functions.invoke('whatsapp-notifier', {
+        body: {
+          phone: client.phone,
+          clientName: client.name,
+          message: `Felicidades ${client.name.split(' ')[0]},\n\nSu préstamo por ${loanData.amount} ha sido desembolsado. Le invitamos a revisar su portal de clientes para más detalles.`
+        }
+      }).catch(err => console.error("Error enviando WhatsApp:", err));
+    }
+
     addToast(`Préstamo desembolsado correctamente`, 'success');
   };
 
@@ -770,8 +784,23 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
 
     const { error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert);
-    if (!trxError) addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
-    else addToast("Error al guardar transacción", 'error');
+    if (!trxError) {
+      addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
+      
+      // WhatsApp Notification (Fire and forget)
+      const client = clients.find(c => c.id === loan.clientId);
+      if (client && client.phone) {
+        insforge.functions.invoke('whatsapp-notifier', {
+          body: {
+            phone: client.phone,
+            clientName: client.name,
+            message: `Hola ${client.name.split(' ')[0]},\n\nHemos recibido un pago de ${amount} por concepto de: ${note}. Su nuevo balance es: ${newBalance}. ¡Gracias por preferirnos!`
+          }
+        }).catch(err => console.error("Error enviando WhatsApp:", err));
+      }
+    } else {
+      addToast("Error al guardar transacción", 'error');
+    }
   };
 
   const addBankAccount = async (account: BankAccount) => {
@@ -852,6 +881,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
        insforge.database.from('clients').update({ clientPin: pin }).eq('id', clientId);
     }
     return pin;
+  };
+
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+    if (!currentUser) return;
+    const { error } = await insforge.database.from('transactions').insert(transaction);
+    if (error) {
+      addToast("Error al registrar transacción: " + error.message, 'error');
+    }
   };
 
   const getFinancialStats = () => {
@@ -949,7 +986,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       },
       addClient, updateClient, addEmployee, deleteEmployee, addLoanRequest, deleteLoanRequest,
       createLoan, refinanceLoan, registerPayment, addBankAccount, removeBankAccount,
-      addClientNote, addClientDocument, removeClientDocument, generateClientPin, getFinancialStats
+      addClientNote, addClientDocument, removeClientDocument, generateClientPin, getFinancialStats,
+      addTransaction
     }}>
       {children}
     </StoreContext.Provider>

@@ -14,12 +14,15 @@ const DICTIONARY: Record<string, string[]> = {
   email: ['correo', 'email', 'e-mail', 'correo electronico', 'correo_electronico'],
   address: ['direccion', 'calle', 'address', 'direccion_calle', 'ubicacion'],
   income: ['ingreso', 'salario', 'sueldo', 'income', 'ingreso_mensual'],
-  amount: ['monto', 'cantidad', 'capital', 'prestamo', 'amount', 'capital_otorgado'],
+  amount: ['monto', 'cantidad', 'capital', 'prestamo', 'amount', 'capital_otorgado', 'monto_transaccion', 'valor'],
   interestRate: ['interes', 'tasa', 'interest', 'porcentaje', 'porcentaje_interes'],
   frequency: ['frecuencia', 'modalidad', 'frequency', 'modalidad_pago'],
   loanType: ['tipo', 'tipo prestamo', 'tipo_prestamo'],
-  date: ['fecha', 'date', 'creado'],
+  date: ['fecha', 'date', 'creado', 'fecha_pago', 'fecha_transaccion'],
   amountCollected: ['cobrado', 'recaudado', 'pago', 'monto cobrado'],
+  loanId: ['codigo_prestamo', 'prestamo_id', 'id_prestamo', 'num_prestamo', 'referencia_prestamo'],
+  concept: ['concepto', 'descripcion', 'nota', 'motivo', 'detalle'],
+  txType: ['tipo_movimiento', 'tipo_transaccion', 'categoria', 'ingreso_gasto']
 };
 
 export const parseFile = async (file: File): Promise<ParseResult> => {

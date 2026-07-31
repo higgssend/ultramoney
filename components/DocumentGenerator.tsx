@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, Printer, Download, CheckCircle, X, Shield, FileCheck, AlertCircle } from 'lucide-react';
+import { FileText, Printer, Download, CheckCircle, X, Shield, FileCheck, AlertCircle, CloudUpload, MessageCircle } from 'lucide-react';
 import { Loan, Client, CompanySettings, Transaction } from '../types';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { insforge } from '../lib/insforge';
+import { useToast } from '../context/ToastContext';
 
 export type DocumentType = 'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo';
 
@@ -32,6 +36,79 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     month: 'long',
     year: 'numeric'
   });
+
+  const { addToast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+
+  const handleCloudSave = async () => {
+    const printElement = document.getElementById('printable-legal-document');
+    if (!printElement) return;
+    
+    setIsUploading(true);
+    addToast('Generando PDF y subiendo a la nube...', 'info');
+
+    try {
+      const canvas = await html2canvas(printElement, { scale: 2 });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF('p', 'mm', 'letter');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+      
+      const fileName = `${client.id}_${docType}_${Date.now()}.pdf`;
+      
+      // Cast to any to bypass the SDK type definition missing the 3rd argument
+      const { data, error } = await (insforge.storage.from('documents').upload as any)(
+        fileName, 
+        pdfBlob, 
+        { contentType: 'application/pdf', upsert: true }
+      );
+
+      if (error) throw error;
+      
+      const { data: publicData } = insforge.storage.from('documents').getPublicUrl(fileName);
+      const docLink = publicData.publicUrl;
+      setDocumentUrl(docLink);
+      
+      // Save URL to client_documents table
+      await insforge.database.from('client_documents').insert({
+        client_id: client.id,
+        name: `Documento ${docType} - ${todayStr}`,
+        url: docLink,
+        upload_date: new Date().toISOString()
+      });
+
+      addToast('Documento guardado en la nube exitosamente', 'success');
+    } catch (err: any) {
+      addToast('Error al guardar en la nube: ' + err.message, 'error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleManualWhatsApp = () => {
+    if (!documentUrl) return;
+    
+    const amountStr = transaction ? `$${transaction.amount.toLocaleString('es-DO')}` : '';
+    let message = `Hola ${client.name.split(' ')[0]},\n\n`;
+    
+    if (docType === 'recibo' && transaction) {
+      message += `Te enviamos el comprobante de tu pago por ${amountStr} realizado el ${new Date(transaction.date).toLocaleDateString('es-DO')}.\n`;
+    } else if (docType === 'pagare' || docType === 'contrato') {
+      message += `Adjunto encontrarás el ${docType} de tu préstamo.\n`;
+    } else {
+      message += `Te enviamos el siguiente documento: ${docType}.\n`;
+    }
+
+    message += `\nPuedes descargar o ver el documento PDF aquí: ${documentUrl}\n\nGracias por confiar en ${company.name || 'nosotros'}.`;
+    
+    const cleanPhone = client.phone ? client.phone.replace(/\D/g, '') : '';
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handlePrint = () => {
     const printElement = document.getElementById('printable-legal-document');
@@ -353,6 +430,21 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           >
             <Printer className="w-5 h-5" /> Imprimir / Exportar a PDF
           </button>
+          <button
+            onClick={handleCloudSave}
+            disabled={isUploading}
+            className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-lg flex items-center gap-2 disabled:opacity-50"
+          >
+            <CloudUpload className="w-5 h-5" /> {isUploading ? 'Guardando...' : 'Guardar en la Nube'}
+          </button>
+          {documentUrl && (
+            <button
+              onClick={handleManualWhatsApp}
+              className="px-6 py-2.5 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 shadow-lg flex items-center gap-2"
+            >
+              <MessageCircle className="w-5 h-5" /> Enviar por WhatsApp
+            </button>
+          )}
         </div>
       </div>
     </div>

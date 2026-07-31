@@ -20,10 +20,10 @@ CREATE POLICY "Permitir Update (Clients)" ON clients FOR UPDATE USING (true);
 CREATE POLICY "Permitir Update (Loans)" ON loans FOR UPDATE USING (true);
 CREATE POLICY "Permitir Update (Transactions)" ON transactions FOR UPDATE USING (true);
 
--- 4. RESTRICTIVAS: Solo Admins pueden Borrar (DELETE)
--- Asumimos que los Admins usan el JWT generado por el Auth de InsForge
-CREATE POLICY "Solo Admin puede borrar Préstamos" ON loans FOR DELETE USING (auth.role() = 'authenticated');
-CREATE POLICY "Solo Admin puede borrar Transacciones" ON transactions FOR DELETE USING (auth.role() = 'authenticated');
+-- 4. RESTRICTIVAS: Bloqueo de Borrado de Transacciones y Préstamos
+-- Ni siquiera los administradores deberían borrar transacciones directamente de la DB, deben hacer un contra-asiento.
+CREATE POLICY "Nadie puede borrar Transacciones" ON transactions FOR DELETE USING (false);
+CREATE POLICY "Solo Admin puede borrar Préstamos vacíos" ON loans FOR DELETE USING (auth.role() = 'authenticated' AND remainingBalance = amount);
 CREATE POLICY "Solo Admin puede borrar Clientes" ON clients FOR DELETE USING (auth.role() = 'authenticated');
 
 -- Nota: Si los empleados usan `employee_session` (localStorage) y no tienen JWT propio de InsForge Auth,

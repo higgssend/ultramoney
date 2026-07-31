@@ -7,6 +7,12 @@
       "skillPath": "skills/gsap-web/SKILL.md",
       "computedHash": "d32db5fd4c702ca088dd5360da6410f430db1a31885212d6b4b6e265c1ee966e"
     },
+    "insforge-cli": {
+      "source": "insforge/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/insforge-cli/SKILL.md",
+      "computedHash": "e163cf30a779929f67036fcbb13ab7f4b232fdbe9baf3f44930a7fe152ae9daa"
+    },
     "interface-design": {
       "source": "Dammyjay93/interface-design",
       "sourceType": "github",
