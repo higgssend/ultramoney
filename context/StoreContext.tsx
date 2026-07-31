@@ -59,6 +59,9 @@ interface StoreContextType {
   markAllNotificationsAsRead: () => void;
   addAuditLog: (action: string, details: string) => void;
   globalCurrency: 'DOP' | 'USD';
+  pdfQueue: PdfJob[];
+  enqueuePdf: (job: Omit<PdfJob, 'id'>) => void;
+  removePdfJob: (id: string) => void;
   setGlobalCurrency: (currency: 'DOP' | 'USD') => void;
 
   // Cash Shift Actions
@@ -111,6 +114,15 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [globalCurrency, setGlobalCurrency] = useState<'DOP' | 'USD'>('DOP');
+  const [pdfQueue, setPdfQueue] = useState<PdfJob[]>([]);
+
+  const enqueuePdf = (job: Omit<PdfJob, 'id'>) => {
+    setPdfQueue(prev => [...prev, { ...job, id: Math.random().toString(36).substr(2, 9) }]);
+  };
+
+  const removePdfJob = (id: string) => {
+    setPdfQueue(prev => prev.filter(j => j.id !== id));
+  };
   
   const [clients, setClients] = useState<Client[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -748,6 +760,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     addToast(`Préstamo desembolsado correctamente`, 'success');
+    enqueuePdf({ type: 'contrato', client, loan: newLoan });
+    enqueuePdf({ type: 'pagare', client, loan: newLoan });
   };
 
   const refinanceLoan = async (oldLoanId: string, newLoanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => {
@@ -1141,6 +1155,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <StoreContext.Provider value={{
       globalCurrency, setGlobalCurrency,
+      pdfQueue, enqueuePdf, removePdfJob,
       clients, loans, loanProducts, loanRequests, transactions, bankAccounts,
       clientNotes, clientDocuments, employees, auditLogs,
       cashShifts, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary,

@@ -27,6 +27,7 @@ import EmployeeLogin from './pages/EmployeeLogin';
 import ClientPortals from './pages/ClientPortals';
 import { ClientPortal } from './pages/ClientPortal';
 import { ReceiptView } from './pages/ReceiptView';
+import { HiddenDocumentRenderer } from './components/HiddenDocumentRenderer';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
@@ -194,6 +195,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ToastProvider>
+          <HiddenDocumentRenderer />
       <StoreProvider>
         <AppContent />
       </StoreProvider>
