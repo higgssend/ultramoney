@@ -13,12 +13,7 @@ import {
   LayoutDashboard,
   ShieldCheck
 } from 'lucide-react';
-import { 
-  INITIAL_CONNECTORS, 
-  INITIAL_SYNC_JOBS, 
-  INITIAL_TEMPLATES, 
-  INITIAL_SCHEDULES 
-} from './mockData';
+
 import { insforge } from '../../lib/insforge';
 import { 
   Connector, 
@@ -56,10 +51,10 @@ const MigrationCenter: React.FC = () => {
 
   // Module persistent local state
   const [logs, setLogs] = useState<MigrationLog[]>([]);
-  const [connectors, setConnectors] = useState<Connector[]>(INITIAL_CONNECTORS);
-  const [syncJobs, setSyncJobs] = useState<SyncJob[]>(INITIAL_SYNC_JOBS);
-  const [templates, setTemplates] = useState<MigrationTemplate[]>(INITIAL_TEMPLATES);
-  const [schedules, setSchedules] = useState<ScheduleJob[]>(INITIAL_SCHEDULES);
+  const [connectors, setConnectors] = useState<Connector[]>([]);
+  const [syncJobs, setSyncJobs] = useState<SyncJob[]>([]);
+  const [templates, setTemplates] = useState<MigrationTemplate[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleJob[]>([]);
 
   useEffect(() => {
     const fetchLogs = async () => {

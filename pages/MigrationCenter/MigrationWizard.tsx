@@ -39,7 +39,7 @@ import {
   ValidationIssue,
   MigrationLog
 } from './types';
-import { SAMPLE_SOURCE_FIELDS, DEFAULT_PREVIEW_RECORDS } from './mockData';
+
 import { useStore } from '../../context/StoreContext';
 import { useToast } from '../../context/ToastContext';
 import { parseFile, guessMapping } from './SmartImporter';
@@ -165,7 +165,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
   });
 
   // Step 6: Preview Records (Editable grid)
-  const [previewRecords, setPreviewRecords] = useState<PreviewRecord[]>(DEFAULT_PREVIEW_RECORDS);
+  const [previewRecords, setPreviewRecords] = useState<PreviewRecord[]>([]);
   const [previewFilter, setPreviewFilter] = useState<'all' | 'valid' | 'warning' | 'error'>('all');
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
 
