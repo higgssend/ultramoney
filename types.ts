@@ -28,6 +28,16 @@ export interface ClientReference {
   type: 'Familiar' | 'Personal' | 'Comercial';
 }
 
+
+export interface Route {
+  id: string;
+  name: string;
+  description?: string;
+  collectorId?: string;
+  status: 'Activa' | 'Inactiva';
+  createdAt: string;
+}
+
 export interface Client {
   id: string;
   clientCode?: string;
@@ -48,11 +58,16 @@ export interface Client {
   referenceAddress?: string;
   coordinates?: { lat: number; lng: number }; // Geolocalización
   
+
   // Informacion laboral
   companyName?: string;
   jobPosition?: string;
   income: number; // Ingresos mensuales
   seniorityYears?: number;
+
+  // Ruta Lógica
+  routeId?: string;
+  routeSequence?: number;
 
   creditScore: number; // 0 - 100
   status: 'Activo' | 'Bloqueado';

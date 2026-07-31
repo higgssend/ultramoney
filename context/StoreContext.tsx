@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct } from '../types';
+import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct, Route } from '../types';
 import { useToast } from './ToastContext';
 import { insforge } from '../lib/insforge';
 
@@ -117,6 +117,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [companySettings, setCompanySettings] = useState<CompanySettings>(initialCompanySettings);
 
   const [employees, setEmployees] = useState<Employee[]>([]);
+
+  const [routes, setRoutes] = useState<Route[]>([]);
+
   const [loanRequests, setLoanRequests] = useState<LoanRequest[]>([]);
   const [clientNotes, setClientNotes] = useState<ClientNote[]>([]);
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
@@ -514,6 +517,66 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     
     if (error) { addToast("Error al actualizar", 'error'); } 
     else { addToast("Cliente actualizado", 'success'); }
+  };
+
+  
+  const addRoute = async (route: Omit<Route, 'id' | 'createdAt'>) => {
+      try {
+          const { data, error } = await insforge.database.from('routes').insert([{
+              name: route.name,
+              description: route.description,
+              collector_id: route.collectorId,
+              status: route.status
+          }]).select();
+          if(error) throw error;
+          if(data) {
+              setRoutes([...routes, {
+                  id: data[0].id,
+                  name: data[0].name,
+                  description: data[0].description,
+                  collectorId: data[0].collector_id,
+                  status: data[0].status,
+                  createdAt: data[0].created_at
+              }]);
+              addToast('Ruta creada exitosamente', 'success');
+          }
+      } catch (e: any) {
+          addToast('Error al crear ruta: ' + e.message, 'error');
+      }
+  };
+
+  const updateRoute = async (id: string, updates: Partial<Route>) => {
+      try {
+          const dbUpdates: any = {};
+          if(updates.name) dbUpdates.name = updates.name;
+          if('description' in updates) dbUpdates.description = updates.description;
+          if('collectorId' in updates) dbUpdates.collector_id = updates.collectorId;
+          if(updates.status) dbUpdates.status = updates.status;
+          
+          const { error } = await insforge.database.from('routes').update(dbUpdates).eq('id', id);
+          if(error) throw error;
+          setRoutes(routes.map(r => r.id === id ? { ...r, ...updates } : r));
+          addToast('Ruta actualizada', 'success');
+      } catch (e: any) {
+          addToast('Error al actualizar ruta: ' + e.message, 'error');
+      }
+  };
+
+  const deleteRoute = async (id: string) => {
+      try {
+          // Check if clients are assigned
+          const hasClients = clients.some(c => c.routeId === id);
+          if(hasClients) {
+              addToast('No se puede eliminar la ruta porque tiene clientes asignados', 'error');
+              return;
+          }
+          const { error } = await insforge.database.from('routes').delete().eq('id', id);
+          if(error) throw error;
+          setRoutes(routes.filter(r => r.id !== id));
+          addToast('Ruta eliminada', 'success');
+      } catch (e: any) {
+          addToast('Error al eliminar ruta: ' + e.message, 'error');
+      }
   };
 
   const addEmployee = async (employee: Employee) => {

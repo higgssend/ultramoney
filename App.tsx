@@ -14,6 +14,7 @@ import Loans from './pages/Loans';
 import Payments from './pages/Payments';
 import Overdue from './pages/Overdue';
 import Portfolio from './pages/Portfolio';
+import RoutesPage from './pages/Routes';
 import Employees from './pages/Employees';
 import Classification from './pages/Classification';
 import DeepAccounting from './pages/DeepAccounting';

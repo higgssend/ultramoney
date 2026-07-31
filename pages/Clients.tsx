@@ -379,6 +379,31 @@ const Clients: React.FC = () => {
                         </div>
                     </div>
 
+                    
+                    {/* Section: Ruta */}
+                    <div>
+                        <h4 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mb-3 flex items-center gap-2">
+                            <Map className="w-4 h-4" /> Ruta de Cobro (Opcional)
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Zona / Ruta</label>
+                                <select className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-700 dark:text-white" 
+                                    value={currentClient.routeId || ''} onChange={e => setCurrentClient({...currentClient, routeId: e.target.value})}>
+                                    <option value="">-- Sin ruta --</option>
+                                    {routes.map(r => (
+                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1"><Hash className="w-3 h-3 text-slate-400"/> Secuencia / Orden</label>
+                                <input type="number" className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-700 dark:text-white" 
+                                    value={currentClient.routeSequence || 0} onChange={e => setCurrentClient({...currentClient, routeSequence: Number(e.target.value)})} placeholder="Ej. 1" />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Section 4: Documento Adjunto (Opcional, Solo Creación) */}
                     {!isEditMode && (
                         <div>
