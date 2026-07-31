@@ -239,6 +239,43 @@ export const ApiDocsTab: React.FC = () => {
           </div>
       </div>
 
+      {/* Documentacion API */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+          <h3 className="font-extrabold text-lg text-slate-800 dark:text-white mb-4">¿Cómo usar la API?</h3>
+          
+          <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+              <p>
+                  Para interactuar con la API de UltraMoney, necesitas incluir tu API Key en los headers de tus peticiones HTTP. 
+                  Esto garantiza que las solicitudes estén autenticadas de forma segura.
+              </p>
+              
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Base URL</h4>
+                  <code className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg font-mono text-sm font-bold">
+                      https://sxwv82iw.us-east.insforge.app/api
+                  </code>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Autenticación (Headers)</h4>
+                  <p className="mb-2">Añade los siguientes headers en todas tus llamadas REST:</p>
+                  <pre className="bg-slate-900 text-slate-300 p-3 rounded-lg overflow-x-auto text-xs font-mono">
+{`Authorization: Bearer <TU_API_KEY_AQUI>
+Content-Type: application/json`}
+                  </pre>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Ejemplo en cURL</h4>
+                  <pre className="bg-slate-900 text-slate-300 p-3 rounded-lg overflow-x-auto text-xs font-mono">
+{`curl -X GET "https://sxwv82iw.us-east.insforge.app/api/clients" \\
+  -H "Authorization: Bearer sk_ultra_abc123" \\
+  -H "Content-Type: application/json"`}
+                  </pre>
+              </div>
+          </div>
+      </div>
+
       {/* Endpoints Catalog */}
       <div className="space-y-4">
         <h4 className="font-extrabold text-slate-800 dark:text-white text-base">Catálogo de Endpoints REST</h4>
