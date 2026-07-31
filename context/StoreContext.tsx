@@ -282,7 +282,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const [
           clientsRes, loansRes, trxRes, settingsRes,
           employeesRes, visitsRes, requestsRes, shiftsRes,
-          notesRes, docsRes, banksRes, rolesRes, usersRes
+          notesRes, docsRes, banksRes, rolesRes, usersRes, apiKeysRes
         ] = await Promise.all([
           insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
           insforge.database.from('loans').select('*').order('created_at', { ascending: false }),
@@ -297,7 +297,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
           insforge.database.from('bank_accounts').select('*').order('created_at', { ascending: false }),
           insforge.database.from('roles').select('*').order('name'),
-          insforge.database.from('user_profiles').select('*').order('created_at')
+          insforge.database.from('user_profiles').select('*').order('created_at'),
+          insforge.database.from('api_keys').select('*').order('created_at', { ascending: false })
         ]);
 
         if (clientsRes.data) setClients(clientsRes.data as unknown as Client[]);
@@ -327,6 +328,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (banksRes.data) setBankAccounts(banksRes.data.map((b: any) => ({...b, clientId: b.client_id, bankName: b.bank_name, accountNumber: b.account_number, accountType: b.account_type, holderName: b.holder_name})) as unknown as BankAccount[]);
         if (rolesRes.data) setRoles(rolesRes.data as unknown as Role[]);
         if (usersRes.data) setUsers(usersRes.data.map((u: any) => ({...u, roleId: u.role_id, employeeId: u.employee_id, status: 'Active'})) as unknown as User[]);
+        if (apiKeysRes.data) setApiKeys(apiKeysRes.data.map((k: any) => ({...k, createdAt: k.created_at})) as unknown as ApiKey[]);
 
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -902,22 +904,34 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       notifications, addNotification, markNotificationAsRead, markAllNotificationsAsRead, addAuditLog,
       login, logout, loginEmployee, logoutSystem, registerUser, updateUser, updateCompanySettings, addRole, deleteRole,
       apiKeys,
-      generateApiKey: (name: string) => {
+      generateApiKey: async (name: string) => {
+        if (!currentUser) return;
         const key = `sk_ultra_${Math.random().toString(36).substr(2, 9)}${Math.random().toString(36).substr(2, 9)}`;
-        const newKey: ApiKey = {
-          id: `key-${Date.now()}`,
+        const { error, data } = await insforge.database.from('api_keys').insert({
+          lender_id: currentUser.id,
           name,
           key,
-          createdAt: new Date().toISOString()
-        };
-        setApiKeys(prev => [...prev, newKey]);
-        addAuditLog('api_key_generated', `Generó API Key: ${name}`);
-        addToast('API Key generada exitosamente', 'success');
+          created_at: new Date().toISOString()
+        }).select().single();
+
+        if (!error && data) {
+          setApiKeys(prev => [...prev, { ...data, createdAt: data.created_at } as unknown as ApiKey]);
+          addAuditLog('api_key_generated', `Generó API Key: ${name}`);
+          addToast('API Key generada exitosamente', 'success');
+        } else {
+          addToast('Error al guardar API Key en base de datos', 'error');
+        }
       },
-      deleteApiKey: (id: string) => {
-        setApiKeys(prev => prev.filter(k => k.id !== id));
-        addAuditLog('api_key_deleted', `Eliminó API Key`);
-        addToast('API Key eliminada', 'success');
+      deleteApiKey: async (id: string) => {
+        if (!currentUser) return;
+        const { error } = await insforge.database.from('api_keys').delete().eq('id', id);
+        if (!error) {
+          setApiKeys(prev => prev.filter(k => k.id !== id));
+          addAuditLog('api_key_deleted', `Eliminó API Key`);
+          addToast('API Key eliminada', 'success');
+        } else {
+          addToast('Error al eliminar API Key', 'error');
+        }
       },
       addClient, updateClient, addEmployee, deleteEmployee, addLoanRequest, deleteLoanRequest,
       createLoan, refinanceLoan, registerPayment, addBankAccount, removeBankAccount,
