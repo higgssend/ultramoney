@@ -26,7 +26,7 @@ const LoanRequest: React.FC = () => {
   const [interest, setInterest] = useState(10); // Porcentaje
   const [frequency, setFrequency] = useState('Semanal');
   const [paymentDay, setPaymentDay] = useState(1); // For Monthly Loans
-  const [loanType, setLoanType] = useState<LoanType>('Amortizado');
+  const [loanType, setLoanType] = useState<LoanType>('Amortizado (Cuota Fija)');
   
   // Closing Costs State
   const [chargeClosingCost, setChargeClosingCost] = useState(false);
@@ -95,7 +95,7 @@ const LoanRequest: React.FC = () => {
 
   // Efecto para recalcular cuando cambian los inputs
   useEffect(() => {
-    if (loanType === 'Amortizado' && calcMode === 'installment') {
+    if (loanType.includes('Amortizado') && calcMode === 'installment') {
         const principal = getPrincipalForCalculation();
         const totalDebt = principal * (1 + (interest / 100));
         if (targetInstallment > 0) {
@@ -165,7 +165,7 @@ const LoanRequest: React.FC = () => {
         return;
     }
     
-    const finalWeeks = loanType === 'Rédito' ? 0 : weeks;
+    const finalWeeks = loanType === 'Rédito (Solo Interés)' ? 0 : weeks;
     // Calculate initial next payment date based on paymentDay (if direct loan + monthly)
     let initialNextDate = new Date();
     initialNextDate.setDate(initialNextDate.getDate() + 7); // Default fallback
@@ -310,21 +310,21 @@ const LoanRequest: React.FC = () => {
                         <div className="mb-6 grid grid-cols-2 gap-4">
                             <div 
                                 onClick={() => { setLoanType('Amortizado'); setCalcMode('time'); }}
-                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType === 'Amortizado' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
+                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType.includes('Amortizado') ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
                                 <div className="flex justify-between">
                                     <span className="font-bold text-sm">Cuotas Fijas (Amortizado)</span>
-                                    {loanType === 'Amortizado' && <FileCheck className="w-5 h-5 text-indigo-600" />}
+                                    {loanType.includes('Amortizado') && <FileCheck className="w-5 h-5 text-indigo-600" />}
                                 </div>
                                 <span className="text-xs opacity-70">Capital + Interés dividido en pagos</span>
                             </div>
                             <div 
                                 onClick={() => { setLoanType('Rédito'); setCalcMode('time'); }}
-                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType === 'Rédito' ? 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' : 'border-slate-200 hover:border-slate-300'}`}
+                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType === 'Rédito (Solo Interés)' ? 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
                                 <div className="flex justify-between">
                                     <span className="font-bold text-sm">Pagaré Abierto (Rédito)</span>
-                                    {loanType === 'Rédito' && <FileCheck className="w-5 h-5 text-purple-600" />}
+                                    {loanType === 'Rédito (Solo Interés)' && <FileCheck className="w-5 h-5 text-purple-600" />}
                                 </div>
                                 <span className="text-xs opacity-70">Solo paga interés. Capital al final.</span>
                             </div>
@@ -348,7 +348,7 @@ const LoanRequest: React.FC = () => {
                             {/* Interés */}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">
-                                    {loanType === 'Amortizado' ? 'Tasa de Interés Total (%)' : 'Tasa por Periodo (%)'}
+                                    {loanType.includes('Amortizado') ? 'Tasa de Interés Total (%)' : 'Tasa por Periodo (%)'}
                                 </label>
                                 <input 
                                 type="number" 
@@ -393,7 +393,7 @@ const LoanRequest: React.FC = () => {
                             )}
 
                             {/* Calculation Mode Tabs */}
-                            {loanType === 'Amortizado' && (
+                            {loanType.includes('Amortizado') && (
                                 <div className="md:col-span-2 border-t border-slate-100 pt-4 mt-2">
                                     <div className="flex bg-slate-100 p-1 rounded-xl mb-4 w-fit">
                                         <button 
@@ -438,7 +438,7 @@ const LoanRequest: React.FC = () => {
                                 </div>
                             )}
                             
-                            {loanType === 'Rédito' && (
+                            {loanType === 'Rédito (Solo Interés)' && (
                                 <div className="md:col-span-2 bg-purple-50 border border-purple-100 p-4 rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
                                         <RefreshCw className="w-4 h-4 text-purple-600" />
@@ -645,7 +645,7 @@ const LoanRequest: React.FC = () => {
                             {/* Separator */}
                             <div className="my-2"></div>
 
-                            {loanType === 'Amortizado' ? (
+                            {loanType.includes('Amortizado') ? (
                                 <div className="flex justify-between border-b border-white/10 pb-3">
                                     <span className="text-indigo-100">Total Deuda (Capital + Int)</span>
                                     <span className="font-bold text-lg text-white">${calculateTotal().toLocaleString()}</span>
@@ -657,7 +657,7 @@ const LoanRequest: React.FC = () => {
                                 </div>
                             )}
                             
-                            {loanType === 'Amortizado' && calcMode === 'installment' && (
+                            {loanType.includes('Amortizado') && calcMode === 'installment' && (
                                 <div className="bg-white/10 p-3 rounded-lg text-center backdrop-blur-sm">
                                     <span className="block text-indigo-200 text-xs mb-1">Duración Calculada</span>
                                     <span className="text-xl font-bold text-white">{weeks} {frequency}(s)</span>
@@ -666,12 +666,12 @@ const LoanRequest: React.FC = () => {
 
                             <div className="mt-8 pt-4">
                                 <p className="text-xs text-indigo-200 text-center uppercase font-bold tracking-wider mb-2">
-                                    {loanType === 'Amortizado' ? 'Cuota Fija' : 'Interés Periódico'}
+                                    {loanType.includes('Amortizado') ? 'Cuota Fija' : 'Interés Periódico'}
                                 </p>
                                 <div className="text-center text-4xl font-bold bg-white/10 py-4 rounded-2xl backdrop-blur-sm border border-white/10">
                                 ${calculateInstallment().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
-                                {loanType === 'Rédito' && (
+                                {loanType === 'Rédito (Solo Interés)' && (
                                     <p className="text-center text-[10px] text-indigo-200 mt-2 bg-black/20 rounded py-1 px-2">
                                         * Cliente debe pagar esto cada {frequency}
                                     </p>

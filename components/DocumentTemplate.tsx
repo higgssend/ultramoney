@@ -35,36 +35,89 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
 
       {/* Document Content Switcher */}
       {docType === 'recibo' && (
-        <div>
-          <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline">RECIBO DE PAGO</h2>
-          <div className="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
-            <div className="font-sans text-sm">
-              <p><strong>Recibo No:</strong> {transaction?.id?.substring(0, 8).toUpperCase() || 'N/A'}</p>
-              <p><strong>Fecha:</strong> {transaction?.date ? new Date(transaction.date).toLocaleDateString('es-DO') : todayStr}</p>
-            </div>
-            <div className="font-sans text-xl font-bold bg-slate-100 px-4 py-2 rounded-lg border border-slate-300">
-              Monto: RD$ {transaction?.amount?.toLocaleString('es-DO', { minimumFractionDigits: 2 }) || '0.00'}
-            </div>
+        <div className="font-sans text-sm">
+          <div className="flex justify-between items-center border-b-2 border-slate-800 pb-4 mb-6">
+             <div>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">RECIBO DE PAGO</h2>
+                <p className="text-slate-500 font-medium">Comprobante Oficial</p>
+             </div>
+             <div className="text-right">
+                <p className="font-bold text-slate-800 text-lg">N°: {transaction?.id?.substring(0, 8).toUpperCase() || 'N/A'}</p>
+                <p className="text-slate-500">Fecha: {transaction?.date ? new Date(transaction.date).toLocaleDateString('es-DO') : todayStr}</p>
+             </div>
           </div>
-          
-          <div className="content space-y-4 text-justify">
-            <p>
-              HEMOS RECIBIDO DE: <strong>{client.name} {client.lastName || ''}</strong> (Cédula: {client.cedula}), la suma de <strong>RD$ {transaction?.amount?.toLocaleString('es-DO', { minimumFractionDigits: 2 }) || '0.00'}</strong> pesos dominicanos.
-            </p>
-            <p>
-              <strong>Por Concepto De:</strong> {transaction?.description || 'Abono a Préstamo'}
-            </p>
-            {loan && (
-              <p>
-                <strong>Préstamo Asociado:</strong> {loan.loanType} - Monto Original: RD$ {loan.amount.toLocaleString('es-DO')}
-              </p>
-            )}
-            {loan && (
-              <div className="mt-6 border border-slate-200 rounded p-4 bg-slate-50 font-sans text-sm">
-                <p><strong>Saldo Anterior:</strong> RD$ {(loan.remainingBalance + (transaction?.amount || 0)).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
-                <p className="font-bold text-lg mt-2 text-indigo-700"><strong>Saldo Actual:</strong> RD$ {loan.remainingBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+
+          <div className="grid grid-cols-2 gap-8 mb-6">
+              <div>
+                  <h3 className="font-bold text-indigo-700 uppercase tracking-wider text-xs mb-2">Datos del Cliente</h3>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <p><strong>Nombre:</strong> {client.name} {client.lastName || ''}</p>
+                      <p><strong>Cédula:</strong> {client.cedula}</p>
+                      <p><strong>Teléfono:</strong> {client.phone}</p>
+                  </div>
               </div>
-            )}
+              <div>
+                  <h3 className="font-bold text-indigo-700 uppercase tracking-wider text-xs mb-2">Datos del Préstamo</h3>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <p><strong>Ref Préstamo:</strong> {loan?.id?.substring(0, 8).toUpperCase()}</p>
+                      <p><strong>Tipo:</strong> {loan?.loanType}</p>
+                      <p><strong>Vencimiento:</strong> {loan?.startDate}</p>
+                  </div>
+              </div>
+          </div>
+
+          <div className="mb-6">
+              <h3 className="font-bold text-indigo-700 uppercase tracking-wider text-xs mb-2">Desglose del Pago</h3>
+              <table className="w-full border-collapse border border-slate-200">
+                  <tbody>
+                      <tr className="bg-indigo-600 text-white font-bold">
+                          <td className="p-3 border border-slate-200">Monto Recibido</td>
+                          <td className="p-3 border border-slate-200 text-right">RD$ {transaction?.amount?.toLocaleString('es-DO', { minimumFractionDigits: 2 }) || '0.00'}</td>
+                      </tr>
+                      <tr>
+                          <td className="p-3 border border-slate-200">Abono a Capital</td>
+                          <td className="p-3 border border-slate-200 text-right">RD$ {((transaction?.amount || 0) * 0.7).toLocaleString('es-DO', {minimumFractionDigits: 2})}</td>
+                      </tr>
+                      <tr className="bg-slate-50">
+                          <td className="p-3 border border-slate-200">Abono a Intereses</td>
+                          <td className="p-3 border border-slate-200 text-right">RD$ {((transaction?.amount || 0) * 0.3).toLocaleString('es-DO', {minimumFractionDigits: 2})}</td>
+                      </tr>
+                      <tr>
+                          <td className="p-3 border border-slate-200">Mora / Cargos</td>
+                          <td className="p-3 border border-slate-200 text-right">RD$ 0.00</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 mb-10">
+              <div>
+                  <h3 className="font-bold text-indigo-700 uppercase tracking-wider text-xs mb-2">Estado del Préstamo</h3>
+                  <div className="p-4 border border-slate-200 rounded-lg">
+                      <p className="flex justify-between mb-1"><span className="text-slate-500">Capital Original:</span> <strong>RD$ {loan?.amount.toLocaleString('es-DO')}</strong></p>
+                      <p className="flex justify-between mb-1"><span className="text-slate-500">Saldo Anterior:</span> <strong>RD$ {((loan?.remainingBalance || 0) + (transaction?.amount || 0)).toLocaleString('es-DO')}</strong></p>
+                      <p className="flex justify-between pt-2 mt-2 border-t border-slate-200 text-lg"><span className="text-slate-700 font-bold">Saldo Actual:</span> <strong className="text-indigo-700">RD$ {loan?.remainingBalance.toLocaleString('es-DO')}</strong></p>
+                  </div>
+              </div>
+              <div>
+                  <h3 className="font-bold text-indigo-700 uppercase tracking-wider text-xs mb-2">Información Adicional</h3>
+                  <div className="p-4 border border-slate-200 rounded-lg h-full">
+                      <p className="mb-1"><strong>Método de Pago:</strong> Efectivo / Transferencia</p>
+                      <p className="mb-1"><strong>Cajero:</strong> Sistema Automatizado</p>
+                      <p className="mb-1 text-xs text-slate-500 mt-4 italic">{transaction?.description}</p>
+                  </div>
+              </div>
+          </div>
+
+          <div className="flex justify-between mt-12 pt-8 border-t-2 border-dashed border-slate-300">
+              <div className="text-center w-64">
+                  <div className="border-b border-slate-800 pb-1 mb-2 h-8"></div>
+                  <p className="font-bold text-slate-700">Firma del Cajero</p>
+              </div>
+              <div className="text-center w-64">
+                  <div className="border-b border-slate-800 pb-1 mb-2 h-8"></div>
+                  <p className="font-bold text-slate-700">Firma del Cliente</p>
+              </div>
           </div>
         </div>
       )}

@@ -7,7 +7,7 @@ export enum LoanStatus {
   REJECTED = 'Rechazado'
 }
 
-export type LoanType = 'Amortizado' | 'Rédito';
+export type LoanType = 'Amortizado (Cuota Fija)' | 'Amortizado (Capital Fijo)' | 'Rédito (Solo Interés)' | 'Interés Adelantado';
 export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
 
 export interface Collateral {

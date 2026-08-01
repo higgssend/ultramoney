@@ -843,7 +843,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     let totalToPay = 0;
     let initialBalance = 0;
 
-    if (loanData.loanType === 'Amortizado') {
+    if (loanData.loanType.includes('Amortizado')) {
         const totalInterest = finalPrincipal * (loanData.interestRate / 100);
         totalToPay = finalPrincipal + totalInterest;
         initialBalance = totalToPay;
@@ -870,7 +870,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         interestrate: loanData.interestRate, durationweeks: loanData.durationWeeks,
         frequency: loanData.frequency, startdate: loanData.startDate, status: LoanStatus.ACTIVE,
         next_payment_date: nextPaymentDate,
-        installmentamount: loanData.loanType === 'Amortizado' ? (totalToPay / loanData.durationWeeks) : (finalPrincipal * (loanData.interestRate/100)),
+        installmentamount: loanData.loanType.includes('Amortizado') ? (totalToPay / loanData.durationWeeks) : (finalPrincipal * (loanData.interestRate/100)),
         remainingbalance: initialBalance, totaltopay: totalToPay, loantype: loanData.loanType,
         collateraltype: loanData.collateral?.type || 'Sin Garantía', collateralref: loanData.collateral?.refNumber || '',
         guarantees: loanData.collateral ? JSON.stringify(loanData.collateral) : null,
@@ -943,7 +943,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     let totalToPay = 0;
     let initialBalance = 0;
 
-    if (newLoanData.loanType === 'Amortizado') {
+    if (newLoanData.loanType.includes('Amortizado')) {
         const totalInterest = finalPrincipal * (newLoanData.interestRate / 100);
         totalToPay = finalPrincipal + totalInterest;
         initialBalance = totalToPay;
@@ -957,7 +957,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         clientid: newLoanData.clientId, clientname: newLoanData.clientName, amount: finalPrincipal,
         interestrate: newLoanData.interestRate, durationweeks: newLoanData.durationWeeks,
         frequency: newLoanData.frequency, startdate: newLoanData.startDate, status: LoanStatus.ACTIVE,
-        installmentamount: newLoanData.loanType === 'Amortizado' ? (totalToPay / newLoanData.durationWeeks) : (finalPrincipal * (newLoanData.interestRate/100)),
+        installmentamount: newLoanData.loanType.includes('Amortizado') ? (totalToPay / newLoanData.durationWeeks) : (finalPrincipal * (newLoanData.interestRate/100)),
         remainingbalance: initialBalance, totaltopay: totalToPay, loantype: newLoanData.loanType,
         collateraltype: newLoanData.collateral?.type || 'Sin Garantía', collateralref: newLoanData.collateral?.refNumber || '',
         guarantees: newLoanData.collateral ? JSON.stringify(newLoanData.collateral) : null,

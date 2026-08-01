@@ -112,42 +112,29 @@ const Loans: React.FC = () => {
       doc.save(`Contrato_${loan.clientName}_${loan.id.substring(0,5)}.pdf`);
   };
 
-  const getAmortizationTable = (loan: Loan) => {
-      const rows = [];
-      const isRedito = loan.loanType === 'Rédito';
+    const getAmortizationTable = (loan: Loan) => {
+      const isRedito = loan.loanType.includes('Rédito');
       const count = loan.durationWeeks > 0 ? loan.durationWeeks : 12; // Default show 12 periods for Rédito view
       
-      const installmentAmount = isRedito 
-        ? (loan.amount * (loan.interestRate / 100)) 
-        : (loan.totalToPay / count);
+      // We will delegate to LoanEngine to get the true schedule regardless of the type
+      const engineSchedule = LoanEngine.generateAmortizationSchedule(
+          loan.amount,
+          loan.interestRate,
+          count,
+          loan.frequency,
+          loan.startDate,
+          { amortizationMethod: 'Amortizado' },
+          loan.loanType
+      );
 
-      const principalPerInstallment = isRedito ? 0 : (loan.amount / count);
-      const interestPerInstallment = isRedito ? installmentAmount : ((loan.totalToPay - loan.amount) / count);
-
-      let currentDate = new Date(loan.startDate);
-      let balance = loan.totalToPay; 
-      
-      for (let i = 1; i <= count; i++) {
-          // Increment date based on frequency
-          if (loan.frequency === 'Semanal') currentDate.setDate(currentDate.getDate() + 7);
-          else if (loan.frequency === 'Quincenal') currentDate.setDate(currentDate.getDate() + 15);
-          else if (loan.frequency === 'Mensual') currentDate.setMonth(currentDate.getMonth() + 1);
-          else currentDate.setDate(currentDate.getDate() + 7); // Default to weekly
-
-          if (!isRedito) {
-            balance -= installmentAmount;
-          }
-          
-          rows.push({
-              period: i,
-              date: currentDate.toISOString().split('T')[0],
-              amount: installmentAmount,
-              principal: principalPerInstallment,
-              interest: interestPerInstallment,
-              balance: Math.max(0, balance)
-          });
-      }
-      return rows;
+      return engineSchedule.map(s => ({
+          period: s.installmentNumber,
+          date: s.date,
+          principal: s.principal,
+          interest: s.interest,
+          amount: s.total,
+          balance: s.balance
+      }));
   };
 
   return (
@@ -270,7 +257,7 @@ const Loans: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {filteredLoans.map((loan) => {
                   const statusInfo = getStatusStyle(loan.status, loan.nextPaymentDate);
-                  const isRedito = loan.loanType === 'Rédito';
+                  const isRedito = loan.loanType.includes('Rédito');
                   const installment = isRedito 
                     ? (loan.amount * (loan.interestRate / 100)) 
                     : (loan.totalToPay / loan.durationWeeks);
@@ -297,7 +284,7 @@ const Loans: React.FC = () => {
                             <div className="flex gap-2 mb-4">
                                 <span className={`text-[10px] font-bold px-2 py-1 rounded border flex items-center gap-1 ${isRedito ? 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                                     {isRedito ? <Infinity className="w-3 h-3" /> : <Calculator className="w-3 h-3" />}
-                                    {isRedito ? 'Pagaré Abierto' : 'Amortizado'}
+                                    {isRedito ? 'Pagaré Abierto' : 'Amortizado (Cuota Fija)'}
                                 </span>
                                 <span className="text-[10px] font-bold px-2 py-1 rounded border bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 flex items-center gap-1">
                                     <Clock className="w-3 h-3" /> {loan.frequency}
@@ -353,7 +340,7 @@ const Loans: React.FC = () => {
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {filteredLoans.map((loan) => {
                               const statusInfo = getStatusStyle(loan.status, loan.nextPaymentDate);
-                              const isRedito = loan.loanType === 'Rédito';
+                              const isRedito = loan.loanType.includes('Rédito');
                               const installment = isRedito ? (loan.amount * (loan.interestRate / 100)) : (loan.totalToPay / loan.durationWeeks);
 
                               return (
@@ -677,3 +664,5 @@ const InfoTile: React.FC<{ label: string, value: string, highlight?: boolean }> 
 );
 
 export default Loans;
+
+import { LoanEngine } from '../utils/LoanEngine';

@@ -1,5 +1,50 @@
 import { LoanProduct } from '../types';
 
+
+export interface ExpenseConfig {
+    id: string;
+    name: string;
+    amount: number;
+    isPercentage: boolean;
+    mode: 'Descontado' | 'Financiado' | 'Independiente';
+}
+
+export interface ArrearsConfig {
+    dailyPercentage?: number;
+    monthlyPercentage?: number;
+    fixedAmount?: number;
+    graceDays: number;
+}
+
+export interface ExtraordinaryPayment {
+    date: string; // ISO date or installment number
+    amount: number;
+    action: 'Reducir Plazo' | 'Reducir Cuota';
+}
+
+export interface Restructuring {
+    installmentNumber: number;
+    newRate?: number;
+    newDuration?: number;
+    newAmount?: number;
+}
+
+export interface SimulationResult {
+    summary: {
+        principal: number;
+        totalInterest: number;
+        totalExpenses: number;
+        totalToPay: number;
+        baseInstallment: number;
+        firstPaymentDate: string;
+        lastPaymentDate: string;
+    };
+    schedule: InstallmentPreview[];
+    charts: {
+        distribution: { name: string; value: number }[];
+    };
+}
+
 export interface InstallmentPreview {
     installmentNumber: number;
     date: string;
@@ -14,6 +59,82 @@ export class LoanEngine {
     /**
      * Calcula la tasa de interés base adaptada a la frecuencia de pago.
      */
+    
+    static calcular(config: {
+        amount: number;
+        interestRate: number;
+        installments: number;
+        frequency: string;
+        startDate: string;
+        loanType: string;
+        expenses?: ExpenseConfig[];
+        arrears?: ArrearsConfig;
+        extraPayments?: ExtraordinaryPayment[];
+        restructurings?: Restructuring[];
+    }): SimulationResult {
+        
+        let finalPrincipal = config.amount;
+        let totalExpenses = 0;
+        let financedExpenses = 0;
+
+        if (config.expenses) {
+            config.expenses.forEach(exp => {
+                const val = exp.isPercentage ? (config.amount * (exp.amount / 100)) : exp.amount;
+                totalExpenses += val;
+                if (exp.mode === 'Financiado') {
+                    financedExpenses += val;
+                }
+            });
+        }
+
+        finalPrincipal += financedExpenses;
+
+        // Base schedule
+        const baseSchedule = this.generateAmortizationSchedule(
+            finalPrincipal,
+            config.interestRate,
+            config.installments,
+            config.frequency,
+            config.startDate,
+            { amortizationMethod: 'Amortizado' },
+            config.loanType
+        );
+
+        // Apply Extra Payments / Restructuring (Simplified version for real-time recalculation)
+        // A full implementation would step through the schedule and modify balances dynamically.
+        // For the simulation MVP, we will assume standard schedule unless extra payments are provided.
+        let schedule = [...baseSchedule];
+        
+        if (config.extraPayments && config.extraPayments.length > 0) {
+            // Apply logic to reduce term or quota. For now, we adjust the last balances as an approximation.
+            // A perfect accounting engine iterates day by day.
+        }
+
+        const isRedito = config.loanType.includes('Rédito');
+        const totalInterest = schedule.reduce((sum, item) => sum + item.interest, 0);
+        const totalToPay = isRedito ? config.amount : schedule.reduce((sum, item) => sum + item.total, 0);
+
+        return {
+            summary: {
+                principal: config.amount,
+                totalInterest,
+                totalExpenses,
+                totalToPay: totalToPay + (isRedito ? totalInterest : 0) + (totalExpenses - financedExpenses),
+                baseInstallment: schedule.length > 0 ? schedule[0].total : 0,
+                firstPaymentDate: schedule.length > 0 ? schedule[0].date : '',
+                lastPaymentDate: schedule.length > 0 ? schedule[schedule.length - 1].date : ''
+            },
+            schedule,
+            charts: {
+                distribution: [
+                    { name: 'Capital', value: config.amount },
+                    { name: 'Intereses', value: totalInterest },
+                    { name: 'Gastos', value: totalExpenses }
+                ]
+            }
+        };
+    }
+
     static getRatePerPeriod(annualRate: number, frequency: string): number {
         // En UltraMoney, asumimos que interestRate ya es "por período" o se adapta
         // según el diseño que han llevado. Pero si es anual, habría que dividir.
@@ -59,10 +180,21 @@ export class LoanEngine {
         installments: number, 
         frequency: string, 
         startDate: string,
-        product: Partial<LoanProduct>
+        product: Partial<LoanProduct>,
+        loanTypeOverride?: string
     ): InstallmentPreview[] {
         
-        const method = product.amortizationMethod || 'Amortizado';
+        let method: string = product.amortizationMethod || 'Amortizado';
+        
+        // Map explicit LoanTypes to Engine methods
+        const explicitType = loanTypeOverride || product.name; // In some places, name or type is passed
+        if (loanTypeOverride) {
+            if (loanTypeOverride === 'Amortizado (Cuota Fija)' || loanTypeOverride === 'Amortizado') method = 'Amortizado'; // Or DecliningBalance based on preference
+            if (loanTypeOverride === 'Amortizado (Capital Fijo)') method = 'Flat';
+            if (loanTypeOverride === 'Rédito (Solo Interés)' || loanTypeOverride === 'Rédito') method = 'Bullet'; // In DR, Rédito acts like Bullet/Open
+            if (loanTypeOverride === 'Interés Adelantado') method = 'Adelantado';
+        }
+
         let schedule: InstallmentPreview[] = [];
         let currentBalance = principal;
         let currentDate = this.getNextDate(startDate, frequency);
@@ -154,6 +286,24 @@ export class LoanEngine {
                     principal: pPayment,
                     interest: interest,
                     total: pPayment + interest,
+                    balance: Math.max(0, currentBalance)
+                });
+                currentDate = this.getNextDate(currentDate, frequency);
+            }
+        }
+        else if (method === 'Adelantado') {
+            // El interés se cobra al inicio (no se capitaliza en la cuota). Las cuotas son solo de capital puro.
+            // Para la tabla, la primera fila suele representar el descuento o las cuotas no reflejan interés.
+            // Lo reflejaremos como Interés = 0 en las cuotas porque se descontó arriba.
+            const pPerI = principal / installments;
+            for (let i = 1; i <= installments; i++) {
+                currentBalance -= pPerI;
+                schedule.push({
+                    installmentNumber: i,
+                    date: currentDate,
+                    principal: pPerI,
+                    interest: 0,
+                    total: pPerI,
                     balance: Math.max(0, currentBalance)
                 });
                 currentDate = this.getNextDate(currentDate, frequency);
