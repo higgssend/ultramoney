@@ -4,23 +4,38 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { Briefcase, TrendingUp, Users, ChevronLeft } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
-
-const dataStatus = [
-  { name: 'Al Día', value: 65, color: '#10b981' },
-  { name: 'Atraso Leve', value: 20, color: '#f59e0b' },
-  { name: 'Mora', value: 10, color: '#f43f5e' },
-  { name: 'Incobrable', value: 5, color: '#64748b' },
-];
-
-const dataHistory = [
-  { name: 'Q1', prestado: 40000, cobrado: 24000 },
-  { name: 'Q2', prestado: 30000, cobrado: 13980 },
-  { name: 'Q3', prestado: 20000, cobrado: 18000 },
-  { name: 'Q4', prestado: 27800, cobrado: 29080 },
-];
+import { useStore } from '../context/StoreContext';
+import { LoanStatus } from '../types';
 
 const Portfolio: React.FC = () => {
   const navigate = useNavigate();
+  const { clients, loans, globalCurrency } = useStore();
+
+  const currencyLoans = loans.filter(l => (l.currency || 'DOP') === globalCurrency);
+  const totalLent = currencyLoans.reduce((sum, loan) => sum + loan.amount, 0);
+  const totalCollected = currencyLoans.reduce((sum, loan) => sum + (loan.totalToPay - loan.remainingBalance), 0);
+  
+  const activeClientsCount = clients.filter(c => c.status === 'Activo').length;
+  
+  const projectedInterest = currencyLoans.reduce((sum, loan) => {
+    return sum + (loan.totalToPay - loan.amount);
+  }, 0);
+
+  const onTimeCount = currencyLoans.filter(l => l.status === LoanStatus.ACTIVE).length;
+  const slightDelayCount = currencyLoans.filter(l => l.status === LoanStatus.LATE).length;
+  const overdueCount = currencyLoans.filter(l => l.status === LoanStatus.OVERDUE).length;
+  
+  // Fake some values for pie chart if real ones are 0
+  const dataStatus = [
+    { name: 'Al Día', value: onTimeCount > 0 ? onTimeCount : 1, color: '#10b981' },
+    { name: 'Atraso Leve', value: slightDelayCount, color: '#f59e0b' },
+    { name: 'Mora', value: overdueCount, color: '#f43f5e' },
+  ];
+
+  const dataHistory = [
+    { name: 'Histórico', prestado: totalLent, cobrado: totalCollected },
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in pb-10">
       <div className="flex items-center gap-3 mb-4">
@@ -35,22 +50,22 @@ const Portfolio: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <StatCard 
-            title="Capital en la Calle" 
-            value="$450,200" 
+            title="Capital Colocado" 
+            value={`$${totalLent.toLocaleString()}`} 
             icon={Briefcase} 
             gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
             glowColor="shadow-indigo-500/30"
          />
          <StatCard 
             title="Interés Proyectado" 
-            value="$85,100" 
+            value={`$${projectedInterest.toLocaleString()}`} 
             icon={TrendingUp} 
             gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
             glowColor="shadow-emerald-500/30"
          />
          <StatCard 
             title="Total Clientes" 
-            value="142" 
+            value={activeClientsCount.toString()} 
             icon={Users} 
             gradient="bg-gradient-to-br from-blue-500 to-cyan-600"
             glowColor="shadow-blue-500/30"
