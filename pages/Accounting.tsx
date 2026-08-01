@@ -9,7 +9,7 @@ import { PaymentMethod } from '../types';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 
 const Accounting: React.FC = () => {
-  const { transactions, getFinancialStats, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary, cashShifts } = useStore();
+  const { transactions, getFinancialStats, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary, cashShifts, addTransaction } = useStore();
   const navigate = useNavigate();
   const stats = getFinancialStats();
   const shiftSummary = getCashShiftSummary();
@@ -71,6 +71,26 @@ const Accounting: React.FC = () => {
     setClosingData({ twoThousands: 0, thousands: 0, fiveHundreds: 0, twoHundreds: 0, hundreds: 0, fifties: 0, coins: 0, notes: '' });
   };
 
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number(expenseAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    
+    await addTransaction({
+        date: new Date().toISOString().split('T')[0],
+        type: 'Gasto',
+        category: expenseCategory,
+        description: expenseDescription,
+        amount: amount,
+        paymentMethod: expenseMethod,
+        lender_id: '' // Managed by addTransaction internally via currentUser
+    });
+    
+    setExpenseAmount('');
+    setExpenseDescription('');
+    setActiveTab('overview');
+  };
+
   return (
     <div className="space-y-8 animate-fade-in pb-20">
       <div className="flex flex-wrap gap-4 justify-between items-center">
@@ -96,6 +116,13 @@ const Accounting: React.FC = () => {
             >
                 <Wallet className="w-4 h-4" />
                 {activeCashShift ? 'Turno Activo (Arqueo)' : 'Apertura de Caja'}
+            </button>
+            <button 
+                onClick={() => setActiveTab('expense')}
+                className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'expense' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-indigo-600'}`}
+            >
+                <TrendingDown className="w-4 h-4" />
+                Registrar Gasto
             </button>
         </div>
       </div>
@@ -417,6 +444,89 @@ const Accounting: React.FC = () => {
                 </div>
             </div>
         )
+      )}
+
+      {activeTab === 'expense' && (
+          <div className="max-w-xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-100 animate-fade-in">
+              <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-rose-500 p-3 rounded-2xl text-white shadow-lg shadow-rose-200">
+                      <TrendingDown className="w-6 h-6" />
+                  </div>
+                  <div>
+                      <h3 className="font-bold text-xl text-slate-800">Registrar Gasto Operativo</h3>
+                      <p className="text-sm text-slate-500">Agrega pagos de nómina, servicios o mantenimiento.</p>
+                  </div>
+              </div>
+
+              <form onSubmit={handleExpenseSubmit} className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                      <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Categoría</label>
+                          <select 
+                              value={expenseCategory}
+                              onChange={e => setExpenseCategory(e.target.value as any)}
+                              className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3.5 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                          >
+                              <option value="Operativo">Gasto Operativo</option>
+                              <option value="Nómina">Nómina / Pago a Empleado</option>
+                              <option value="Servicios">Luz / Internet / Teléfono</option>
+                              <option value="Combustible">Combustible / Transporte</option>
+                              <option value="Papelería">Papelería y Oficina</option>
+                              <option value="Mantenimiento">Mantenimiento local</option>
+                              <option value="Otros">Otros Gastos</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label>
+                          <select 
+                              value={expenseMethod}
+                              onChange={e => setExpenseMethod(e.target.value as PaymentMethod)}
+                              className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3.5 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                          >
+                              <option value="Efectivo">Efectivo de Caja</option>
+                              <option value="Transferencia">Transferencia Bancaria</option>
+                              <option value="Cheque">Cheque</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Monto del Gasto (RD$)</label>
+                      <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
+                          <input 
+                              type="number" 
+                              min="0"
+                              step="0.01"
+                              required
+                              value={expenseAmount}
+                              onChange={e => setExpenseAmount(e.target.value)}
+                              className="w-full pl-10 pr-4 py-3.5 border border-slate-200 bg-slate-50 rounded-xl font-mono font-bold text-xl text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                              placeholder="0.00"
+                          />
+                      </div>
+                  </div>
+
+                  <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Descripción (Obligatoria)</label>
+                      <textarea 
+                          rows={2}
+                          required
+                          value={expenseDescription}
+                          onChange={e => setExpenseDescription(e.target.value)}
+                          placeholder="Ej: Pago de quincena a cobrador Juan..."
+                          className="w-full border border-slate-200 bg-slate-50 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      />
+                  </div>
+
+                  <button 
+                      type="submit"
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-2"
+                  >
+                      <Save className="w-5 h-5" /> GUARDAR GASTO
+                  </button>
+              </form>
+          </div>
       )}
     </div>
   );

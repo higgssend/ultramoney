@@ -13,7 +13,7 @@ const Loans: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'TODOS' | 'A tiempo' | 'Atrasado' | 'Vencido' | 'Pagado'>('TODOS');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
-  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'refinance'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'refinance' | 'collateral'>('summary');
 
   // Refinance State
   const [refinanceAmount, setRefinanceAmount] = useState<number>(0);
@@ -69,21 +69,30 @@ const Loans: React.FC = () => {
         ? (loan.amount * (loan.interestRate / 100)) 
         : (loan.totalToPay / count);
 
+      const principalPerInstallment = isRedito ? 0 : (loan.amount / count);
+      const interestPerInstallment = isRedito ? installmentAmount : ((loan.totalToPay - loan.amount) / count);
+
       let currentDate = new Date(loan.startDate);
       let balance = loan.totalToPay; 
       
       for (let i = 1; i <= count; i++) {
-          currentDate.setDate(currentDate.getDate() + 7); // Simplified weekly
+          // Increment date based on frequency
+          if (loan.frequency === 'Semanal') currentDate.setDate(currentDate.getDate() + 7);
+          else if (loan.frequency === 'Quincenal') currentDate.setDate(currentDate.getDate() + 15);
+          else if (loan.frequency === 'Mensual') currentDate.setMonth(currentDate.getMonth() + 1);
+          else currentDate.setDate(currentDate.getDate() + 7); // Default to weekly
+
           if (!isRedito) {
             balance -= installmentAmount;
           }
           
           rows.push({
               period: i,
-              date: currentDate.toLocaleDateString(),
+              date: currentDate.toISOString().split('T')[0],
               amount: installmentAmount,
-              balance: isRedito ? loan.amount : Math.max(0, balance),
-              note: isRedito ? (i === count ? 'Interés (Proyección)' : 'Interés') : 'Cuota'
+              principal: principalPerInstallment,
+              interest: interestPerInstallment,
+              balance: Math.max(0, balance)
           });
       }
       return rows;
@@ -377,6 +386,7 @@ const Loans: React.FC = () => {
                      <div className="w-64 bg-slate-50/50 dark:bg-slate-900/50 border-r border-slate-100 dark:border-slate-800 flex flex-col p-4 gap-2 overflow-y-auto hidden md:flex">
                         <ModalTab label="Resumen General" icon={FileText} active={activeTab === 'summary'} onClick={() => setActiveTab('summary')} />
                         <ModalTab label="Tabla Amortización" icon={Banknote} active={activeTab === 'amortization'} onClick={() => setActiveTab('amortization')} />
+                        <ModalTab label="Garantías" icon={Shield} active={activeTab === 'collateral'} onClick={() => setActiveTab('collateral')} />
                         <ModalTab label="Refinanciar" icon={RefreshCw} active={activeTab === 'refinance'} onClick={() => { 
                             setRefinanceAmount(selectedLoan.amount);
                             setActiveTab('refinance'); 
@@ -451,7 +461,9 @@ const Loans: React.FC = () => {
                                              <tr>
                                                  <th className="px-6 py-4"># Cuota</th>
                                                  <th className="px-6 py-4">Fecha Programada</th>
-                                                 <th className="px-6 py-4 text-right">Monto a Pagar</th>
+                                                 <th className="px-6 py-4 text-right text-emerald-600 dark:text-emerald-400">Capital</th>
+                                                 <th className="px-6 py-4 text-right text-rose-500 dark:text-rose-400">Interés</th>
+                                                 <th className="px-6 py-4 text-right">Cuota Total</th>
                                                  <th className="px-6 py-4 text-right">Balance Restante</th>
                                              </tr>
                                          </thead>
@@ -460,8 +472,10 @@ const Loans: React.FC = () => {
                                                  <tr key={row.period} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                      <td className="px-6 py-4 font-mono text-slate-500 dark:text-slate-400 font-bold">{row.period}</td>
                                                      <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-medium">{row.date}</td>
-                                                     <td className="px-6 py-4 text-right font-bold text-slate-800 dark:text-white">RD${row.amount.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
-                                                     <td className="px-6 py-4 text-right text-slate-500 dark:text-slate-400 font-mono">RD${row.balance.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
+                                                     <td className="px-6 py-4 text-right font-medium text-emerald-600 dark:text-emerald-400">RD${row.principal.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
+                                                     <td className="px-6 py-4 text-right font-medium text-rose-500 dark:text-rose-400">RD${row.interest.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
+                                                     <td className="px-6 py-4 text-right font-bold text-slate-800 dark:text-white">RD${row.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
+                                                     <td className="px-6 py-4 text-right text-slate-500 dark:text-slate-400 font-mono">RD${row.balance.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
                                                  </tr>
                                              ))}
                                          </tbody>
@@ -470,13 +484,57 @@ const Loans: React.FC = () => {
                              </div>
                          )}
                          
-                         {/* Refinance Tab content omitted for brevity, keeping simple placeholder or existing logic if I wanted to paste it fully. Since it's identical, I'll keep the basic UI */}
                          {activeTab === 'refinance' && (
                              <div className="animate-fade-in text-center p-12">
                                  <RefreshCw className="w-16 h-16 text-indigo-200 mx-auto mb-4" />
                                  <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Módulo de Refinanciamiento</h4>
                                  <p className="text-slate-500 max-w-md mx-auto">Selecciona esta opción para refinanciar este préstamo, extendiendo el plazo o añadiendo más capital.</p>
                                  <button onClick={handleRefinance} className="mt-6 bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold">Procesar Refinanciamiento</button>
+                             </div>
+                         )}
+
+                         {activeTab === 'collateral' && (
+                             <div className="animate-fade-in p-6 md:p-8">
+                                 <div className="flex items-center gap-4 mb-6">
+                                     <div className="bg-indigo-50 dark:bg-indigo-900/50 p-3 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                                         <Shield className="w-6 h-6" />
+                                     </div>
+                                     <div>
+                                         <h4 className="font-bold text-slate-800 dark:text-white text-xl">Bóveda de Garantías</h4>
+                                         <p className="text-sm text-slate-500 dark:text-slate-400">Detalles de la garantía asociada a este préstamo.</p>
+                                     </div>
+                                 </div>
+                                 
+                                 {selectedLoan.collateral && selectedLoan.collateral.type !== 'Sin Garantía' ? (
+                                     <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+                                         <div className="grid grid-cols-2 gap-4">
+                                             <div>
+                                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo de Garantía</p>
+                                                 <p className="font-bold text-slate-800 dark:text-white text-lg">{selectedLoan.collateral.type}</p>
+                                             </div>
+                                             <div>
+                                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Referencia</p>
+                                                 <p className="font-mono text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 px-3 py-1 rounded inline-block border border-slate-200 dark:border-slate-700">{selectedLoan.collateral.refNumber || 'N/A'}</p>
+                                             </div>
+                                         </div>
+                                         <div className="mt-6">
+                                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Descripción Detallada</p>
+                                             <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                 <p className="text-slate-700 dark:text-slate-300">{selectedLoan.collateral.description}</p>
+                                             </div>
+                                         </div>
+                                         <div className="mt-6 flex gap-3">
+                                              <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold uppercase border border-amber-200">En Custodia</span>
+                                              <button className="text-sm font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl transition-colors ml-auto">Actualizar Estado</button>
+                                         </div>
+                                     </div>
+                                 ) : (
+                                     <div className="text-center p-12 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl">
+                                         <Shield className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                                         <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-2">Sin Garantía</h4>
+                                         <p className="text-sm text-slate-500">Este préstamo fue otorgado sin una garantía asociada.</p>
+                                     </div>
+                                 )}
                              </div>
                          )}
                      </div>
@@ -486,6 +544,7 @@ const Loans: React.FC = () => {
                  <div className="md:hidden flex border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                     <button onClick={() => setActiveTab('summary')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'summary' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Resumen</button>
                     <button onClick={() => setActiveTab('amortization')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'amortization' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Tabla</button>
+                    <button onClick={() => setActiveTab('collateral')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'collateral' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Garantías</button>
                     <button onClick={() => setActiveTab('refinance')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'refinance' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Renovar</button>
                  </div>
              </div>

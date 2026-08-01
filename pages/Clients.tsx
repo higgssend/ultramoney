@@ -47,6 +47,13 @@ const Clients: React.FC = () => {
     return { activeDebt, totalLoansCount, nextPaymentDate, isOverdue };
   };
 
+  const getCreditGrade = (score: number) => {
+      if (score >= 90) return { grade: 'A', color: 'text-emerald-700 bg-emerald-100 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' };
+      if (score >= 75) return { grade: 'B', color: 'text-blue-700 bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' };
+      if (score >= 60) return { grade: 'C', color: 'text-amber-700 bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800' };
+      return { grade: 'D', color: 'text-rose-700 bg-rose-100 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800' };
+  };
+
   const handleOpenCreate = () => {
     navigate('/clientes/nuevo');
   };
@@ -167,13 +174,20 @@ const Clients: React.FC = () => {
                         )}
                     </td>
                     <td className="px-6 py-4">
-                        <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 w-20">
-                            <div 
-                            className={`h-1.5 rounded-full ${client.creditScore > 80 ? 'bg-emerald-500' : client.creditScore > 50 ? 'bg-amber-500' : 'bg-rose-500'}`} 
-                            style={{ width: `${client.creditScore}%` }}
-                            ></div>
+                        <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-lg ${getCreditGrade(client.creditScore).color}`}>
+                                {getCreditGrade(client.creditScore).grade}
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="w-16 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 mb-1">
+                                    <div 
+                                    className={`h-1.5 rounded-full ${client.creditScore > 80 ? 'bg-emerald-500' : client.creditScore > 50 ? 'bg-amber-500' : 'bg-rose-500'}`} 
+                                    style={{ width: `${client.creditScore}%` }}
+                                    ></div>
+                                </div>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{client.creditScore} pts</span>
+                            </div>
                         </div>
-                        <span className="text-xs text-slate-400">{client.creditScore} pts</span>
                     </td>
                     <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
