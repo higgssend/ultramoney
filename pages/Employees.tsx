@@ -5,7 +5,7 @@ import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Employees: React.FC = () => {
-  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit, roles, cargos } = useStore();
+  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit, roles, cargos, registerUser } = useStore();
   const [activeTab, setActiveTab] = useState<'employees' | 'visits'>('employees');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -22,6 +22,9 @@ const Employees: React.FC = () => {
       employeePin: ''
   });
 
+  const [createSystemAccess, setCreateSystemAccess] = useState(false);
+  const [systemRoleIds, setSystemRoleIds] = useState<string[]>([]);
+
   // Visit Form State
   const [selectedCollectorId, setSelectedCollectorId] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -31,11 +34,12 @@ const Employees: React.FC = () => {
   const [visitCoordinates, setVisitCoordinates] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [visitNotes, setVisitNotes] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if(newEmp.name && newEmp.assignedRoute) {
+          const employeeId = `EMP-${Date.now()}`;
           const employee: Employee = {
-              id: `EMP-${Date.now()}`,
+              id: employeeId,
               name: newEmp.name,
               cargoId: newEmp.cargoId,
               assignedRoute: newEmp.assignedRoute,
@@ -46,9 +50,22 @@ const Employees: React.FC = () => {
               username: newEmp.username || undefined,
               employeePin: newEmp.employeePin || undefined
           };
-          addEmployee(employee);
+          await addEmployee(employee);
+          
+          if (createSystemAccess && newEmp.username && newEmp.employeePin) {
+              await registerUser({
+                  name: newEmp.name,
+                  username: newEmp.username,
+                  password: newEmp.employeePin,
+                  employeeId: employeeId,
+                  roleIds: systemRoleIds
+              });
+          }
+
           setIsModalOpen(false);
           setNewEmp({ name: '', cargoId: '', phone: '', assignedRoute: '', username: '', employeePin: '' });
+          setCreateSystemAccess(false);
+          setSystemRoleIds([]);
       }
   };
 
@@ -323,34 +340,73 @@ const Employees: React.FC = () => {
                           </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-2">
-                          <div>
-                              <label className="block text-sm font-bold text-slate-700 mb-1">Usuario de Acceso</label>
-                              <input 
-                                type="text" 
-                                className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" 
-                                placeholder="Ej. jperez"
-                                value={newEmp.username}
-                                onChange={e => setNewEmp({...newEmp, username: e.target.value})}
-                              />
-                          </div>
-                          <div>
-                              <label className="block text-sm font-bold text-slate-700 mb-1">PIN de Acceso</label>
-                              <input 
-                                type="text" 
-                                className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-mono tracking-widest" 
-                                placeholder="1234"
-                                maxLength={6}
-                                value={newEmp.employeePin}
-                                onChange={e => setNewEmp({...newEmp, employeePin: e.target.value})}
-                              />
-                          </div>
-                      </div>
+                        <div className="border-t pt-4 mt-4">
+                            <label className="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                                <input 
+                                    type="checkbox" 
+                                    className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                                    checked={createSystemAccess}
+                                    onChange={(e) => setCreateSystemAccess(e.target.checked)}
+                                />
+                                <div>
+                                    <span className="block text-sm font-bold text-slate-800">Crear acceso al sistema para este empleado</span>
+                                    <span className="block text-xs text-slate-500">Permitir inicio de sesión en el portal y asignar permisos administrativos.</span>
+                                </div>
+                            </label>
+                        </div>
 
-                      <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg mt-4">
-                          Guardar Registro
-                      </button>
-                  </form>
+                        {createSystemAccess && (
+                            <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100 mt-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">Nombre de Usuario</label>
+                                        <input 
+                                          type="text" 
+                                          required={createSystemAccess}
+                                          className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                          placeholder="Ej. juanperez"
+                                          value={newEmp.username}
+                                          onChange={e => setNewEmp({...newEmp, username: e.target.value})}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">Contraseña o PIN</label>
+                                        <input 
+                                          type="text" 
+                                          required={createSystemAccess}
+                                          className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-mono tracking-widest" 
+                                          placeholder="123456"
+                                          value={newEmp.employeePin}
+                                          onChange={e => setNewEmp({...newEmp, employeePin: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Roles del Sistema (Permisos)</label>
+                                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                                        {roles.filter(r => r.id !== 'admin').map(role => (
+                                            <label key={role.id} className="flex items-center gap-2 text-sm text-slate-700 bg-white p-2 rounded border border-slate-200 cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                    checked={systemRoleIds.includes(role.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setSystemRoleIds([...systemRoleIds, role.id]);
+                                                        else setSystemRoleIds(systemRoleIds.filter(id => id !== role.id));
+                                                    }}
+                                                />
+                                                {role.name}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg mt-4">
+                            Guardar Registro
+                        </button>
+                    </form>
               </div>
           </div>
       )}
