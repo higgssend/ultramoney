@@ -222,7 +222,7 @@ export interface CashReconciliation {
 export interface Employee {
   id: string;
   name: string;
-  role: 'Admin' | 'Collector' | 'Secretary' | 'Manager' | 'Cashier' | 'Supervisor';
+  role: string; // Dynamic role UUID or name
   phone?: string;
   assignedRoute?: string;
   performance: number;

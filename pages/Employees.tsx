@@ -5,7 +5,7 @@ import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Employees: React.FC = () => {
-  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit } = useStore();
+  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit, roles } = useStore();
   const [activeTab, setActiveTab] = useState<'employees' | 'visits'>('employees');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -15,7 +15,7 @@ const Employees: React.FC = () => {
   // Form State Employee
   const [newEmp, setNewEmp] = useState<{name: string, role: Employee['role'], phone: string, assignedRoute: string, username: string, employeePin: string}>({
       name: '',
-      role: 'Collector',
+      role: '',
       phone: '',
       assignedRoute: '',
       username: '',
@@ -48,7 +48,7 @@ const Employees: React.FC = () => {
           };
           addEmployee(employee);
           setIsModalOpen(false);
-          setNewEmp({ name: '', role: 'Collector', phone: '', assignedRoute: '', username: '', employeePin: '' });
+          setNewEmp({ name: '', role: '', phone: '', assignedRoute: '', username: '', employeePin: '' });
       }
   };
 
@@ -153,19 +153,13 @@ const Employees: React.FC = () => {
                       </button>
 
                       <div className="flex items-center gap-4 mb-6">
-                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-sm ${
-                              emp.role === 'Collector' ? 'bg-indigo-50 text-indigo-600' : 
-                              emp.role === 'Admin' ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'
-                          }`}>
+                          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-sm bg-indigo-50 text-indigo-600`}>
                               {emp.name.charAt(0)}
                           </div>
                           <div>
                               <h3 className="font-bold text-lg text-slate-800">{emp.name}</h3>
-                              <span className={`text-xs px-2 py-0.5 rounded border ${
-                                  emp.role === 'Collector' ? 'bg-indigo-50 border-indigo-100 text-indigo-700' :
-                                  emp.role === 'Admin' ? 'bg-purple-50 border-purple-100 text-purple-700' : 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                              }`}>
-                                  {emp.role === 'Collector' ? 'Cobrador' : emp.role === 'Admin' ? 'Administrador' : 'Secretaria'}
+                              <span className={`text-xs px-2 py-0.5 rounded border bg-indigo-50 border-indigo-100 text-indigo-700`}>
+                                  {roles.find(r => r.id === emp.role)?.name || emp.role}
                               </span>
                           </div>
                       </div>
@@ -296,27 +290,23 @@ const Employees: React.FC = () => {
                                       onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
                                   >
                                       <span className="text-slate-700">
-                                          {newEmp.role === 'Collector' ? 'Cobrador' : newEmp.role === 'Secretary' ? 'Secretaria' : 'Admin'}
+                                          {roles.find(r => r.id === newEmp.role)?.name || 'Selecciona un rol'}
                                       </span>
                                       <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
                                   </div>
 
                                   {isRoleDropdownOpen && (
-                                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
-                                          {[
-                                              { value: 'Collector', label: 'Cobrador' },
-                                              { value: 'Secretary', label: 'Secretaria' },
-                                              { value: 'Admin', label: 'Admin' }
-                                          ].map(option => (
+                                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-50 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                                          {roles.map(option => (
                                               <div 
-                                                  key={option.value}
-                                                  className={`px-4 py-2.5 cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${newEmp.role === option.value ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
+                                                  key={option.id}
+                                                  className={`px-4 py-2.5 cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${newEmp.role === option.id ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
                                                   onClick={() => {
-                                                      setNewEmp({...newEmp, role: option.value as any});
+                                                      setNewEmp({...newEmp, role: option.id});
                                                       setIsRoleDropdownOpen(false);
                                                   }}
                                               >
-                                                  {option.label}
+                                                  {option.name}
                                               </div>
                                           ))}
                                       </div>
