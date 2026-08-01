@@ -5,7 +5,7 @@ import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Employees: React.FC = () => {
-  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit, roles } = useStore();
+  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit, roles, cargos } = useStore();
   const [activeTab, setActiveTab] = useState<'employees' | 'visits'>('employees');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -13,9 +13,9 @@ const Employees: React.FC = () => {
   const navigate = useNavigate();
   
   // Form State Employee
-  const [newEmp, setNewEmp] = useState<{name: string, role: Employee['role'], phone: string, assignedRoute: string, username: string, employeePin: string}>({
+  const [newEmp, setNewEmp] = useState<{name: string, cargoId: string, phone: string, assignedRoute: string, username: string, employeePin: string}>({
       name: '',
-      role: '',
+      cargoId: '',
       phone: '',
       assignedRoute: '',
       username: '',
@@ -28,8 +28,8 @@ const Employees: React.FC = () => {
   const [visitStatus, setVisitStatus] = useState<'Cobrado' | 'Ausente' | 'Promesa de Pago' | 'No Pagó'>('Promesa de Pago');
   const [promisedDate, setPromisedDate] = useState('');
   const [amountCollected, setAmountCollected] = useState('');
-  const [visitNotes, setVisitNotes] = useState('');
   const [visitCoordinates, setVisitCoordinates] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [visitNotes, setVisitNotes] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -37,7 +37,7 @@ const Employees: React.FC = () => {
           const employee: Employee = {
               id: `EMP-${Date.now()}`,
               name: newEmp.name,
-              role: newEmp.role,
+              cargoId: newEmp.cargoId,
               assignedRoute: newEmp.assignedRoute,
               phone: newEmp.phone,
               performance: 100,
@@ -48,7 +48,7 @@ const Employees: React.FC = () => {
           };
           addEmployee(employee);
           setIsModalOpen(false);
-          setNewEmp({ name: '', role: '', phone: '', assignedRoute: '', username: '', employeePin: '' });
+          setNewEmp({ name: '', cargoId: '', phone: '', assignedRoute: '', username: '', employeePin: '' });
       }
   };
 
@@ -159,7 +159,7 @@ const Employees: React.FC = () => {
                           <div>
                               <h3 className="font-bold text-lg text-slate-800">{emp.name}</h3>
                               <span className={`text-xs px-2 py-0.5 rounded border bg-indigo-50 border-indigo-100 text-indigo-700`}>
-                                  {roles.find(r => r.id === emp.role)?.name || emp.role}
+                                  {cargos.find(c => c.id === emp.cargoId)?.name || 'Sin Cargo'}
                               </span>
                           </div>
                       </div>
@@ -281,41 +281,19 @@ const Employees: React.FC = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                           <div>
-                              <label className="block text-sm font-bold text-slate-700 mb-1">Rol</label>
+                              <label className="block text-sm font-bold text-slate-700 mb-1">Cargo</label>
                               <div className="relative">
-                                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 z-10 pointer-events-none" />
-                                  
-                                  <div 
-                                      className="w-full pl-10 pr-10 py-2 border border-slate-200 rounded-xl bg-white cursor-pointer hover:border-indigo-300 transition-colors flex items-center justify-between"
-                                      onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                                  <select 
+                                      className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white appearance-none"
+                                      value={newEmp.cargoId}
+                                      onChange={e => setNewEmp({...newEmp, cargoId: e.target.value})}
+                                      required
                                   >
-                                      <span className="text-slate-700">
-                                          {roles.find(r => r.id === newEmp.role)?.name || 'Selecciona un rol'}
-                                      </span>
-                                      <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
-                                  </div>
-
-                                  {isRoleDropdownOpen && (
-                                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-50 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
-                                          {roles.map(option => (
-                                              <div 
-                                                  key={option.id}
-                                                  className={`px-4 py-2.5 cursor-pointer hover:bg-indigo-50 hover:text-indigo-700 transition-colors ${newEmp.role === option.id ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
-                                                  onClick={() => {
-                                                      setNewEmp({...newEmp, role: option.id});
-                                                      setIsRoleDropdownOpen(false);
-                                                  }}
-                                              >
-                                                  {option.name}
-                                              </div>
-                                          ))}
-                                      </div>
-                                  )}
-                                  
-                                  {/* Overlay invisible para cerrar al hacer click fuera */}
-                                  {isRoleDropdownOpen && (
-                                      <div className="fixed inset-0 z-40" onClick={() => setIsRoleDropdownOpen(false)}></div>
-                                  )}
+                                      <option value="">Selecciona un cargo</option>
+                                      {cargos.map(option => (
+                                          <option key={option.id} value={option.id}>{option.name}</option>
+                                      ))}
+                                  </select>
                               </div>
                           </div>
                           <div>

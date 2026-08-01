@@ -41,8 +41,8 @@ const Settings: React.FC = () => {
 
   // User Form State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
-    name: '', username: '', password: '', confirmPassword: '', roleId: 'collector'
+  const [newUser, setNewUser] = useState<{name: string, username: string, password: string, confirmPassword: string, employeeId: string, roleIds: string[]}>({
+    name: '', username: '', password: '', confirmPassword: '', employeeId: '', roleIds: []
   });
 
   const availablePermissions: {id: Permission, label: string}[] = [
@@ -159,12 +159,22 @@ const Settings: React.FC = () => {
         username: newUser.username,
         email: '', // Optional in new type def
         password: newUser.password,
-        roleId: newUser.roleId || 'collector',
+        employeeId: newUser.employeeId || undefined,
+        roleIds: newUser.roleIds,
         status: 'Active'
       });
       setIsUserModalOpen(false);
-      setNewUser({ name: '', username: '', password: '', confirmPassword: '', roleId: 'collector' });
+      setNewUser({ name: '', username: '', password: '', confirmPassword: '', employeeId: '', roleIds: [] });
     }
+  };
+
+  const toggleUserRole = (roleId: string) => {
+    setNewUser(prev => ({
+      ...prev,
+      roleIds: prev.roleIds.includes(roleId)
+        ? prev.roleIds.filter(id => id !== roleId)
+        : [...prev.roleIds, roleId]
+    }));
   };
 
   return (
@@ -557,9 +567,21 @@ const Settings: React.FC = () => {
                            </div>
                          </td>
                          <td className="px-6 py-4">
-                           <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs border border-slate-200 uppercase font-bold">
-                             {roles.find(r => r.id === user.roleId)?.name}
-                           </span>
+                           <div className="flex flex-wrap gap-1">
+                             {user.roleIds?.map(rid => {
+                               const roleName = roles.find(r => r.id === rid)?.name;
+                               return roleName ? (
+                                 <span key={rid} className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs border border-slate-200 uppercase font-bold">
+                                   {roleName}
+                                 </span>
+                               ) : null;
+                             })}
+                             {(!user.roleIds || user.roleIds.length === 0) && (
+                                 <span className="px-2 py-1 bg-rose-50 text-rose-500 rounded text-xs border border-rose-100 uppercase font-bold">
+                                   Sin Rol
+                                 </span>
+                             )}
+                           </div>
                          </td>
                          <td className="px-6 py-4">
                            <span className="px-2 py-1 bg-emerald-100 text-emerald-600 rounded-full text-xs font-bold flex items-center gap-1 w-fit">
@@ -802,13 +824,31 @@ const Settings: React.FC = () => {
                 </div>
 
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Rol Asignado</label>
+                   <label className="block text-sm font-medium text-slate-700 mb-1">Empleado Vinculado (Opcional)</label>
                    <select className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
-                     value={newUser.roleId} onChange={e => setNewUser({...newUser, roleId: e.target.value})}>
-                     {roles.map(r => (
-                       <option key={r.id} value={r.id}>{r.name}</option>
+                     value={newUser.employeeId} onChange={e => setNewUser({...newUser, employeeId: e.target.value})}>
+                     <option value="">Seleccione un empleado...</option>
+                     {employees.map(e => (
+                       <option key={e.id} value={e.id}>{e.name}</option>
                      ))}
                    </select>
+                </div>
+
+                <div>
+                   <label className="block text-sm font-medium text-slate-700 mb-2">Roles Asignados</label>
+                   <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                     {roles.map(r => (
+                       <label key={r.id} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-slate-50">
+                         <input 
+                           type="checkbox" 
+                           checked={newUser.roleIds.includes(r.id)}
+                           onChange={() => toggleUserRole(r.id)}
+                           className="rounded text-indigo-600 focus:ring-indigo-500"
+                         />
+                         <span className="text-sm text-slate-700">{r.name}</span>
+                       </label>
+                     ))}
+                   </div>
                 </div>
 
                 <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold hover:bg-emerald-700 mt-4">

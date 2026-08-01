@@ -219,10 +219,17 @@ export interface CashReconciliation {
   total: number;
 }
 
+export interface Cargo {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt?: string;
+}
+
 export interface Employee {
   id: string;
   name: string;
-  role: string; // Dynamic role UUID or name
+  cargoId?: string; // Replaces role
   phone?: string;
   assignedRoute?: string;
   performance: number;
@@ -276,9 +283,11 @@ export interface User {
   email?: string;
   username?: string;
   password?: string;
-  roleId: string;
+  roleIds?: string[];
+  employeeId?: string;
   avatarUrl?: string;
   status: 'Active' | 'Inactive';
+  lastLogin?: string;
 }
 
 export interface ApiKey {

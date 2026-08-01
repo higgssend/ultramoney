@@ -26,6 +26,7 @@ interface StoreContextType {
   isLoadingAuth: boolean;
   users: User[];
   roles: Role[];
+  cargos: Cargo[];
   companySettings: CompanySettings;
 
   // Actions
@@ -39,6 +40,9 @@ interface StoreContextType {
   addRole: (role: Role) => void;
   updateRole: (id: string, role: Partial<Role>) => void;
   deleteRole: (id: string) => void;
+  addCargo: (cargo: Cargo) => void;
+  updateCargo: (id: string, cargo: Partial<Cargo>) => void;
+  deleteCargo: (id: string) => void;
   exportSystemBackup: () => string;
   importSystemBackup: (jsonContent: string) => boolean;
 
@@ -144,6 +148,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
 
   // Cash Shifts State
@@ -353,7 +358,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const [
           clientsRes, loansRes, trxRes, settingsRes,
           employeesRes, visitsRes, requestsRes, shiftsRes,
-          notesRes, docsRes, loanProductsRes, banksRes, rolesRes, usersRes, apiKeysRes
+          notesRes, docsRes, loanProductsRes, banksRes, rolesRes, cargosRes, usersRes, apiKeysRes
         ] = await Promise.all([
           insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
           insforge.database.from('loans').select('*').order('created_at', { ascending: false }),
@@ -369,7 +374,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
           insforge.database.from('bank_accounts').select('*').order('created_at', { ascending: false }),
           insforge.database.from('roles').select('*').order('name'),
-          insforge.database.from('user_profiles').select('*').order('created_at'),
+          insforge.database.from('cargos').select('*').order('name'),
+          insforge.database.from('user_profiles').select('*, usuario_roles ( role_id )').order('created_at'),
           insforge.database.from('api_keys').select('*').order('created_at', { ascending: false })
         ]);
 
@@ -410,7 +416,21 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         if (banksRes.data) setBankAccounts(banksRes.data.map((b: any) => ({...b, clientId: b.client_id, bankName: b.bank_name, accountNumber: b.account_number, accountType: b.account_type, holderName: b.holder_name})) as unknown as BankAccount[]);
         if (rolesRes.data) setRoles(rolesRes.data as unknown as Role[]);
-        if (usersRes.data) setUsers(usersRes.data.map((u: any) => ({...u, roleId: u.role_id, employeeId: u.employee_id, status: 'Active'})) as unknown as User[]);
+        if (cargosRes.data) setCargos(cargosRes.data.map((c: any) => ({ id: c.id, name: c.name, description: c.description, createdAt: c.created_at })));
+        if (usersRes.data) {
+          const userProfiles = usersRes.data as any[];
+          // For now, mapping users locally. Assuming we fetch usuario_roles either here or they are part of user_profiles if we used a join. 
+          // Wait, I didn't update the query to join usuario_roles in the Promise.all array! Let's do that in a separate chunk.
+          setUsers(userProfiles.map((u: any) => ({
+             id: u.id,
+             name: u.name,
+             email: u.email,
+             username: u.username,
+             employeeId: u.employee_id,
+             roleIds: u.usuario_roles ? u.usuario_roles.map((ur: any) => ur.role_id) : [],
+             status: 'Active'
+          })));
+        }
         if (apiKeysRes.data) setApiKeys(apiKeysRes.data.map((k: any) => ({...k, createdAt: k.created_at})) as unknown as ApiKey[]);
 
       } catch (err) {
@@ -504,12 +524,42 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (error) {
       addToast(`Error al registrar usuario: ${error.message}`, "error");
     } else {
+      const newUserId = data.user?.id || user.id;
+      
+      // Ensure user profile is updated with employee_id
+      await insforge.database.from('user_profiles').upsert({
+         id: newUserId,
+         name: user.name,
+         employee_id: user.employeeId,
+         username: user.username
+      });
+      
+      // Insert into usuario_roles for each roleId
+      if (user.roleIds && user.roleIds.length > 0) {
+         const roleInserts = user.roleIds.map(rid => ({ user_id: newUserId, role_id: rid }));
+         await insforge.database.from('usuario_roles').insert(roleInserts);
+      }
+
       addToast("Usuario registrado exitosamente", "success");
-      // Add to local state (the backend trigger should also insert to user_profiles)
-      setUsers(prev => [...prev, { ...user, email: generatedEmail, id: data.user?.id || user.id }]);
+      setUsers(prev => [...prev, { ...user, email: generatedEmail, id: newUserId }]);
     }
   };
-  const updateUser = (_updatedUser: User) => {};
+
+  const updateUser = async (updatedUser: User) => {
+     await insforge.database.from('user_profiles').update({
+         name: updatedUser.name,
+         employee_id: updatedUser.employeeId
+     }).eq('id', updatedUser.id);
+     
+     // Sync roles
+     await insforge.database.from('usuario_roles').delete().eq('user_id', updatedUser.id);
+     if (updatedUser.roleIds && updatedUser.roleIds.length > 0) {
+         const roleInserts = updatedUser.roleIds.map(rid => ({ user_id: updatedUser.id, role_id: rid }));
+         await insforge.database.from('usuario_roles').insert(roleInserts);
+     }
+     
+     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+  };
 
   const updateCompanySettings = async (settings: CompanySettings) => {
     if (!currentUser) return;
@@ -1112,6 +1162,43 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return { balance, incomeToday, expenseToday };
   };
 
+  const addCargo = async (cargo: Cargo) => {
+    if (!currentUser) return;
+    const newCargo = {
+       name: cargo.name,
+       description: cargo.description,
+       lender_id: currentUser.id
+    };
+    const { data, error } = await insforge.database.from('cargos').insert(newCargo).select().single();
+    if (error) {
+       addToast(`Error al crear cargo: ${error.message}`, 'error');
+    } else {
+       addToast('Cargo creado', 'success');
+       setCargos(prev => [...prev, { id: data.id, name: data.name, description: data.description, createdAt: data.created_at }]);
+    }
+  };
+
+  const updateCargo = async (id: string, cargo: Partial<Cargo>) => {
+     const updates = { name: cargo.name, description: cargo.description };
+     const { error } = await insforge.database.from('cargos').update(updates).eq('id', id);
+     if (error) {
+        addToast(`Error al actualizar cargo: ${error.message}`, 'error');
+     } else {
+        addToast('Cargo actualizado', 'success');
+        setCargos(prev => prev.map(c => c.id === id ? { ...c, ...cargo } : c));
+     }
+  };
+
+  const deleteCargo = async (id: string) => {
+     const { error } = await insforge.database.from('cargos').delete().eq('id', id);
+     if (error) {
+        addToast(`Error al eliminar cargo: ${error.message}`, 'error');
+     } else {
+        addToast('Cargo eliminado', 'success');
+        setCargos(prev => prev.filter(c => c.id !== id));
+     }
+  };
+
   const exportSystemBackup = () => {
     const backupData = {
       clients, loans, transactions, bankAccounts,
@@ -1258,9 +1345,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       clientNotes, clientDocuments, employees, routes, auditLogs,
       cashShifts, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary,
       collectorVisits, addCollectorVisit, exportSystemBackup, importSystemBackup,
-      currentUser, isLoadingAuth, users, roles, companySettings,
+      currentUser, isLoadingAuth, users, roles, cargos, companySettings,
       notifications, addNotification, markNotificationAsRead, markAllNotificationsAsRead, addAuditLog,
       login, logout, loginEmployee, logoutSystem, registerUser, updateUser, updateCompanySettings, addRole, updateRole, deleteRole,
+      addCargo, updateCargo, deleteCargo,
       addLoanProduct, updateLoanProduct, deleteLoanProduct,
       apiKeys,
       generateApiKey: async (name: string) => {

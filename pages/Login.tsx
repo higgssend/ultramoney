@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, ChevronLeft, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, ChevronLeft, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react';
 import { insforge } from '../lib/insforge';
 
 const REMEMBER_EMAIL_KEY = 'ultramoney_remembered_email';
@@ -45,8 +45,9 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+      const loginEmail = email.includes('@') ? email : `${email}@app.ultramoney.com`;
       const { error } = await insforge.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
       });
 
@@ -221,19 +222,18 @@ const Login: React.FC = () => {
                 <div className="space-y-4">
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Correo Electrónico</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Usuario o Correo</label>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
-                        <Mail className="h-5 w-5" />
+                        <User className="h-5 w-5" />
                       </div>
                       <input
-                        type="email"
-                        required
+                        type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-indigo-500 transition-all text-sm"
-                        placeholder="correo@ejemplo.com"
-                        autoComplete="email"
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all outline-none"
+                        placeholder="ej. juanperez o correo@ejemplo.com"
+                        required
                       />
                     </div>
                   </div>
