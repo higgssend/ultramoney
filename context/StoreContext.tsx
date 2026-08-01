@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct, Route, PdfJob } from '../types';
+import { Client, Loan, Transaction, LoanStatus, BankAccount, ClientNote, ClientDocument, User, Role, Cargo, CompanySettings, AuditLog, LoanRequest, Employee, CashShift, PaymentMethod, CollectorVisit, AppNotification, ApiKey, LoanProduct, Route, PdfJob } from '../types';
 import { useToast } from './ToastContext';
 import { insforge } from '../lib/insforge';
 
