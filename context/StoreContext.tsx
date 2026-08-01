@@ -107,7 +107,7 @@ const initialCompanySettings: CompanySettings = {
   address: 'Av. 27 de Febrero #23, Santo Domingo, RD',
   phone: '(809) 555-0100',
   email: 'contacto@ultramoney.com',
-  currency: 'RD$',
+  currency: 'DOP',
   termsAndConditions: 'El incumplimiento de pago generará una mora del 5% mensual.'
 };
 
@@ -272,9 +272,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // 1. Auth Listener
     useEffect(() => {
-      insforge.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          setCurrentUser(session.user);
+      insforge.auth.getCurrentUser().then(({ data }) => {
+        if (data?.user) {
+          setCurrentUser(data.user);
         } else {
           const empSession = localStorage.getItem('employee_session');
           if (empSession) {
@@ -286,9 +286,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setIsLoadingAuth(false);
       });
   
-      const { data: { subscription } } = insforge.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
-          setCurrentUser(session.user);
+      const unsubscribe = insforge.auth.onAuthStateChange(async (_event) => {
+        const { data } = await insforge.auth.getCurrentUser();
+        if (data?.user) {
+          setCurrentUser(data.user);
         } else {
           const empSession = localStorage.getItem('employee_session');
           if (empSession) {
@@ -299,7 +300,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
       });
   
-      return () => subscription.unsubscribe();
+      return () => unsubscribe();
     }, []);
 
   // Helper: map DB lowercase columns to camelCase for Loan objects
@@ -381,7 +382,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           const s = settingsRes.data as any;
           setCompanySettings({
             name: s.name, slogan: s.slogan, rnc: s.rnc, address: s.address, phone: s.phone,
-            logoUrl: s.logoUrl, email: currentUser.email, currency: 'RD$', termsAndConditions: 'El incumplimiento de pago generará mora.',
+            logoUrl: s.logoUrl, email: currentUser.email, currency: 'DOP', termsAndConditions: 'El incumplimiento de pago generará mora.',
             customLink: s.custom_link
           });
         }
@@ -497,12 +498,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const { data, error } = await insforge.auth.signUp({
       email: generatedEmail,
       password: user.password,
-      options: {
-        data: {
-          name: user.name,
-          roleId: user.roleId
-        }
-      }
+      name: user.name
     });
 
     if (error) {
