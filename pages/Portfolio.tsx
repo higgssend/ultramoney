@@ -22,7 +22,7 @@ const Portfolio: React.FC = () => {
   }, 0);
 
   const onTimeCount = currencyLoans.filter(l => l.status === LoanStatus.ACTIVE).length;
-  const slightDelayCount = currencyLoans.filter(l => l.status === LoanStatus.LATE).length;
+  const slightDelayCount = 0; // We don't have a LATE status in LoanStatus right now
   const overdueCount = currencyLoans.filter(l => l.status === LoanStatus.OVERDUE).length;
   
   // Fake some values for pie chart if real ones are 0
