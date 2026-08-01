@@ -994,14 +994,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const addBankAccount = async (account: BankAccount) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('bank_accounts').insert({
-      lender_id: currentUser.id,
-      client_id: account.clientId,
-      bank_name: account.bankName,
-      account_number: account.accountNumber,
-      account_type: account.accountType,
-      holder_name: account.holderName
-    });
+      const { error } = await insforge.database.from('bank_accounts').insert({
+        lender_id: currentUser.id,
+        clientid: account.clientId,
+        bankname: account.bankName,
+        accountnumber: account.accountNumber,
+        accounttype: account.accountType,
+        holdername: account.holderName
+      });
     if (!error) addToast("Cuenta bancaria guardada", 'success');
   };
   const removeBankAccount = async (id: string) => {
