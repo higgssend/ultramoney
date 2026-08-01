@@ -22,13 +22,20 @@ export type MigrationTargetEntity =
   | 'garantias' 
   | 'cobradores' 
   | 'usuarios' 
-  | 'caja' 
+    | 'caja' 
   | 'gastos' 
   | 'documentos' 
   | 'contratos' 
   | 'referencias' 
   | 'notas' 
-  | 'historial';
+  | 'historial'
+  | 'rutas'
+  | 'cuentas_bancarias'
+  | 'solicitudes_prestamo'
+  | 'productos_prestamo'
+  | 'cargos'
+  | 'roles'
+  | 'empleados';
 
 export type TransformRule = 
   | 'none' 

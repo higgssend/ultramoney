@@ -9,7 +9,16 @@ import { LoanProductsTab } from '../components/LoanProductsTab';
 const Settings: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { companySettings, updateCompanySettings, roles, addRole, updateRole, deleteRole, users, registerUser, auditLogs, currentUser, updateUser, exportSystemBackup, importSystemBackup, apiKeys, generateApiKey, deleteApiKey } = useStore();
+  const { 
+      companySettings, updateCompanySettings, 
+      roles, addRole, updateRole, deleteRole, 
+      users, registerUser, auditLogs, 
+      currentUser, updateUser, 
+      exportSystemBackup, importSystemBackup, 
+      apiKeys, generateApiKey, deleteApiKey,
+      cargos, addCargo, updateCargo, deleteCargo,
+      employees
+    } = useStore();
   const [activeTab, setActiveTab] = useState<'company' | 'products' | 'roles' | 'users' | 'audit' | 'security' | 'backup' | 'api'>('company');
 
   // Handle incoming navigation state (e.g. from Sidebar edit profile)

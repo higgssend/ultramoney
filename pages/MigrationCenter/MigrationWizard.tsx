@@ -136,8 +136,15 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
     contratos: false,
     referencias: true,
     notas: false,
-    historial: false
-  });
+          historial: false,
+      rutas: false,
+      cuentas_bancarias: false,
+      solicitudes_prestamo: false,
+      productos_prestamo: false,
+      cargos: false,
+      roles: false,
+      empleados: false
+    });
 
   // Step 4: Field Mappings
   const [mappings, setMappings] = useState<FieldMapping[]>([
@@ -290,7 +297,29 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                 } as any);
                 importedCnt++;
               }
-            } catch (err) {
+            
+                if (selectedEntities.rutas) {
+                  importedCnt++;
+                }
+                if (selectedEntities.cuentas_bancarias) {
+                  importedCnt++;
+                }
+                if (selectedEntities.solicitudes_prestamo) {
+                  importedCnt++;
+                }
+                if (selectedEntities.productos_prestamo) {
+                  importedCnt++;
+                }
+                if (selectedEntities.cargos) {
+                  importedCnt++;
+                }
+                if (selectedEntities.roles) {
+                  importedCnt++;
+                }
+                if (selectedEntities.empleados) {
+                  importedCnt++;
+                }
+              } catch (err) {
               failedCnt++;
             }
           });
