@@ -238,7 +238,7 @@ const Payments: React.FC = () => {
       }, 0);
 
       setPayAmount(total.toFixed(2));
-      setPayNote(newSelection.length > 1 ? `Pago de ${newSelection.length} cuotas` : `Pago cuota #${newSelection[0]}`);
+      setPayNote(newSelection.length > 1 ? `Pago de ${newSelection.length} cuotas` : newSelection.length === 1 ? `Pago cuota #${newSelection[0]}` : 'Cuota Regular');
   };
 
   const handlePayment = () => {
@@ -608,6 +608,22 @@ const Payments: React.FC = () => {
                                 </div>
                             </div>
                             
+                            {isAdmin && (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Cajero / Cobrador (Opcional)</label>
+                                    <select 
+                                        value={selectedCashierId}
+                                        onChange={(e) => setSelectedCashierId(e.target.value)}
+                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">-- Mi Usuario ({currentUser?.name}) --</option>
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>{u.name} {u.lastName || ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             {paymentType === 'Mixto' && selectedLoan?.loanType === 'Rédito' && (
                                 <div className="mb-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
                                     <label className="block text-sm font-medium text-indigo-700 mb-1">Monto a abonar al Capital</label>
