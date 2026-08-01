@@ -26,6 +26,28 @@ const Dashboard: React.FC = () => {
     .reduce((sum, l) => sum + l.remainingBalance, 0);
   const balance = stats.balance;
 
+  // Calculate PAR (Portfolio At Risk)
+  let par30 = 0;
+  let par60 = 0;
+  let par90 = 0;
+
+  currencyLoans.forEach(loan => {
+      if (loan.remainingBalance > 0 && loan.status !== LoanStatus.PAID) {
+          if (loan.status === LoanStatus.OVERDUE || loan.status === 'Vencido' || (loan.nextPaymentDate && new Date() > new Date(loan.nextPaymentDate))) {
+              const nextDate = loan.nextPaymentDate ? new Date(loan.nextPaymentDate) : new Date();
+              const diffTime = Math.abs(new Date().getTime() - nextDate.getTime());
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              
+              if (diffDays <= 30) par30 += loan.remainingBalance;
+              else if (diffDays <= 60) par60 += loan.remainingBalance;
+              else par90 += loan.remainingBalance;
+          }
+      }
+  });
+
+  const parTotal = par30 + par60 + par90;
+  const parTotalPercent = totalPortfolio > 0 ? ((parTotal / totalPortfolio) * 100).toFixed(1) : '0';
+
   const recentTransactions = transactions.slice(0, 5);
 
   // Dynamic Chart Data Logic
@@ -136,6 +158,43 @@ const Dashboard: React.FC = () => {
           gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
           glowColor="shadow-emerald-500/30"
         />
+      </div>
+
+      {/* Portfolio At Risk (PAR) Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+          <div className="flex justify-between items-center mb-6">
+              <div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-rose-500" />
+                      Métricas de Riesgo (Cartera PAR)
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total en riesgo: <span className="font-bold text-rose-500">${parTotal.toLocaleString()} ({parTotalPercent}%)</span> del portafolio.</p>
+              </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50">
+                  <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-bold text-rose-800 dark:text-rose-400">PAR 30</span>
+                      <span className="text-xs font-bold text-rose-500 bg-rose-100 dark:bg-rose-900/50 px-2 py-1 rounded-lg">1-30 Días</span>
+                  </div>
+                  <div className="text-2xl font-bold text-rose-600 dark:text-rose-300">${par30.toLocaleString()}</div>
+              </div>
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/50">
+                  <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-bold text-orange-800 dark:text-orange-400">PAR 60</span>
+                      <span className="text-xs font-bold text-orange-500 bg-orange-100 dark:bg-orange-900/50 px-2 py-1 rounded-lg">31-60 Días</span>
+                  </div>
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">${par60.toLocaleString()}</div>
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/50">
+                  <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-bold text-red-800 dark:text-red-400">PAR 90+</span>
+                      <span className="text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/50 px-2 py-1 rounded-lg">&gt; 60 Días</span>
+                  </div>
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-300">${par90.toLocaleString()}</div>
+              </div>
+          </div>
       </div>
 
       {/* Main Content Split: Chart (2/3) + Activity (1/3) */}

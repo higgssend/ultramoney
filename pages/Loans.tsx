@@ -5,20 +5,26 @@ import { toast } from 'sonner';
 import { LoanStatus, Loan, formatLoanId } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { DataExportToolbar } from '../components/DataExportToolbar';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Loans: React.FC = () => {
-  const { loans, companySettings, refinanceLoan } = useStore();
+  const { loans, companySettings, refinanceLoan, forgiveDebt } = useStore();
   const navigate = useNavigate();
   const [filterTerm, setFilterTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'TODOS' | 'A tiempo' | 'Atrasado' | 'Vencido' | 'Pagado'>('TODOS');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
-  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'refinance' | 'collateral'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'refinance' | 'collateral' | 'forgiveness'>('summary');
 
   // Refinance State
   const [refinanceAmount, setRefinanceAmount] = useState<number>(0);
   const [refinanceWeeks, setRefinanceWeeks] = useState<number>(12);
   const [refinanceInterest, setRefinanceInterest] = useState<number>(10);
+
+  // Forgiveness State
+  const [forgiveAmount, setForgiveAmount] = useState<number>(0);
+  const [forgiveNote, setForgiveNote] = useState('');
 
   const getStatusStyle = (status: string, nextDate: string) => {
       if (status === LoanStatus.OVERDUE) return { badge: 'Vencido', color: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800' };
@@ -59,7 +65,53 @@ const Loans: React.FC = () => {
       toast.success(`Préstamo refinanciado con éxito.`);
       setSelectedLoan(null);
   };
+
+  const handleForgive = () => {
+      if(!selectedLoan || forgiveAmount <= 0) return;
+      forgiveDebt(selectedLoan.id, forgiveAmount, forgiveNote);
+      setForgiveAmount(0);
+      setForgiveNote('');
+      setSelectedLoan(null);
+  };
   
+  const generatePDFContract = (loan: Loan) => {
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Pagare Notarial / Contrato de Prestamo", 105, 20, { align: "center" });
+      
+      doc.setFontSize(12);
+      doc.text(`Prestamo ID: #${loan.id.substring(0,8)}`, 20, 40);
+      doc.text(`Cliente: ${loan.clientName}`, 20, 50);
+      doc.text(`Monto Prestado: $${loan.amount.toLocaleString()}`, 20, 60);
+      doc.text(`Tasa de Interes: ${loan.interestRate}%`, 20, 70);
+      doc.text(`Fecha de Emision: ${loan.startDate}`, 20, 80);
+      
+      doc.text("DECLARACION LEGAL", 105, 100, { align: "center" });
+      doc.setFontSize(10);
+      const legalText = `Por medio del presente PAGARE NOTARIAL, yo, ${loan.clientName}, me comprometo a pagar incondicionalmente la suma de $${loan.totalToPay.toLocaleString()} en pagos de $${loan.installmentAmount.toLocaleString()} de manera ${loan.frequency}. En caso de incumplimiento, acepto los cargos por mora estipulados.`;
+      doc.text(legalText, 20, 110, { maxWidth: 170 });
+      
+      // AutoTable
+      const tableData = getAmortizationTable(loan).map(row => [
+          row.period, row.date, `$${row.principal.toLocaleString()}`, `$${row.interest.toLocaleString()}`, `$${row.amount.toLocaleString()}`, `$${row.balance.toLocaleString()}`
+      ]);
+      
+      autoTable(doc, {
+          startY: 140,
+          head: [['Cuota', 'Fecha', 'Capital', 'Interes', 'Cuota Total', 'Balance Restante']],
+          body: tableData,
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY || 150;
+      doc.text("_________________________", 60, finalY + 40, { align: "center" });
+      doc.text("Firma del Cliente", 60, finalY + 50, { align: "center" });
+      
+      doc.text("_________________________", 150, finalY + 40, { align: "center" });
+      doc.text("Firma Empresa / Prestamista", 150, finalY + 50, { align: "center" });
+
+      doc.save(`Contrato_${loan.clientName}_${loan.id.substring(0,5)}.pdf`);
+  };
+
   const getAmortizationTable = (loan: Loan) => {
       const rows = [];
       const isRedito = loan.loanType === 'Rédito';
@@ -387,6 +439,7 @@ const Loans: React.FC = () => {
                         <ModalTab label="Resumen General" icon={FileText} active={activeTab === 'summary'} onClick={() => setActiveTab('summary')} />
                         <ModalTab label="Tabla Amortización" icon={Banknote} active={activeTab === 'amortization'} onClick={() => setActiveTab('amortization')} />
                         <ModalTab label="Garantías" icon={Shield} active={activeTab === 'collateral'} onClick={() => setActiveTab('collateral')} />
+                        <ModalTab label="Condonación" icon={AlertTriangle} active={activeTab === 'forgiveness'} onClick={() => setActiveTab('forgiveness')} />
                         <ModalTab label="Refinanciar" icon={RefreshCw} active={activeTab === 'refinance'} onClick={() => { 
                             setRefinanceAmount(selectedLoan.amount);
                             setActiveTab('refinance'); 
@@ -438,12 +491,18 @@ const Loans: React.FC = () => {
                                      </div>
                                  )}
 
-                                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex gap-4 flex-col md:flex-row">
                                     <button 
                                         onClick={() => goToPayment(selectedLoan.id)}
-                                        className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all transform hover:-translate-y-0.5 text-lg"
+                                        className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all transform hover:-translate-y-0.5 text-lg"
                                     >
                                         <DollarSign className="w-6 h-6" /> Registrar Nuevo Pago
+                                    </button>
+                                    <button 
+                                        onClick={() => generatePDFContract(selectedLoan)}
+                                        className="md:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all text-lg"
+                                    >
+                                        <Printer className="w-6 h-6" /> Pagaré / Contrato
                                     </button>
                                  </div>
                              </div>
@@ -537,6 +596,48 @@ const Loans: React.FC = () => {
                                  )}
                              </div>
                          )}
+
+                         {activeTab === 'forgiveness' && (
+                             <div className="animate-fade-in p-6 md:p-8">
+                                 <div className="flex items-center gap-4 mb-6">
+                                     <div className="bg-rose-50 dark:bg-rose-900/50 p-3 rounded-2xl text-rose-600 dark:text-rose-400">
+                                         <AlertTriangle className="w-6 h-6" />
+                                     </div>
+                                     <div>
+                                         <h4 className="font-bold text-slate-800 dark:text-white text-xl">Módulo de Condonación</h4>
+                                         <p className="text-sm text-slate-500 dark:text-slate-400">Restar capital o perdonar deudas de manera controlada.</p>
+                                     </div>
+                                 </div>
+                                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 max-w-lg">
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Monto a Condonar</label>
+                                        <input 
+                                            type="number" 
+                                            value={forgiveAmount}
+                                            onChange={(e) => setForgiveAmount(Number(e.target.value))}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-rose-500 focus:outline-none" 
+                                        />
+                                    </div>
+                                    <div className="mb-6">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nota / Razón de Condonación</label>
+                                        <textarea 
+                                            value={forgiveNote}
+                                            onChange={(e) => setForgiveNote(e.target.value)}
+                                            rows={3}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-rose-500 focus:outline-none" 
+                                            placeholder="Describa por qué se perdona esta deuda..."
+                                        />
+                                    </div>
+                                    <button 
+                                        onClick={handleForgive}
+                                        disabled={forgiveAmount <= 0}
+                                        className="w-full bg-rose-600 text-white font-bold py-3 rounded-xl hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        Ejecutar Condonación
+                                    </button>
+                                 </div>
+                             </div>
+                         )}
                      </div>
                  </div>
                  
@@ -545,6 +646,7 @@ const Loans: React.FC = () => {
                     <button onClick={() => setActiveTab('summary')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'summary' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Resumen</button>
                     <button onClick={() => setActiveTab('amortization')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'amortization' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Tabla</button>
                     <button onClick={() => setActiveTab('collateral')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'collateral' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Garantías</button>
+                    <button onClick={() => setActiveTab('forgiveness')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'forgiveness' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Condonar</button>
                     <button onClick={() => setActiveTab('refinance')} className={`flex-1 py-4 text-center text-[10px] font-bold uppercase tracking-widest ${activeTab === 'refinance' ? 'text-indigo-600 border-t-2 border-indigo-600 bg-indigo-50/50' : 'text-slate-400'}`}>Renovar</button>
                  </div>
              </div>

@@ -82,6 +82,7 @@ interface StoreContextType {
   createLoan: (loanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => void;
   
   refinanceLoan: (oldLoanId: string, newLoanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => void;
+  forgiveDebt: (loanId: string, amount: number, note: string) => Promise<void>;
   registerPayment: (
     loanId: string, 
     amount: number, 
@@ -1000,11 +1001,43 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         await insforge.database.from('transactions').insert({
           lender_id: currentUser.id, date: new Date().toISOString().split('T')[0],
           amount: closingCost, type: 'Ingreso', description: `Cobro Gastos de Cierre (Refinanciamiento) - ${newLoanData.clientName}`,
-          referenceId: (insertedLoan as any).id
+        referenceId: (insertedLoan as any).id
         });
     }
     
     addToast(`Préstamo refinanciado correctamente`, 'success');
+    };
+
+  const forgiveDebt = async (loanId: string, amount: number, note: string) => {
+    if (!currentUser) return;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) return;
+
+    let newBalance = loan.remainingBalance - amount;
+    if (newBalance < 0) newBalance = 0;
+    const newStatus = newBalance === 0 ? LoanStatus.PAID : loan.status;
+
+    // Registrar transaccion de gasto por Condonacion
+    const { error: txError } = await insforge.database.from('transactions').insert({
+        lender_id: currentUser.id,
+        date: new Date().toISOString().split('T')[0],
+        amount: amount,
+        type: 'Gasto',
+        description: `Condonación de Deuda: ${note}`,
+        referenceId: loanId,
+        paymentMethod: 'Condonación'
+    });
+    if (txError) { addToast("Error al registrar condonación", 'error'); return; }
+
+    const { error: loanError } = await insforge.database.from('loans').update({ 
+        remainingBalance: newBalance, 
+        status: newStatus 
+    }).eq('id', loanId);
+
+    if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
+
+    addAuditLog('debt_forgiven', `Condonó RD$ ${amount.toLocaleString('es-DO')} para el préstamo ${loanId}`);
+    addToast("Deuda condonada correctamente", 'success');
   };
 
   const registerPayment = async (
@@ -1425,7 +1458,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
       },
       addClient, updateClient, addEmployee, deleteEmployee, addLoanRequest, deleteLoanRequest,
-      createLoan, refinanceLoan, registerPayment, addBankAccount, removeBankAccount,
+      createLoan, refinanceLoan, forgiveDebt, registerPayment, addBankAccount, removeBankAccount,
       addClientNote, addClientDocument, removeClientDocument, generateClientPin, getFinancialStats,
       addTransaction
     }}>

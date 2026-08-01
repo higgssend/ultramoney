@@ -29,6 +29,9 @@ const LoanRequest: React.FC = () => {
   const [loanType, setLoanType] = useState<LoanType>('Amortizado');
   
   // Closing Costs State
+  const [chargeClosingCost, setChargeClosingCost] = useState(false);
+  const [closingCostType, setClosingCostType] = useState<'Manual' | 'Porcentaje'>('Porcentaje');
+  const [closingCostPercentage, setClosingCostPercentage] = useState(5);
   const [closingCost, setClosingCost] = useState(0);
   const [closingCostMode, setClosingCostMode] = useState<ClosingCostMode>('Descontado');
 
@@ -102,6 +105,16 @@ const LoanRequest: React.FC = () => {
     }
   }, [amount, interest, targetInstallment, calcMode, loanType, closingCost, closingCostMode]);
 
+  useEffect(() => {
+      if (chargeClosingCost) {
+          if (closingCostType === 'Porcentaje') {
+              setClosingCost(amount * (closingCostPercentage / 100));
+          }
+      } else {
+          setClosingCost(0);
+      }
+  }, [chargeClosingCost, closingCostType, closingCostPercentage, amount]);
+
   
   const calculateTotal = () => {
       if (schedulePreview.length === 0) return 0;
@@ -129,7 +142,11 @@ const LoanRequest: React.FC = () => {
       setWeeks(req.durationWeeks);
       setFrequency(req.frequency);
       setLoanType(req.loanType);
-      if (req.closingCost) setClosingCost(req.closingCost);
+      if (req.closingCost) {
+          setChargeClosingCost(true);
+          setClosingCostType('Manual');
+          setClosingCost(req.closingCost);
+      }
       if (req.closingCostMode) setClosingCostMode(req.closingCostMode);
       if (req.paymentDay) setPaymentDay(req.paymentDay);
       if (req.collateral) setCollateral(req.collateral);
@@ -470,23 +487,64 @@ const LoanRequest: React.FC = () => {
 
                     {/* Closing Costs Config */}
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
-                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Scissors className="w-5 h-5" /></div>
-                            Gastos de Cierre / Legal
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Monto Gasto Cierre</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
-                                    <input 
-                                        type="number" 
-                                        value={closingCost}
-                                        onChange={(e) => setClosingCost(Number(e.target.value))}
-                                        className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-700" 
-                                    />
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Scissors className="w-5 h-5" /></div>
+                                Gastos de Cierre / Legal
+                            </h3>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={chargeClosingCost} onChange={(e) => setChargeClosingCost(e.target.checked)} />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                            </label>
+                        </div>
+                        
+                        {chargeClosingCost && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in border-t border-slate-100 pt-6">
+                                <div className="md:col-span-2">
+                                    <div className="flex bg-slate-100 p-1 rounded-xl mb-4 w-fit">
+                                        <button 
+                                            onClick={() => setClosingCostType('Porcentaje')}
+                                            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${closingCostType === 'Porcentaje' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            Porcentaje (%)
+                                        </button>
+                                        <button 
+                                            onClick={() => setClosingCostType('Manual')}
+                                            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${closingCostType === 'Manual' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            Monto Fijo
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                                
+                                {closingCostType === 'Porcentaje' ? (
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Porcentaje de Gasto (%)</label>
+                                        <div className="relative">
+                                            <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
+                                            <input 
+                                                type="number" 
+                                                value={closingCostPercentage}
+                                                onChange={(e) => setClosingCostPercentage(Number(e.target.value))}
+                                                className="w-full pl-4 pr-8 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-700" 
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-1">Calculado: ${closingCost.toLocaleString()}</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Monto Fijo ($)</label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
+                                            <input 
+                                                type="number" 
+                                                value={closingCost}
+                                                onChange={(e) => setClosingCost(Number(e.target.value))}
+                                                className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-700" 
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Forma de Pago</label>
                                 <div className="grid grid-cols-3 gap-2">
@@ -510,7 +568,8 @@ const LoanRequest: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
