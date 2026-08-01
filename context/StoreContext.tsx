@@ -48,8 +48,8 @@ interface StoreContextType {
   updateApiKey: (id: string, newName: string) => void;
 
   // Domain Actions
-  addClient: (client: Client) => void;
-  updateClient: (client: Client) => void;
+  addClient: (client: any) => Promise<Client | void>;
+  updateClient: (client: any) => Promise<void>;
   
   // Employee Actions
   addEmployee: (employee: Employee) => void;
@@ -542,44 +542,78 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const addClient = async (client: Client) => {
+  const addClient = async (client: any) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('clients').insert({
+    const { data, error } = await insforge.database.from('clients').insert({
       lender_id: currentUser.id,
       name: client.name,
+      lastName: client.lastName,
       cedula: client.cedula,
+      documentType: client.documentType,
       email: client.email,
       phone: client.phone,
+      whatsapp: client.whatsapp,
       phonehome: client.phoneHome,
       address: client.address,
+      province: client.province,
+      municipality: client.municipality,
+      sector: client.sector,
+      referenceAddress: client.referenceAddress,
+      companyName: client.companyName,
+      jobPosition: client.jobPosition,
+      coordinates: client.coordinates,
+      routeId: client.routeId,
+      routeSequence: client.routeSequence,
       occupation: client.occupation,
       sex: client.sex,
       income: client.income,
       creditscore: client.creditScore,
-      joineddate: client.joinedDate,
+      joineddate: client.joinedDate || new Date().toISOString().split('T')[0],
       status: client.status,
       clientpin: client.clientPin,
       portal_alias: client.portalAlias,
       portal_active: client.portalActive
-    });
+    }).select().single();
     if (error) {
       addToast("Error al registrar cliente", 'error');
+      console.error(error);
     } else {
       addToast("Cliente registrado", 'success');
+      return data;
     }
   };
 
-  const updateClient = async (updatedClient: Client) => {
+  const updateClient = async (updatedClient: any) => {
     if (!currentUser) return;
     const { error } = await insforge.database.from('clients').update({
-      name: updatedClient.name, cedula: updatedClient.cedula, email: updatedClient.email,
-      phone: updatedClient.phone, phonehome: updatedClient.phoneHome, address: updatedClient.address,
-      occupation: updatedClient.occupation, sex: updatedClient.sex, income: updatedClient.income,
-      status: updatedClient.status, clientpin: updatedClient.clientPin,
-      portal_alias: updatedClient.portalAlias, portal_active: updatedClient.portalActive
+      name: updatedClient.name,
+      lastName: updatedClient.lastName,
+      cedula: updatedClient.cedula,
+      documentType: updatedClient.documentType,
+      email: updatedClient.email,
+      phone: updatedClient.phone,
+      whatsapp: updatedClient.whatsapp,
+      phonehome: updatedClient.phoneHome,
+      address: updatedClient.address,
+      province: updatedClient.province,
+      municipality: updatedClient.municipality,
+      sector: updatedClient.sector,
+      referenceAddress: updatedClient.referenceAddress,
+      companyName: updatedClient.companyName,
+      jobPosition: updatedClient.jobPosition,
+      coordinates: updatedClient.coordinates,
+      routeId: updatedClient.routeId,
+      routeSequence: updatedClient.routeSequence,
+      occupation: updatedClient.occupation,
+      sex: updatedClient.sex,
+      income: updatedClient.income,
+      status: updatedClient.status,
+      clientpin: updatedClient.clientPin,
+      portal_alias: updatedClient.portalAlias,
+      portal_active: updatedClient.portalActive
     }).eq('id', updatedClient.id);
     
-    if (error) { addToast("Error al actualizar", 'error'); } 
+    if (error) { addToast("Error al actualizar", 'error'); console.error(error); } 
     else { addToast("Cliente actualizado", 'success'); }
   };
 

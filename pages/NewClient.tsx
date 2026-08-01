@@ -70,7 +70,7 @@ const NewClient: React.FC = () => {
         };
 
         if (isEditMode && finalClient.id) {
-            await updateClient(finalClient.id, finalClient);
+            await updateClient(finalClient);
             navigate('/clientes');
         } else {
             const newClient = await addClient(finalClient as Omit<Client, 'id' | 'joinedDate'>);
