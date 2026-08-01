@@ -382,7 +382,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           const s = settingsRes.data as any;
           setCompanySettings({
             name: s.name, slogan: s.slogan, rnc: s.rnc, address: s.address, phone: s.phone,
-            logoUrl: s.logoUrl, email: currentUser.email, currency: 'RD$', termsAndConditions: 'El incumplimiento de pago generará mora.'
+            logoUrl: s.logoUrl, email: currentUser.email, currency: 'RD$', termsAndConditions: 'El incumplimiento de pago generará mora.',
+            customLink: s.custom_link
           });
         }
         
@@ -486,7 +487,33 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     addToast("Sesión cerrada correctamente", 'info');
   };
 
-  const registerUser = (_user: User) => {};
+  const registerUser = async (user: User) => {
+    if (!user.password || !user.username) {
+      addToast("Usuario y contraseña requeridos", "error");
+      return;
+    }
+    const domain = companySettings.customLink ? `${companySettings.customLink}.ultramoney.com` : 'app.ultramoney.com';
+    const generatedEmail = `${user.username}@${domain}`;
+    
+    const { data, error } = await insforge.auth.signUp({
+      email: generatedEmail,
+      password: user.password,
+      options: {
+        data: {
+          name: user.name,
+          roleId: user.roleId
+        }
+      }
+    });
+
+    if (error) {
+      addToast(`Error al registrar usuario: ${error.message}`, "error");
+    } else {
+      addToast("Usuario registrado exitosamente", "success");
+      // Add to local state (the backend trigger should also insert to user_profiles)
+      setUsers(prev => [...prev, { ...user, email: generatedEmail, id: data.user?.id || user.id }]);
+    }
+  };
   const updateUser = (_updatedUser: User) => {};
 
   const updateCompanySettings = async (settings: CompanySettings) => {
@@ -498,9 +525,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       rnc: settings.rnc,
       address: settings.address,
       phone: settings.phone,
-      logoUrl: settings.logoUrl
+      logoUrl: settings.logoUrl,
+      custom_link: settings.customLink
     });
     addToast("Configuración guardada", 'success');
+    setCompanySettings(settings);
   };
 
   const addRole = async (role: Role) => {

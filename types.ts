@@ -315,15 +315,15 @@ export interface NumberSeriesSettings {
 
 export interface CompanySettings {
   name: string;
+  slogan?: string;
   rnc: string;
   address: string;
   phone: string;
-  email: string;
-  website?: string;
   logoUrl?: string;
-  slogan?: string;
-  currency: string;
+  email: string;
+  currency: 'DOP' | 'USD';
   termsAndConditions: string;
+  customLink?: string; // e.g. mi-empresa
   defaultLateFeePercent?: number;
   numberSeries?: NumberSeriesSettings;
 }

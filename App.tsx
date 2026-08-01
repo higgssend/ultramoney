@@ -25,6 +25,7 @@ import NewClient from './pages/NewClient';
 import Invoices from './pages/Invoices';
 import Login from './pages/Login';
 import EmployeeLogin from './pages/EmployeeLogin';
+import { CompanyLogin } from './pages/CompanyLogin';
 import ClientPortals from './pages/ClientPortals';
 import { ClientPortal } from './pages/ClientPortal';
 import { ReceiptView } from './pages/ReceiptView';
@@ -113,6 +114,7 @@ const AppContent: React.FC = () => {
     location.pathname === '/register' || 
     location.pathname === '/onboarding' ||
     location.pathname.startsWith('/portal/') ||
+    location.pathname.startsWith('/login/') ||
     location.pathname.startsWith('/recibo/') ||
     location.pathname === '/ayuda' ||
     location.pathname.startsWith('/features/') || 
@@ -140,6 +142,7 @@ const AppContent: React.FC = () => {
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+            <Route path="/login/:slug" element={<PublicOnlyRoute><CompanyLogin /></PublicOnlyRoute>} />
             <Route path="/login-staff" element={<PublicOnlyRoute><EmployeeLogin /></PublicOnlyRoute>} />
             <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
             <Route path="/portal/:clientId" element={<ClientPortal />} />

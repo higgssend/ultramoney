@@ -294,8 +294,17 @@ const Settings: React.FC = () => {
                             value={companyForm.slogan || ''} onChange={e => setCompanyForm({...companyForm, slogan: e.target.value})} placeholder="Tu socio financiero de confianza" />
                         </div>
                      </div>
-                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
+                       <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Enlace Personalizado (Portal Empleados)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">ultramoney.com/login/</span>
+                            <input type="text" className="w-full pl-[170px] pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" 
+                              value={companyForm.customLink || ''} onChange={e => setCompanyForm({...companyForm, customLink: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} placeholder="mi-empresa" />
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">Este será el enlace único que le darás a tus empleados para iniciar sesión.</p>
+                       </div>
+                       <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
                         <div className="relative">
                           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                           <input type="text" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" 
@@ -761,14 +770,17 @@ const Settings: React.FC = () => {
                 
                 {/* Username Field */}
                 <div>
-                   <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de Usuario (Login)</label>
-                   <div className="relative">
-                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                      <input type="text" required className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        placeholder="ej. juanperez"
-                        value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value})} />
-                   </div>
-                </div>
+                     <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de Usuario (Login)</label>
+                     <div className="relative">
+                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input type="text" required className="w-full pl-9 pr-[120px] py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          placeholder="ej. juanperez"
+                          value={newUser.username} onChange={e => setNewUser({...newUser, username: e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, '')})} />
+                        {companyForm.customLink && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">@{companyForm.customLink}</span>
+                        )}
+                     </div>
+                  </div>
 
                 {/* Password Fields */}
                 <div>
