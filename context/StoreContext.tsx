@@ -751,24 +751,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
   };
 
-  const addEmployee = async (employee: Employee) => {
-    if (!currentUser) return;
-    const { error } = await insforge.database.from('employees').insert({
-      lender_id: currentUser.id,
-      name: employee.name,
-      role: employee.role,
-      phone: employee.phone,
-      assigned_route: employee.assignedRoute,
-      performance: employee.performance,
-      active_routes: employee.activeRoutes,
-      collections: employee.collections,
-      username: employee.username,
-      employee_pin: employee.employeePin
-    });
-    if (error) addToast("Error al registrar empleado", 'error');
-    else addToast("Empleado guardado", 'success');
-  };
-  
+
   const deleteEmployee = async (id: string) => {
     if (!currentUser) return;
     await insforge.database.from('employees').delete().eq('id', id);
@@ -1065,6 +1048,28 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       addToast("Error al guardar transacción", 'error');
     }
   };
+
+    const addEmployee = async (employee: Employee) => {
+      if (!currentUser) return;
+      const { data, error } = await insforge.database.from('employees').insert({
+        lender_id: currentUser.id,
+        name: employee.name,
+        cargo_id: employee.cargoId,
+        phone: employee.phone,
+        assigned_route: employee.assignedRoute,
+        performance: employee.performance,
+        active_routes: employee.activeRoutes,
+        collections: employee.collections,
+        username: employee.username,
+        employee_pin: employee.employeePin
+      }).select().single();
+      if (error) {
+        addToast(`Error al registrar empleado: ${error.message}`, 'error');
+      } else if (data) {
+        setEmployees(prev => [...prev, { ...employee, id: data.id }]);
+        addToast("Empleado guardado", 'success');
+      }
+    };
 
   const addBankAccount = async (account: BankAccount) => {
     if (!currentUser) return;
