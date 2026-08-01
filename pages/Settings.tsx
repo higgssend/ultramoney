@@ -39,6 +39,12 @@ const Settings: React.FC = () => {
     name: '', description: '', permissions: []
   });
 
+  const [isCargoModalOpen, setIsCargoModalOpen] = useState(false);
+  const [editingCargoId, setEditingCargoId] = useState<string | null>(null);
+  const [newCargo, setNewCargo] = useState<{name: string, description: string}>({
+    name: '', description: ''
+  });
+
   // User Form State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [newUser, setNewUser] = useState<{name: string, username: string, password: string, confirmPassword: string, employeeId: string, roleIds: string[]}>({
@@ -122,14 +128,37 @@ const Settings: React.FC = () => {
   const handleSaveRole = (e: React.FormEvent) => {
     e.preventDefault();
     if(newRole.name) {
-      addRole({
-        id: newRole.name.toLowerCase().replace(/\s+/g, '_'),
-        name: newRole.name,
-        description: newRole.description,
-        permissions: newRole.permissions
-      });
+      if (editingRoleId) {
+          // not implemented updateRole in the ui currently, but if it was, it would go here
+      } else {
+          addRole({
+            id: newRole.name.toLowerCase().replace(/\s+/g, '_'),
+            name: newRole.name,
+            description: newRole.description,
+            permissions: newRole.permissions
+          });
+      }
       setIsRoleModalOpen(false);
       setNewRole({ name: '', description: '', permissions: [] });
+    }
+  };
+
+  const handleSaveCargo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newCargo.name) {
+        if (editingCargoId) {
+            updateCargo(editingCargoId, newCargo);
+        } else {
+            addCargo({
+                id: `TEMP-${Date.now()}`,
+                name: newCargo.name,
+                description: newCargo.description,
+                createdAt: new Date().toISOString()
+            });
+        }
+        setIsCargoModalOpen(false);
+        setNewCargo({ name: '', description: '' });
+        setEditingCargoId(null);
     }
   };
 
@@ -216,6 +245,12 @@ const Settings: React.FC = () => {
              className={`p-3 rounded-lg text-left font-medium flex items-center gap-3 transition-colors ${activeTab === 'roles' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
            >
              <Shield className="w-5 h-5" /> Roles y Permisos
+           </button>
+           <button 
+             onClick={() => setActiveTab('cargos')}
+             className={`p-3 rounded-lg text-left font-medium flex items-center gap-3 transition-colors ${activeTab === 'cargos' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+           >
+             <Briefcase className="w-5 h-5" /> Cargos y Posiciones
            </button>
            <button 
              onClick={() => setActiveTab('users')}
@@ -532,6 +567,49 @@ const Settings: React.FC = () => {
             </div>
           )}
 
+          {/* Cargos Management */}
+          {activeTab === 'cargos' && (
+            <div className="space-y-6 animate-fade-in">
+               <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                  <div>
+                    <h3 className="font-bold text-slate-800">Cargos y Posiciones</h3>
+                    <p className="text-sm text-slate-500">Define los cargos para tus empleados (ej: Supervisor, Cajero, Mensajero).</p>
+                  </div>
+                  <button onClick={() => { setEditingCargoId(null); setNewCargo({ name: '', description: '' }); setIsCargoModalOpen(true); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2">
+                    <Plus className="w-4 h-4" /> Crear Cargo
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-1 gap-4">
+                  {cargos && cargos.map(cargo => (
+                    <div key={cargo.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                       <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                               <Briefcase className="w-5 h-5 text-indigo-500" /> {cargo.name}
+                            </h4>
+                            <p className="text-sm text-slate-500">{cargo.description || 'Sin descripción'}</p>
+                          </div>
+                          <div className="flex gap-2">
+                              <button onClick={() => { setEditingCargoId(cargo.id); setNewCargo({ name: cargo.name, description: cargo.description || '' }); setIsCargoModalOpen(true); }} className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors">
+                                <Edit2 className="w-5 h-5" />
+                              </button>
+                              <button onClick={() => deleteCargo(cargo.id)} className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors">
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                          </div>
+                       </div>
+                    </div>
+                  ))}
+                  {(!cargos || cargos.length === 0) && (
+                    <div className="text-center py-8 bg-white rounded-xl shadow-sm border border-slate-100">
+                        <p className="text-slate-500">No hay cargos registrados. Crea uno para poder asignarlo a tus empleados.</p>
+                    </div>
+                  )}
+               </div>
+            </div>
+          )}
+
           {/* Users Management */}
           {activeTab === 'users' && (
             <div className="space-y-6 animate-fade-in">
@@ -769,6 +847,36 @@ const Settings: React.FC = () => {
 
                <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 mt-4">
                  Guardar Rol
+               </button>
+             </form>
+          </div>
+        </div>
+      )}
+
+      {isCargoModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-fade-in">
+             <div className="flex justify-between items-center mb-6">
+               <h3 className="font-bold text-lg text-slate-800">{editingCargoId ? 'Editar Cargo' : 'Crear Nuevo Cargo'}</h3>
+               <button onClick={() => setIsCargoModalOpen(false)}><X className="w-5 h-5 text-slate-400" /></button>
+             </div>
+             
+             <form onSubmit={handleSaveCargo} className="space-y-4">
+               <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Cargo</label>
+                  <input type="text" required className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Ej. Oficial de Cobros"
+                    value={newCargo.name} onChange={e => setNewCargo({...newCargo, name: e.target.value})} />
+               </div>
+               <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
+                  <input type="text" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Breve descripción del puesto"
+                    value={newCargo.description} onChange={e => setNewCargo({...newCargo, description: e.target.value})} />
+               </div>
+               
+               <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 mt-4">
+                 Guardar Cargo
                </button>
              </form>
           </div>
