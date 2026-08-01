@@ -187,7 +187,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const addAuditLog = (action: string, details: string) => {
+  const addAuditLog = async (action: string, details: string) => {
     if (!currentUser) return;
     const log: AuditLog = {
       id: `log-${Date.now()}`,
@@ -198,7 +198,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       timestamp: new Date().toISOString()
     };
     setAuditLogs(prev => [log, ...prev]);
-    // Optionally: Sync to backend here if needed
+    
+    await insforge.database.from('bitacora_logs').insert({
+      lender_id: currentUser.id,
+      user_id: currentUser.id,
+      user_name: currentUser.name || currentUser.email || 'Sistema',
+      action,
+      details
+    });
   };
 
   const openCashShift = async (initialAmount: number, notes?: string) => {
@@ -221,6 +228,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (error) {
       addToast("Error al abrir caja", 'error');
     } else {
+      addAuditLog('cash_shift_opened', `Abrió caja con RD$ ${initialAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`);
       addToast(`Caja abierta con RD$ ${initialAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`, 'success');
     }
   };
@@ -247,6 +255,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (error) {
       addToast("Error al cerrar caja", 'error');
     } else {
+      addAuditLog('cash_shift_closed', `Cerró caja con ${difference === 0 ? 'Cuadre perfecto' : difference > 0 ? 'Sobrante' : 'Faltante'} de RD$ ${Math.abs(difference).toFixed(2)}`);
       addToast(`Caja cerrada. ${difference === 0 ? 'Cuadre perfecto.' : difference > 0 ? `Sobrante de RD$ ${difference.toFixed(2)}` : `Faltante de RD$ ${Math.abs(difference).toFixed(2)}`}`, difference < 0 ? 'error' : 'success');
     }
   };
@@ -358,7 +367,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const [
           clientsRes, loansRes, trxRes, settingsRes,
           employeesRes, visitsRes, requestsRes, shiftsRes,
-          notesRes, docsRes, loanProductsRes, banksRes, rolesRes, cargosRes, usersRes, apiKeysRes
+          notesRes, docsRes, loanProductsRes, banksRes, rolesRes, cargosRes, usersRes, apiKeysRes, bitacoraRes
         ] = await Promise.all([
           insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
           insforge.database.from('loans').select('*').order('created_at', { ascending: false }),
@@ -376,7 +385,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           insforge.database.from('roles').select('*').order('name'),
           insforge.database.from('cargos').select('*').order('name'),
           insforge.database.from('user_profiles').select('*, usuario_roles ( role_id )').order('created_at'),
-          insforge.database.from('api_keys').select('*').order('created_at', { ascending: false })
+          insforge.database.from('api_keys').select('*').order('created_at', { ascending: false }),
+          insforge.database.from('bitacora_logs').select('*').order('created_at', { ascending: false })
         ]);
 
         if (clientsRes.data) setClients(clientsRes.data.map(mapClient) as unknown as Client[]);
@@ -432,7 +442,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           })));
         }
         if (apiKeysRes.data) setApiKeys(apiKeysRes.data.map((k: any) => ({...k, createdAt: k.created_at})) as unknown as ApiKey[]);
-
+        if (bitacoraRes.data) setAuditLogs(bitacoraRes.data.map((b: any) => ({
+          id: b.id,
+          action: b.action,
+          details: b.details,
+          userId: b.user_id,
+          userName: b.user_name,
+          timestamp: b.created_at
+        })) as unknown as AuditLog[]);
       } catch (err) {
         console.error("Error fetching data:", err);
       }
@@ -503,6 +520,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const login = (_identifier: string, _password: string): boolean => false;
 
   const logout = async () => {
+    addAuditLog('logout', `Cerró sesión`);
     await insforge.auth.signOut();
     addToast("Sesión cerrada correctamente", 'info');
   };
@@ -540,6 +558,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
          await insforge.database.from('usuario_roles').insert(roleInserts);
       }
 
+      addAuditLog('user_registered', `Registró al usuario ${user.username}`);
       addToast("Usuario registrado exitosamente", "success");
       setUsers(prev => [...prev, { ...user, email: generatedEmail, id: newUserId }]);
     }
@@ -573,6 +592,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       logoUrl: settings.logoUrl,
       custom_link: settings.customLink
     });
+    addAuditLog('settings_updated', `Actualizó la configuración de la empresa`);
     addToast("Configuración guardada", 'success');
     setCompanySettings(settings);
   };
@@ -585,6 +605,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }]).select();
     if (!error && data) {
       setRoles(prev => [...prev, data[0] as unknown as Role]);
+      addAuditLog('role_created', `Creó el rol de sistema: ${role.name}`);
       addToast("Rol creado exitosamente", "success");
     } else {
       addToast("Error al crear rol", "error");
@@ -610,6 +631,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const { error } = await insforge.database.from('roles').delete().eq('id', id);
     if (!error) {
       setRoles(prev => prev.filter(r => r.id !== id));
+      addAuditLog('role_deleted', `Eliminó un rol de sistema`);
       addToast("Rol eliminado", "success");
     } else {
       addToast("Error al eliminar rol", "error");
@@ -652,6 +674,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       addToast("Error al registrar cliente", 'error');
       console.error(error);
     } else {
+      addAuditLog('client_created', `Registró al cliente ${client.name} ${client.lastName}`);
       addToast("Cliente registrado", 'success');
       return data;
     }
@@ -686,9 +709,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       portal_alias: updatedClient.portalAlias,
       portal_active: updatedClient.portalActive
     }).eq('id', updatedClient.id);
-    
     if (error) { addToast("Error al actualizar", 'error'); console.error(error); } 
-    else { addToast("Cliente actualizado", 'success'); }
+    else { 
+      addAuditLog('client_updated', `Actualizó el perfil del cliente ${updatedClient.name} ${updatedClient.lastName}`);
+      addToast("Cliente actualizado", 'success'); 
+    }
   };
 
   
@@ -755,6 +780,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const deleteEmployee = async (id: string) => {
     if (!currentUser) return;
     await insforge.database.from('employees').delete().eq('id', id);
+    addAuditLog('employee_deleted', `Eliminó un empleado`);
   };
 
   const addCollectorVisit = async (visit: Omit<CollectorVisit, 'id'>) => {
@@ -891,6 +917,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     addToast(`Préstamo desembolsado correctamente`, 'success');
+    addAuditLog('loan_created', `Aprobó un préstamo de RD$ ${finalPrincipal.toLocaleString('es-DO')} para ${loanData.clientName}`);
     enqueuePdf({ type: 'contrato', client, loan: insertedLoan as any });
     enqueuePdf({ type: 'pagare', client, loan: insertedLoan as any });
   };
@@ -1031,6 +1058,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const { error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert);
     if (!trxError) {
+      addAuditLog('payment_registered', `Registró pago de RD$ ${amount.toLocaleString('es-DO')} para el préstamo ${loanId}`);
       addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
       
       // WhatsApp Notification (Fire and forget)
@@ -1067,6 +1095,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         addToast(`Error al registrar empleado: ${error.message}`, 'error');
       } else if (data) {
         setEmployees(prev => [...prev, { ...employee, id: data.id }]);
+        addAuditLog('employee_created', `Registró al empleado ${employee.name}`);
         addToast("Empleado guardado", 'success');
       }
     };
