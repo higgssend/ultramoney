@@ -60,12 +60,30 @@ const Profit: React.FC = () => {
     return sum + (loan.totalToPay - loan.amount);
   }, 0);
 
-  const profitData = [
-    { name: 'Sem 1', ingresos: 12000, gastos: 4000 },
-    { name: 'Sem 2', ingresos: 15000, gastos: 3500 },
-    { name: 'Sem 3', ingresos: 11000, gastos: 5000 },
-    { name: 'Sem 4', ingresos: 18000, gastos: 4200 },
-  ];
+  const profitDataMap = new Map<number, { name: string, ingresos: number, gastos: number }>();
+  const currentMonth = new Date().getMonth();
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  for (let i = 5; i >= 0; i--) {
+    let m = currentMonth - i;
+    if (m < 0) m += 12;
+    profitDataMap.set(m, { name: monthNames[m], ingresos: 0, gastos: 0 });
+  }
+
+  transactions.forEach(t => {
+    const dateObj = new Date(t.date);
+    const diffMonths = (new Date().getFullYear() - dateObj.getFullYear()) * 12 + (currentMonth - dateObj.getMonth());
+    if (diffMonths >= 0 && diffMonths <= 5) {
+      const m = dateObj.getMonth();
+      if (profitDataMap.has(m)) {
+        const current = profitDataMap.get(m)!;
+        if (t.type === 'Ingreso' && t.category !== 'Capital') current.ingresos += Number(t.amount);
+        if (t.type === 'Gasto' && t.category !== 'Desembolso') current.gastos += Number(t.amount);
+      }
+    }
+  });
+
+  const profitData = Array.from(profitDataMap.values());
 
   return (
     <div className="space-y-8 animate-fade-in pb-10">
