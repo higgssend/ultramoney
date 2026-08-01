@@ -826,7 +826,7 @@ const PaymentSuccessModal: React.FC<{
     const message = `🏢 *${company.name}*
 📄 *Recibo de Pago*: ${data.transactionId}
 👤 *Cliente*: ${data.clientName}
-💰 *Monto Pagado*: RD$ ${data.amount.toLocaleString()}
+💰 *Monto Pagado*: RD$ ${data.amountPaid.toLocaleString()}
 
 Link web para descargar o imprimir su recibo:
 ${receiptWebLink}
