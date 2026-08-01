@@ -547,9 +547,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const { data, error } = await insforge.database.from('clients').insert({
       lender_id: currentUser.id,
       name: client.name,
-      lastName: client.lastName,
+      lastname: client.lastName,
       cedula: client.cedula,
-      documentType: client.documentType,
+      documenttype: client.documentType,
       email: client.email,
       phone: client.phone,
       whatsapp: client.whatsapp,
@@ -558,12 +558,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       province: client.province,
       municipality: client.municipality,
       sector: client.sector,
-      referenceAddress: client.referenceAddress,
-      companyName: client.companyName,
-      jobPosition: client.jobPosition,
+      referenceaddress: client.referenceAddress,
+      companyname: client.companyName,
+      jobposition: client.jobPosition,
       coordinates: client.coordinates,
-      routeId: client.routeId,
-      routeSequence: client.routeSequence,
+      routeid: client.routeId,
+      routesequence: client.routeSequence,
       occupation: client.occupation,
       sex: client.sex,
       income: client.income,
@@ -587,9 +587,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser) return;
     const { error } = await insforge.database.from('clients').update({
       name: updatedClient.name,
-      lastName: updatedClient.lastName,
+      lastname: updatedClient.lastName,
       cedula: updatedClient.cedula,
-      documentType: updatedClient.documentType,
+      documenttype: updatedClient.documentType,
       email: updatedClient.email,
       phone: updatedClient.phone,
       whatsapp: updatedClient.whatsapp,
@@ -598,12 +598,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       province: updatedClient.province,
       municipality: updatedClient.municipality,
       sector: updatedClient.sector,
-      referenceAddress: updatedClient.referenceAddress,
-      companyName: updatedClient.companyName,
-      jobPosition: updatedClient.jobPosition,
+      referenceaddress: updatedClient.referenceAddress,
+      companyname: updatedClient.companyName,
+      jobposition: updatedClient.jobPosition,
       coordinates: updatedClient.coordinates,
-      routeId: updatedClient.routeId,
-      routeSequence: updatedClient.routeSequence,
+      routeid: updatedClient.routeId,
+      routesequence: updatedClient.routeSequence,
       occupation: updatedClient.occupation,
       sex: updatedClient.sex,
       income: updatedClient.income,
@@ -722,22 +722,22 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const addLoanRequest = async (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => {
     if (!currentUser) return;
     const { error } = await insforge.database.from('loan_requests').insert({
-      lender_id: currentUser.id,
-      client_id: request.clientId,
-      client_name: request.clientName,
-      amount: request.amount,
-      interest_rate: request.interestRate,
-      duration_weeks: request.durationWeeks,
-      frequency: request.frequency,
-      loan_type: request.loanType,
-      closing_cost: request.closingCost,
-      closing_cost_mode: request.closingCostMode,
-      payment_day: request.paymentDay,
-      request_date: new Date().toISOString().split('T')[0],
-      status: 'Pendiente',
-      collateral: request.collateral,
-      loan_destination: request.loanDestination,
-      observations: request.observations
+        lender_id: currentUser.id,
+        client_id: request.clientId,
+        client_name: request.clientName,
+        amount: request.amount,
+        interest_rate: request.interestRate,
+        duration_weeks: request.durationWeeks,
+        frequency: request.frequency,
+        loan_type: request.loanType,
+        closing_cost: request.closingCost,
+        closing_cost_mode: request.closingCostMode,
+        payment_day: request.paymentDay,
+        request_date: new Date().toISOString().split('T')[0],
+        status: 'Pendiente',
+        collateral: request.collateral,
+        loan_destination: request.loanDestination,
+        observations: request.observations
     });
     if (error) addToast("Error al crear solicitud", 'error');
     else addToast("Solicitud enviada a evaluación", 'success');
@@ -781,19 +781,19 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     const { data: insertedLoan, error: loanError } = await insforge.database.from('loans').insert({
-      lender_id: currentUser.id,
-      clientId: loanData.clientId, clientName: loanData.clientName, amount: finalPrincipal,
-      interestRate: loanData.interestRate, durationWeeks: loanData.durationWeeks,
-      frequency: loanData.frequency, startDate: loanData.startDate, status: LoanStatus.ACTIVE,
-      next_payment_date: nextPaymentDate, nextPaymentDate: nextPaymentDate,
-      installmentAmount: loanData.loanType === 'Amortizado' ? (totalToPay / loanData.durationWeeks) : (finalPrincipal * (loanData.interestRate/100)),
-      remainingBalance: initialBalance, totalToPay, loanType: loanData.loanType,
-      collateralType: loanData.collateral?.type || 'Sin Garantía', collateralRef: loanData.collateral?.refNumber || '',
-      guarantees: loanData.collateral ? JSON.stringify(loanData.collateral) : null,
-      collateralDescription: loanData.collateral?.description || '', collateralData: loanData.collateral || {},
-      installments: [],
-      lateFeePercentage: loanData.lateFeePercentage || 10,
-      graceDays: loanData.graceDays || 3
+        lender_id: currentUser.id,
+        clientid: loanData.clientId, clientname: loanData.clientName, amount: finalPrincipal,
+        interestrate: loanData.interestRate, durationweeks: loanData.durationWeeks,
+        frequency: loanData.frequency, startdate: loanData.startDate, status: LoanStatus.ACTIVE,
+        next_payment_date: nextPaymentDate,
+        installmentamount: loanData.loanType === 'Amortizado' ? (totalToPay / loanData.durationWeeks) : (finalPrincipal * (loanData.interestRate/100)),
+        remainingbalance: initialBalance, totaltopay: totalToPay, loantype: loanData.loanType,
+        collateraltype: loanData.collateral?.type || 'Sin Garantía', collateralref: loanData.collateral?.refNumber || '',
+        guarantees: loanData.collateral ? JSON.stringify(loanData.collateral) : null,
+        collateraldescription: loanData.collateral?.description || '', collateraldata: loanData.collateral || {},
+        installments: [],
+        latefeepercentage: loanData.lateFeePercentage || 10,
+        gracedays: loanData.graceDays || 3
     }).select().single();
 
     if (loanError || !insertedLoan) {
@@ -868,16 +868,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     const { data: insertedLoan, error: loanError } = await insforge.database.from('loans').insert({
-      lender_id: currentUser.id,
-      clientId: newLoanData.clientId, clientName: newLoanData.clientName, amount: finalPrincipal,
-      interestRate: newLoanData.interestRate, durationWeeks: newLoanData.durationWeeks,
-      frequency: newLoanData.frequency, startDate: newLoanData.startDate, status: LoanStatus.ACTIVE,
-      installmentAmount: newLoanData.loanType === 'Amortizado' ? (totalToPay / newLoanData.durationWeeks) : (finalPrincipal * (newLoanData.interestRate/100)),
-      remainingBalance: initialBalance, totalToPay, loanType: newLoanData.loanType,
-      collateralType: newLoanData.collateral?.type || 'Sin Garantía', collateralRef: newLoanData.collateral?.refNumber || '',
-      guarantees: newLoanData.collateral ? JSON.stringify(newLoanData.collateral) : null,
-      collateralDescription: newLoanData.collateral?.description || '', collateralData: newLoanData.collateral || {},
-      installments: []
+        lender_id: currentUser.id,
+        clientid: newLoanData.clientId, clientname: newLoanData.clientName, amount: finalPrincipal,
+        interestrate: newLoanData.interestRate, durationweeks: newLoanData.durationWeeks,
+        frequency: newLoanData.frequency, startdate: newLoanData.startDate, status: LoanStatus.ACTIVE,
+        installmentamount: newLoanData.loanType === 'Amortizado' ? (totalToPay / newLoanData.durationWeeks) : (finalPrincipal * (newLoanData.interestRate/100)),
+        remainingbalance: initialBalance, totaltopay: totalToPay, loantype: newLoanData.loanType,
+        collateraltype: newLoanData.collateral?.type || 'Sin Garantía', collateralref: newLoanData.collateral?.refNumber || '',
+        guarantees: newLoanData.collateral ? JSON.stringify(newLoanData.collateral) : null,
+        collateraldescription: newLoanData.collateral?.description || '', collateraldata: newLoanData.collateral || {},
+        installments: []
     }).select().single();
 
     if (loanError || !insertedLoan) {
