@@ -270,38 +270,37 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
   };
 
-  // 1. Auth Listener
-  useEffect(() => {
-    insforge.auth.getCurrentUser().then(({ data }) => {
-      if (data?.user) {
-        setCurrentUser(data.user);
-      } else {
-        const empSession = localStorage.getItem('employee_session');
-        if (empSession) {
-          setCurrentUser(JSON.parse(empSession));
+    // 1. Auth Listener
+    useEffect(() => {
+      insforge.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setCurrentUser(session.user);
         } else {
-          setCurrentUser(null);
+          const empSession = localStorage.getItem('employee_session');
+          if (empSession) {
+            setCurrentUser(JSON.parse(empSession));
+          } else {
+            setCurrentUser(null);
+          }
         }
-      }
-      setIsLoadingAuth(false);
-    });
-
-    const unsubscribe = insforge.auth.onAuthStateChange(async (_event) => {
-      const { data } = await insforge.auth.getCurrentUser();
-      if (data?.user) {
-        setCurrentUser(data.user);
-      } else {
-        const empSession = localStorage.getItem('employee_session');
-        if (empSession) {
-          setCurrentUser(JSON.parse(empSession));
+        setIsLoadingAuth(false);
+      });
+  
+      const { data: { subscription } } = insforge.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setCurrentUser(session.user);
         } else {
-          setCurrentUser(null);
+          const empSession = localStorage.getItem('employee_session');
+          if (empSession) {
+            setCurrentUser(JSON.parse(empSession));
+          } else {
+            setCurrentUser(null);
+          }
         }
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+      });
+  
+      return () => subscription.unsubscribe();
+    }, []);
 
   // Helper: map DB lowercase columns to camelCase for Loan objects
   
