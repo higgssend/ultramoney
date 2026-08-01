@@ -7,6 +7,7 @@ interface DocumentTemplateProps {
   company: CompanySettings;
   loan?: Loan;
   transaction?: Transaction;
+  cashierName?: string;
   id?: string;
 }
 
@@ -16,7 +17,8 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
   company,
   loan,
   transaction,
-  id = 'printable-legal-document'
+  id = 'printable-legal-document',
+  cashierName
 }) => {
   const todayStr = new Date().toLocaleDateString('es-DO', {
     day: 'numeric',
@@ -103,7 +105,7 @@ export const DocumentTemplate: React.FC<DocumentTemplateProps> = ({
                   <h3 className="font-bold text-indigo-700 uppercase tracking-wider text-xs mb-2">Información Adicional</h3>
                   <div className="p-4 border border-slate-200 rounded-lg h-full">
                       <p className="mb-1"><strong>Método de Pago:</strong> Efectivo / Transferencia</p>
-                      <p className="mb-1"><strong>Cajero:</strong> Sistema Automatizado</p>
+                      <p className="mb-1"><strong>Cajero:</strong> {cashierName || 'Sistema Automatizado'}</p>
                       <p className="mb-1 text-xs text-slate-500 mt-4 italic">{transaction?.description}</p>
                   </div>
               </div>

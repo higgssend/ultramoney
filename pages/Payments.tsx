@@ -62,7 +62,7 @@ interface FullReceiptData {
 }
 
 const Payments: React.FC = () => {
-  const { loans, clients, registerPayment, transactions, companySettings, currentUser } = useStore();
+  const { loans, clients, registerPayment, transactions, companySettings, currentUser, users, roles } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -78,6 +78,7 @@ const Payments: React.FC = () => {
   const [selectedInstallments, setSelectedInstallments] = useState<number[]>([]); 
   const [paymentType, setPaymentType] = useState<'Interes' | 'Capital' | 'Mixto'>('Interes');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
+  const [selectedCashierId, setSelectedCashierId] = useState('');
   const [capitalAmount, setCapitalAmount] = useState<string>('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -101,6 +102,7 @@ const Payments: React.FC = () => {
     }
   }, [location]);
 
+  const isAdmin = roles.some(r => currentUser?.roleIds?.includes(r.id) && r.name.toLowerCase().includes('admin'));
   const selectedLoan = loans.find(l => l.id === selectedLoanId);
 
   // --- Logic to Generate Installments ---
@@ -248,7 +250,7 @@ const Payments: React.FC = () => {
     
     const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
     // Register the payment
-    registerPayment(selectedLoanId, amountVal, payNote, paymentDate, invoiceDate, paymentType, capitalAmountVal, paymentMethod);
+    registerPayment(selectedLoanId, amountVal, payNote, paymentDate, invoiceDate, paymentType, capitalAmountVal, paymentMethod, selectedCashierId || undefined);
     
     // Logic for Receipt Details
     const allInstallments = generateInstallments(selectedLoan);

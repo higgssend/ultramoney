@@ -80,6 +80,7 @@ export const HiddenDocumentRenderer: React.FC = () => {
         client={activeJob.client}
         company={companySettings}
         loan={activeJob.loan}
+        cashierName={activeJob.cashierName}
         transaction={activeJob.transaction}
       />
     </div>

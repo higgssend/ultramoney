@@ -393,4 +393,5 @@ export interface PdfJob {
     client: Client;
     loan?: Loan;
     transaction?: Transaction;
+    cashierName?: string;
 }

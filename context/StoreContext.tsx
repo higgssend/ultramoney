@@ -91,8 +91,9 @@ interface StoreContextType {
     invoiceDate?: string, 
     paymentType?: 'Interes' | 'Capital' | 'Mixto',
     capitalAmount?: number,
-    paymentMethod?: PaymentMethod
-  ) => void;
+      paymentMethod?: PaymentMethod,
+      cashierId?: string
+    ) => void;
   addBankAccount: (account: BankAccount) => void;
   removeBankAccount: (id: string) => void;
   addClientNote: (note: ClientNote) => void;
@@ -1043,8 +1044,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const registerPayment = async (
     loanId: string, amount: number, note: string, paymentDate?: string, 
     _invoiceDate?: string, paymentType?: 'Interes' | 'Capital' | 'Mixto',
-    capitalAmount?: number, paymentMethod: PaymentMethod = 'Efectivo'
-  ) => {
+    capitalAmount?: number, paymentMethod: PaymentMethod = 'Efectivo', cashierId?: string
+    ) => {
     if (!currentUser) return;
     const loan = loans.find(l => l.id === loanId);
     if (!loan) return;
