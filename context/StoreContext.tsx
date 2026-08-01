@@ -757,7 +757,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       collateralType: loanData.collateral?.type || 'Sin Garantía', collateralRef: loanData.collateral?.refNumber || '',
       guarantees: loanData.collateral ? JSON.stringify(loanData.collateral) : null,
       collateralDescription: loanData.collateral?.description || '', collateralData: loanData.collateral || {},
-      installments: []
+      installments: [],
+      lateFeePercentage: loanData.lateFeePercentage || 10,
+      graceDays: loanData.graceDays || 3
     }).select().single();
 
     if (loanError || !insertedLoan) {

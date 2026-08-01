@@ -40,6 +40,10 @@ const LoanRequest: React.FC = () => {
   const [loanDestination, setLoanDestination] = useState('');
   const [observations, setObservations] = useState('');
 
+  // Arrears Config (Moras)
+  const [lateFeePercentage, setLateFeePercentage] = useState(10);
+  const [graceDays, setGraceDays] = useState(3);
+
   // New: Calculation Mode (Time vs Amount)
   const [calcMode, setCalcMode] = useState<'time' | 'installment'>('time');
   const [targetInstallment, setTargetInstallment] = useState(1000);
@@ -69,6 +73,8 @@ const LoanRequest: React.FC = () => {
           } else {
               setCollateral(undefined);
           }
+          if (product.lateFeePercentage !== undefined) setLateFeePercentage(product.lateFeePercentage);
+          if (product.graceDays !== undefined) setGraceDays(product.graceDays);
       } else {
           setActiveProduct(null);
       }
@@ -127,6 +133,8 @@ const LoanRequest: React.FC = () => {
       if (req.closingCostMode) setClosingCostMode(req.closingCostMode);
       if (req.paymentDay) setPaymentDay(req.paymentDay);
       if (req.collateral) setCollateral(req.collateral);
+      if (req.lateFeePercentage !== undefined) setLateFeePercentage(req.lateFeePercentage);
+      if (req.graceDays !== undefined) setGraceDays(req.graceDays);
 
       // Set UI state to Creation Mode (Direct)
       setProcessingRequestId(req.id);
@@ -169,7 +177,9 @@ const LoanRequest: React.FC = () => {
             startDate: new Date().toISOString().split('T')[0],
             nextPaymentDate: initialNextDate.toISOString().split('T')[0],
             collateral,
-            loanCategory
+            loanCategory,
+            lateFeePercentage,
+            graceDays
         });
         
         // If this came from a request, delete the request now that it is a loan
@@ -209,7 +219,9 @@ const LoanRequest: React.FC = () => {
             paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
             collateral,
             loanDestination,
-            observations
+            observations,
+            lateFeePercentage,
+            graceDays
         });
         toast.success("Solicitud guardada con éxito.");
         setViewMode('queue');
@@ -425,6 +437,36 @@ const LoanRequest: React.FC = () => {
 
                     {/* Collateral Form */}
                     <CollateralForm collateral={collateral} onChange={setCollateral} />
+
+                    {/* Arrears Config (Moras) */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <div className="p-2 bg-red-50 text-red-600 rounded-lg"><Clock className="w-5 h-5" /></div>
+                            Configuración de Moras (Automatización)
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Porcentaje de Mora (%)</label>
+                                <input 
+                                    type="number" 
+                                    value={lateFeePercentage}
+                                    onChange={(e) => setLateFeePercentage(Number(e.target.value))}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-bold text-slate-700" 
+                                />
+                                <p className="text-xs text-slate-500 mt-2">Cargo que se sumará al balance vencido automáticamente.</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Días de Gracia</label>
+                                <input 
+                                    type="number" 
+                                    value={graceDays}
+                                    onChange={(e) => setGraceDays(Number(e.target.value))}
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-bold text-slate-700" 
+                                />
+                                <p className="text-xs text-slate-500 mt-2">Días extra antes de aplicar la mora (0 = mora inmediata).</p>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Closing Costs Config */}
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">

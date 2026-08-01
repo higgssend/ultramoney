@@ -132,6 +132,7 @@ export interface Loan {
   lateFeePercentage?: number;
   graceDays?: number;
   remainingBalance: number;
+  installmentAmount?: number;
   nextPaymentDate: string;
   // Garantía
   collateral?: Collateral;
@@ -155,6 +156,8 @@ export interface LoanRequest {
   collateral?: Collateral;
   loanDestination?: string;
   observations?: string;
+  lateFeePercentage?: number;
+  graceDays?: number;
 }
 
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
