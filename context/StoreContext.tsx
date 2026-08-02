@@ -1063,7 +1063,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const baseTx = {
       lender_id: currentUser.id, date: paymentDate || new Date().toISOString().split('T')[0],
-      type: 'Ingreso', description: note, referenceid: loanId, paymentMethod
+      type: 'Ingreso', description: note, referenceid: loanId
     };
 
     let transactionsToInsert: any[] = [];

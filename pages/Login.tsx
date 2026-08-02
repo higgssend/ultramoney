@@ -28,6 +28,14 @@ const Login: React.FC = () => {
 
   const handleOAuthLogin = async (provider: 'google' | 'apple') => {
     try {
+      const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
+      if (isTauri) {
+        // Open web login page in external system browser
+        const webLoginUrl = 'https://ultramoney.app/login';
+        window.open(webLoginUrl, '_blank');
+        return;
+      }
+
       const { error } = await insforge.auth.signInWithOAuth({
         provider,
         redirectTo: window.location.origin + '/dashboard'

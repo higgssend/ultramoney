@@ -162,6 +162,11 @@ const Register: React.FC = () => {
 
   const triggerOAuth = async (provider: 'google' | 'apple') => {
     try {
+      const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
+      if (isTauri) {
+        window.open('https://ultramoney.app/register', '_blank');
+        return;
+      }
       const { error } = await insforge.auth.signInWithOAuth({
         provider,
         redirectTo: window.location.origin + '/onboarding'
