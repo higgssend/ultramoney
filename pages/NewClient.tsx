@@ -75,11 +75,14 @@ const NewClient: React.FC = () => {
         } else {
             const newClient = await addClient(finalClient as Omit<Client, 'id' | 'joinedDate'>);
             if (newClient && docFile && currentClient.documentType) {
-                await addClientDocument(newClient.id, {
+                await addClientDocument({
+                    id: Date.now().toString(),
+                    clientId: newClient.id,
                     title: `Documento de Identidad (${currentClient.documentType})`,
                     type: currentClient.documentType === 'Cedula' ? 'Cedula' : 'Otro',
                     fileUrl: docFile,
-                    fileType: docFile.startsWith('data:image') ? 'image/jpeg' : 'application/pdf'
+                    fileType: docFile.startsWith('data:image') ? 'image/jpeg' : 'application/pdf',
+                    uploadDate: new Date().toISOString().split('T')[0]
                 });
             }
             navigate('/clientes');
