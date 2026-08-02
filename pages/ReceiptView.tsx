@@ -3,22 +3,59 @@ import { useParams, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { Download, CheckCircle, Smartphone } from 'lucide-react';
 import { Transaction } from '../types';
+import { insforge } from '../lib/insforge';
+
 
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
     const { transactions, companySettings } = useStore();
     const [transaction, setTransaction] = useState<Transaction | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (transactionId) {
-            const found = transactions.find(t => t.id === transactionId);
-            setTransaction(found || null);
-        }
+        const fetchReceipt = async () => {
+            if (transactionId) {
+                // Primero intentar desde el estado local si ya est cargado (usuario autenticado navegando)
+                const found = transactions.find(t => t.id === transactionId);
+                if (found) {
+                    setTransaction(found);
+                    setLoading(false);
+                    return;
+                }
+                
+                // Si no, intentar fetchear directamente desde Supabase/InsForge
+                try {
+                    const { data, error } = await insforge.database.from('transactions').select('*').eq('id', transactionId).single();
+                    if (data && !error) {
+                        setTransaction({
+                            ...data,
+                            referenceId: data.reference_id,
+                            paymentType: data.payment_type,
+                            paymentMethod: data.payment_method,
+                            invoiceDate: data.invoice_date
+                        } as unknown as Transaction);
+                    }
+                } catch(e) {
+                    console.error("Error fetching receipt:", e);
+                }
+            }
+            setLoading(false);
+        };
+        fetchReceipt();
     }, [transactionId, transactions]);
 
     const handlePrint = () => {
         window.print();
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-500 font-medium">Buscando recibo...</p>
+            </div>
+        );
+    }
 
     if (!transaction) {
         return (
@@ -67,6 +104,15 @@ export const ReceiptView: React.FC = () => {
                         <p className="text-slate-500 text-sm">{companySettings.address}</p>
                         <p className="text-slate-500 text-sm">RNC: {companySettings.rnc}</p>
                         <p className="text-slate-500 text-sm">Tel: {companySettings.phone}</p>
+                        
+                        {/* QR Code in Visual Preview */}
+                        <div className="flex justify-center mt-4">
+                            <img 
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(window.location.href)}`}
+                                alt="QR Code del recibo"
+                                className="w-24 h-24"
+                            />
+                        </div>
                         
                         <div className="mt-6 inline-block bg-slate-100 px-4 py-2 rounded-lg">
                             <p className="text-xs font-bold text-slate-500 uppercase">Comprobante de Pago</p>

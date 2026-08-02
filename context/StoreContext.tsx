@@ -395,7 +395,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (loansRes.data) {
           setLoans(loansRes.data.map(mapLoan) as unknown as Loan[]);
         }
-        if (trxRes.data) setTransactions(trxRes.data as unknown as Transaction[]);
+        if (trxRes.data) setTransactions(trxRes.data.map((t: any) => ({...t, referenceId: t.reference_id, paymentType: t.payment_type, paymentMethod: t.payment_method, invoiceDate: t.invoice_date})) as unknown as Transaction[]);
         if (settingsRes.data) {
           const s = settingsRes.data as any;
           setCompanySettings({
@@ -1064,27 +1064,27 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const currentInterestDue = loan.remainingBalance * (loan.interestRate / 100);
       if (paymentType === 'Capital') {
         newBalance -= amount;
-        transactionsToInsert.push({ ...baseTx, amount, paymentType: 'Capital', description: `${note} (Abono Directo a Capital)` });
+        transactionsToInsert.push({ ...baseTx, amount, payment_type: 'Capital', description: `${note} (Abono Directo a Capital)` });
       } else if (paymentType === 'Mixto' && capitalAmount && capitalAmount > 0) {
         const interestPart = Math.max(0, amount - capitalAmount);
         newBalance -= capitalAmount;
-        if (capitalAmount > 0) transactionsToInsert.push({ ...baseTx, amount: capitalAmount, paymentType: 'Capital', description: `${note} (Abono a Capital)` });
-        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, paymentType: 'Interes', description: `${note} (Interés)` });
+        if (capitalAmount > 0) transactionsToInsert.push({ ...baseTx, amount: capitalAmount, payment_type: 'Capital', description: `${note} (Abono a Capital)` });
+        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, payment_type: 'Interes', description: `${note} (Interés)` });
       } else {
         if (amount > currentInterestDue) {
           const excessCapital = amount - currentInterestDue;
           newBalance -= excessCapital;
-          transactionsToInsert.push({ ...baseTx, amount: currentInterestDue, paymentType: 'Interes', description: `${note} (Pago Rédito/Interés)` });
-          transactionsToInsert.push({ ...baseTx, amount: excessCapital, paymentType: 'Capital', description: `${note} (Abono a Capital por Excedente)` });
+          transactionsToInsert.push({ ...baseTx, amount: currentInterestDue, payment_type: 'Interes', description: `${note} (Pago Rédito/Interés)` });
+          transactionsToInsert.push({ ...baseTx, amount: excessCapital, payment_type: 'Capital', description: `${note} (Abono a Capital por Excedente)` });
         } else {
-          transactionsToInsert.push({ ...baseTx, amount, paymentType: 'Interes', description: `${note} (Pago Rédito/Interés)` });
+          transactionsToInsert.push({ ...baseTx, amount, payment_type: 'Interes', description: `${note} (Pago Rédito/Interés)` });
         }
       }
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
     } else {
       newBalance -= amount;
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
-      transactionsToInsert.push({ ...baseTx, amount, paymentType: paymentType || 'Interes' });
+      transactionsToInsert.push({ ...baseTx, amount, payment_type: paymentType || 'Interes' });
     }
 
     const { error: loanError } = await insforge.database.from('loans').update({ remainingbalance: newBalance, status: newStatus }).eq('id', loanId);

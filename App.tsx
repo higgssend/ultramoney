@@ -140,7 +140,7 @@ const AppContent: React.FC = () => {
         <div className={`${!isFullScreenPage && currentUser ? 'p-4 md:p-8 pb-24 md:pb-8' : ''}`}>
             <Routes>
             {/* Public Routes */}
-            <Route path="/" element={"__TAURI_INTERNALS__" in window ? <Navigate to="/login" replace /> : <LandingPage />} />
+            <Route path="/" element={("__TAURI__" in window || "__TAURI_INTERNALS__" in window || window.navigator.userAgent.includes('Tauri')) ? <Navigate to="/login" replace /> : <LandingPage />} />
             <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
             <Route path="/login/:slug" element={<PublicOnlyRoute><CompanyLogin /></PublicOnlyRoute>} />
             <Route path="/login-staff" element={<PublicOnlyRoute><EmployeeLogin /></PublicOnlyRoute>} />
