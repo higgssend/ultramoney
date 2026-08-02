@@ -355,6 +355,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     collateral: l.guarantees ? (typeof l.guarantees === 'string' ? JSON.parse(l.guarantees) : l.guarantees) : undefined
   });
 
+  const mapTransaction = (t: any) => ({
+    ...t,
+    referenceId: t.referenceid || t.reference_id || t.referenceId,
+    paymentType: t.paymenttype || t.payment_type || t.paymentType,
+    paymentMethod: t.paymentmethod || t.payment_method || t.paymentMethod || 'Efectivo',
+    invoiceDate: t.invoicedate || t.invoice_date || t.invoiceDate
+  });
+
   // 2. Data Fetching & Realtime Subscriptions
   useEffect(() => {
     if (!currentUser) {
@@ -395,7 +403,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (loansRes.data) {
           setLoans(loansRes.data.map(mapLoan) as unknown as Loan[]);
         }
-        if (trxRes.data) setTransactions(trxRes.data.map((t: any) => ({...t, referenceId: t.reference_id, paymentType: t.payment_type, paymentMethod: t.payment_method, invoiceDate: t.invoice_date})) as unknown as Transaction[]);
+        if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction) as unknown as Transaction[]);
         if (settingsRes.data) {
           const s = settingsRes.data as any;
           setCompanySettings({
@@ -479,7 +487,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
         insforge.realtime.on('loans_delete', (p: any) => setLoans(prev => prev.filter(l => l.id !== p.id)));
 
-        insforge.realtime.on('transactions_insert', (p: any) => setTransactions(prev => [p as unknown as Transaction, ...prev]));
+        insforge.realtime.on('transactions_insert', (p: any) => setTransactions(prev => [mapTransaction(p) as unknown as Transaction, ...prev]));
         insforge.realtime.on('transactions_delete', (p: any) => setTransactions(prev => prev.filter(t => t.id !== p.id)));
         
         insforge.realtime.on('cash_shifts_insert', (s: any) => setCashShifts(prev => [{...s, userId: s.user_id, userName: s.user_name, openedAt: s.opened_at, closedAt: s.closed_at, initialAmount: s.initial_amount, expectedAmount: s.expected_amount, finalCashCount: s.final_cash_count} as unknown as CashShift, ...prev]));
@@ -895,14 +903,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       amount: disbursementAmount,
       type: 'Gasto',
       description: `Desembolso ${loanData.loanType} para ${loanData.clientName}`,
-      referenceId: (insertedLoan as any).id
+      referenceid: (insertedLoan as any).id
     });
 
     if (loanData.closingCostMode === 'Externo' && closingCost > 0) {
         await insforge.database.from('transactions').insert({
           lender_id: currentUser.id, date: new Date().toISOString().split('T')[0],
           amount: closingCost, type: 'Ingreso', description: `Cobro Gastos de Cierre - ${loanData.clientName}`,
-          referenceId: (insertedLoan as any).id
+          referenceid: (insertedLoan as any).id
         });
     }
     
@@ -984,7 +992,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         amount: disbursementAmount,
         type: 'Gasto',
         description: `Desembolso Refinanciamiento para ${newLoanData.clientName}`,
-        referenceId: (insertedLoan as any).id
+        referenceid: (insertedLoan as any).id
       });
     } else if (disbursementAmount < 0) {
       // The client actually paid down some principal to get the new terms
@@ -994,7 +1002,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         amount: Math.abs(disbursementAmount),
         type: 'Ingreso',
         description: `Abono Refinanciamiento - ${newLoanData.clientName}`,
-        referenceId: (insertedLoan as any).id
+        referenceid: (insertedLoan as any).id
       });
     }
 
@@ -1002,7 +1010,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         await insforge.database.from('transactions').insert({
           lender_id: currentUser.id, date: new Date().toISOString().split('T')[0],
           amount: closingCost, type: 'Ingreso', description: `Cobro Gastos de Cierre (Refinanciamiento) - ${newLoanData.clientName}`,
-        referenceId: (insertedLoan as any).id
+        referenceid: (insertedLoan as any).id
         });
     }
     
@@ -1025,8 +1033,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         amount: amount,
         type: 'Gasto',
         description: `Condonación de Deuda: ${note}`,
-        referenceId: loanId,
-        paymentMethod: 'Condonación'
+        referenceid: loanId,
+        
     });
     if (txError) { addToast("Error al registrar condonación", 'error'); return; }
 
@@ -1055,7 +1063,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const baseTx = {
       lender_id: currentUser.id, date: paymentDate || new Date().toISOString().split('T')[0],
-      type: 'Ingreso', description: note, referenceId: loanId, paymentMethod
+      type: 'Ingreso', description: note, referenceid: loanId, paymentMethod
     };
 
     let transactionsToInsert: any[] = [];
@@ -1064,34 +1072,36 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const currentInterestDue = loan.remainingBalance * (loan.interestRate / 100);
       if (paymentType === 'Capital') {
         newBalance -= amount;
-        transactionsToInsert.push({ ...baseTx, amount, payment_type: 'Capital', description: `${note} (Abono Directo a Capital)` });
+        transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Capital', description: `${note} (Abono Directo a Capital)` });
       } else if (paymentType === 'Mixto' && capitalAmount && capitalAmount > 0) {
         const interestPart = Math.max(0, amount - capitalAmount);
         newBalance -= capitalAmount;
-        if (capitalAmount > 0) transactionsToInsert.push({ ...baseTx, amount: capitalAmount, payment_type: 'Capital', description: `${note} (Abono a Capital)` });
-        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, payment_type: 'Interes', description: `${note} (Interés)` });
+        if (capitalAmount > 0) transactionsToInsert.push({ ...baseTx, amount: capitalAmount, paymenttype: 'Capital', description: `${note} (Abono a Capital)` });
+        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, paymenttype: 'Interes', description: `${note} (Interés)` });
       } else {
         if (amount > currentInterestDue) {
           const excessCapital = amount - currentInterestDue;
           newBalance -= excessCapital;
-          transactionsToInsert.push({ ...baseTx, amount: currentInterestDue, payment_type: 'Interes', description: `${note} (Pago Rédito/Interés)` });
-          transactionsToInsert.push({ ...baseTx, amount: excessCapital, payment_type: 'Capital', description: `${note} (Abono a Capital por Excedente)` });
+          transactionsToInsert.push({ ...baseTx, amount: currentInterestDue, paymenttype: 'Interes', description: `${note} (Pago Rédito/Interés)` });
+          transactionsToInsert.push({ ...baseTx, amount: excessCapital, paymenttype: 'Capital', description: `${note} (Abono a Capital por Excedente)` });
         } else {
-          transactionsToInsert.push({ ...baseTx, amount, payment_type: 'Interes', description: `${note} (Pago Rédito/Interés)` });
+          transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Interes', description: `${note} (Pago Rédito/Interés)` });
         }
       }
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
     } else {
       newBalance -= amount;
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
-      transactionsToInsert.push({ ...baseTx, amount, payment_type: paymentType || 'Interes' });
+      transactionsToInsert.push({ ...baseTx, amount, paymenttype: paymentType || 'Interes' });
     }
 
     const { error: loanError } = await insforge.database.from('loans').update({ remainingbalance: newBalance, status: newStatus }).eq('id', loanId);
     if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
 
     const { data: insertedTxs, error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert).select();
-    if (!trxError) {
+    if (!trxError && insertedTxs) {
+      const mappedTxs = insertedTxs.map(mapTransaction);
+      setLoans(prev => prev.map(l => l.id === loanId ? { ...l, remainingBalance: newBalance, status: newStatus } : l));
       addAuditLog('payment_registered', `Registró pago de RD$ ${amount.toLocaleString('es-DO')} para el préstamo ${loanId}`);
       addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
       
@@ -1109,7 +1119,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } else {
       addToast("Error al guardar transacción", 'error');
     }
-    return insertedTxs;
+    return (insertedTxs || []).map(mapTransaction);
   };
 
     const addEmployee = async (employee: Employee) => {

@@ -29,10 +29,10 @@ export const ReceiptView: React.FC = () => {
                     if (data && !error) {
                         setTransaction({
                             ...data,
-                            referenceId: data.reference_id,
-                            paymentType: data.payment_type,
-                            paymentMethod: data.payment_method,
-                            invoiceDate: data.invoice_date
+                            referenceId: data.referenceid || data.reference_id || data.referenceId,
+                            paymentType: data.paymenttype || data.payment_type || data.paymentType,
+                            paymentMethod: data.paymentmethod || data.payment_method || data.paymentMethod || 'Efectivo',
+                            invoiceDate: data.invoicedate || data.invoice_date || data.invoiceDate
                         } as unknown as Transaction);
                     }
                 } catch(e) {
