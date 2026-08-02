@@ -241,7 +241,7 @@ const Payments: React.FC = () => {
       setPayNote(newSelection.length > 1 ? `Pago de ${newSelection.length} cuotas` : newSelection.length === 1 ? `Pago cuota #${newSelection[0]}` : 'Cuota Regular');
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!selectedLoanId || !payAmount || !selectedLoan) return;
     
     const amountVal = Number(payAmount);
@@ -250,7 +250,7 @@ const Payments: React.FC = () => {
     
     const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
     // Register the payment
-    registerPayment(selectedLoanId, amountVal, payNote, paymentDate, invoiceDate, paymentType, capitalAmountVal, paymentMethod, selectedCashierId || undefined);
+    const insertedTxs = await registerPayment(selectedLoanId, amountVal, payNote, paymentDate, invoiceDate, paymentType, capitalAmountVal, paymentMethod, selectedCashierId || undefined);
     
     // Logic for Receipt Details
     const allInstallments = generateInstallments(selectedLoan);
@@ -267,6 +267,11 @@ const Payments: React.FC = () => {
         .filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoanId && l.status !== 'Pagado')
         .map(l => ({ id: l.id, balance: l.remainingBalance }));
 
+    let txId = `TRX-${Date.now()}`;
+    if (insertedTxs && insertedTxs.length > 0) {
+        txId = insertedTxs[0].id;
+    }
+
     // Prepare Detailed Receipt Data
     setReceiptData({
         loanId: selectedLoanId,
@@ -275,7 +280,7 @@ const Payments: React.FC = () => {
         clientId: selectedLoan.clientId,
         previousBalance: previousBalance,
         newBalance: newBalance,
-        transactionId: `TRX-${Date.now()}`,
+        transactionId: txId,
         date: new Date().toLocaleString(),
         collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''} (${selectedLoan.collateralRef || ''})` : 'Sin Garantía',
         overdueAmount: Math.max(0, overdueAmount - amountVal), 
@@ -866,6 +871,7 @@ Gracias por su pago.`;
                             <div class="header">
                                 ${company.logoUrl ? `<img src="${company.logoUrl}" style="max-height: 60px; margin: 0 auto 10px;" />` : ''}
                                 <h2>${company.name}</h2>
+                                ${company.rnc ? `<p>RNC: ${company.rnc}</p>` : ''}
                                 ${company.slogan ? `<p style="font-style: italic; font-size: 10px;">"${company.slogan}"</p>` : ''}
                                 <p>${company.address}</p>
                                 <p>${company.phone}</p>
@@ -911,6 +917,8 @@ Gracias por su pago.`;
                                 <p>__________________________</p>
                                 <p>Firma Conforme</p>
                                 <br/>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(receiptWebLink)}" alt="QR Code" style="margin: 10px auto; display: block;" />
+                                <p>Escanee para validar recibo</p>
                                 <p>Gracias por su pago.</p>
                             </div>
                         </body>
@@ -945,6 +953,7 @@ Gracias por su pago.`;
                                 <img src={company.logoUrl} alt="Logo" className="h-16 object-contain mx-auto mb-2" />
                             )}
                             <h3 className="font-bold text-lg text-slate-800 uppercase">{company.name}</h3>
+                            {company.rnc && <p className="text-slate-500 text-xs font-bold mb-1">RNC: {company.rnc}</p>}
                             {company.slogan && <p className="text-slate-500 text-xs italic mb-1">"{company.slogan}"</p>}
                             <p className="text-slate-500 text-xs">{company.address}</p>
                             <p className="text-slate-500 text-xs mb-2">{company.phone}</p>
@@ -1036,6 +1045,16 @@ Gracias por su pago.`;
                                 ))}
                             </div>
                         )}
+                    </div>
+                    
+                    {/* QR Code in Visual Preview */}
+                    <div className="mt-4 flex flex-col items-center pb-4">
+                        <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(receiptWebLink)}`} 
+                            alt="QR Code del recibo" 
+                            className="w-24 h-24 mb-1" 
+                        />
+                        <span className="text-[10px] text-slate-400">Escanee para validar recibo</span>
                     </div>
                 </div>
                 

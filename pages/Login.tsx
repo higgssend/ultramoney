@@ -77,7 +77,7 @@ const Login: React.FC = () => {
 
       <div className="relative z-10 p-16 text-white max-w-xl">
         <div className="flex items-center gap-3 mb-10">
-          <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney" className="w-10 h-10" />
+          <img src="/logoultramoney.svg" alt="Ultramoney" className="w-10 h-10" />
           <span className="text-2xl font-black tracking-tight text-white">ultramoney</span>
         </div>
         <h1 className="text-5xl font-black mb-6 tracking-tight leading-tight">
@@ -129,7 +129,7 @@ const Login: React.FC = () => {
             <div className="space-y-8 animate-fade-in-up">
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start mb-6">
-                  <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
+                  <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-900">Iniciar Sesión</h2>
                 <p className="text-slate-500 mt-2">Elige cómo quieres acceder a tu cuenta.</p>
@@ -206,7 +206,7 @@ const Login: React.FC = () => {
             <div className="space-y-6 animate-fade-in-up">
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start mb-6">
-                  <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
+                  <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-900">Bienvenido de nuevo</h2>
                 <p className="text-slate-500 mt-2">Ingresa tus datos para continuar.</p>

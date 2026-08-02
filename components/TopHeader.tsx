@@ -73,7 +73,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
         <button onClick={onMenuClick} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
           <Menu className="w-6 h-6" />
         </button>
-        <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney" className="w-8 h-8" />
+        <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8" />
       </div>
 
       <div className="hidden lg:block w-1/4"></div>

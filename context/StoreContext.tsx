@@ -93,7 +93,7 @@ interface StoreContextType {
     capitalAmount?: number,
       paymentMethod?: PaymentMethod,
       cashierId?: string
-    ) => void;
+    ) => Promise<any>;
   addBankAccount: (account: BankAccount) => void;
   removeBankAccount: (id: string) => void;
   addClientNote: (note: ClientNote) => void;
@@ -1087,10 +1087,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       transactionsToInsert.push({ ...baseTx, amount, paymentType: paymentType || 'Interes' });
     }
 
-    const { error: loanError } = await insforge.database.from('loans').update({ remainingBalance: newBalance, status: newStatus }).eq('id', loanId);
+    const { error: loanError } = await insforge.database.from('loans').update({ remainingbalance: newBalance, status: newStatus }).eq('id', loanId);
     if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
 
-    const { error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert);
+    const { data: insertedTxs, error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert).select();
     if (!trxError) {
       addAuditLog('payment_registered', `Registró pago de RD$ ${amount.toLocaleString('es-DO')} para el préstamo ${loanId}`);
       addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
@@ -1109,6 +1109,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } else {
       addToast("Error al guardar transacción", 'error');
     }
+    return insertedTxs;
   };
 
     const addEmployee = async (employee: Employee) => {

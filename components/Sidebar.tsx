@@ -88,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Brand */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney Logo" className="w-10 h-10 object-contain" />
+            <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-10 h-10 object-contain" />
             <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent hidden sm:block">Ultramoney</span>
           </div>
           <button onClick={onClose} className="md:hidden text-slate-400 hover:text-slate-800 dark:hover:text-white">

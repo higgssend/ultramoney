@@ -96,7 +96,7 @@ const LandingPage: React.FC = () => {
           
           {/* Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney Logo" className="w-9 h-9 object-contain" />
+            <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-9 h-9 object-contain" />
             <span className="text-2xl font-black tracking-tight text-indigo-950">ultramoney</span>
           </div>
 
@@ -272,7 +272,7 @@ const LandingPage: React.FC = () => {
                     <div className="w-36 bg-white border-r border-slate-200/80 p-3 hidden sm:flex flex-col justify-between">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 px-1 mb-4">
-                          <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="logo" className="w-5 h-5" />
+                          <img src="/logoultramoney.svg" alt="logo" className="w-5 h-5" />
                           <span className="font-bold text-indigo-950 text-xs tracking-tight">ultramoney</span>
                         </div>
                         <div className="space-y-1">
@@ -693,7 +693,7 @@ const LandingPage: React.FC = () => {
           {/* Copyright bar */}
           <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
             <div className="flex items-center gap-2">
-              <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="logo" className="w-4 h-4" />
+              <img src="/logoultramoney.svg" alt="logo" className="w-4 h-4" />
               <span className="font-bold text-slate-700">ultramoney</span>
               <span>© {new Date().getFullYear()} Todos los derechos reservados.</span>
             </div>

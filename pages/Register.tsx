@@ -235,7 +235,7 @@ const Register: React.FC = () => {
       <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
       <div className="relative z-10 p-16 text-white max-w-xl">
         <div className="flex items-center gap-3 mb-10">
-          <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney" className="w-10 h-10" />
+          <img src="/logoultramoney.svg" alt="Ultramoney" className="w-10 h-10" />
           <span className="text-2xl font-black tracking-tight text-white">ultramoney</span>
         </div>
         <h1 className="text-5xl font-black mb-6 tracking-tight leading-tight">
@@ -287,7 +287,7 @@ const Register: React.FC = () => {
             <div className="space-y-8">
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start mb-6">
-                  <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
+                  <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-900">Crear Cuenta</h2>
                 <p className="text-slate-500 mt-2">Elige cómo quieres registrarte.</p>
@@ -372,7 +372,7 @@ const Register: React.FC = () => {
             <div className="space-y-6">
               <div className="text-center lg:text-left">
                 <div className="flex items-center justify-center lg:justify-start mb-6">
-                  <img src="/logoultramoney_logooriginaldegradadomorado.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
+                  <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-12 h-12 object-contain" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-900">Registrarme con Correo</h2>
                 <p className="text-slate-500 mt-2">Completa tus datos para crear tu cuenta.</p>
