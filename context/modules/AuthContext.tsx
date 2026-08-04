@@ -142,7 +142,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
            }));
            setUsers(mappedUsers);
         }
-        if (apiKeysRes.data) setApiKeys(apiKeysRes.data.map((k: any) => ({ ...k, key: k.api_key })));
+        if (apiKeysRes.data) setApiKeys(apiKeysRes.data.map((k: any) => ({ ...k, key: k.key, createdAt: k.created_at })));
         if (employeesRes.data) setEmployees(employeesRes.data);
 
       } catch (error) {
@@ -310,7 +310,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error("Error generating API Key:", error);
       addToast("Error al generar API Key: " + error.message, "error");
     } else if (data) {
-      setApiKeys(prev => [data, ...prev]);
+      setApiKeys(prev => [{ ...data, createdAt: data.created_at }, ...prev]);
       addToast("API Key generada", "success");
     }
   };
