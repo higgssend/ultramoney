@@ -114,7 +114,7 @@ const Loans: React.FC = () => {
   };
 
     const getAmortizationTable = (loan: Loan) => {
-      const isRedito = loan.loanType.includes('Rédito');
+      const isRedito = (loan.loanType || '').includes('Rédito');
       const count = loan.durationWeeks > 0 ? loan.durationWeeks : 12; // Default show 12 periods for Rédito view
       
       // We will delegate to LoanEngine to get the true schedule regardless of the type
@@ -405,7 +405,7 @@ const Loans: React.FC = () => {
                  <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
                      <div className="flex items-center gap-4">
                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-indigo-500/30">
-                             {selectedLoan.clientName.charAt(0)}
+                             {(selectedLoan.clientName || '?').charAt(0)}
                          </div>
                          <div>
                             <h3 className="font-black text-2xl text-slate-800 dark:text-white leading-none mb-1">{selectedLoan.clientName}</h3>

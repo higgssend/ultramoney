@@ -16,7 +16,7 @@ const Bitacora: React.FC = () => {
     const matchesSearch = (log.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (log.details || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAction = filterAction === 'Todas' || log.action.includes(filterAction);
+    const matchesAction = filterAction === 'Todas' || (log.action || '').includes(filterAction);
     return matchesSearch && matchesAction;
   });
 

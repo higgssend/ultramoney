@@ -60,7 +60,7 @@ export const ContractViewer: React.FC<ContractViewerProps> = ({ loan, client, co
                                     <strong>PRIMERO:</strong> EL DEUDOR reconoce deber y pagar a EL ACREEDOR la suma de <strong>RD$${loan.amount.toLocaleString()}</strong> por concepto de préstamo personal en efectivo.
                                 </p>
                                 <p>
-                                    <strong>SEGUNDO:</strong> El préstamo devengará un interés de <strong>${loan.interestRate}%</strong> pagadero en forma <strong>${loan.frequency.toLowerCase()}</strong>.
+                                    <strong>SEGUNDO:</strong> El préstamo devengará un interés de <strong>${loan.interestRate}%</strong> pagadero en forma <strong>${(loan.frequency || '').toLowerCase()}</strong>.
                                 </p>
                                 ${loan.loanType === 'Rédito' ? `
                                 <p>
@@ -160,7 +160,7 @@ export const ContractViewer: React.FC<ContractViewerProps> = ({ loan, client, co
                             <p>Y por la otra parte, el señor/a <strong>{client.name}</strong>, portador/a de la cédula de identidad y electoral No. <strong>{client.cedula}</strong>, domiciliado/a y residente en {client.address}, en lo adelante denominado <strong>EL DEUDOR</strong>.</p>
                             <p className="text-center font-bold my-6">SE HA CONVENIDO Y PACTADO LO SIGUIENTE:</p>
                             <p><strong>PRIMERO:</strong> EL DEUDOR reconoce deber y pagar a EL ACREEDOR la suma de <strong>RD${loan.amount.toLocaleString()}</strong> por concepto de préstamo personal en efectivo.</p>
-                            <p><strong>SEGUNDO:</strong> El préstamo devengará un interés de <strong>{loan.interestRate}%</strong> pagadero en forma <strong>{loan.frequency.toLowerCase()}</strong>.</p>
+                            <p><strong>SEGUNDO:</strong> El préstamo devengará un interés de <strong>{loan.interestRate}%</strong> pagadero en forma <strong>{(loan.frequency || '').toLowerCase()}</strong>.</p>
                             
                             {loan.loanType === 'Rédito' ? (
                                 <p><strong>TERCERO (MODO RÉDITO):</strong> Este préstamo operará bajo la modalidad de Pagaré Abierto. EL DEUDOR se compromete a pagar periódicamente solo los intereses generados. El saldo del capital inicial podrá realizarse en cualquier momento, siempre que los intereses estén al día, o mediante abonos a capital acordados previamente.</p>
