@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./api"
+    "rootDir": "."
   },
-  "include": ["api/**/*"]
+  "include": ["index.ts"],
 }
