@@ -295,10 +295,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const generateApiKey = async (name: string) => {
     const newKey = `um_${Array.from({length: 32}, () => Math.random().toString(36)[2]).join('')}`;
-    const payload = { lender_id: currentUser?.id, name, api_key: newKey, last_used: null };
-    const { data, error } = await insforge.database.from('api_keys').insert(payload).select().single();
-    if (data && !error) {
-      setApiKeys(prev => [{ ...data, key: data.api_key }, ...prev]);
+    const payload = { user_id: currentUser?.id, name, key: newKey, last_used: null };
+    const { data, error } = await insforge.database.from('api_keys').insert([payload]).select().single();
+    if (error) {
+      console.error("Error generating API Key:", error);
+      addToast("Error al generar API Key: " + error.message, "error");
+    } else if (data) {
+      setApiKeys(prev => [data, ...prev]);
       addToast("API Key generada", "success");
     }
   };
