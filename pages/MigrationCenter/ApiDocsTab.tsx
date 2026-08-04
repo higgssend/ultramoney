@@ -67,10 +67,11 @@ export const ApiDocsTab: React.FC = () => {
       }));
   };
 
-  const maskKey = (key: string, isVisible: boolean) => {
-      if (isVisible) return key;
-      const prefix = key.substring(0, 8); // e.g. sk_ultra_
-      const suffix = key.substring(key.length - 4);
+  const maskKey = (keyString: string | undefined, isVisible: boolean) => {
+      if (!keyString) return '--------------------------';
+      if (isVisible) return keyString;
+      const prefix = keyString.substring(0, 8); // e.g. sk_ultra_
+      const suffix = keyString.substring(keyString.length - 4);
       return `${prefix}${'•'.repeat(16)}${suffix}`;
   };
 
@@ -209,12 +210,12 @@ export const ApiDocsTab: React.FC = () => {
                               <td className="px-6 py-4">
                                   <div className="flex items-center gap-3">
                                       <code className="bg-slate-100 dark:bg-slate-950 px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 font-mono text-sm border border-slate-200 dark:border-slate-800 min-w-[280px]">
-                                          {maskKey(key.key, !!visibleKeys[key.id])}
+                                          {maskKey(key.api_key || key.key, !!visibleKeys[key.id])}
                                       </code>
                                       <button onClick={() => toggleVisibility(key.id)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Mostrar/Ocultar">
                                           {visibleKeys[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                       </button>
-                                      <button onClick={() => handleCopy(key.key)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Copiar">
+                                      <button onClick={() => handleCopy(key.api_key || key.key)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Copiar">
                                           <Copy className="w-4 h-4" />
                                       </button>
                                   </div>
