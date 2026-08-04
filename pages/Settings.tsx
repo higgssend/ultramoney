@@ -134,7 +134,7 @@ const Settings: React.FC = () => {
           // not implemented updateRole in the ui currently, but if it was, it would go here
       } else {
           addRole({
-            id: newRole.name.toLowerCase().replace(/\s+/g, '_'),
+            id: (newRole.name || '').toLowerCase().replace(/\s+/g, '_'),
             name: newRole.name,
             description: newRole.description,
             permissions: newRole.permissions

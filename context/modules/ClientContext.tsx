@@ -1,23 +1,26 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Client, ClientNote, ClientDocument } from '../../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { Client, ClientNote, ClientDocument, Route } from '../../types';
+import type { ClientDB, ClientNoteDB, ClientDocumentDB, RouteDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
+import { logger } from '../../utils/logger';
 
 interface ClientContextType {
   clients: Client[];
   clientNotes: ClientNote[];
   clientDocuments: ClientDocument[];
-  routes: any[];
+  routes: Route[];
   
-  addClient: (client: any) => Promise<Client | void>;
-  updateClient: (client: any) => Promise<void>;
+  addClient: (client: Omit<Client, 'id'>) => Promise<Client | void>;
+  updateClient: (client: Client) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
   addClientNote: (note: ClientNote) => void;
   addClientDocument: (doc: ClientDocument, file?: File) => void;
   removeClientDocument: (id: string) => void;
   generateClientPin: (clientId: string) => string;
-  addRoute: (route: any) => Promise<void>;
-  updateRoute: (id: string, updates: any) => Promise<void>;
+  addRoute: (route: Omit<Route, 'id' | 'createdAt'>) => Promise<void>;
+  updateRoute: (id: string, updates: Partial<Route>) => Promise<void>;
   deleteRoute: (id: string) => Promise<void>;
   refreshClients: () => Promise<void>;
 }
@@ -47,34 +50,56 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       ]);
 
       if (clientsRes.data) {
-        setClients(clientsRes.data.map((c: any) => ({
-          id: c.id, name: c.name, lastName: c.lastname, cedula: c.cedula, documentType: c.documenttype,
-          email: c.email, phone: c.phone, whatsapp: c.whatsapp, phoneHome: c.phonehome,
-          address: c.address, province: c.province, municipality: c.municipality, sector: c.sector,
-          referenceAddress: c.referenceaddress, companyName: c.companyname, jobPosition: c.jobposition,
-          coordinates: c.coordinates, routeId: c.routeid, routeSequence: c.routesequence,
-          occupation: c.occupation, sex: c.sex, income: c.income, creditScore: c.creditscore,
-          status: c.status, joinedDate: c.joineddate || c.created_at, clientPin: c.clientpin, guarantors: c.guarantors
+        setClients((clientsRes.data as ClientDB[]).map((c) => ({
+          id: c.id,
+          name: c.name,
+          lastName: c.lastname || c.last_name,
+          cedula: c.cedula || '',
+          documentType: (c.documenttype || c.document_type) as Client['documentType'],
+          email: c.email,
+          phone: c.phone || '',
+          whatsapp: c.whatsapp,
+          phoneHome: c.phonehome,
+          address: c.address || '',
+          province: c.province,
+          municipality: c.municipality,
+          sector: c.sector,
+          referenceAddress: c.referenceaddress,
+          companyName: c.companyname,
+          jobPosition: c.jobposition,
+          coordinates: c.coordinates ?? undefined,
+          routeId: c.routeid,
+          routeSequence: c.routesequence,
+          occupation: c.occupation || '',
+          sex: (c.sex || 'Otro') as Client['sex'],
+          income: c.income,
+          creditScore: c.creditscore ?? c.credit_score,
+          status: (c.status || 'Activo') as Client['status'],
+          joinedDate: c.joineddate || c.created_at,
+          clientPin: c.clientpin,
+          guarantors: c.guarantors,
+          currency: (c.currency || 'DOP') as 'DOP' | 'USD',
         })));
       }
       if (notesRes.data) {
-        setClientNotes(notesRes.data.map((n: any) => ({
+        setClientNotes((notesRes.data as ClientNoteDB[]).map((n) => ({
           id: n.id, clientId: n.client_id, content: n.content, date: n.date, createdBy: n.created_by
         })));
       }
       if (docsRes.data) {
-        setClientDocuments(docsRes.data.map((d: any) => ({
-          id: d.id, clientId: d.client_id, title: d.title, type: d.type,
+        setClientDocuments((docsRes.data as ClientDocumentDB[]).map((d) => ({
+          id: d.id, clientId: d.client_id, title: d.title, type: d.type as ClientDocument['type'],
           fileUrl: d.file_url, uploadDate: d.upload_date, tags: d.tags || []
         })));
       }
       if (routesRes.data) {
-        setRoutes(routesRes.data.map((r: any) => ({
-           id: r.id, name: r.name, description: r.description, collector_id: r.collector_id
+        setRoutes((routesRes.data as RouteDB[]).map((r) => ({
+          id: r.id, name: r.name, description: r.description,
+          collectorId: r.collector_id, status: (r.status || 'Activa') as Route['status'], createdAt: r.created_at || ''
         })));
       }
     } catch (error) {
-      console.error("Error fetching clients:", error);
+      logger.error("Error fetching clients:", error);
     }
   }, [currentUser]);
 
@@ -82,7 +107,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     refreshClients();
   }, [refreshClients]);
 
-  const addClient = async (client: any): Promise<Client | void> => {
+  const addClient = async (client: Omit<Client, 'id'>): Promise<Client | void> => {
     if (!currentUser) return;
     const { data, error } = await insforge.database.from('clients').insert({
       lender_id: currentUser.id, name: client.name, lastname: client.lastName, cedula: client.cedula,
@@ -113,7 +138,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const updateClient = async (updatedClient: any) => {
+  const updateClient = async (updatedClient: Client) => {
     if (!currentUser) return;
     const { error } = await insforge.database.from('clients').update({
       name: updatedClient.name, lastname: updatedClient.lastName, cedula: updatedClient.cedula,
@@ -186,7 +211,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return newPin;
   };
 
-  const addRoute = async (route: any) => {
+  const addRoute = async (route: Omit<Route, 'id' | 'createdAt'>) => {
     if (!currentUser) return;
     const { data, error } = await insforge.database.from('routes').insert([{
       name: route.name, description: route.description, collector_id: route.collectorId, lender_id: currentUser.id
@@ -197,8 +222,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } else addToast("Error al crear ruta", "error");
   };
 
-  const updateRoute = async (id: string, updates: any) => {
-    const dbUpdates: any = {};
+  const updateRoute = async (id: string, updates: Partial<Route>) => {
+    const dbUpdates: Partial<RouteDB> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.collectorId !== undefined) dbUpdates.collector_id = updates.collectorId;

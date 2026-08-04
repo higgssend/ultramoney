@@ -4,7 +4,7 @@ import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
-import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral } from '../types';
+import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct } from '../types';
 import { CollateralForm } from './features/CollateralForm';
 import { CustomSelect } from '../components/CustomSelect';
 
@@ -42,7 +42,7 @@ const LoanRequest: React.FC = () => {
   const [collateral, setCollateral] = useState<Collateral | undefined>(undefined);
 
   // PRD Category, Destination and Observations
-  const [loanCategory, setLoanCategory] = useState<any>('Personal');
+  const [loanCategory, setLoanCategory] = useState<Loan['loanCategory']>('Personal');
   const [loanDestination, setLoanDestination] = useState('');
   const [observations, setObservations] = useState('');
 
@@ -58,7 +58,7 @@ const LoanRequest: React.FC = () => {
   const [enablePortal, setEnablePortal] = useState(true);
   const [portalPin, setPortalPin] = useState('');
   const [schedulePreview, setSchedulePreview] = useState<InstallmentPreview[]>([]);
-  const [activeProduct, setActiveProduct] = useState<any>(null);
+  const [activeProduct, setActiveProduct] = useState<LoanProduct | null>(null);
 
   const selectedClient = clients.find(c => c.id === selectedClientId);
 

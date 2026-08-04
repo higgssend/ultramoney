@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Role, Cargo, Employee, ApiKey } from '../../types';
+import type { UserProfileDB, ApiKeyDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
+import { logger } from '../../utils/logger';
 
 interface AuthContextType {
-  currentUser: any | null;
+  currentUser: User | null;
   isLoadingAuth: boolean;
   users: User[];
   roles: Role[];
@@ -35,7 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -45,7 +47,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     let unmounted = false;
-    let authSub: any;
+    let authSub: (() => void) | { unsubscribe: () => void } | null = null;
 
     const initAuth = async () => {
       try {
@@ -98,7 +100,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         authSub = unsubscribe;
 
       } catch (error) {
-        console.error("Auth init error:", error);
+        logger.error("Auth init error:", error);
         setIsLoadingAuth(false);
       }
     };
@@ -135,18 +137,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (rolesRes.data) setRoles(rolesRes.data);
         if (cargosRes.data) setCargos(cargosRes.data);
         if (usersRes.data) {
-           const mappedUsers = usersRes.data.map((u: any) => ({
-             id: u.id, name: u.name, username: u.username, email: u.email, employeeId: u.employee_id,
-             roleIds: u.usuario_roles ? u.usuario_roles.map((ur: any) => ur.role_id) : [],
+           const mappedUsers = (usersRes.data as UserProfileDB[]).map((u) => ({
+             id: u.id, name: u.name || u.email || 'Usuario', username: u.username,
+             email: u.email, employeeId: u.employee_id,
+             status: (u.status || 'Active') as User['status'],
+             roleIds: u.usuario_roles ? u.usuario_roles.map(ur => ur.role_id) : [],
              created_at: u.created_at
            }));
            setUsers(mappedUsers);
         }
-        if (apiKeysRes.data) setApiKeys(apiKeysRes.data.map((k: any) => ({ ...k, key: k.key, createdAt: k.created_at })));
+        if (apiKeysRes.data) setApiKeys((apiKeysRes.data as ApiKeyDB[]).map((k) => ({ id: k.id, name: k.name, key: k.key, createdAt: k.created_at })));
         if (employeesRes.data) setEmployees(employeesRes.data);
 
       } catch (error) {
-        console.error("Error fetching auth data:", error);
+        logger.error("Error fetching auth data:", error);
       }
     };
     fetchData();
@@ -307,7 +311,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const payload = { user_id: finalUserId, name, key: newKey, last_used: null };
     const { data, error } = await insforge.database.from('api_keys').insert([payload]).select().single();
     if (error) {
-      console.error("Error generating API Key:", error);
+      logger.error("Error generating API Key:", error);
       addToast("Error al generar API Key: " + error.message, "error");
     } else if (data) {
       setApiKeys(prev => [{ ...data, createdAt: data.created_at }, ...prev]);

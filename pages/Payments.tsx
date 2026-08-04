@@ -203,11 +203,12 @@ const Payments: React.FC = () => {
             const loan = loans.find(l => l.id === t.referenceId);
             const clientName = loan ? (loan.clientName || '').toLowerCase() : '';
             
-            const matchesSearch = 
-                t.description.toLowerCase().includes(searchLower) || 
+            const matchesSearch = (
+                (t.description || '').toLowerCase().includes(searchLower) || 
                 (t.referenceId && t.referenceId.toLowerCase().includes(searchLower)) ||
-                clientName.includes(searchLower) ||
-                t.id.toLowerCase().includes(searchLower);
+                (t.id && t.id.toLowerCase().includes(searchLower)) ||
+                clientName.includes(searchLower)
+            );
 
             const matchesStart = dateStart ? t.date >= dateStart : true;
             const matchesEnd = dateEnd ? t.date <= dateEnd : true;
@@ -318,7 +319,7 @@ const Payments: React.FC = () => {
     }
   };
 
-  const handleReprintReceipt = (t: any) => {
+  const handleReprintReceipt = (t: import('../types').Transaction) => {
       const loan = loans.find(l => l.id === t.referenceId);
       if(!loan) return;
 

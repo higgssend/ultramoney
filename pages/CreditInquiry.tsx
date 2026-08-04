@@ -9,7 +9,7 @@ const CreditInquiry: React.FC = () => {
   const { loans } = useLoans();
   const [searchTerm, setSearchTerm] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
-  const [clientData, setClientData] = useState<any>(null);
+  const [clientData, setClientData] = useState<import('../types').Client | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

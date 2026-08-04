@@ -117,13 +117,13 @@ export interface ClientDocument {
 export interface Loan {
   id: string;
   clientId: string;
-  clientName?: string;
+  clientName: string;
   amount: number; // Capital Inicial
   interestRate: number; // Percentage (e.g., 10 for 10%)
   durationWeeks?: number;
   installments?: number;
   currentInstallment?: number;
-  frequency?: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
+  frequency: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
   paymentFrequency?: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
   startDate: string;
   status: LoanStatus;
@@ -328,7 +328,7 @@ export interface CollectorVisit {
   amountCollected?: number;
   notes?: string;
   coordinates?: { lat: number; lng: number };
-  location?: any;
+  location?: { lat: number; lng: number };
 }
 
 export interface NumberSeriesSettings {

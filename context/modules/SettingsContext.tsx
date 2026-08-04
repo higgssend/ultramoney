@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CompanySettings, AuditLog, AppNotification, PdfJob } from '../../types';
+import type { AuditLogDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
+import { logger } from '../../utils/logger';
 
 interface SettingsContextType {
   companySettings: CompanySettings;
@@ -79,12 +81,17 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           if (settingsRes.data.currency === 'USD') setGlobalCurrencyState('USD');
         }
         if (bitacoraRes.data) {
-           setAuditLogs(bitacoraRes.data.map((l: any) => ({
-             id: l.id, userId: l.user_id, userName: l.user_name, action: l.action, details: l.details, timestamp: l.created_at
+           setAuditLogs((bitacoraRes.data as AuditLogDB[]).map((l) => ({
+             id: l.id,
+             userId: l.user_id || '',
+             userName: l.user_name || 'Sistema',
+             action: l.action || '',
+             details: l.details || '',
+             timestamp: l.timestamp
            })));
         }
       } catch (error) {
-        console.error("Error fetching settings:", error);
+        logger.error("Error fetching settings:", error);
       }
     };
     fetchSettings();

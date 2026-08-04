@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Transaction, CashShift, BankAccount, CollectorVisit } from '../../types';
+import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
+import { logger } from '../../utils/logger';
 
 interface AccountingContextType {
   transactions: Transaction[];
@@ -24,12 +26,17 @@ interface AccountingContextType {
 
 const AccountingContext = createContext<AccountingContextType | undefined>(undefined);
 
-const mapTransaction = (t: any) => ({
-  ...t, referenceId: t.referenceid || t.reference_id || t.referenceId,
-  paymentType: t.paymenttype || t.payment_type || t.paymentType,
-  paymentMethod: t.paymentmethod || t.payment_method || t.paymentMethod || 'Efectivo',
-  invoiceDate: t.invoicedate || t.invoice_date || t.invoiceDate,
-  category: t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')
+const mapTransaction = (t: TransactionDB): Transaction => ({
+  id: t.id,
+  type: t.type as Transaction['type'],
+  category: (t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')) as Transaction['category'],
+  amount: Number(t.amount) || 0,
+  date: t.date,
+  description: t.description,
+  referenceId: t.referenceid || t.reference_id || undefined,
+  paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
+  paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
+  invoiceDate: t.invoicedate || t.invoice_date || undefined,
 });
 
 export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -61,27 +68,36 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
         if (banksRes.data) {
-          setBankAccounts(banksRes.data.map((b: any) => ({
-            id: b.id, bankName: b.bank_name, accountName: b.account_name, accountNumber: b.account_number,
-            accountType: b.account_type, currency: b.currency, status: b.status, initialBalance: b.initial_balance
+          setBankAccounts((banksRes.data as BankAccountDB[]).map((b) => ({
+            id: b.id,
+            bankName: b.bank_name || '',
+            accountName: b.account_name || '',
+            accountNumber: b.account_number || '',
+            accountType: (b.account_type || 'Ahorro') as BankAccount['accountType'],
+            currency: (b.currency || 'DOP') as BankAccount['currency'],
+            status: (b.status || 'Activa') as BankAccount['status'],
+            initialBalance: Number(b.initial_balance) || 0,
           })));
         }
         if (shiftsRes.data) {
-          setCashShifts(shiftsRes.data.map((s: any) => ({
+          setCashShifts((shiftsRes.data as CashShiftDB[]).map((s) => ({
             id: s.id, userId: s.user_id, userName: s.user_name, openedAt: s.opened_at, closedAt: s.closed_at,
-            initialAmount: s.initial_amount, finalCashCount: s.final_cash_count,
-            expectedAmount: s.expected_amount, difference: s.difference, status: s.status, notes: s.notes
+            initialAmount: Number(s.initial_amount) || 0, finalCashCount: s.final_cash_count,
+            expectedAmount: s.expected_amount, difference: s.difference,
+            status: s.status as CashShift['status'], notes: s.notes,
           })));
         }
         if (visitsRes.data) {
-          setCollectorVisits(visitsRes.data.map((v: any) => ({
-            id: v.id, collectorId: v.collector_id, clientId: v.client_id, loanId: v.loan_id,
-            date: v.date, status: v.status, notes: v.notes, amountCollected: v.amount_collected,
-            location: v.location, promisedDate: v.promised_date
+          setCollectorVisits((visitsRes.data as CollectorVisitDB[]).map((v) => ({
+            id: v.id, collectorId: v.collector_id, collectorName: v.collector_name || '',
+            clientId: v.client_id, clientName: v.client_name || '',
+            loanId: v.loan_id, date: v.date, status: v.status as CollectorVisit['status'],
+            notes: v.notes, amountCollected: v.amount_collected,
+            location: v.location ?? undefined, promisedDate: v.promised_date,
           })));
         }
       } catch (error) {
-        console.error("Error fetching accounting data:", error);
+        logger.error("Error fetching accounting data:", error);
       }
     };
     fetchData();
@@ -101,10 +117,11 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       addToast(`Caja abierta con RD$ ${initialAmount}`, 'success');
       // Fetch again to update state properly
       const { data } = await insforge.database.from('cash_shifts').select('*').order('created_at', { ascending: false });
-      if (data) setCashShifts(data.map((s: any) => ({
+      if (data) setCashShifts((data as CashShiftDB[]).map((s) => ({
          id: s.id, userId: s.user_id, userName: s.user_name, openedAt: s.opened_at, closedAt: s.closed_at,
-         initialAmount: s.initial_amount, finalCashCount: s.final_cash_count,
-         expectedAmount: s.expected_amount, difference: s.difference, status: s.status, notes: s.notes
+         initialAmount: Number(s.initial_amount) || 0, finalCashCount: s.final_cash_count,
+         expectedAmount: s.expected_amount, difference: s.difference,
+         status: s.status as CashShift['status'], notes: s.notes,
       })));
     }
   };

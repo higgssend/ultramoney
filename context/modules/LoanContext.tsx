@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Loan, LoanProduct, LoanRequest, LoanStatus, PaymentMethod } from '../../types';
+import { Loan, LoanProduct, LoanRequest, LoanStatus, LoanType, PaymentMethod } from '../../types';
+import type { LoanDB, LoanProductDB, LoanRequestDB, TransactionDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
 import { useClients } from './ClientContext';
 import { useSettings } from './SettingsContext';
+import { logger } from '../../utils/logger';
 
 interface LoanContextType {
   loans: Loan[];
@@ -18,7 +20,7 @@ interface LoanContextType {
     loanId: string, amount: number, note: string, paymentDate?: string, 
     invoiceDate?: string, paymentType?: 'Interes' | 'Capital' | 'Mixto',
     capitalAmount?: number, paymentMethod?: PaymentMethod, cashierId?: string
-  ) => Promise<any>;
+  ) => Promise<Transaction | null>;
   addLoanRequest: (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => void;
   deleteLoanRequest: (requestId: string) => void;
   addLoanProduct: (product: Omit<LoanProduct, 'id' | 'createdAt'>) => Promise<void>;
@@ -28,11 +30,13 @@ interface LoanContextType {
 
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
-const mapTransaction = (t: any) => ({
-  ...t, referenceId: t.referenceid || t.reference_id || t.referenceId,
-  paymentType: t.paymenttype || t.payment_type || t.paymentType,
-  paymentMethod: t.paymentmethod || t.payment_method || t.paymentMethod || 'Efectivo',
-  invoiceDate: t.invoicedate || t.invoice_date || t.invoiceDate
+const mapTransaction = (t: TransactionDB) => ({
+  ...t,
+  referenceId: t.referenceid || t.reference_id || undefined,
+  paymentType: (t.paymenttype || t.payment_type || undefined) as 'Interes' | 'Capital' | 'Mixto' | undefined,
+  paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as import('../../types').PaymentMethod,
+  invoiceDate: t.invoicedate || t.invoice_date || undefined,
+  category: (t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')) as import('../../types').Transaction['category'],
 });
 
 export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -60,30 +64,81 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ]);
 
         if (loansRes.data) {
-          setLoans(loansRes.data.map((l: any) => ({
-            id: l.id, clientId: l.clientid || l.client_id, amount: l.amount, interestRate: l.interestrate || l.interest_rate,
-            installments: l.installments, currentInstallment: l.current_installment || 0,
-            paymentFrequency: l.frequency || l.payment_frequency, startDate: l.startdate || l.start_date, nextPaymentDate: l.next_payment_date || l.nextpaymentdate,
-            status: l.status, remainingBalance: l.remainingbalance, totalToPay: l.totaltopay,
-            loanType: l.loantype, guarantorId: l.guarantor_id || l.collateralref, note: l.note
+          setLoans((loansRes.data as LoanDB[]).map((l) => ({
+            id: l.id,
+            clientId: l.clientid || l.client_id || '',
+            clientName: l.clientname || l.client_name || 'Sin Nombre',
+            amount: Number(l.amount) || 0,
+            interestRate: Number(l.interestrate ?? l.interest_rate) || 0,
+            installments: l.installments,
+            currentInstallment: l.current_installment || 0,
+            frequency: ((l.frequency || l.payment_frequency || 'Mensual') as Loan['frequency']),
+            paymentFrequency: ((l.frequency || l.payment_frequency || 'Mensual') as Loan['frequency']),
+            startDate: l.startdate || l.start_date || '',
+            nextPaymentDate: l.next_payment_date || l.nextpaymentdate || '',
+            status: l.status as LoanStatus,
+            loanType: (l.loantype || l.loan_type || 'Amortización') as LoanType,
+            loanCategory: (l.loancategory || l.loan_category) as Loan['loanCategory'],
+            remainingBalance: Number(l.remainingbalance ?? l.remaining_balance) || 0,
+            totalToPay: Number(l.totaltopay ?? l.total_to_pay) || 0,
+            installmentAmount: l.installmentamount ?? l.installment_amount,
+            durationWeeks: l.duration_weeks || l.durationweeks,
+            lateFeePercentage: l.late_fee_percentage,
+            graceDays: l.grace_days,
+            guarantorId: l.guarantor_id || l.collateralref,
+            note: l.note,
+            currency: (l.currency as 'DOP' | 'USD') || 'DOP',
           })));
         }
         if (productsRes.data) {
-          setLoanProducts(productsRes.data.map((p: any) => ({
-            id: p.id, name: p.name, interestRate: p.interest_rate || p.interestrate,
-            paymentFrequency: p.payment_frequency || p.frequency, defaultInstallments: p.default_installments || p.installments,
-            isActive: p.is_active !== undefined ? p.is_active : true, requirements: p.requirements || []
+          setLoanProducts((productsRes.data as LoanProductDB[]).map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description || '',
+            interestRate: Number(p.interest_rate ?? p.interestrate) || 0,
+            minAmount: Number(p.min_amount) || 0,
+            maxAmount: Number(p.max_amount) || 0,
+            frequency: ((p.frequency || p.payment_frequency || 'Mensual') as LoanProduct['frequency']),
+            termMonths: p.term_months || 1,
+            defaultInstallments: p.default_installments ?? p.installments ?? 1,
+            requiresCollateral: p.requires_collateral ?? false,
+            collateralType: p.collateral_type,
+            disbursementFee: Number(p.disbursement_fee) || 0,
+            lateFeePercentage: Number(p.late_fee_percentage) || 0,
+            graceDays: Number(p.grace_days) || 0,
+            prepaymentAllowed: p.prepayment_allowed ?? true,
+            autoCalculateInterest: p.auto_calculate_interest ?? true,
+            isActive: p.is_active !== false,
+            amortizationMethod: (p.amortization_method || 'Amortizado') as LoanProduct['amortizationMethod'],
+            paymentOrder: (p.payment_order || 'Interest_Capital_Mora_Expenses') as LoanProduct['paymentOrder'],
+            recalculateInterestOnEarlyPayoff: false,
+            capitalizationFrequency: 'Ninguno' as LoanProduct['capitalizationFrequency'],
+            interestType: (p.interest_type || 'Fijo') as LoanProduct['interestType'],
+            createdAt: p.created_at || '',
+            updatedAt: p.updated_at || '',
           })));
         }
         if (requestsRes.data) {
-          setLoanRequests(requestsRes.data.map((r: any) => ({
-             id: r.id, clientName: r.client_name, clientPhone: r.client_phone, clientEmail: r.client_email,
-             requestedAmount: r.requested_amount, requestedTerm: r.requested_term,
-             purpose: r.purpose, status: r.status, requestDate: r.created_at, notes: r.notes
+          setLoanRequests((requestsRes.data as LoanRequestDB[]).map((r) => ({
+            id: r.id,
+            clientName: r.client_name || 'Sin Nombre',
+            clientPhone: r.client_phone,
+            clientEmail: r.client_email,
+            clientId: r.client_id,
+            requestedAmount: r.requested_amount ?? r.amount,
+            requestedTerm: r.requested_term,
+            interestRate: r.interest_rate,
+            durationWeeks: r.duration_weeks,
+            frequency: r.frequency as LoanRequest['frequency'],
+            loanType: r.loan_type as LoanRequest['loanType'],
+            purpose: r.purpose,
+            notes: r.notes,
+            status: r.status as LoanRequest['status'],
+            requestDate: r.created_at || r.request_date || new Date().toISOString(),
           })));
         }
       } catch (error) {
-        console.error("Error fetching loans:", error);
+        logger.error("Error fetching loans:", error);
       }
     };
     fetchLoans();
@@ -255,7 +310,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             clientName: client.name,
             message: `Hola ${client.name.split(' ')[0]},\n\nHemos recibido un pago de ${amount} por concepto de: ${note}. Su nuevo balance es: ${newBalance}. ¡Gracias por preferirnos!`
           }
-        }).catch(err => console.error("Error enviando WhatsApp:", err));
+        }).catch(err => logger.error("Error enviando WhatsApp:", err));
       }
     } else {
       addToast("Error al guardar transacción", 'error');

@@ -646,7 +646,7 @@ const Loans: React.FC = () => {
   );
 };
 
-const ModalTab: React.FC<{ label: string, icon: any, active: boolean, onClick: () => void }> = ({ label, icon: Icon, active, onClick }) => (
+const ModalTab: React.FC<{ label: string, icon: React.ElementType, active: boolean, onClick: () => void }> = ({ label, icon: Icon, active, onClick }) => (
     <button 
         onClick={onClick}
         className={`w-full text-left p-3.5 rounded-xl flex items-center gap-3 transition-all text-sm font-bold ${active ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'}`}
