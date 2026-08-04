@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const [rolesRes, cargosRes, usersRes, apiKeysRes, employeesRes] = await Promise.all([
           insforge.database.from('roles').select('*').order('name'),
           insforge.database.from('cargos').select('*').order('name'),
-          insforge.database.from('user_profiles').select('*, usuario_roles ( role_id )').order('created_at'),
+          insforge.database.from('user_profiles').select('*').order('created_at'),
           insforge.database.from('api_keys').select('*').order('created_at', { ascending: false }),
           insforge.database.from('employees').select('*').order('created_at', { ascending: false })
         ]);

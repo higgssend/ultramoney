@@ -84,14 +84,6 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       }
     };
     fetchData();
-
-    // Listen to transactions table for real-time updates (useful when registerPayment inserts one)
-    const txSub = insforge.database.channel('public:transactions')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
-        setTransactions(prev => [mapTransaction(payload.new), ...prev]);
-      }).subscribe();
-
-    return () => { txSub.unsubscribe(); };
   }, [currentUser]);
 
   const openCashShift = async (initialAmount: number, notes?: string) => {

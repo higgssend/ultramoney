@@ -76,16 +76,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     };
     fetchClients();
-
-    // Set up realtime subscriptions
-    const clientSub = insforge.database.channel('public:clients')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, payload => {
-         fetchClients(); // simple refetch for now to maintain consistency
-      }).subscribe();
-      
-    return () => {
-       clientSub.unsubscribe();
-    };
   }, [currentUser]);
 
   const addClient = async (client: any): Promise<Client | void> => {
