@@ -12,12 +12,12 @@ dotenv.config();
 const url = process.env.VITE_INSFORGE_URL;
 const key = process.env.VITE_INSFORGE_ANON_KEY;
 
+let db: any;
 if (!url || !key) {
     console.error("Missing VITE_INSFORGE_URL or VITE_INSFORGE_ANON_KEY");
-    process.exit(1);
+} else {
+    db = createClient({ baseUrl: url, anonKey: key });
 }
-
-const db = createClient({ baseUrl: url, anonKey: key });
 
 const server = new McpServer({
   name: "UltraMoney-MCP-HTTP",
@@ -73,7 +73,11 @@ const app = express();
 app.use(cors());
 
 app.get("/", (req, res) => {
-    res.send("UltraMoney MCP Server is running! Conecte Gemini Spark a la ruta /mcp");
+    if (!url || !key) {
+        res.status(500).send("UltraMoney MCP Server is running, BUT you are missing VITE_INSFORGE_URL or VITE_INSFORGE_ANON_KEY in Vercel Environment Variables! Please add them and redeploy.");
+    } else {
+        res.send("UltraMoney MCP Server is running! Conecte Gemini Spark a la ruta /mcp");
+    }
 });
 
 const transports = new Map<string, SSEServerTransport>();
