@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@insforge/sdk": "^1.5.2",
     "@modelcontextprotocol/sdk": "^1.30.0",

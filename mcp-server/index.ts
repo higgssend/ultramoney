@@ -72,6 +72,10 @@ server.tool("register_payment", "Registra un pago.", { loanId: z.string(), amoun
 const app = express();
 app.use(cors());
 
+app.get("/", (req, res) => {
+    res.send("UltraMoney MCP Server is running! Conecte Gemini Spark a la ruta /mcp");
+});
+
 const transports = new Map<string, SSEServerTransport>();
 
 app.get("/mcp", async (req, res) => {
