@@ -31,7 +31,8 @@ const Loans: React.FC = () => {
       if (status === LoanStatus.OVERDUE) return { badge: 'Vencido', color: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800' };
       if (status === LoanStatus.PAID) return { badge: 'Pagado', color: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' };
       
-      const daysDiff = Math.ceil((new Date(nextDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+      const dateObj = nextDate ? new Date(nextDate) : null;
+      const daysDiff = (dateObj && !isNaN(dateObj.getTime())) ? Math.ceil((dateObj.getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
       if (daysDiff < 0) return { badge: 'Atrasado', color: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800' };
       return { badge: 'A tiempo', color: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800' };
   };

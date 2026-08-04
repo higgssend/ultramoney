@@ -23,7 +23,7 @@ const Bitacora: React.FC = () => {
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
   const currentLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const uniqueActions = ['Todas', ...new Set(auditLogs.map(log => log.action.split(' ')[0]))]; // Rough action category
+  const uniqueActions = ['Todas', ...new Set(auditLogs.map(log => (log.action || '').split(' ')[0]))];
 
   return (
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">

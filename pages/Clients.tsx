@@ -41,7 +41,8 @@ const Clients: React.FC = () => {
         const sortedLoans = [...activeLoans].sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime());
         nextPaymentDate = sortedLoans[0].nextPaymentDate;
         
-        const daysDiff = Math.ceil((new Date(nextPaymentDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+        const dateObj = nextPaymentDate ? new Date(nextPaymentDate) : null;
+        const daysDiff = (dateObj && !isNaN(dateObj.getTime())) ? Math.ceil((dateObj.getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
         isOverdue = daysDiff < 0;
     }
     
