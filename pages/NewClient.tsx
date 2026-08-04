@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Phone, MapPin, Plus, Crosshair, Map, Hash, Save, ArrowLeft, Building, Briefcase } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useClients } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
 import { maskPhone } from '../utils/masks';
@@ -9,7 +9,7 @@ import { useToast } from '../context/ToastContext';
 const NewClient: React.FC = () => {
     const { id } = useParams();
     const isEditMode = Boolean(id);
-    const { clients, addClient, updateClient, routes, addClientDocument } = useStore();
+    const { clients, addClient, updateClient, routes, addClientDocument } = useClients();
     const navigate = useNavigate();
     const { addToast } = useToast();
 

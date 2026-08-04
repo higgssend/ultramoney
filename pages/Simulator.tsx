@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Settings, PieChart as PieChartIcon, TrendingUp, Calendar, ChevronLeft, ArrowRight, Table, FileText, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../context/StoreContext';
+import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { LoanType } from '../types';
 import { LoanEngine, ExpenseConfig, ExtraordinaryPayment, SimulationResult } from '../utils/LoanEngine';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
@@ -10,7 +10,9 @@ const COLORS = ['#4f46e5', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6'];
 
 const Simulator: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, createLoan, globalCurrency } = useStore();
+  const { clients } = useClients();
+  const { createLoan } = useLoans();
+  const { globalCurrency } = useSettings();
 
   const [activeTab, setActiveTab] = useState<'basico' | 'gastos' | 'abonos' | 'graficos'>('basico');
 

@@ -7,7 +7,7 @@ import {
   File as FileIcon, Image as ImageIcon, Upload, FileCheck, Edit, Plus, Trash2, X, Save, Globe,
   Briefcase, DollarSign, Lock, Mail, Clock, Camera, Shield, MessageCircle
 } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useSettings, useClients, useLoans, useAccounting } from '../context/StoreContext';
 import { LoanStatus, BankAccount, Client, Loan, Transaction, ClientDocument } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ContractViewer } from './features/ContractViewer';
@@ -18,11 +18,10 @@ const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { 
-    clients, loans, transactions, bankAccounts, clientNotes, clientDocuments,
-    addBankAccount, removeBankAccount, addClientNote, updateClient,
-    addClientDocument, removeClientDocument, companySettings
-  } = useStore();
+  const { clients, clientNotes, clientDocuments, addClientNote, updateClient, addClientDocument, removeClientDocument } = useClients();
+  const { loans } = useLoans();
+  const { transactions, bankAccounts, addBankAccount, removeBankAccount } = useAccounting();
+  const { companySettings } = useSettings();
 
   const [selectedContractLoan, setSelectedContractLoan] = useState<Loan | null>(null);
   const [isDocGeneratorOpen, setIsDocGeneratorOpen] = useState(false);

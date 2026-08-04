@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useStore } from '../context/StoreContext';
+import { useClients } from '../context/StoreContext';
 import { Search, Link as LinkIcon, RefreshCw, XCircle, ShieldCheck, Copy, ChevronLeft, CheckCircle, ExternalLink, Settings, AlertTriangle, Key } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { Client } from '../types';
 
 const ClientPortals: React.FC = () => {
-    const { clients, updateClient } = useStore();
+    const { clients, updateClient } = useClients();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');

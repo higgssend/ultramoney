@@ -4,13 +4,14 @@ import { Search, Eye, Download, X, User, ShoppingBag, Clock, CheckCircle, Chevro
 import { Invoice } from '../types';
 import { useNavigate } from 'react-router-dom';
 
-import { useStore } from '../context/StoreContext';
+import { useClients, useAccounting } from '../context/StoreContext';
 
 const Invoices: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const navigate = useNavigate();
-  const { transactions, clients } = useStore();
+  const { transactions } = useAccounting();
+  const { clients } = useClients();
 
   const generatedInvoices: Invoice[] = transactions
     .filter(t => t.type === 'Ingreso' && t.category === 'Pago Préstamo')

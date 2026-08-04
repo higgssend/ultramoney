@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Plus, Filter, Clock, X, Banknote, Calendar, CreditCard, DollarSign, FileText, Printer, RefreshCw, Calculator, ChevronRight, CheckCircle, Tag, Infinity, ChevronLeft, Shield, LayoutGrid, List, AlertTriangle, Eye } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useLoans, useSettings } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { LoanStatus, Loan, formatLoanId } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Loans: React.FC = () => {
-  const { loans, companySettings, refinanceLoan, forgiveDebt } = useStore();
+  const { loans, refinanceLoan, forgiveDebt } = useLoans();
+  const { companySettings } = useSettings();
   const navigate = useNavigate();
   const [filterTerm, setFilterTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'TODOS' | 'A tiempo' | 'Atrasado' | 'Vencido' | 'Pagado'>('TODOS');

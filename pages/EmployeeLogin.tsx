@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, User, Lock, ArrowRight, Building2 } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/StoreContext';
 import { useToast } from '../context/ToastContext';
 
 const EmployeeLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
-  const { loginEmployee } = useStore();
+  const { loginEmployee } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 

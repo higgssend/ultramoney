@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, Menu, X, Check, CheckCircle2, User, FileText, Banknote, ShieldAlert } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 
 interface TopHeaderProps {
@@ -8,7 +8,9 @@ interface TopHeaderProps {
 }
 
 const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
-  const { notifications, markNotificationAsRead, markAllNotificationsAsRead, clients, loans } = useStore();
+  const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useSettings();
+  const { clients } = useClients();
+  const { loans } = useLoans();
   const navigate = useNavigate();
   
   const [isNotifOpen, setIsNotifOpen] = useState(false);

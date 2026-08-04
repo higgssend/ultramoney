@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Phone, MapPin, CreditCard, Upload, Image as ImageIcon, Activity, Smartphone, Key, UserCheck, User as UserIcon, ChevronLeft, Database, Download, FileJson, Eye, EyeOff, Copy, Briefcase, Edit2 } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useAuth, useSettings } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { Permission, User, ApiKey } from '../types';
 import { LoanProductsTab } from '../components/LoanProductsTab';
@@ -9,16 +9,8 @@ import { LoanProductsTab } from '../components/LoanProductsTab';
 const Settings: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { 
-      companySettings, updateCompanySettings, 
-      roles, addRole, updateRole, deleteRole, 
-      users, registerUser, auditLogs, 
-      currentUser, updateUser, 
-      exportSystemBackup, importSystemBackup, 
-      apiKeys, generateApiKey, deleteApiKey,
-      cargos, addCargo, updateCargo, deleteCargo,
-      employees
-    } = useStore();
+  const { companySettings, updateCompanySettings, auditLogs, exportSystemBackup, importSystemBackup } = useSettings();
+  const { roles, addRole, updateRole, deleteRole, users, registerUser, currentUser, updateUser, apiKeys, generateApiKey, deleteApiKey, cargos, addCargo, updateCargo, deleteCargo, employees } = useAuth();
   const [activeTab, setActiveTab] = useState<'company' | 'products' | 'roles' | 'users' | 'audit' | 'security' | 'backup' | 'api'>('company');
 
   // Handle incoming navigation state (e.g. from Sidebar edit profile)

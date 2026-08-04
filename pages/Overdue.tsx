@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Phone, AlertTriangle, Clock, ChevronLeft, FileText, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../context/StoreContext';
+import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { DocumentGenerator } from '../components/DocumentGenerator';
 import { Client, Loan, formatLoanId } from '../types';
 
@@ -15,7 +15,9 @@ const WhatsAppIcon = () => (
 
 const Overdue: React.FC = () => {
   const navigate = useNavigate();
-  const { loans, clients, companySettings } = useStore();
+  const { loans } = useLoans();
+  const { clients } = useClients();
+  const { companySettings } = useSettings();
   const [selectedNoticeLoan, setSelectedNoticeLoan] = useState<{ loan: Loan; client: Client } | null>(null);
 
   const overdueList = loans.filter(l => l.status === 'Atrasado' || (l.status === 'Activo' && new Date(l.nextPaymentDate) < new Date()));

@@ -40,7 +40,7 @@ import {
   MigrationLog
 } from './types';
 
-import { useStore } from '../../context/StoreContext';
+import { useClients, useLoans, useAccounting, useAuth } from '../../context/StoreContext';
 import { useToast } from '../../context/ToastContext';
 import { parseFile, guessMapping } from './SmartImporter';
 
@@ -50,7 +50,10 @@ interface MigrationWizardProps {
 }
 
 export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, onCancel }) => {
-  const { addClient, createLoan, registerPayment, addTransaction, currentUser } = useStore();
+  const { addClient } = useClients();
+  const { createLoan, registerPayment } = useLoans();
+  const { addTransaction } = useAccounting();
+  const { currentUser } = useAuth();
   const { addToast } = useToast();
 
   // Wizard Step State (1 to 8)

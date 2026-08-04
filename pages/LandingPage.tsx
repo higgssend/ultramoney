@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/StoreContext';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -37,7 +37,7 @@ const Counter: React.FC<{ end: number; suffix?: string; prefix?: string; duratio
 /* ─── LANDING PAGE ─── */
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useStore();
+  const { currentUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 

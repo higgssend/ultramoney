@@ -4,12 +4,14 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { Briefcase, TrendingUp, Users, ChevronLeft } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../context/StoreContext';
+import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { LoanStatus } from '../types';
 
 const Portfolio: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, loans, globalCurrency } = useStore();
+  const { clients } = useClients();
+  const { loans } = useLoans();
+  const { globalCurrency } = useSettings();
 
   const currencyLoans = loans.filter(l => (l.currency || 'DOP') === globalCurrency);
   const totalLent = currencyLoans.reduce((sum, loan) => sum + loan.amount, 0);

@@ -5,12 +5,15 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
-import { useStore } from '../context/StoreContext';
+import { useSettings, useClients, useLoans, useAccounting } from '../context/StoreContext';
 import { LoanStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { loans, clients, transactions, getFinancialStats, globalCurrency } = useStore();
+  const { loans } = useLoans();
+  const { clients } = useClients();
+  const { transactions, getFinancialStats } = useAccounting();
+  const { globalCurrency } = useSettings();
   const navigate = useNavigate();
   const stats = getFinancialStats();
 

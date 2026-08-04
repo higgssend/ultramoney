@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, PlusCircle, Eye, EyeOff } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
-import { useStore } from '../context/StoreContext';
+import { useAccounting } from '../context/StoreContext';
 import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
 import { PaymentMethod } from '../types';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 
 const Accounting: React.FC = () => {
-  const { transactions, getFinancialStats, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary, cashShifts, addTransaction } = useStore();
+  const { transactions, getFinancialStats, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary, cashShifts, addTransaction } = useAccounting();
   const navigate = useNavigate();
   const stats = getFinancialStats();
   const shiftSummary = getCashShiftSummary();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
@@ -8,7 +8,9 @@ import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral } fr
 import { CollateralForm } from './features/CollateralForm';
 
 const LoanRequest: React.FC = () => {
-  const { addLoanRequest, createLoan, deleteLoanRequest, updateClient, clients, loanRequests, globalCurrency, loanProducts } = useStore();
+  const { addLoanRequest, createLoan, deleteLoanRequest, loanRequests, loanProducts } = useLoans();
+  const { updateClient, clients } = useClients();
+  const { globalCurrency } = useSettings();
   const navigate = useNavigate();
   
   // View State

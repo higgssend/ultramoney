@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Download, Filter, ChevronLeft } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useAccounting } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 
 const DeepAccounting: React.FC = () => {
-  const { transactions } = useStore();
+  const { transactions } = useAccounting();
   const navigate = useNavigate();
 
   return (

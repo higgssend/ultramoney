@@ -1,13 +1,13 @@
-
 export enum LoanStatus {
   PENDING = 'Pendiente',
   ACTIVE = 'Activo',
   PAID = 'Pagado',
   OVERDUE = 'Atrasado',
-  REJECTED = 'Rechazado'
+  REJECTED = 'Rechazado',
+  REFINANCED = 'Refinanciado'
 }
 
-export type LoanType = 'Amortizado (Cuota Fija)' | 'Amortizado (Capital Fijo)' | 'Rédito (Solo Interés)' | 'Interés Adelantado';
+export type LoanType = 'Amortizado (Cuota Fija)' | 'Amortizado (Capital Fijo)' | 'Rédito (Solo Interés)' | 'Interés Adelantado' | 'Amortización' | 'Rédito';
 export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
 
 export interface Collateral {
@@ -51,7 +51,7 @@ export interface Client {
   whatsapp?: string; // WhatsApp
   phoneHome?: string; // Teléfono Casa
   cedula: string;
-documentType?: 'Cedula' | 'Pasaporte' | 'Licencia' | 'ID' | 'Otro';
+  documentType?: 'Cedula' | 'Pasaporte' | 'Licencia' | 'ID' | 'Otro';
   address: string;
   province?: string;
   municipality?: string;
@@ -71,7 +71,7 @@ documentType?: 'Cedula' | 'Pasaporte' | 'Licencia' | 'ID' | 'Otro';
   routeSequence?: number;
 
   creditScore: number; // 0 - 100
-  status: 'Activo' | 'Bloqueado';
+  status: 'Activo' | 'Bloqueado' | 'Al Día';
   email?: string;
   joinedDate: string;
   clientPin?: string; // 4-digit PIN para el portal del cliente
@@ -79,6 +79,7 @@ documentType?: 'Cedula' | 'Pasaporte' | 'Licencia' | 'ID' | 'Otro';
   portalActive?: boolean;
   avatarUrl?: string;
   references?: ClientReference[];
+  guarantors?: any[];
 }
 
 export interface BankAccount {
@@ -106,16 +107,20 @@ export interface ClientDocument {
   fileUrl: string; // URL o DataURI
   fileType: string; // mime type e.g., 'image/jpeg', 'application/pdf'
   uploadDate: string;
+  tags?: string[];
 }
 
 export interface Loan {
   id: string;
   clientId: string;
-  clientName: string;
+  clientName?: string;
   amount: number; // Capital Inicial
   interestRate: number; // Percentage (e.g., 10 for 10%)
-  durationWeeks: number;
-  frequency: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
+  durationWeeks?: number;
+  installments?: number;
+  currentInstallment?: number;
+  frequency?: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
+  paymentFrequency?: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
   startDate: string;
   status: LoanStatus;
   loanType: LoanType;
@@ -136,25 +141,33 @@ export interface Loan {
   nextPaymentDate: string;
   // Garantía
   collateral?: Collateral;
+  guarantorId?: string;
+  note?: string;
 }
 
 export interface LoanRequest {
   id: string;
-  clientId: string;
+  clientId?: string;
   clientName: string;
+  clientPhone?: string;
+  clientEmail?: string;
   currency?: 'DOP' | 'USD';
-  amount: number;
-  interestRate: number;
-  durationWeeks: number;
-  frequency: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
-  loanType: LoanType;
+  amount?: number;
+  requestedAmount?: number;
+  requestedTerm?: number;
+  interestRate?: number;
+  durationWeeks?: number;
+  frequency?: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
+  loanType?: LoanType;
   closingCost?: number;
   closingCostMode?: ClosingCostMode;
   paymentDay?: number;
   requestDate: string;
-  status: 'Pendiente' | 'En evaluación' | 'Aprobado' | 'Rechazado' | 'Cancelado';
+  status: 'Pendiente' | 'Pending' | 'En evaluación' | 'Aprobado' | 'Rechazado' | 'Cancelado';
   collateral?: Collateral;
   loanDestination?: string;
+  purpose?: string;
+  notes?: string;
   observations?: string;
   lateFeePercentage?: number;
   graceDays?: number;

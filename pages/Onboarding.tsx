@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Upload, ArrowRight, ShieldCheck } from 'lucide-react';
 import { insforge } from '../lib/insforge';
-import { useStore } from '../context/StoreContext';
+import { useAuth, useSettings } from '../context/StoreContext';
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { updateCompanySettings, currentUser } = useStore();
+  const { updateCompanySettings } = useSettings();
+  const { currentUser } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',

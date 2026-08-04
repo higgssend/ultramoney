@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { User, MapPin, TrendingUp, Award, Plus, X, ChevronDown, Phone, Briefcase, Trash2, ChevronLeft, Calendar, CheckCircle2, Clock, Crosshair, AlertCircle } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useClients, useAuth, useAccounting, useLoans } from '../context/StoreContext';
 import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Employees: React.FC = () => {
-  const { employees, addEmployee, deleteEmployee, clients, loans, collectorVisits, addCollectorVisit, roles, cargos, registerUser } = useStore();
+  const { employees, addEmployee, deleteEmployee, roles, cargos, registerUser } = useAuth();
+  const { clients } = useClients();
+  const { loans } = useLoans();
+  const { collectorVisits, addCollectorVisit } = useAccounting();
   const [activeTab, setActiveTab] = useState<'employees' | 'visits'>('employees');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);

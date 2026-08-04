@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../context/StoreContext';
+import { useSettings } from '../context/StoreContext';
 import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar } from 'lucide-react';
 import { Loan, Transaction, CompanySettings, Client } from '../types';
 import { useParams } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { insforge } from '../lib/insforge';
 import { addWeeks, addMonths, addDays } from 'date-fns';
 
 export const ClientPortal: React.FC = () => {
-    const { companySettings } = useStore();
+    const { companySettings } = useSettings();
     const { clientId } = useParams<{ clientId: string }>(); // Can be UUID or portal_alias
     
     // Auth State

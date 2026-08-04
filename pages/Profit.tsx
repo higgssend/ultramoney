@@ -3,11 +3,14 @@ import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart as PieIcon, ChevronLeft, Download, FileSpreadsheet } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import StatCard from '../components/StatCard';
-import { useStore } from '../context/StoreContext';
+import { useClients, useAccounting, useAuth, useLoans } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 
 const Profit: React.FC = () => {
-  const { transactions, loans, clients, employees } = useStore();
+  const { transactions } = useAccounting();
+  const { loans } = useLoans();
+  const { clients } = useClients();
+  const { employees } = useAuth();
   const navigate = useNavigate();
 
   const downloadCSV = (filename: string, rows: string[][]) => {

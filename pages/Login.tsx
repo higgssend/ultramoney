@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, ChevronLeft, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react';
 import { insforge } from '../lib/insforge';
 
+import { open } from '@tauri-apps/plugin-shell';
+
 const REMEMBER_EMAIL_KEY = 'ultramoney_remembered_email';
 
 const Login: React.FC = () => {
@@ -32,7 +34,7 @@ const Login: React.FC = () => {
       if (isTauri) {
         // Open web login page in external system browser
         const webLoginUrl = 'https://ultramoney.app/login';
-        window.open(webLoginUrl, '_blank');
+        await open(webLoginUrl);
         return;
       }
 

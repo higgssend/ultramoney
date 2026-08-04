@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useStore } from '../context/StoreContext';
+import { useLoans } from '../context/StoreContext';
 import { Plus, Edit2, Trash2, Check, X, ShieldAlert, CheckCircle } from 'lucide-react';
 import { LoanProduct } from '../types';
 
 export const LoanProductsTab: React.FC = () => {
-    const { loanProducts, addLoanProduct, updateLoanProduct, deleteLoanProduct } = useStore();
+    const { loanProducts, addLoanProduct, updateLoanProduct, deleteLoanProduct } = useLoans();
     const [isEditing, setIsEditing] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Partial<LoanProduct> | null>(null);
 

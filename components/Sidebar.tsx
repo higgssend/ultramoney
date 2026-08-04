@@ -8,7 +8,7 @@ import {
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
   Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign
 } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useAuth, useSettings } from '../context/StoreContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -16,7 +16,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { currentUser, logout, companySettings, globalCurrency, setGlobalCurrency } = useStore();
+  const { currentUser, logout } = useAuth();
+  const { companySettings, globalCurrency, setGlobalCurrency } = useSettings();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
       return localStorage.getItem('theme') === 'dark';

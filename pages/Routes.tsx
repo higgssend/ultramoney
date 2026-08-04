@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../context/StoreContext';
+import { useAuth, useClients } from '../context/StoreContext';
 import { Route, Client } from '../types';
 import { Map, Plus, Edit2, Trash2, Search, ArrowRight, User, Hash, Save, AlertCircle, X, AlertTriangle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const RoutesPage: React.FC = () => {
-    const { routes, clients, addRoute, updateRoute, deleteRoute, updateClient, employees, roles } = useStore();
+    const { routes, clients, addRoute, updateRoute, deleteRoute, updateClient } = useClients();
+  const { employees, roles } = useAuth();
     const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);

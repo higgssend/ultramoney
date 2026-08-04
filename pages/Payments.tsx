@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useClients, useAuth, useSettings, useLoans, useAccounting } from '../context/StoreContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { toast } from 'sonner';
@@ -62,7 +62,11 @@ interface FullReceiptData {
 }
 
 const Payments: React.FC = () => {
-  const { loans, clients, registerPayment, transactions, companySettings, currentUser, users, roles } = useStore();
+  const { loans, registerPayment } = useLoans();
+  const { clients } = useClients();
+  const { transactions } = useAccounting();
+  const { companySettings } = useSettings();
+  const { currentUser, users, roles } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -272,6 +276,14 @@ const Payments: React.FC = () => {
         txId = insertedTxs[0].id;
     }
 
+    const totalInstallmentsCount = selectedLoan.durationWeeks || selectedLoan.installments || 1;
+    const amountPerInst = selectedLoan.totalToPay / totalInstallmentsCount;
+    const totalPaidAfterThis = Math.max(0, selectedLoan.totalToPay - newBalance);
+    const paidInstallmentsCalculated = Math.min(
+        totalInstallmentsCount, 
+        Math.floor((totalPaidAfterThis + 0.01) / amountPerInst)
+    );
+
     // Prepare Detailed Receipt Data
     setReceiptData({
         loanId: selectedLoanId,
@@ -285,8 +297,8 @@ const Payments: React.FC = () => {
         collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''} (${selectedLoan.collateralRef || ''})` : 'Sin Garantía',
         overdueAmount: Math.max(0, overdueAmount - amountVal), 
         overdueInstallments: overdueInsts.length,
-        totalInstallments: selectedLoan.durationWeeks,
-        paidInstallments: allInstallments.filter(i => i.status === 'Pagado').length,
+        totalInstallments: totalInstallmentsCount,
+        paidInstallments: paidInstallmentsCalculated,
         otherLoans: otherActiveLoans,
         cashierName: currentUser?.name || 'Sistema',
         paymentNote: payNote,
@@ -312,7 +324,14 @@ const Payments: React.FC = () => {
       // Reconstruct historical snapshot (mocked for demo as we don't have event sourcing)
       const currentBalance = loan.remainingBalance;
       
-      const allInstallments = generateInstallments(loan);
+      const totalInstallmentsCount = loan.durationWeeks || loan.installments || 1;
+      const amountPerInst = loan.totalToPay / totalInstallmentsCount;
+      const totalPaidSoFar = Math.max(0, loan.totalToPay - currentBalance);
+      const paidInstallmentsCalculated = Math.min(
+          totalInstallmentsCount, 
+          Math.floor((totalPaidSoFar + 0.01) / amountPerInst)
+      );
+
       const otherActiveLoans = loans.filter(l => l.clientId === loan.clientId && l.id !== loan.id).map(l => ({id: l.id, balance: l.remainingBalance}));
 
       setReceiptData({
@@ -327,8 +346,8 @@ const Payments: React.FC = () => {
           collateral: loan.collateralType ? `${loan.collateralType} - ${loan.collateralDescription}` : 'N/A',
           overdueAmount: 0, 
           overdueInstallments: 0,
-          totalInstallments: loan.durationWeeks,
-          paidInstallments: allInstallments.filter(i => i.status === 'Pagado').length,
+          totalInstallments: totalInstallmentsCount,
+          paidInstallments: paidInstallmentsCalculated,
           otherLoans: otherActiveLoans,
           cashierName: currentUser?.name || 'Sistema',
           paymentNote: t.description,

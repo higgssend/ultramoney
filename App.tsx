@@ -37,7 +37,7 @@ import Simulator from './pages/Simulator';
 import LandingPage from './pages/LandingPage';
 import HelpPage from './pages/Help';
 import MigrationCenter from './pages/MigrationCenter';
-import { StoreProvider, useStore } from './context/StoreContext';
+import { StoreProvider, useAuth } from './context/StoreContext';
 import { ToastProvider } from './context/ToastContext';
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 
@@ -68,7 +68,7 @@ import ScalabilityFeature from './pages/features/ScalabilityFeature';
 
 // Auth Guard Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, isLoadingAuth } = useStore();
+  const { currentUser, isLoadingAuth } = useAuth();
   
   if (isLoadingAuth) {
     return (
@@ -86,7 +86,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Public Only Guard Wrapper (Redirects to dashboard if logged in)
 const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, isLoadingAuth } = useStore();
+  const { currentUser, isLoadingAuth } = useAuth();
   
   if (isLoadingAuth) {
     return (
@@ -104,7 +104,7 @@ const PublicOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 const AppContent: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { currentUser } = useStore();
+  const { currentUser } = useAuth();
   const location = useLocation();
 
   // Define routes where Sidebar/Layout should NOT appear

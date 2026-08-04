@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { useStore } from '../context/StoreContext';
+import { useSettings } from '../context/StoreContext';
 import { DocumentTemplate } from './DocumentTemplate';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { insforge } from '../lib/insforge';
 
 export const HiddenDocumentRenderer: React.FC = () => {
-  const { pdfQueue, removePdfJob, companySettings } = useStore();
+  const { pdfQueue, removePdfJob, companySettings } = useSettings();
   const processingRef = useRef(false);
 
   useEffect(() => {

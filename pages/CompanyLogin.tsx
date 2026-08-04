@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useStore } from '../context/StoreContext';
+import { useAuth } from '../context/StoreContext';
 import { insforge } from '../lib/insforge';
 
 export const CompanyLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { login } = useStore();
+  const { login } = useAuth();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

@@ -20,12 +20,12 @@ import {
   Save
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
-import { useStore } from '../../context/StoreContext';
+import { useAuth } from '../../context/StoreContext';
 import { ApiKey } from '../../types';
 
 export const ApiDocsTab: React.FC = () => {
   const { addToast } = useToast();
-  const { apiKeys, generateApiKey, deleteApiKey, updateApiKey } = useStore();
+  const { apiKeys, generateApiKey, deleteApiKey, updateApiKey } = useAuth();
   
   // UI State
   const [isGenerating, setIsGenerating] = useState(false);

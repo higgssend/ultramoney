@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useStore } from '../context/StoreContext';
+import { useSettings } from '../context/StoreContext';
 import { ShieldCheck, Search, Filter, Calendar, User, Clock, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 
 const Bitacora: React.FC = () => {
-  const { auditLogs } = useStore();
+  const { auditLogs } = useSettings();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('Todas');
   

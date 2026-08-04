@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Search, ChevronLeft, User, CreditCard, Calendar, Briefcase, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../context/StoreContext';
+import { useClients, useLoans } from '../context/StoreContext';
 
 const CreditInquiry: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, loans } = useStore();
+  const { clients } = useClients();
+  const { loans } = useLoans();
   const [searchTerm, setSearchTerm] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
