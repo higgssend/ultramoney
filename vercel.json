@@ -1,8 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/api/:path*",
+      "destination": "https://sxwv82iw.us-east.insforge.app/:path*"
+    },
+    {
+      "source": "/functions/v1/:path*",
+      "destination": "https://sxwv82iw.us-east.insforge.app/functions/v1/:path*"
     }
   ]
 }
