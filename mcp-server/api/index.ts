@@ -71,19 +71,22 @@ server.tool("register_payment", "Registra un pago.", { loanId: z.string(), amoun
 const app = express();
 app.use(cors());
 
-let transport: SSEServerTransport;
+const transports = new Map<string, SSEServerTransport>();
 
 app.get("/mcp", async (req, res) => {
-  transport = new SSEServerTransport("/mcp/messages", res);
+  const transport = new SSEServerTransport("/mcp/messages", res);
   await server.connect(transport);
+  transports.set(transport.sessionId, transport);
 });
 
 app.post("/mcp/messages", express.json(), async (req, res) => {
-  if (transport) {
-    await transport.handlePostMessage(req, res);
-  } else {
-    res.status(500).send("Transport not initialized");
+  const sessionId = req.query.sessionId as string;
+  const transport = transports.get(sessionId);
+  if (!transport) {
+    res.status(404).send("Session not found");
+    return;
   }
+  await transport.handlePostMessage(req, res);
 });
 
 const PORT = process.env.PORT || 3001;
