@@ -83,6 +83,42 @@ export default defineConfig(({ mode }) => {
                     statuses: [0, 200]
                   }
                 }
+              },
+              {
+                urlPattern: /^https:\/\/[a-z0-9]+\.[a-z-]+\.insforge\.app\/rest\/v1\/.*/i,
+                handler: 'NetworkFirst',
+                options: {
+                  cacheName: 'insforge-api-get-cache',
+                  expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+                  },
+                  cacheableResponse: {
+                    statuses: [0, 200]
+                  }
+                }
+              },
+              {
+                urlPattern: /^https:\/\/[a-z0-9]+\.[a-z-]+\.insforge\.app\/rest\/v1\/.*/i,
+                handler: 'NetworkOnly',
+                method: 'POST',
+                options: {
+                  backgroundSync: {
+                    name: 'insforge-api-post-queue',
+                    options: { maxRetentionTime: 24 * 60 }
+                  }
+                }
+              },
+              {
+                urlPattern: /^https:\/\/[a-z0-9]+\.[a-z-]+\.insforge\.app\/rest\/v1\/.*/i,
+                handler: 'NetworkOnly',
+                method: 'PATCH',
+                options: {
+                  backgroundSync: {
+                    name: 'insforge-api-patch-queue',
+                    options: { maxRetentionTime: 24 * 60 }
+                  }
+                }
               }
             ]
           }

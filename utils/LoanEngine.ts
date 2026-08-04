@@ -342,7 +342,14 @@ export class LoanEngine {
             });
         }
 
-        return schedule;
+        // Apply robust rounding to 2 decimals for all financial values
+        return schedule.map(inst => ({
+            ...inst,
+            principal: Math.round(inst.principal * 100) / 100,
+            interest: Math.round(inst.interest * 100) / 100,
+            total: Math.round(inst.total * 100) / 100,
+            balance: Math.round(inst.balance * 100) / 100,
+        }));
     }
 
     /**
@@ -360,9 +367,11 @@ export class LoanEngine {
         let paidMora = 0, paidExpenses = 0, paidInterest = 0, paidPrincipal = 0;
 
         const pay = (due: number) => {
-            const amountToPay = Math.min(remaining, due);
-            remaining -= amountToPay;
-            return amountToPay;
+            // Prevent paying more than due, and ensure no micro-cents issues
+            const safeDue = Math.max(0, Math.round(due * 100) / 100);
+            const amountToPay = Math.min(remaining, safeDue);
+            remaining = Math.round((remaining - amountToPay) * 100) / 100;
+            return Math.round(amountToPay * 100) / 100;
         };
 
         if (order === 'Mora_Expenses_Interest_Capital') {

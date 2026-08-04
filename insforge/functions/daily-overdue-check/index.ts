@@ -36,7 +36,11 @@ serve(async (req) => {
 
 
     for (const loan of (loans || [])) {
-      const nextPayment = loan.nextpaymentdate || loan.startdate;
+      // Find the next pending installment from the JSON array
+      const installments = loan.installments || [];
+      const pendingInstallment = installments.find((inst: any) => inst.status === 'Pendiente');
+      const nextPayment = pendingInstallment ? pendingInstallment.dueDate : loan.startdate;
+      
       if (!nextPayment) continue;
 
       if (nextPayment < todayStr) {
@@ -46,17 +50,12 @@ serve(async (req) => {
         
         const graceDays = loan.gracedays || 0;
         
-        // If within grace period, skip penalty but we could still mark it as overdue if we wanted.
-        // Usually, grace period protects from BOTH status change and penalty, or just penalty.
-        // Let's assume it protects from penalty, but status is 'Atrasado'.
-        
         let penaltyAmount = 0;
         let shouldApplyPenalty = false;
         
         if (diffDays > graceDays) {
            const lateFeePct = loan.latefeepercentage || 0;
            if (lateFeePct > 0) {
-               // Calculate penalty on the installment amount
                const installmentAmount = loan.installmentamount || 0;
                penaltyAmount = installmentAmount * (lateFeePct / 100);
                shouldApplyPenalty = true;
@@ -82,9 +81,8 @@ serve(async (req) => {
         const updates: any = { status: 'Atrasado' };
         
         if (shouldApplyPenalty) {
-           // We need to add penalty to remaining balance and total_to_pay
            updates.remainingbalance = (loan.remainingbalance || 0) + penaltyAmount;
-           updates.total_to_pay = (loan.total_to_pay || 0) + penaltyAmount;
+           updates.totaltopay = (loan.totaltopay || 0) + penaltyAmount;
         }
 
         await supabase
@@ -95,14 +93,14 @@ serve(async (req) => {
         if (shouldApplyPenalty) {
            // Insert the penalty transaction
            await supabase.from('transactions').insert({
-               loanid: loan.id,
+               referenceid: loan.id,
                lender_id: loan.lender_id,
-               client_id: loan.clientid,
                type: 'Cargo',
                amount: penaltyAmount,
                date: new Date().toISOString(),
                category: 'Mora',
-               notes: `Penalidad automática por mora (${loan.latefeepercentage}% de cuota)`
+               currency: loan.currency || 'DOP',
+               description: `Penalidad automática por mora (${loan.latefeepercentage}% de cuota)`
            });
         }
           
