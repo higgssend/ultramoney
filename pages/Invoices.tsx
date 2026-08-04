@@ -41,7 +41,7 @@ const Invoices: React.FC = () => {
     });
 
   const filteredInvoices = generatedInvoices.filter(inv => 
-    inv.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (inv.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
     inv.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

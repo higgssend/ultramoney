@@ -13,9 +13,9 @@ const Bitacora: React.FC = () => {
   const itemsPerPage = 15;
 
   const filteredLogs = auditLogs.filter(log => {
-    const matchesSearch = log.userName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          log.details.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (log.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (log.action || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (log.details || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesAction = filterAction === 'Todas' || log.action.includes(filterAction);
     return matchesSearch && matchesAction;
   });

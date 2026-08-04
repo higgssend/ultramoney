@@ -184,7 +184,7 @@ const Payments: React.FC = () => {
       if (searchTerm) {
           const term = searchTerm.toLowerCase();
           return Object.values(groups).filter(g => 
-              g.clientName.toLowerCase().includes(term) || 
+              (g.clientName || '').toLowerCase().includes(term) || 
               g.loans.some(l => l.loan.id.toLowerCase().includes(term))
           );
       }
@@ -201,7 +201,7 @@ const Payments: React.FC = () => {
         .filter(t => {
             const searchLower = historySearch.toLowerCase();
             const loan = loans.find(l => l.id === t.referenceId);
-            const clientName = loan ? loan.clientName.toLowerCase() : '';
+            const clientName = loan ? (loan.clientName || '').toLowerCase() : '';
             
             const matchesSearch = 
                 t.description.toLowerCase().includes(searchLower) || 
@@ -367,7 +367,7 @@ const Payments: React.FC = () => {
     const client = clients.find(c => c.id === l.clientId);
     const term = searchTerm.toLowerCase();
     const matchesLoan = l.id.toLowerCase().includes(term);
-    const matchesName = l.clientName.toLowerCase().includes(term);
+    const matchesName = (l.clientName || '').toLowerCase().includes(term);
     const matchesCedula = client ? client.cedula.includes(searchTerm) : false;
     return (matchesLoan || matchesName || matchesCedula) && l.remainingBalance > 0;
   }) : [];

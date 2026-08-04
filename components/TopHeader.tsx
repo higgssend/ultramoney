@@ -51,7 +51,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
     
     // Search Loans
     const foundLoans = loans.filter(l => 
-      l.clientName.toLowerCase().includes(q)
+      (l.clientName || '').toLowerCase().includes(q)
     ).map(l => ({ type: 'loan', id: l.id, title: `Préstamo de ${l.clientName}`, subtitle: `Balance: $${l.remainingBalance}` })).slice(0, 3);
     
     setSearchResults([...foundClients, ...foundLoans]);

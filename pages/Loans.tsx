@@ -37,7 +37,7 @@ const Loans: React.FC = () => {
   };
 
   const filteredLoans = loans.filter(l => {
-    const matchesSearch = l.clientName.toLowerCase().includes(filterTerm.toLowerCase()) || l.id.toLowerCase().includes(filterTerm.toLowerCase());
+    const matchesSearch = (l.clientName || '').toLowerCase().includes(filterTerm.toLowerCase()) || l.id.toLowerCase().includes(filterTerm.toLowerCase());
     const statusObj = getStatusStyle(l.status, l.nextPaymentDate);
     const matchesStatus = statusFilter === 'TODOS' || statusObj.badge === statusFilter;
     return matchesSearch && matchesStatus;
