@@ -4,7 +4,7 @@ import { Mail, ChevronLeft, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-r
 import { insforge } from '../lib/insforge';
 
 import { open } from '@tauri-apps/plugin-shell';
-
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 const REMEMBER_EMAIL_KEY = 'ultramoney_remembered_email';
 
 const Login: React.FC = () => {
@@ -28,19 +28,49 @@ const Login: React.FC = () => {
     }
   }, []);
 
+  // Listen for Deep Link OAuth Redirects in Tauri
+  useEffect(() => {
+    const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
+    let unlisten: (() => void) | undefined;
+    if (isTauri) {
+      onOpenUrl((urls) => {
+        if (urls.length > 0) {
+          const url = urls[0];
+          if (url.includes('#access_token=')) {
+            window.location.hash = url.substring(url.indexOf('#'));
+            navigate('/dashboard');
+          }
+        }
+      }).then(fn => { unlisten = fn; }).catch(console.error);
+    }
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [navigate]);
+
   const handleOAuthLogin = async (provider: 'google' | 'apple') => {
     try {
       const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
       if (isTauri) {
-        // Open web login page in external system browser
-        const webLoginUrl = 'https://ultramoney.app/login';
-        await open(webLoginUrl);
+        const { data, error } = await insforge.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: 'ultramoney://login',
+            skipBrowserRedirect: true
+          }
+        });
+        if (error) throw error;
+        if (data?.url) {
+          await open(data.url);
+        }
         return;
       }
 
       const { error } = await insforge.auth.signInWithOAuth({
         provider,
-        redirectTo: window.location.origin + '/dashboard'
+        options: {
+          redirectTo: window.location.origin + '/dashboard'
+        }
       });
       if (error) throw error;
     } catch (err: unknown) {

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, ChevronLeft, Lock, Eye, EyeOff, CheckCircle, ShieldCheck, ArrowRight, User } from 'lucide-react';
 import { insforge } from '../lib/insforge';
+import { open } from '@tauri-apps/plugin-shell';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 
 // ─── Password Helpers ───────────────────────────────────────────
 const getPasswordStrength = (pw: string): { score: number; label: string; color: string } => {
@@ -160,16 +162,48 @@ const Register: React.FC = () => {
 
   const strength = getPasswordStrength(formData.password);
 
+  // Listen for Deep Link OAuth Redirects in Tauri
+  React.useEffect(() => {
+    const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
+    let unlisten: (() => void) | undefined;
+    if (isTauri) {
+      onOpenUrl((urls) => {
+        if (urls.length > 0) {
+          const url = urls[0];
+          if (url.includes('#access_token=')) {
+            window.location.hash = url.substring(url.indexOf('#'));
+            navigate('/onboarding');
+          }
+        }
+      }).then(fn => { unlisten = fn; }).catch(console.error);
+    }
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [navigate]);
+
   const triggerOAuth = async (provider: 'google' | 'apple') => {
     try {
       const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
       if (isTauri) {
-        window.open('https://ultramoney.app/register', '_blank');
+        const { data, error } = await insforge.auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: 'ultramoney://register',
+            skipBrowserRedirect: true
+          }
+        });
+        if (error) throw error;
+        if (data?.url) {
+          await open(data.url);
+        }
         return;
       }
       const { error } = await insforge.auth.signInWithOAuth({
         provider,
-        redirectTo: window.location.origin + '/onboarding'
+        options: {
+          redirectTo: window.location.origin + '/onboarding'
+        }
       });
       if (error) throw error;
     } catch (err: unknown) {

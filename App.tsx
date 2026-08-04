@@ -39,6 +39,7 @@ import HelpPage from './pages/Help';
 import MigrationCenter from './pages/MigrationCenter';
 import { StoreProvider, useAuth } from './context/StoreContext';
 import { ToastProvider } from './context/ToastContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 
 // Initialize Core Web Vitals reporting
@@ -138,6 +139,7 @@ const AppContent: React.FC = () => {
 
         {/* Inner Content Wrapper */}
         <div className={`${!isFullScreenPage && currentUser ? 'p-4 md:p-8 pb-24 md:pb-8' : ''}`}>
+          <ErrorBoundary>
             <Routes>
             {/* Public Routes */}
             <Route path="/" element={("__TAURI__" in window || "__TAURI_INTERNALS__" in window || window.navigator.userAgent.includes('Tauri')) ? <Navigate to="/login" replace /> : <LandingPage />} />
@@ -188,6 +190,7 @@ const AppContent: React.FC = () => {
             
             <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+          </ErrorBoundary>
         </div>
       </main>
 

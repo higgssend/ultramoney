@@ -28,7 +28,8 @@ const mapTransaction = (t: any) => ({
   ...t, referenceId: t.referenceid || t.reference_id || t.referenceId,
   paymentType: t.paymenttype || t.payment_type || t.paymentType,
   paymentMethod: t.paymentmethod || t.payment_method || t.paymentMethod || 'Efectivo',
-  invoiceDate: t.invoicedate || t.invoice_date || t.invoiceDate
+  invoiceDate: t.invoicedate || t.invoice_date || t.invoiceDate,
+  category: t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')
 });
 
 export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
