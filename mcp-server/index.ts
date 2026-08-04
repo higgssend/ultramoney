@@ -83,7 +83,10 @@ app.get("/", (req, res) => {
 const transports = new Map<string, SSEServerTransport>();
 
 app.get("/mcp", async (req, res) => {
-  const transport = new SSEServerTransport("/mcp/messages", res);
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.headers['x-forwarded-host'] || req.get('host');
+  const absoluteUrl = `${protocol}://${host}/mcp/messages`;
+  const transport = new SSEServerTransport(absoluteUrl, res);
   await server.connect(transport);
   transports.set(transport.sessionId, transport);
 });
