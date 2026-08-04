@@ -51,9 +51,11 @@ export default defineConfig(({ mode }) => {
             ]
           },
           workbox: {
+            cacheId: 'ultramoney-v2',
             cleanupOutdatedCaches: true,
             skipWaiting: true,
             clientsClaim: true,
+            maximumFileSizeToCacheInBytes: 10485760, // 10MB to ensure large JS chunks are precached
             globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
             runtimeCaching: [
               {

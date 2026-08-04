@@ -15,7 +15,10 @@ if (!rootElement) {
 window.addEventListener('vite:preloadError', (event) => {
   console.warn('Vite preload error detected (posible nueva versión). Recargando página...');
   event.preventDefault();
-  window.location.reload();
+  if (!sessionStorage.getItem('um_reloaded')) {
+    sessionStorage.setItem('um_reloaded', 'true');
+    window.location.reload();
+  }
 });
 
 // Fallback for Service Worker chunk load errors that might not be caught by vite:preloadError
@@ -29,7 +32,20 @@ window.addEventListener('unhandledrejection', (event) => {
   ) {
     console.warn('Chunk load error detected. Recargando página...');
     event.preventDefault();
-    window.location.reload();
+    
+    // Si el ServiceWorker está corrupto, lo eliminamos a la fuerza
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+
+    if (!sessionStorage.getItem('um_reloaded')) {
+      sessionStorage.setItem('um_reloaded', 'true');
+      setTimeout(() => window.location.reload(), 500);
+    }
   }
 });
 
