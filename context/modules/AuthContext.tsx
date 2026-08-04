@@ -58,17 +58,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         const { data: userData } = await insforge.auth.getCurrentUser();
-        const user = userData?.user;
+        const user: any = userData?.user;
         
         if (!unmounted) {
           if (user) {
+            const meta = user.user_metadata || user.metadata || {};
             setCurrentUser({
               id: user.id,
               email: user.email,
-              name: user.profile?.name || user.user_metadata?.name || user.email,
-              roleId: user.user_metadata?.roleId || user.profile?.roleId || 'Admin',
-              username: user.user_metadata?.username || user.email?.split('@')[0],
-              roleIds: user.user_metadata?.roleIds || []
+              name: user.profile?.name || meta.name || user.email,
+              roleId: meta.roleId || user.profile?.roleId || 'Admin',
+              username: meta.username || user.email?.split('@')[0],
+              roleIds: meta.roleIds || []
             });
           } else {
             setCurrentUser(null);
@@ -76,24 +77,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsLoadingAuth(false);
         }
 
-        const { data: authListener } = insforge.auth.onAuthStateChange(async (event, session) => {
+        const unsubscribe = insforge.auth.onAuthStateChange(async (event: string, session: any) => {
           if (unmounted) return;
-          if (event === 'SIGNED_IN' && session?.user) {
-            const u = session.user;
+          const u: any = session?.user;
+          if (event === 'SIGNED_IN' && u) {
+            const meta = u.user_metadata || u.metadata || {};
             setCurrentUser({
               id: u.id,
               email: u.email,
-              name: u.profile?.name || u.user_metadata?.name || u.email,
-              roleId: u.user_metadata?.roleId || u.profile?.roleId || 'Admin',
-              username: u.user_metadata?.username || u.email?.split('@')[0],
-              roleIds: u.user_metadata?.roleIds || []
+              name: u.profile?.name || meta.name || u.email,
+              roleId: meta.roleId || u.profile?.roleId || 'Admin',
+              username: meta.username || u.email?.split('@')[0],
+              roleIds: meta.roleIds || []
             });
           } else if (event === 'SIGNED_OUT') {
             setCurrentUser(null);
             localStorage.removeItem('employee_session');
           }
         });
-        authSub = authListener.subscription;
+        authSub = unsubscribe;
 
       } catch (error) {
         console.error("Auth init error:", error);
@@ -105,7 +107,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return () => {
       unmounted = true;
-      if (authSub) authSub.unsubscribe();
+      if (typeof authSub === 'function') {
+        authSub();
+      } else if (authSub?.unsubscribe) {
+        authSub.unsubscribe();
+      }
     };
   }, []);
 
@@ -188,10 +194,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const registerUser = async (user: User) => {
     try {
-      const { data, error: authError } = await insforge.auth.signUp({
+      const { data, error: authError } = await (insforge.auth.signUp as any)({
         email: user.email || `${user.username}@app.ultramoney.com`,
         password: (user as any).password || '123456',
-        options: { data: { name: user.name, username: user.username, roleId: user.roleId || 'Employee', roleIds: user.roleIds || [] } }
+        name: user.name
       });
       if (authError) { addToast(authError.message, 'error'); return; }
       
@@ -244,7 +250,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addCargo = async (cargo: Cargo) => {
     const { data, error } = await insforge.database.from('cargos').insert({
-      lender_id: currentUser?.id, name: cargo.name, description: cargo.description, permissions: cargo.permissions
+      lender_id: currentUser?.id, name: cargo.name, description: cargo.description, permissions: (cargo as any).permissions
     }).select().single();
     if (data && !error) setCargos(prev => [...prev, data]);
   };
@@ -260,18 +266,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addEmployee = async (employee: Employee) => {
+    const empAny = employee as any;
     const payload = {
-      lender_id: currentUser?.id, name: employee.name, role: employee.role, phone: employee.phone,
+      lender_id: currentUser?.id, name: employee.name, role: empAny.role || 'Employee', phone: employee.phone,
       assigned_route: employee.assignedRoute, performance: employee.performance, active_routes: employee.activeRoutes,
-      collections: employee.collections, sucursal_id: employee.sucursalId, cargo_id: employee.cargoId,
+      collections: employee.collections, sucursal_id: empAny.sucursalId, cargo_id: employee.cargoId,
       username: employee.username, employee_pin: employee.employeePin
     };
     const { data, error } = await insforge.database.from('employees').insert(payload).select().single();
     if (data && !error) {
       const newEmp: Employee = {
-        id: data.id, name: data.name, role: data.role, phone: data.phone, assignedRoute: data.assigned_route,
+        id: data.id, name: data.name, phone: data.phone, assignedRoute: data.assigned_route,
         performance: data.performance, activeRoutes: data.active_routes, collections: data.collections,
-        sucursalId: data.sucursal_id, cargoId: data.cargo_id, username: data.username, employeePin: data.employee_pin
+        cargoId: data.cargo_id, username: data.username, employeePin: data.employee_pin
       };
       setEmployees(prev => [newEmp, ...prev]);
       addToast("Empleado agregado", "success");
