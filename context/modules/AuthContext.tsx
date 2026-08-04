@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsLoadingAuth(false);
         }
 
-        const unsubscribe = insforge.auth.onAuthStateChange(async (event: string, session: any) => {
+        const unsubscribe = (insforge.auth.onAuthStateChange as any)(async (event: string, session: any) => {
           if (unmounted) return;
           const u: any = session?.user;
           if (event === 'SIGNED_IN' && u) {
