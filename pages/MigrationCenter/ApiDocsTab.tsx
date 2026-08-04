@@ -252,14 +252,14 @@ export const ApiDocsTab: React.FC = () => {
                   <div className="space-y-3">
                       <div>
                           <p className="text-xs text-slate-500 mb-1">Para acceso directo a la Base de Datos (PostgREST):</p>
-                          <code className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:emerald-400 rounded-lg font-mono text-sm font-bold block">
-                              https://sxwv82iw.us-east.insforge.app/rest/v1
+                          <code className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg font-mono text-sm font-bold block">
+                              https://api.ultramoney.app/rest/v1
                           </code>
                       </div>
                       <div>
-                          <p className="text-xs text-slate-500 mb-1">Para lógicas complejas y conectores (Edge Functions):</p>
+                          <p className="text-xs text-slate-500 mb-1">Para lógicas complejas y Edge Functions:</p>
                           <code className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg font-mono text-sm font-bold block">
-                              https://sxwv82iw.us-east.insforge.app/functions/v1
+                              https://api.ultramoney.app/functions/v1
                           </code>
                       </div>
                   </div>
@@ -278,7 +278,7 @@ Content-Type: application/json`}
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                   <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Ejemplo en cURL (Leer Clientes)</h4>
                   <pre className="bg-slate-900 text-slate-300 p-3 rounded-lg overflow-x-auto text-xs font-mono">
-{`curl -X GET "https://sxwv82iw.us-east.insforge.app/rest/v1/clients?select=*" \\
+{`curl -X GET "https://api.ultramoney.app/rest/v1/clients?select=*" \\
   -H "apikey: sk_ultra_abc123" \\
   -H "Authorization: Bearer sk_ultra_abc123" \\
   -H "Content-Type: application/json"`}
