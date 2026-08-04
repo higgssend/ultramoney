@@ -11,6 +11,18 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// FORCE KILL OLD SERVICE WORKER AND RECREATE IT (Requested by User)
+if ('serviceWorker' in navigator && !localStorage.getItem('sw_force_recreated_v4')) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister();
+    }
+    localStorage.setItem('sw_force_recreated_v4', 'true');
+    console.log("Service Worker eliminado forzosamente. Recargando para recrearlo...");
+    window.location.reload();
+  });
+}
+
 // Global handler for Vite chunk loading errors (occurs after deployments when old chunks are deleted)
 window.addEventListener('vite:preloadError', (event) => {
   console.warn('Vite preload error detected (posible nueva versión). Recargando página...');
