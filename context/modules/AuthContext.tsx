@@ -57,17 +57,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
 
-        const { data: { session } } = await insforge.auth.getSession();
+        const { data: userData } = await insforge.auth.getCurrentUser();
+        const user = userData?.user;
         
         if (!unmounted) {
-          if (session?.user) {
+          if (user) {
             setCurrentUser({
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.name || session.user.email,
-              roleId: session.user.user_metadata?.roleId || 'Admin',
-              username: session.user.user_metadata?.username || session.user.email?.split('@')[0],
-              roleIds: session.user.user_metadata?.roleIds || []
+              id: user.id,
+              email: user.email,
+              name: user.profile?.name || user.user_metadata?.name || user.email,
+              roleId: user.user_metadata?.roleId || user.profile?.roleId || 'Admin',
+              username: user.user_metadata?.username || user.email?.split('@')[0],
+              roleIds: user.user_metadata?.roleIds || []
             });
           } else {
             setCurrentUser(null);
@@ -78,13 +79,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data: authListener } = insforge.auth.onAuthStateChange(async (event, session) => {
           if (unmounted) return;
           if (event === 'SIGNED_IN' && session?.user) {
+            const u = session.user;
             setCurrentUser({
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.name || session.user.email,
-              roleId: session.user.user_metadata?.roleId || 'Admin',
-              username: session.user.user_metadata?.username || session.user.email?.split('@')[0],
-              roleIds: session.user.user_metadata?.roleIds || []
+              id: u.id,
+              email: u.email,
+              name: u.profile?.name || u.user_metadata?.name || u.email,
+              roleId: u.user_metadata?.roleId || u.profile?.roleId || 'Admin',
+              username: u.user_metadata?.username || u.email?.split('@')[0],
+              roleIds: u.user_metadata?.roleIds || []
             });
           } else if (event === 'SIGNED_OUT') {
             setCurrentUser(null);
