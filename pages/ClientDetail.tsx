@@ -13,6 +13,7 @@ import { useToast } from '../context/ToastContext';
 import { ContractViewer } from './features/ContractViewer';
 import { DocumentGenerator, DocumentType } from '../components/DocumentGenerator';
 import { DataExportToolbar } from '../components/DataExportToolbar';
+import { CustomSelect } from '../components/CustomSelect';
 
 const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -495,12 +496,17 @@ const ClientDetail: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo</label>
-                            <select className="w-full px-4 py-2 border dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" value={uploadDocType} onChange={e => setUploadDocType(e.target.value as any)}>
-                                <option value="Cedula">Cédula de Identidad</option>
-                                <option value="Contrato">Contrato Firmado</option>
-                                <option value="Garantia">Garantía / Aval</option>
-                                <option value="Otro">Otro</option>
-                            </select>
+                            <CustomSelect 
+                                className="w-full"
+                                value={uploadDocType} 
+                                onChange={e => setUploadDocType(e as any)}
+                                options={[
+                                    { value: 'Cedula', label: 'Cédula de Identidad' },
+                                    { value: 'Contrato', label: 'Contrato Firmado' },
+                                    { value: 'Garantia', label: 'Garantía / Aval' },
+                                    { value: 'Otro', label: 'Otro' }
+                                ]}
+                            />
                         </div>
                         <div className="flex gap-4">
                             <div className="flex-1 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer relative group">

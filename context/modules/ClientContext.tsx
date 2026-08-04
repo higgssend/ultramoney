@@ -16,6 +16,10 @@ interface ClientContextType {
   addClientDocument: (doc: ClientDocument, file?: File) => void;
   removeClientDocument: (id: string) => void;
   generateClientPin: (clientId: string) => string;
+  addRoute: (route: any) => Promise<void>;
+  updateRoute: (id: string, updates: any) => Promise<void>;
+  deleteRoute: (id: string) => Promise<void>;
+  refreshClients: () => Promise<void>;
 }
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
@@ -29,54 +33,54 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
 
-  useEffect(() => {
+  const refreshClients = React.useCallback(async () => {
     if (!currentUser) {
       setClients([]); setClientNotes([]); setClientDocuments([]); setRoutes([]);
       return;
     }
+    try {
+      const [clientsRes, notesRes, docsRes, routesRes] = await Promise.all([
+        insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
+        insforge.database.from('client_notes').select('*').order('created_at', { ascending: false }),
+        insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
+        insforge.database.from('routes').select('*').order('created_at', { ascending: false })
+      ]);
 
-    const fetchClients = async () => {
-      try {
-        const [clientsRes, notesRes, docsRes, routesRes] = await Promise.all([
-          insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('client_notes').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('routes').select('*').order('created_at', { ascending: false })
-        ]);
-
-        if (clientsRes.data) {
-          setClients(clientsRes.data.map((c: any) => ({
-            id: c.id, name: c.name, lastName: c.lastname, cedula: c.cedula, documentType: c.documenttype,
-            email: c.email, phone: c.phone, whatsapp: c.whatsapp, phoneHome: c.phonehome,
-            address: c.address, province: c.province, municipality: c.municipality, sector: c.sector,
-            referenceAddress: c.referenceaddress, companyName: c.companyname, jobPosition: c.jobposition,
-            coordinates: c.coordinates, routeId: c.routeid, routeSequence: c.routesequence,
-            occupation: c.occupation, sex: c.sex, income: c.income, creditScore: c.creditscore,
-            status: c.status, joinDate: c.joineddate || c.created_at, clientPin: c.clientpin, guarantors: c.guarantors
-          })));
-        }
-        if (notesRes.data) {
-          setClientNotes(notesRes.data.map((n: any) => ({
-            id: n.id, clientId: n.client_id, content: n.content, date: n.date, createdBy: n.created_by
-          })));
-        }
-        if (docsRes.data) {
-          setClientDocuments(docsRes.data.map((d: any) => ({
-            id: d.id, clientId: d.client_id, title: d.title, type: d.type,
-            fileUrl: d.file_url, uploadDate: d.upload_date, tags: d.tags || []
-          })));
-        }
-        if (routesRes.data) {
-          setRoutes(routesRes.data.map((r: any) => ({
-             id: r.id, name: r.name, description: r.description, collector_id: r.collector_id
-          })));
-        }
-      } catch (error) {
-        console.error("Error fetching clients:", error);
+      if (clientsRes.data) {
+        setClients(clientsRes.data.map((c: any) => ({
+          id: c.id, name: c.name, lastName: c.lastname, cedula: c.cedula, documentType: c.documenttype,
+          email: c.email, phone: c.phone, whatsapp: c.whatsapp, phoneHome: c.phonehome,
+          address: c.address, province: c.province, municipality: c.municipality, sector: c.sector,
+          referenceAddress: c.referenceaddress, companyName: c.companyname, jobPosition: c.jobposition,
+          coordinates: c.coordinates, routeId: c.routeid, routeSequence: c.routesequence,
+          occupation: c.occupation, sex: c.sex, income: c.income, creditScore: c.creditscore,
+          status: c.status, joinedDate: c.joineddate || c.created_at, clientPin: c.clientpin, guarantors: c.guarantors
+        })));
       }
-    };
-    fetchClients();
+      if (notesRes.data) {
+        setClientNotes(notesRes.data.map((n: any) => ({
+          id: n.id, clientId: n.client_id, content: n.content, date: n.date, createdBy: n.created_by
+        })));
+      }
+      if (docsRes.data) {
+        setClientDocuments(docsRes.data.map((d: any) => ({
+          id: d.id, clientId: d.client_id, title: d.title, type: d.type,
+          fileUrl: d.file_url, uploadDate: d.upload_date, tags: d.tags || []
+        })));
+      }
+      if (routesRes.data) {
+        setRoutes(routesRes.data.map((r: any) => ({
+           id: r.id, name: r.name, description: r.description, collector_id: r.collector_id
+        })));
+      }
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    }
   }, [currentUser]);
+
+  useEffect(() => {
+    refreshClients();
+  }, [refreshClients]);
 
   const addClient = async (client: any): Promise<Client | void> => {
     if (!currentUser) return;
@@ -99,7 +103,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         referenceAddress: data.referenceaddress, companyName: data.companyname, jobPosition: data.jobposition,
         coordinates: data.coordinates, routeId: data.routeid, routeSequence: data.routesequence,
         occupation: data.occupation, sex: data.sex, income: data.income, creditScore: data.creditscore,
-        status: data.status, joinDate: data.joineddate || data.created_at, clientPin: data.clientpin, guarantors: data.guarantors
+        status: data.status, joinedDate: data.joineddate || data.created_at, clientPin: data.clientpin, guarantors: data.guarantors
       };
       setClients(prev => [newClient, ...prev]);
       addToast("Cliente agregado", "success");
@@ -136,7 +140,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       date: note.date, created_by: currentUser.name || 'Agente'
     }).select().single();
     if (!error) {
-      fetchClients(); // Just refetch for simplicity since we need ID
+      refreshClients(); // Refetch to get updated list
       addToast("Nota agregada", "success");
     }
   };
@@ -163,7 +167,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       file_url: fileUrl, upload_date: doc.uploadDate, tags: doc.tags || []
     });
     if (!error) {
-      fetchClients();
+      refreshClients();
       addToast("Documento agregado", "success");
     }
   };
@@ -218,7 +222,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     <ClientContext.Provider value={{
       clients, clientNotes, clientDocuments, routes,
       addClient, updateClient, addClientNote, addClientDocument, removeClientDocument, generateClientPin,
-      addRoute, updateRoute, deleteRoute
+      addRoute, updateRoute, deleteRoute, refreshClients
     }}>
       {children}
     </ClientContext.Provider>

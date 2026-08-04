@@ -1,6 +1,7 @@
 import React from 'react';
 import { Collateral } from '../../types';
 import { Shield, Type, Hash, DollarSign, Upload, User, Image as ImageIcon } from 'lucide-react';
+import { CustomSelect } from '../../components/CustomSelect';
 
 interface CollateralFormProps {
     collateral: Collateral | undefined;
@@ -9,8 +10,8 @@ interface CollateralFormProps {
 
 export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onChange }) => {
 
-    const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const type = e.target.value as Collateral['type'];
+    const handleTypeChange = (val: string) => {
+        const type = val as Collateral['type'];
         if (type === 'Sin Garantía') {
             onChange(undefined);
         } else {
@@ -33,17 +34,18 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Garantía</label>
-                    <select 
+                    <CustomSelect 
                         value={collateral?.type || 'Sin Garantía'}
                         onChange={handleTypeChange}
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="Sin Garantía">Sin Garantía</option>
-                        <option value="Vehículo">Vehículo</option>
-                        <option value="Propiedad">Propiedad</option>
-                        <option value="Electrodoméstico">Electrodoméstico</option>
-                        <option value="Joya">Joya</option>
-                    </select>
+                        className="w-full"
+                        options={[
+                            { value: 'Sin Garantía', label: 'Sin Garantía' },
+                            { value: 'Vehículo', label: 'Vehículo' },
+                            { value: 'Propiedad', label: 'Propiedad' },
+                            { value: 'Electrodoméstico', label: 'Electrodoméstico' },
+                            { value: 'Joya', label: 'Joya' }
+                        ]}
+                    />
                 </div>
 
                 {collateral && collateral.type !== 'Sin Garantía' && (

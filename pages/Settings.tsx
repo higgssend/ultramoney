@@ -5,6 +5,7 @@ import { useAuth, useSettings } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { Permission, User, ApiKey } from '../types';
 import { LoanProductsTab } from '../components/LoanProductsTab';
+import { CustomSelect } from '../components/CustomSelect';
 
 const Settings: React.FC = () => {
   const location = useLocation();
@@ -934,13 +935,15 @@ const Settings: React.FC = () => {
 
                 <div>
                    <label className="block text-sm font-medium text-slate-700 mb-1">Empleado Vinculado (Opcional)</label>
-                   <select className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
-                     value={newUser.employeeId} onChange={e => setNewUser({...newUser, employeeId: e.target.value})}>
-                     <option value="">Seleccione un empleado...</option>
-                     {employees.map(e => (
-                       <option key={e.id} value={e.id}>{e.name}</option>
-                     ))}
-                   </select>
+                   <CustomSelect 
+                     className="w-full"
+                     value={newUser.employeeId || ''} 
+                     onChange={e => setNewUser({...newUser, employeeId: e})}
+                     options={[
+                       { value: '', label: 'Seleccione un empleado...' },
+                       ...employees.map(e => ({ value: e.id, label: e.name }))
+                     ]}
+                   />
                 </div>
 
                 <div>

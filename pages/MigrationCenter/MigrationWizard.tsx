@@ -43,6 +43,7 @@ import {
 import { useClients, useLoans, useAccounting, useAuth } from '../../context/StoreContext';
 import { useToast } from '../../context/ToastContext';
 import { parseFile, guessMapping } from './SmartImporter';
+import { CustomSelect } from '../../components/CustomSelect';
 
 interface MigrationWizardProps {
   onComplete: (newLog: MigrationLog) => void;
@@ -762,10 +763,10 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                         {sourceData[0] ? String(sourceData[0][header]) : 'N/A'}
                       </td>
                       <td className="py-3 px-4">
-                        <select
+                        <CustomSelect
                           value={existingMap ? existingMap.targetField : ''}
                           onChange={(e) => {
-                            const val = e.target.value;
+                            const val = e;
                             if (val) {
                                setMappings(prev => {
                                  const filtered = prev.filter(m => m.sourceField !== header);
@@ -773,43 +774,45 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                                });
                             }
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
-                        >
-                          <option value="">-- Ignorar --</option>
-                          <option value="name">Nombre Cliente</option>
-                          <option value="cedula">Cédula / RNC</option>
-                          <option value="phone">Teléfono / Celular</option>
-                          <option value="email">Correo Electrónico</option>
-                          <option value="address">Dirección</option>
-                          <option value="income">Ingreso Mensual</option>
-                          <option value="id">Código Préstamo</option>
-                          <option value="amount">Monto Capital / Pago / Gasto</option>
-                          <option value="interestRate">Tasa Interés (%)</option>
-                          <option value="frequency">Frecuencia Pago</option>
-                          <option value="loanType">Tipo Préstamo</option>
-                          <option value="loanId">ID Préstamo (Para Pagos)</option>
-                          <option value="date">Fecha (Pagos/Gastos)</option>
-                          <option value="concept">Concepto/Descripción</option>
-                          <option value="txType">Tipo (Ingreso/Gasto)</option>
-                        </select>
+                          className="w-full text-xs font-bold"
+                          options={[
+                            { value: '', label: '-- Ignorar --' },
+                            { value: 'name', label: 'Nombre Cliente' },
+                            { value: 'cedula', label: 'Cédula / RNC' },
+                            { value: 'phone', label: 'Teléfono / Celular' },
+                            { value: 'email', label: 'Correo Electrónico' },
+                            { value: 'address', label: 'Dirección' },
+                            { value: 'income', label: 'Ingreso Mensual' },
+                            { value: 'id', label: 'Código Préstamo' },
+                            { value: 'amount', label: 'Monto Capital / Pago / Gasto' },
+                            { value: 'interestRate', label: 'Tasa Interés (%)' },
+                            { value: 'frequency', label: 'Frecuencia Pago' },
+                            { value: 'loanType', label: 'Tipo Préstamo' },
+                            { value: 'loanId', label: 'ID Préstamo (Para Pagos)' },
+                            { value: 'date', label: 'Fecha (Pagos/Gastos)' },
+                            { value: 'concept', label: 'Concepto/Descripción' },
+                            { value: 'txType', label: 'Tipo (Ingreso/Gasto)' }
+                          ]}
+                        />
                       </td>
                       <td className="py-3 px-4">
-                         <select
+                         <CustomSelect
                           value={existingMap?.transformRule || 'none'}
                           onChange={(e) => {
-                            const val = e.target.value as any;
+                            const val = e as any;
                              setMappings(prev => prev.map(m => m.sourceField === header ? { ...m, transformRule: val } : m));
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
-                        >
-                          <option value="none">Sin transformación</option>
-                          <option value="uppercase">Texto → MAYÚSCULAS</option>
-                          <option value="lowercase">Texto → minúsculas</option>
-                          <option value="format_date">Fecha dd/mm/yyyy → yyyy-mm-dd</option>
-                          <option value="currency_to_decimal">Moneda RD$ → Decimal</option>
-                          <option value="clean_number">Número "10,000" → 10000</option>
-                          <option value="trim">Eliminar Espacios Excesivos</option>
-                        </select>
+                          className="w-full text-xs text-slate-700 dark:text-slate-300"
+                          options={[
+                            { value: 'none', label: 'Sin transformación' },
+                            { value: 'uppercase', label: 'Texto → MAYÚSCULAS' },
+                            { value: 'lowercase', label: 'Texto → minúsculas' },
+                            { value: 'format_date', label: 'Fecha dd/mm/yyyy → yyyy-mm-dd' },
+                            { value: 'currency_to_decimal', label: 'Moneda RD$ → Decimal' },
+                            { value: 'clean_number', label: 'Número "10,000" → 10000' },
+                            { value: 'trim', label: 'Eliminar Espacios Excesivos' }
+                          ]}
+                        />
                       </td>
                     </tr>
                   )}) : mappings.map((m) => (
@@ -821,44 +824,46 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                         {m.sampleValue || 'N/A'}
                       </td>
                       <td className="py-3 px-4">
-                        <select
+                        <CustomSelect
                           value={m.targetField}
                           onChange={(e) => {
-                            const val = e.target.value;
+                            const val = e;
                             setMappings(mappings.map(item => item.id === m.id ? { ...item, targetField: val } : item));
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
-                        >
-                          <option value="name">Nombre Cliente</option>
-                          <option value="cedula">Cédula / RNC</option>
-                          <option value="phone">Teléfono / Celular</option>
-                          <option value="email">Correo Electrónico</option>
-                          <option value="address">Dirección</option>
-                          <option value="income">Ingreso Mensual</option>
-                          <option value="id">Código Préstamo</option>
-                          <option value="amount">Monto Capital</option>
-                          <option value="interestRate">Tasa Interés (%)</option>
-                          <option value="frequency">Frecuencia Pago</option>
-                          <option value="loanType">Tipo Préstamo</option>
-                        </select>
+                          className="w-full text-xs font-bold"
+                          options={[
+                            { value: 'name', label: 'Nombre Cliente' },
+                            { value: 'cedula', label: 'Cédula / RNC' },
+                            { value: 'phone', label: 'Teléfono / Celular' },
+                            { value: 'email', label: 'Correo Electrónico' },
+                            { value: 'address', label: 'Dirección' },
+                            { value: 'income', label: 'Ingreso Mensual' },
+                            { value: 'id', label: 'Código Préstamo' },
+                            { value: 'amount', label: 'Monto Capital' },
+                            { value: 'interestRate', label: 'Tasa Interés (%)' },
+                            { value: 'frequency', label: 'Frecuencia Pago' },
+                            { value: 'loanType', label: 'Tipo Préstamo' }
+                          ]}
+                        />
                       </td>
                       <td className="py-3 px-4">
-                        <select
+                        <CustomSelect
                           value={m.transformRule || 'none'}
                           onChange={(e) => {
-                            const val = e.target.value as any;
+                            const val = e as any;
                             setMappings(mappings.map(item => item.id === m.id ? { ...item, transformRule: val } : item));
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
-                        >
-                          <option value="none">Sin transformación</option>
-                          <option value="uppercase">Texto → MAYÚSCULAS</option>
-                          <option value="lowercase">Texto → minúsculas</option>
-                          <option value="format_date">Fecha dd/mm/yyyy → yyyy-mm-dd</option>
-                          <option value="currency_to_decimal">Moneda RD$ → Decimal</option>
-                          <option value="clean_number">Número "10,000" → 10000</option>
-                          <option value="trim">Eliminar Espacios Excesivos</option>
-                        </select>
+                          className="w-full text-xs text-slate-700 dark:text-slate-300"
+                          options={[
+                            { value: 'none', label: 'Sin transformación' },
+                            { value: 'uppercase', label: 'Texto → MAYÚSCULAS' },
+                            { value: 'lowercase', label: 'Texto → minúsculas' },
+                            { value: 'format_date', label: 'Fecha dd/mm/yyyy → yyyy-mm-dd' },
+                            { value: 'currency_to_decimal', label: 'Moneda RD$ → Decimal' },
+                            { value: 'clean_number', label: 'Número "10,000" → 10000' },
+                            { value: 'trim', label: 'Eliminar Espacios Excesivos' }
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))}{sourceHeaders.length === 0 && mappings.map((m) => (
@@ -870,44 +875,46 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
                         {m.sampleValue || 'N/A'}
                       </td>
                       <td className="py-3 px-4">
-                        <select
+                        <CustomSelect
                           value={m.targetField}
                           onChange={(e) => {
-                            const val = e.target.value;
+                            const val = e;
                             setMappings(mappings.map(item => item.id === m.id ? { ...item, targetField: val } : item));
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
-                        >
-                          <option value="name">Nombre Cliente</option>
-                          <option value="cedula">Cédula / RNC</option>
-                          <option value="phone">Teléfono / Celular</option>
-                          <option value="email">Correo Electrónico</option>
-                          <option value="address">Dirección</option>
-                          <option value="income">Ingreso Mensual</option>
-                          <option value="id">Código Préstamo</option>
-                          <option value="amount">Monto Capital</option>
-                          <option value="interestRate">Tasa Interés (%)</option>
-                          <option value="frequency">Frecuencia Pago</option>
-                          <option value="loanType">Tipo Préstamo</option>
-                        </select>
+                          className="w-full text-xs font-bold"
+                          options={[
+                            { value: 'name', label: 'Nombre Cliente' },
+                            { value: 'cedula', label: 'Cédula / RNC' },
+                            { value: 'phone', label: 'Teléfono / Celular' },
+                            { value: 'email', label: 'Correo Electrónico' },
+                            { value: 'address', label: 'Dirección' },
+                            { value: 'income', label: 'Ingreso Mensual' },
+                            { value: 'id', label: 'Código Préstamo' },
+                            { value: 'amount', label: 'Monto Capital' },
+                            { value: 'interestRate', label: 'Tasa Interés (%)' },
+                            { value: 'frequency', label: 'Frecuencia Pago' },
+                            { value: 'loanType', label: 'Tipo Préstamo' }
+                          ]}
+                        />
                       </td>
                       <td className="py-3 px-4">
-                        <select
+                        <CustomSelect
                           value={m.transformRule || 'none'}
                           onChange={(e) => {
-                            const val = e.target.value as any;
+                            const val = e as any;
                             setMappings(mappings.map(item => item.id === m.id ? { ...item, transformRule: val } : item));
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
-                        >
-                          <option value="none">Sin transformación</option>
-                          <option value="uppercase">Texto → MAYÚSCULAS</option>
-                          <option value="lowercase">Texto → minúsculas</option>
-                          <option value="format_date">Fecha dd/mm/yyyy → yyyy-mm-dd</option>
-                          <option value="currency_to_decimal">Moneda RD$ → Decimal</option>
-                          <option value="clean_number">Número "10,000" → 10000</option>
-                          <option value="trim">Eliminar Espacios Excesivos</option>
-                        </select>
+                          className="w-full text-xs text-slate-700 dark:text-slate-300"
+                          options={[
+                            { value: 'none', label: 'Sin transformación' },
+                            { value: 'uppercase', label: 'Texto → MAYÚSCULAS' },
+                            { value: 'lowercase', label: 'Texto → minúsculas' },
+                            { value: 'format_date', label: 'Fecha dd/mm/yyyy → yyyy-mm-dd' },
+                            { value: 'currency_to_decimal', label: 'Moneda RD$ → Decimal' },
+                            { value: 'clean_number', label: 'Número "10,000" → 10000' },
+                            { value: 'trim', label: 'Eliminar Espacios Excesivos' }
+                          ]}
+                        />
                       </td>
                     </tr>
                   ))}

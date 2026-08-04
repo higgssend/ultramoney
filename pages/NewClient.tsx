@@ -5,6 +5,7 @@ import { Client } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
 import { maskPhone } from '../utils/masks';
 import { useToast } from '../context/ToastContext';
+import { CustomSelect } from '../components/CustomSelect';
 
 const NewClient: React.FC = () => {
     const { id } = useParams();
@@ -135,14 +136,18 @@ const NewClient: React.FC = () => {
                                 Documento de Identidad <span className="text-rose-500">*</span>
                             </label>
                             <div className="flex">
-                                <select className="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-r-0 rounded-l-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white text-sm font-medium"
-                                    value={currentClient.documentType || 'Cedula'} onChange={e => setCurrentClient({...currentClient, documentType: e.target.value as any})}>
-                                    <option value="Cedula">Cédula</option>
-                                    <option value="Pasaporte">Pasaporte</option>
-                                    <option value="Licencia">Licencia</option>
-                                    <option value="ID">ID</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
+                                <CustomSelect 
+                                    className="w-32 rounded-r-none border-r-0"
+                                    value={currentClient.documentType || 'Cedula'} 
+                                    onChange={e => setCurrentClient({...currentClient, documentType: e as any})}
+                                    options={[
+                                        { value: 'Cedula', label: 'Cédula' },
+                                        { value: 'Pasaporte', label: 'Pasaporte' },
+                                        { value: 'Licencia', label: 'Licencia' },
+                                        { value: 'ID', label: 'ID' },
+                                        { value: 'Otro', label: 'Otro' }
+                                    ]}
+                                />
                                 <input required type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-r-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all" 
                                     value={currentClient.cedula} onChange={e => setCurrentClient({...currentClient, cedula: e.target.value})} placeholder="Número de documento..." />
                             </div>
@@ -150,12 +155,16 @@ const NewClient: React.FC = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Sexo (Opcional)</label>
-                            <select className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.sex} onChange={e => setCurrentClient({...currentClient, sex: e.target.value as any})}>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Femenino">Femenino</option>
-                                <option value="Otro">Otro</option>
-                            </select>
+                            <CustomSelect 
+                                className="w-full"
+                                value={currentClient.sex || 'Masculino'} 
+                                onChange={e => setCurrentClient({...currentClient, sex: e as any})}
+                                options={[
+                                    { value: 'Masculino', label: 'Masculino' },
+                                    { value: 'Femenino', label: 'Femenino' },
+                                    { value: 'Otro', label: 'Otro' }
+                                ]}
+                            />
                         </div>
                         
                         {!isEditMode && (
@@ -246,13 +255,15 @@ const NewClient: React.FC = () => {
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Zona / Ruta (Opcional)</label>
                             <div className="relative">
                                 <Map className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <select className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none dark:text-white transition-all" 
-                                    value={currentClient.routeId || ''} onChange={e => setCurrentClient({...currentClient, routeId: e.target.value})}>
-                                    <option value="">-- Sin ruta asignada --</option>
-                                    {routes.map(r => (
-                                        <option key={r.id} value={r.id}>{r.name}</option>
-                                    ))}
-                                </select>
+                                <CustomSelect 
+                                    className="w-full"
+                                    value={currentClient.routeId || ''} 
+                                    onChange={e => setCurrentClient({...currentClient, routeId: e})}
+                                    options={[
+                                        { value: '', label: '-- Sin ruta asignada --' },
+                                        ...routes.map(r => ({ value: r.id, label: r.name }))
+                                    ]}
+                                />
                             </div>
                         </div>
 

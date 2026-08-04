@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSettings } from '../context/StoreContext';
 import { ShieldCheck, Search, Filter, Calendar, User, Clock, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import { CustomSelect } from '../components/CustomSelect';
 
 const Bitacora: React.FC = () => {
   const { auditLogs } = useSettings();
@@ -50,15 +51,12 @@ const Bitacora: React.FC = () => {
           />
         </div>
         <div className="flex gap-2">
-          <select
+          <CustomSelect
             value={filterAction}
-            onChange={(e) => setFilterAction(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-slate-50 font-medium text-slate-700"
-          >
-            {uniqueActions.map((action, i) => (
-              <option key={i} value={action}>{action}</option>
-            ))}
-          </select>
+            onChange={(e) => setFilterAction(e)}
+            className="w-48"
+            options={uniqueActions.map(action => ({ value: action, label: action }))}
+          />
         </div>
       </div>
 

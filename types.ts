@@ -84,11 +84,15 @@ export interface Client {
 
 export interface BankAccount {
   id: string;
-  clientId: string;
+  clientId?: string;
   bankName: string;
   accountNumber: string;
+  accountName?: string;
   accountType: 'Ahorro' | 'Corriente';
-  holderName: string;
+  holderName?: string;
+  currency?: 'DOP' | 'USD';
+  status?: 'Activa' | 'Inactiva';
+  initialBalance?: number;
 }
 
 export interface ClientNote {
@@ -324,6 +328,7 @@ export interface CollectorVisit {
   amountCollected?: number;
   notes?: string;
   coordinates?: { lat: number; lng: number };
+  location?: any;
 }
 
 export interface NumberSeriesSettings {

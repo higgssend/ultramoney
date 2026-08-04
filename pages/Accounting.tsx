@@ -7,6 +7,7 @@ import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
 import { PaymentMethod } from '../types';
 import { DataExportToolbar } from '../components/DataExportToolbar';
+import { CustomSelect } from '../components/CustomSelect';
 
 const Accounting: React.FC = () => {
   const { transactions, getFinancialStats, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary, cashShifts, addTransaction } = useAccounting();
@@ -462,31 +463,33 @@ const Accounting: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Categoría</label>
-                          <select 
+                          <CustomSelect 
                               value={expenseCategory}
-                              onChange={e => setExpenseCategory(e.target.value as any)}
-                              className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3.5 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-                          >
-                              <option value="Operativo">Gasto Operativo</option>
-                              <option value="Nómina">Nómina / Pago a Empleado</option>
-                              <option value="Servicios">Luz / Internet / Teléfono</option>
-                              <option value="Combustible">Combustible / Transporte</option>
-                              <option value="Papelería">Papelería y Oficina</option>
-                              <option value="Mantenimiento">Mantenimiento local</option>
-                              <option value="Otros">Otros Gastos</option>
-                          </select>
+                              onChange={e => setExpenseCategory(e as any)}
+                              className="w-full font-bold"
+                              options={[
+                                  { value: 'Operativo', label: 'Gasto Operativo' },
+                                  { value: 'Nómina', label: 'Nómina / Pago a Empleado' },
+                                  { value: 'Servicios', label: 'Luz / Internet / Teléfono' },
+                                  { value: 'Combustible', label: 'Combustible / Transporte' },
+                                  { value: 'Papelería', label: 'Papelería y Oficina' },
+                                  { value: 'Mantenimiento', label: 'Mantenimiento local' },
+                                  { value: 'Otros', label: 'Otros Gastos' }
+                              ]}
+                          />
                       </div>
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Método de Pago</label>
-                          <select 
+                          <CustomSelect 
                               value={expenseMethod}
-                              onChange={e => setExpenseMethod(e.target.value as PaymentMethod)}
-                              className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3.5 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-                          >
-                              <option value="Efectivo">Efectivo de Caja</option>
-                              <option value="Transferencia">Transferencia Bancaria</option>
-                              <option value="Cheque">Cheque</option>
-                          </select>
+                              onChange={e => setExpenseMethod(e as PaymentMethod)}
+                              className="w-full font-bold"
+                              options={[
+                                  { value: 'Efectivo', label: 'Efectivo de Caja' },
+                                  { value: 'Transferencia', label: 'Transferencia Bancaria' },
+                                  { value: 'Cheque', label: 'Cheque' }
+                              ]}
+                          />
                       </div>
                   </div>
 

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Connector } from './types';
 import { useToast } from '../../context/ToastContext';
+import { CustomSelect } from '../../components/CustomSelect';
 
 interface ConnectorsTabProps {
   connectors: Connector[];
@@ -153,18 +154,19 @@ export const ConnectorsTab: React.FC<ConnectorsTabProps> = ({ connectors, onAddC
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Categoría</label>
-                  <select
+                  <CustomSelect
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
-                  >
-                    <option value="Púrpura Datos">Púrpura Datos</option>
-                    <option value="ERP Financiero">ERP Financiero</option>
-                    <option value="Software a Medida">Software a Medida</option>
-                    <option value="Sistema Contable">Sistema Contable</option>
-                    <option value="App Web">App Web</option>
-                    <option value="App Desktop">App Desktop</option>
-                  </select>
+                    onChange={(e) => setFormData({ ...formData, category: e as any })}
+                    className="w-full text-xs font-bold"
+                    options={[
+                      { value: 'Púrpura Datos', label: 'Púrpura Datos' },
+                      { value: 'ERP Financiero', label: 'ERP Financiero' },
+                      { value: 'Software a Medida', label: 'Software a Medida' },
+                      { value: 'Sistema Contable', label: 'Sistema Contable' },
+                      { value: 'App Web', label: 'App Web' },
+                      { value: 'App Desktop', label: 'App Desktop' }
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Driver / Motor</label>

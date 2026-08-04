@@ -5,6 +5,7 @@ import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { LoanType } from '../types';
 import { LoanEngine, ExpenseConfig, ExtraordinaryPayment, SimulationResult } from '../utils/LoanEngine';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { CustomSelect } from '../components/CustomSelect';
 
 const COLORS = ['#4f46e5', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6'];
 
@@ -138,14 +139,18 @@ const Simulator: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Frecuencia</label>
-                                <select className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500"
-                                    value={frequency} onChange={e => setFrequency(e.target.value)}>
-                                    <option>Diario</option>
-                                    <option>Semanal</option>
-                                    <option>Quincenal</option>
-                                    <option>Mensual</option>
-                                    <option>Anual</option>
-                                </select>
+                                <CustomSelect 
+                                    className="w-full"
+                                    value={frequency} 
+                                    onChange={e => setFrequency(e)}
+                                    options={[
+                                        { value: 'Diario', label: 'Diario' },
+                                        { value: 'Semanal', label: 'Semanal' },
+                                        { value: 'Quincenal', label: 'Quincenal' },
+                                        { value: 'Mensual', label: 'Mensual' },
+                                        { value: 'Anual', label: 'Anual' }
+                                    ]}
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Fecha de Desembolso</label>
@@ -154,13 +159,17 @@ const Simulator: React.FC = () => {
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Método de Amortización</label>
-                                <select className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium"
-                                    value={type} onChange={e => setType(e.target.value as LoanType)}>
-                                    <option value="Amortizado (Cuota Fija)">Cuota Fija (Francés)</option>
-                                    <option value="Amortizado (Capital Fijo)">Capital Fijo (Alemán)</option>
-                                    <option value="Rédito (Solo Interés)">Solo Intereses (Abierto)</option>
-                                    <option value="Interés Adelantado">Interés Adelantado</option>
-                                </select>
+                                <CustomSelect 
+                                    className="w-full font-medium"
+                                    value={type} 
+                                    onChange={e => setType(e as LoanType)}
+                                    options={[
+                                        { value: 'Amortizado (Cuota Fija)', label: 'Cuota Fija (Francés)' },
+                                        { value: 'Amortizado (Capital Fijo)', label: 'Capital Fijo (Alemán)' },
+                                        { value: 'Rédito (Solo Interés)', label: 'Solo Intereses (Abierto)' },
+                                        { value: 'Interés Adelantado', label: 'Interés Adelantado' }
+                                    ]}
+                                />
                             </div>
                         </div>
                     )}
@@ -177,16 +186,26 @@ const Simulator: React.FC = () => {
                                         <div key={exp.id} className="flex flex-wrap md:flex-nowrap items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700">
                                             <input type="text" value={exp.name} onChange={e => updateExpense(exp.id, 'name', e.target.value)} className="px-3 py-2 border rounded-lg text-sm flex-1 bg-white dark:bg-slate-800" placeholder="Nombre (Ej. Seguro)" />
                                             <input type="number" value={exp.amount} onChange={e => updateExpense(exp.id, 'amount', Number(e.target.value))} className="w-24 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-slate-800" placeholder="Monto" />
-                                            <select value={exp.isPercentage ? 'true' : 'false'} onChange={e => updateExpense(exp.id, 'isPercentage', e.target.value === 'true')} className="px-2 py-2 border rounded-lg text-sm bg-white dark:bg-slate-800">
-                                                <option value="false">$ Fijo</option>
-                                                <option value="true">% del Capital</option>
-                                            </select>
-                                            <select value={exp.mode} onChange={e => updateExpense(exp.id, 'mode', e.target.value)} className="px-2 py-2 border rounded-lg text-sm bg-white dark:bg-slate-800">
-                                                <option value="Financiado">Financiado (Sumar a capital)</option>
-                                                <option value="Descontado">Descontado (Restar del desembolso)</option>
-                                                <option value="Independiente">Pago Independiente</option>
-                                            </select>
-                                            <button onClick={() => removeExpense(exp.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                            <CustomSelect 
+                                                value={exp.isPercentage ? 'true' : 'false'} 
+                                                onChange={e => updateExpense(exp.id, 'isPercentage', e === 'true')} 
+                                                className="w-36"
+                                                options={[
+                                                    { value: 'false', label: '$ Fijo' },
+                                                    { value: 'true', label: '% del Capital' }
+                                                ]}
+                                            />
+                                            <CustomSelect 
+                                                value={exp.mode} 
+                                                onChange={e => updateExpense(exp.id, 'mode', e)} 
+                                                className="flex-1 min-w-[200px]"
+                                                options={[
+                                                    { value: 'Financiado', label: 'Financiado (Sumar a capital)' },
+                                                    { value: 'Descontado', label: 'Descontado (Restar del desembolso)' },
+                                                    { value: 'Externo', label: 'Externo (El cliente lo paga aparte)' }
+                                                ]}
+                                            />
+                                            <button onClick={() => removeExpense(exp.id)} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                     ))}
                                     {expenses.length === 0 && <p className="text-sm text-slate-400 p-4 text-center border border-dashed rounded-xl">Sin cargos adicionales.</p>}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLoans } from '../context/StoreContext';
 import { Plus, Edit2, Trash2, Check, X, ShieldAlert, CheckCircle } from 'lucide-react';
 import { LoanProduct } from '../types';
+import { CustomSelect } from './CustomSelect';
 
 export const LoanProductsTab: React.FC = () => {
     const { loanProducts, addLoanProduct, updateLoanProduct, deleteLoanProduct } = useLoans();
@@ -69,21 +70,21 @@ export const LoanProductsTab: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Tipo de Interés</label>
-                            <select value={editingProduct.interestType} onChange={e => setEditingProduct({...editingProduct, interestType: e.target.value as any})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3">
-                                <option value="Fijo">Fijo</option>
-                                <option value="Simple">Simple</option>
-                                <option value="Compuesto">Compuesto</option>
-                            </select>
+                            <CustomSelect value={editingProduct.interestType || ''} onChange={e => setEditingProduct({...editingProduct, interestType: e as any})} className="mt-1" options={[
+                                { value: 'Fijo', label: 'Fijo' },
+                                { value: 'Simple', label: 'Simple' },
+                                { value: 'Compuesto', label: 'Compuesto' }
+                            ]} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Frecuencia</label>
-                            <select value={editingProduct.frequency} onChange={e => setEditingProduct({...editingProduct, frequency: e.target.value as any})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3">
-                                <option value="Diario">Diario</option>
-                                <option value="Semanal">Semanal</option>
-                                <option value="Quincenal">Quincenal</option>
-                                <option value="Mensual">Mensual</option>
-                                <option value="Anual">Anual</option>
-                            </select>
+                            <CustomSelect value={editingProduct.frequency || ''} onChange={e => setEditingProduct({...editingProduct, frequency: e as any})} className="mt-1" options={[
+                                { value: 'Diario', label: 'Diario' },
+                                { value: 'Semanal', label: 'Semanal' },
+                                { value: 'Quincenal', label: 'Quincenal' },
+                                { value: 'Mensual', label: 'Mensual' },
+                                { value: 'Anual', label: 'Anual' }
+                            ]} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Número de Cuotas por Defecto</label>

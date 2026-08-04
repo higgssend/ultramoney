@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
 import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral } from '../types';
 import { CollateralForm } from './features/CollateralForm';
+import { CustomSelect } from '../components/CustomSelect';
 
 const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, deleteLoanRequest, loanRequests, loanProducts } = useLoans();
@@ -287,16 +288,15 @@ const LoanRequest: React.FC = () => {
                         <div className="grid grid-cols-1 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Seleccionar Cliente</label>
-                            <select 
-                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50"
+                            <CustomSelect 
+                                className="w-full text-sm"
                                 value={selectedClientId}
-                                onChange={(e) => setSelectedClientId(e.target.value)}
-                            >
-                                <option value="">-- Buscar Cliente --</option>
-                                {clients.map(client => (
-                                    <option key={client.id} value={client.id}>{client.name} - {client.cedula}</option>
-                                ))}
-                            </select>
+                                onChange={(e) => setSelectedClientId(e)}
+                                options={[
+                                    { value: '', label: '-- Buscar Cliente --' },
+                                    ...clients.map(client => ({ value: client.id, label: `${client.name} - ${client.cedula}` }))
+                                ]}
+                            />
                         </div>
                         </div>
                     </div>
@@ -363,15 +363,17 @@ const LoanRequest: React.FC = () => {
                             {/* Frecuencia */}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Frecuencia de Pago</label>
-                                <select 
+                                <CustomSelect 
                                     value={frequency}
-                                    onChange={(e) => setFrequency(e.target.value)}
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-medium">
-                                <option>Semanal</option>
-                                <option>Quincenal</option>
-                                <option>Mensual</option>
-                                <option>Diario</option>
-                                </select>
+                                    onChange={(e) => setFrequency(e)}
+                                    className="w-full font-medium"
+                                    options={[
+                                        { value: 'Semanal', label: 'Semanal' },
+                                        { value: 'Quincenal', label: 'Quincenal' },
+                                        { value: 'Mensual', label: 'Mensual' },
+                                        { value: 'Diario', label: 'Diario' }
+                                    ]}
+                                />
                             </div>
 
                             {/* Specific Payment Day (Only for Mensual) */}
@@ -380,15 +382,15 @@ const LoanRequest: React.FC = () => {
                                     <label className="block text-sm font-bold text-indigo-800 mb-2">Día de Pago Mensual</label>
                                     <div className="flex items-center gap-3">
                                         <Calendar className="w-5 h-5 text-indigo-500" />
-                                        <select 
-                                            value={paymentDay}
-                                            onChange={(e) => setPaymentDay(Number(e.target.value))}
-                                            className="w-full px-4 py-2 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                                        >
-                                            {Array.from({length: 31}, (_, i) => i + 1).map(day => (
-                                                <option key={day} value={day}>Día {day} de cada mes</option>
-                                            ))}
-                                        </select>
+                                        <CustomSelect 
+                                            value={paymentDay.toString()}
+                                            onChange={(e) => setPaymentDay(Number(e))}
+                                            className="w-full"
+                                            options={Array.from({length: 31}, (_, i) => i + 1).map(day => ({
+                                                value: day.toString(),
+                                                label: `Día ${day} de cada mes`
+                                            }))}
+                                        />
                                     </div>
                                     <p className="text-xs text-indigo-500 mt-2">El sistema ajustará el primer pago al próximo día {paymentDay}.</p>
                                 </div>

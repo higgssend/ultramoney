@@ -3,6 +3,7 @@ import { User, MapPin, TrendingUp, Award, Plus, X, ChevronDown, Phone, Briefcase
 import { useClients, useAuth, useAccounting, useLoans } from '../context/StoreContext';
 import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { CustomSelect } from '../components/CustomSelect';
 
 const Employees: React.FC = () => {
   const { employees, addEmployee, deleteEmployee, roles, cargos, registerUser } = useAuth();
@@ -302,22 +303,15 @@ const Employees: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                           <div>
                               <label className="block text-sm font-bold text-slate-700 mb-1">Cargo</label>
-                              <div className="relative">
-                                  <select 
-                                      className="w-full pl-4 pr-10 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white appearance-none cursor-pointer"
-                                      value={newEmp.cargoId}
-                                      onChange={e => setNewEmp({...newEmp, cargoId: e.target.value})}
-                                      required
-                                  >
-                                      <option value="">Selecciona un cargo</option>
-                                      {cargos.map(option => (
-                                          <option key={option.id} value={option.id}>{option.name}</option>
-                                      ))}
-                                  </select>
-                                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                      <ChevronDown className="w-5 h-5" />
-                                  </div>
-                              </div>
+                              <CustomSelect 
+                                  className="w-full"
+                                  value={newEmp.cargoId}
+                                  onChange={e => setNewEmp({...newEmp, cargoId: e})}
+                                  options={[
+                                      { value: '', label: 'Selecciona un cargo' },
+                                      ...cargos.map(option => ({ value: option.id, label: option.name }))
+                                  ]}
+                              />
                           </div>
                           <div>
                               <label className="block text-sm font-bold text-slate-700 mb-1">Teléfono</label>

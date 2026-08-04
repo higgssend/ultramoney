@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { MigrationLog } from './types';
 import { useToast } from '../../context/ToastContext';
+import { CustomSelect } from '../../components/CustomSelect';
 
 interface RollbackTabProps {
   logs: MigrationLog[];
@@ -53,17 +54,15 @@ export const RollbackTab: React.FC<RollbackTabProps> = ({ logs, onRollbackExecut
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
         <div>
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Seleccione el Lote de Migración a Revertir</label>
-          <select
+          <CustomSelect
             value={selectedLogId}
-            onChange={(e) => setSelectedLogId(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-bold font-mono"
-          >
-            {logs.filter(l => l.canRollback && l.status !== 'Revertida').map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.id} - {l.method} ({l.recordsImported} reg. importados el {l.timestamp})
-              </option>
-            ))}
-          </select>
+            onChange={(e) => setSelectedLogId(e)}
+            className="w-full font-bold font-mono"
+            options={logs.filter(l => l.canRollback && l.status !== 'Revertida').map((l) => ({
+              value: l.id,
+              label: `${l.id} - ${l.method} (${l.recordsImported} reg. importados el ${l.timestamp})`
+            }))}
+          />
         </div>
 
         {targetLog && (

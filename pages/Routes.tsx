@@ -3,6 +3,7 @@ import { useAuth, useClients } from '../context/StoreContext';
 import { Route, Client } from '../types';
 import { Map, Plus, Edit2, Trash2, Search, ArrowRight, User, Hash, Save, AlertCircle, X, AlertTriangle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { CustomSelect } from '../components/CustomSelect';
 
 const RoutesPage: React.FC = () => {
     const { routes, clients, addRoute, updateRoute, deleteRoute, updateClient } = useClients();
@@ -129,22 +130,30 @@ const RoutesPage: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Cobrador Asignado</label>
-                                <select value={formData.collectorId || ''} onChange={e => setFormData({...formData, collectorId: e.target.value})} className="w-full px-4 py-2 border dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                                    <option value="">(Sin asignar)</option>
-                                    {employees.filter(e => {
-                                        const r = roles.find(rl => rl.id === e.role);
-                                        return r && r.name.toLowerCase().includes('cobrador');
-                                    }).map(emp => (
-                                        <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                    ))}
-                                </select>
+                                <CustomSelect
+                                    className="w-full"
+                                    value={formData.collectorId || ''} 
+                                    onChange={e => setFormData({...formData, collectorId: e})}
+                                    options={[
+                                        { value: '', label: '(Sin asignar)' },
+                                        ...employees.filter(e => {
+                                            const r = roles.find(rl => rl.id === e.role);
+                                            return r && r.name.toLowerCase().includes('cobrador');
+                                        }).map(emp => ({ value: emp.id, label: emp.name }))
+                                    ]}
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
-                                <select value={formData.status || 'Activa'} onChange={e => setFormData({...formData, status: e.target.value as any})} className="w-full px-4 py-2 border dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                                    <option value="Activa">Activa</option>
-                                    <option value="Inactiva">Inactiva</option>
-                                </select>
+                                <CustomSelect
+                                    className="w-full"
+                                    value={formData.status || 'Activa'} 
+                                    onChange={e => setFormData({...formData, status: e as any})}
+                                    options={[
+                                        { value: 'Activa', label: 'Activa' },
+                                        { value: 'Inactiva', label: 'Inactiva' }
+                                    ]}
+                                />
                             </div>
                             <div className="flex gap-4 pt-4 border-t dark:border-slate-700">
                                 <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 border border-slate-300 rounded-xl font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>

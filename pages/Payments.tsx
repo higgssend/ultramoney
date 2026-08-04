@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { toast } from 'sonner';
 import { LoanEngine } from '../utils/LoanEngine';
 import { Loan, CompanySettings, PaymentMethod, formatLoanId } from '../types';
+import { CustomSelect } from '../components/CustomSelect';
 
 // WhatsApp Official Icon SVG
 const WhatsAppIcon = () => (
@@ -593,15 +594,16 @@ const Payments: React.FC = () => {
                             {selectedLoan?.loanType === 'Rédito' && (
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-slate-600 mb-1">Tipo de Pago (Pagaré Abierto)</label>
-                                    <select 
+                                    <CustomSelect 
                                         value={paymentType}
-                                        onChange={(e) => setPaymentType(e.target.value as any)}
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="Interes">Solo Intereses (Réditos)</option>
-                                        <option value="Capital">Abono Directo a Capital</option>
-                                        <option value="Mixto">Interés + Abono a Capital (Mixto)</option>
-                                    </select>
+                                        onChange={(e) => setPaymentType(e as any)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Interes', label: 'Solo Intereses (Réditos)' },
+                                            { value: 'Capital', label: 'Abono Directo a Capital' },
+                                            { value: 'Mixto', label: 'Interés + Abono a Capital (Mixto)' }
+                                        ]}
+                                    />
                                 </div>
                             )}
 
@@ -635,16 +637,15 @@ const Payments: React.FC = () => {
                             {isAdmin && (
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-slate-600 mb-1">Cajero / Cobrador (Opcional)</label>
-                                    <select 
+                                    <CustomSelect 
                                         value={selectedCashierId}
-                                        onChange={(e) => setSelectedCashierId(e.target.value)}
-                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="">-- Mi Usuario ({currentUser?.name}) --</option>
-                                        {users.map(u => (
-                                            <option key={u.id} value={u.id}>{u.name} {u.lastName || ''}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(e) => setSelectedCashierId(e)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '', label: `-- Mi Usuario (${currentUser?.name}) --` },
+                                            ...users.map(u => ({ value: u.id, label: `${u.name} ${u.lastName || ''}` }))
+                                        ]}
+                                    />
                                 </div>
                             )}
 
