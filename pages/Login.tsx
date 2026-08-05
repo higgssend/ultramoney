@@ -54,11 +54,9 @@ const Login: React.FC = () => {
       if (isTauri) {
         const { data, error } = await insforge.auth.signInWithOAuth({
           provider,
-          options: {
-            redirectTo: 'ultramoney://login',
-            skipBrowserRedirect: true
-          }
-        });
+          redirectTo: 'ultramoney://login',
+          skipBrowserRedirect: true
+        } as any);
         if (error) throw error;
         if (data?.url) {
           await open(data.url);
@@ -68,10 +66,8 @@ const Login: React.FC = () => {
 
       const { error } = await insforge.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: window.location.origin + '/dashboard'
-        }
-      });
+        redirectTo: window.location.origin + '/dashboard'
+      } as any);
       if (error) throw error;
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : `Error al iniciar sesión con ${provider}.`;

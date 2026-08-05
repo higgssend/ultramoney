@@ -188,11 +188,9 @@ const Register: React.FC = () => {
       if (isTauri) {
         const { data, error } = await insforge.auth.signInWithOAuth({
           provider,
-          options: {
-            redirectTo: 'ultramoney://register',
-            skipBrowserRedirect: true
-          }
-        });
+          redirectTo: 'ultramoney://register',
+          skipBrowserRedirect: true
+        } as any);
         if (error) throw error;
         if (data?.url) {
           await open(data.url);
@@ -201,10 +199,8 @@ const Register: React.FC = () => {
       }
       const { error } = await insforge.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: window.location.origin + '/onboarding'
-        }
-      });
+        redirectTo: window.location.origin + '/onboarding'
+      } as any);
       if (error) throw error;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : `Error al registrarse con ${provider}.`);
