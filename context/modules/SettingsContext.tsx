@@ -84,13 +84,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           setCompanySettings(initialCompanySettings);
         }
         if (bitacoraRes.data) {
-           setAuditLogs((bitacoraRes.data as AuditLogDB[]).map((l) => ({
+           setAuditLogs((bitacoraRes.data as any[]).map((l) => ({
              id: l.id,
              userId: l.user_id || '',
              userName: l.user_name || 'Sistema',
              action: l.action || '',
              details: l.details || '',
-             timestamp: l.timestamp
+             timestamp: l.created_at || l.timestamp || new Date().toISOString()
            })));
         }
       } catch (error) {
@@ -118,6 +118,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
     
     setCompanySettings(settings);
+    addAuditLog('settings_updated', 'Actualizó la configuración de la empresa');
     addToast("Configuración guardada", "success");
   };
 
@@ -141,15 +142,27 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addAuditLog = async (action: string, details: string) => {
     if (!currentUser) return;
-    const log: AuditLog = {
-      id: `log-${Date.now()}`, userId: currentUser.id, userName: currentUser.name || currentUser.email || 'Sistema',
-      action, details, timestamp: new Date().toISOString()
+    const { data, error } = await insforge.database.from('bitacora_logs').insert([{
+      lender_id: currentUser.id,
+      user_id: currentUser.id,
+      user_name: currentUser.name || currentUser.email || 'Sistema',
+      action,
+      details
+    }]).select().single();
+
+    const newLog: AuditLog = {
+      id: data?.id || `log-${Date.now()}`,
+      userId: currentUser.id,
+      userName: currentUser.name || currentUser.email || 'Sistema',
+      action,
+      details,
+      timestamp: data?.created_at || new Date().toISOString()
     };
-    setAuditLogs(prev => [log, ...prev]);
-    await insforge.database.from('bitacora_logs').insert([{
-      lender_id: currentUser.id, user_id: currentUser.id, user_name: currentUser.name || currentUser.email || 'Sistema',
-      action, details
-    }]);
+
+    setAuditLogs(prev => [newLog, ...prev]);
+    if (error) {
+      logger.error("Error guardando bitácora:", error);
+    }
   };
 
   const enqueuePdf = (job: Omit<PdfJob, 'id'>) => {

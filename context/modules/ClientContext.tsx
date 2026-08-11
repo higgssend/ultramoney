@@ -4,6 +4,7 @@ import type { ClientDB, ClientNoteDB, ClientDocumentDB, RouteDB } from '../../ty
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
+import { useSettings } from './SettingsContext';
 import { logger } from '../../utils/logger';
 
 interface ClientContextType {
@@ -30,6 +31,7 @@ const ClientContext = createContext<ClientContextType | undefined>(undefined);
 export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const { currentUser } = useAuth();
+  const { addAuditLog } = useSettings();
   
   const [clients, setClients] = useState<Client[]>([]);
   const [clientNotes, setClientNotes] = useState<ClientNote[]>([]);
@@ -177,6 +179,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         guarantors: []
       };
       setClients(prev => [newClient, ...prev]);
+      addAuditLog('client_created', `Creó el cliente ${newClient.name} ${newClient.lastName || ''}`.trim());
       addToast("Cliente agregado exitosamente", "success");
       return newClient;
     } else {
@@ -187,9 +190,11 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const deleteClient = async (id: string): Promise<void> => {
     if (!currentUser) return;
+    const clientObj = clients.find(c => c.id === id);
     const { error } = await insforge.database.from('clients').delete().eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
       setClients(prev => prev.filter(c => c.id !== id));
+      addAuditLog('client_deleted', `Eliminó al cliente ${clientObj ? clientObj.name : id}`);
       addToast('Cliente eliminado exitosamente', 'success');
     } else {
       logger.error('Error al eliminar cliente:', error);

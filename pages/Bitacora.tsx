@@ -86,10 +86,14 @@ const Bitacora: React.FC = () => {
                     <td className="py-4 px-6 whitespace-nowrap">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Calendar className="w-4 h-4 text-slate-400" />
-                        <span className="font-medium">{new Date(log.timestamp).toLocaleDateString()}</span>
+                        <span className="font-medium">
+                          {log.timestamp && !isNaN(new Date(log.timestamp).getTime()) ? new Date(log.timestamp).toLocaleDateString('es-DO', { year: 'numeric', month: 'short', day: 'numeric' }) : new Date().toLocaleDateString('es-DO')}
+                        </span>
                         <span className="text-slate-400">·</span>
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                        <span>
+                          {log.timestamp && !isNaN(new Date(log.timestamp).getTime()) ? new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-'}
+                        </span>
                       </div>
                     </td>
                     <td className="py-4 px-6 whitespace-nowrap">
