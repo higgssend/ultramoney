@@ -43,7 +43,6 @@ const LandingPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // 1. Interactive Loan Calculator State
@@ -68,7 +67,7 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /* ── GSAP Animations with Visibility Guarantees (No hidden opacity traps) ── */
+  /* ── GSAP Animations ── */
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.8 } });
@@ -142,7 +141,6 @@ const LandingPage: React.FC = () => {
             <a href="#caracteristicas" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Características</a>
             <a href="#comparativa" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Excel vs Ultramoney</a>
             <a href="#app-movil" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">App Móvil</a>
-            <a href="#precios" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Precios</a>
             <a href="#faq" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Preguntas</a>
           </nav>
 
@@ -189,7 +187,6 @@ const LandingPage: React.FC = () => {
             <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Características</a>
             <a href="#comparativa" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Comparativa Excel</a>
             <a href="#app-movil" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">App Móvil de Campo</a>
-            <a href="#precios" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Precios y Planes</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Preguntas Frecuentes</a>
           </div>
           <div className="space-y-3">
@@ -294,7 +291,7 @@ const LandingPage: React.FC = () => {
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     </div>
-                    <div className="bg-white px-8 py-0.5 rounded-md border border-slate-200 text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                    <div className="bg-white px-8 py-0.5 rounded-md border border-slate-200 text-[10px] text-slate-400 flex items-center gap-1">
                       <Lock className="w-2.5 h-2.5 text-slate-400" /> app.ultramoney.com
                     </div>
                     <div className="w-10"></div>
@@ -385,7 +382,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── NEW SECTION 1: INTERACTIVE LOAN CALCULATOR WIDGET ─── */}
+      {/* ─── SECTION 1: INTERACTIVE LOAN CALCULATOR WIDGET (LIGHT THEME) ─── */}
       <section id="simulador" className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
@@ -398,7 +395,7 @@ const LandingPage: React.FC = () => {
             <p className="text-xs sm:text-sm text-slate-500">Calcula amortizaciones, cuotas y rendimiento para cualquier tipo de préstamo.</p>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-10 text-white shadow-2xl border border-indigo-900/50 max-w-5xl mx-auto">
+          <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-blue-50/80 rounded-3xl p-6 sm:p-10 text-slate-900 shadow-xl border border-indigo-200/80 max-w-5xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               
               {/* Sliders Area */}
@@ -407,8 +404,8 @@ const LandingPage: React.FC = () => {
                 {/* Amount Slider */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-indigo-200 uppercase">Monto a Prestar</label>
-                    <span className="text-xl font-black text-emerald-400 font-mono">RD$ {calcAmount.toLocaleString()}</span>
+                    <label className="text-xs font-bold text-slate-700 uppercase">Monto a Prestar</label>
+                    <span className="text-xl font-black text-indigo-700">RD$ {calcAmount.toLocaleString()}</span>
                   </div>
                   <input 
                     type="range" 
@@ -417,9 +414,9 @@ const LandingPage: React.FC = () => {
                     step={5000}
                     value={calcAmount} 
                     onChange={e => setCalcAmount(Number(e.target.value))}
-                    className="w-full h-2 bg-indigo-900/80 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                   />
-                  <div className="flex justify-between text-[10px] text-indigo-300 font-mono">
+                  <div className="flex justify-between text-[10px] text-slate-500">
                     <span>RD$ 5,000</span>
                     <span>RD$ 500,000</span>
                   </div>
@@ -428,8 +425,8 @@ const LandingPage: React.FC = () => {
                 {/* Rate Slider */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-indigo-200 uppercase">Tasa de Interés Mensual</label>
-                    <span className="text-xl font-black text-amber-400 font-mono">{calcRate}% / mes</span>
+                    <label className="text-xs font-bold text-slate-700 uppercase">Tasa de Interés Mensual</label>
+                    <span className="text-xl font-black text-amber-600">{calcRate}% / mes</span>
                   </div>
                   <input 
                     type="range" 
@@ -438,36 +435,36 @@ const LandingPage: React.FC = () => {
                     step={1}
                     value={calcRate} 
                     onChange={e => setCalcRate(Number(e.target.value))}
-                    className="w-full h-2 bg-indigo-900/80 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
                   />
                 </div>
 
                 {/* Term Slider & Frequency */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-indigo-200 uppercase block">Plazo del Préstamo</label>
-                    <div className="flex items-center gap-2 bg-indigo-900/50 p-2 rounded-xl border border-indigo-800">
+                    <label className="text-xs font-bold text-slate-700 uppercase block">Plazo del Préstamo</label>
+                    <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-300">
                       <input 
                         type="number" 
                         min={1} 
                         max={36} 
                         value={calcTerm} 
                         onChange={e => setCalcTerm(Math.max(1, Number(e.target.value)))}
-                        className="w-full bg-transparent text-white font-bold text-center focus:outline-none"
+                        className="w-full bg-transparent text-slate-900 font-bold text-center focus:outline-none"
                       />
-                      <span className="text-xs text-indigo-300 font-bold pr-2">Meses</span>
+                      <span className="text-xs text-slate-500 font-bold pr-2">Meses</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-indigo-200 uppercase block">Frecuencia de Pago</label>
-                    <div className="grid grid-cols-3 gap-1 bg-indigo-900/50 p-1 rounded-xl border border-indigo-800">
+                    <label className="text-xs font-bold text-slate-700 uppercase block">Frecuencia de Pago</label>
+                    <div className="grid grid-cols-3 gap-1 bg-white p-1 rounded-xl border border-slate-300">
                       {(['Semanal', 'Quincenal', 'Mensual'] as const).map(f => (
                         <button
                           key={f}
                           type="button"
                           onClick={() => setCalcFreq(f)}
-                          className={`py-1.5 text-[10px] font-bold rounded-lg transition-colors ${calcFreq === f ? 'bg-indigo-600 text-white shadow' : 'text-indigo-300 hover:text-white'}`}
+                          className={`py-1.5 text-[10px] font-bold rounded-lg transition-colors ${calcFreq === f ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
                         >
                           {f}
                         </button>
@@ -478,39 +475,39 @@ const LandingPage: React.FC = () => {
 
               </div>
 
-              {/* Live Result Box */}
-              <div className="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 space-y-4 text-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-200 bg-indigo-900/80 px-3 py-1 rounded-full">
+              {/* Live Result Box (Light Theme) */}
+              <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-indigo-100 shadow-md space-y-4 text-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
                   Resultado Estimado por Cuota
                 </span>
                 
                 <div>
-                  <p className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono">
+                  <p className="text-3xl sm:text-4xl font-black text-indigo-700">
                     RD$ {installmentAmount.toLocaleString()}
                   </p>
-                  <p className="text-xs text-indigo-200 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     {installmentCount} cuotas {calcFreq.toLowerCase()}s
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-white/10 space-y-2 text-xs">
-                  <div className="flex justify-between text-indigo-200">
+                <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-600">
                     <span>Capital Prestado:</span>
-                    <span className="font-bold text-white font-mono">RD$ {calcAmount.toLocaleString()}</span>
+                    <span className="font-bold text-slate-800">RD$ {calcAmount.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-indigo-200">
+                  <div className="flex justify-between text-slate-600">
                     <span>Interés Ganado:</span>
-                    <span className="font-bold text-amber-400 font-mono">+RD$ {totalInterest.toLocaleString()}</span>
+                    <span className="font-bold text-amber-600">+RD$ {totalInterest.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-indigo-200 font-bold border-t border-white/10 pt-2 text-sm">
+                  <div className="flex justify-between text-slate-800 font-bold border-t border-slate-100 pt-2 text-sm">
                     <span>Total a Retornar:</span>
-                    <span className="text-emerald-400 font-mono">RD$ {totalToPay.toLocaleString()}</span>
+                    <span className="text-emerald-600">RD$ {totalToPay.toLocaleString()}</span>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => navigate('/register')}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20"
+                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-indigo-500/20"
                 >
                   Probar este Préstamo en Ultramoney
                 </button>
@@ -521,7 +518,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── NEW SECTION 2: COMPARATIVA VS EXCEL / CUADERNOS ─── */}
+      {/* ─── SECTION 2: COMPARATIVA VS EXCEL / CUADERNOS (LIGHT THEME) ─── */}
       <section id="comparativa" className="py-14 bg-slate-50 border-t border-slate-200/60">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
@@ -532,10 +529,10 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl">
-            <div className="grid grid-cols-12 bg-slate-900 text-white p-4 font-bold text-xs uppercase tracking-wider text-center">
+            <div className="grid grid-cols-12 bg-slate-800 text-white p-4 font-bold text-xs uppercase tracking-wider text-center">
               <div className="col-span-5 text-left pl-4">Característica / Proceso</div>
-              <div className="col-span-3 text-rose-400">Cuadernos / Excel</div>
-              <div className="col-span-4 text-emerald-400">Ultramoney 2.0</div>
+              <div className="col-span-3 text-rose-300">Cuadernos / Excel</div>
+              <div className="col-span-4 text-emerald-300">Ultramoney 2.0</div>
             </div>
 
             <div className="divide-y divide-slate-100 text-xs sm:text-sm">
@@ -565,7 +562,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── NEW SECTION 3: APP MÓVIL Y COBRANZA EN CAMPO ─── */}
+      {/* ─── SECTION 3: APP MÓVIL Y COBRANZA EN CAMPO ─── */}
       <section id="app-movil" className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
@@ -608,7 +605,7 @@ const LandingPage: React.FC = () => {
 
             {/* Mobile Visual Interactive Display */}
             <div className="lg:col-span-6 flex justify-center">
-              <div className="relative w-72 border-8 border-slate-900 bg-slate-900 rounded-[3rem] shadow-2xl p-3 aspect-[9/18]">
+              <div className="relative w-72 border-8 border-slate-800 bg-slate-800 rounded-[3rem] shadow-2xl p-3 aspect-[9/18]">
                 <div className="w-full h-full bg-white rounded-[2.2rem] overflow-hidden flex flex-col justify-between p-4 relative">
                   
                   {/* Status Bar */}
@@ -622,21 +619,21 @@ const LandingPage: React.FC = () => {
                     <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-100">
                       <p className="text-[10px] text-indigo-600 font-bold uppercase">Cliente Actual</p>
                       <p className="text-sm font-black text-slate-800">Juan Carlos López</p>
-                      <p className="text-[10px] text-slate-500 font-mono">Ref: PRES-9C37D19B</p>
+                      <p className="text-[10px] text-slate-500">Ref: PRES-9C37D19B</p>
                     </div>
 
                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs space-y-1">
                       <div className="flex justify-between text-slate-500">
                         <span>Cuota regular:</span>
-                        <span className="font-bold text-slate-800 font-mono">RD$ 1,250.00</span>
+                        <span className="font-bold text-slate-800">RD$ 1,250.00</span>
                       </div>
                       <div className="flex justify-between text-slate-500">
                         <span>Recargo Mora:</span>
-                        <span className="font-bold text-rose-600 font-mono">+RD$ 0.00</span>
+                        <span className="font-bold text-rose-600">+RD$ 0.00</span>
                       </div>
                       <div className="flex justify-between font-bold text-slate-800 border-t border-slate-200 pt-1">
                         <span>Total Pagado:</span>
-                        <span className="text-emerald-600 font-mono">RD$ 1,250.00</span>
+                        <span className="text-emerald-600">RD$ 1,250.00</span>
                       </div>
                     </div>
 
@@ -660,12 +657,12 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── NEW SECTION 4: SOLUCIONES POR TIPO DE PRESTAMISTA ─── */}
-      <section className="py-14 bg-slate-900 text-white">
+      {/* ─── SECTION 4: SOLUCIONES POR TIPO DE PRESTAMISTA (LIGHT THEME) ─── */}
+      <section className="py-14 bg-slate-100 text-slate-900 border-t border-slate-200/80">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <span className="text-xs font-black tracking-widest text-indigo-400 uppercase">ADAPTABILIDAD TOTAL</span>
-            <h2 className="text-3xl font-black text-white">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">ADAPTABILIDAD TOTAL</span>
+            <h2 className="text-3xl font-black text-slate-900">
               Diseñado para cada tipo de modelo financiero
             </h2>
           </div>
@@ -680,20 +677,20 @@ const LandingPage: React.FC = () => {
             ].map(uc => (
               <div 
                 key={uc.id}
-                className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:border-indigo-500 transition-all space-y-3 group"
+                className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-indigo-400 hover:shadow-md transition-all space-y-3 group"
               >
-                <div className="w-12 h-12 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <uc.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-base text-white">{uc.title}</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">{uc.desc}</p>
+                <h3 className="font-bold text-base text-slate-900">{uc.title}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">{uc.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── NEW SECTION 5: CALCULADORA DE ROI / AHORRO ─── */}
+      {/* ─── SECTION 5: CALCULADORA DE ROI / AHORRO (LIGHT THEME) ─── */}
       <section className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-5xl mx-auto px-6">
           <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 rounded-3xl p-8 sm:p-12 border border-indigo-100 shadow-sm text-center space-y-6">
@@ -714,26 +711,26 @@ const LandingPage: React.FC = () => {
                   onChange={e => setActiveLoansCount(Number(e.target.value))}
                   className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
-                <span className="text-2xl font-black text-indigo-700 font-mono">{activeLoansCount}</span>
+                <span className="text-2xl font-black text-indigo-700">{activeLoansCount}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
               <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
                 <Clock className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
-                <p className="text-2xl font-black text-slate-900 font-mono">+{hoursSavedPerWeek}h</p>
+                <p className="text-2xl font-black text-slate-900">+{hoursSavedPerWeek}h</p>
                 <p className="text-xs text-slate-500 font-medium mt-1">Horas ahorradas por semana</p>
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
                 <TrendingUp className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
-                <p className="text-2xl font-black text-emerald-600 font-mono">+28%</p>
+                <p className="text-2xl font-black text-emerald-600">+28%</p>
                 <p className="text-xs text-slate-500 font-medium mt-1">Incremento en cobranza a tiempo</p>
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
                 <DollarSign className="w-6 h-6 text-amber-600 mx-auto mb-2" />
-                <p className="text-2xl font-black text-slate-900 font-mono">RD$ {moneySavedInArrears.toLocaleString()}</p>
+                <p className="text-2xl font-black text-slate-900">RD$ {moneySavedInArrears.toLocaleString()}</p>
                 <p className="text-xs text-slate-500 font-medium mt-1">Ahorro mensual estimado en moras</p>
               </div>
             </div>
@@ -741,7 +738,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── NEW SECTION 6: TESTIMONIOS Y RESEÑAS REALES ─── */}
+      {/* ─── SECTION 6: TESTIMONIOS Y RESEÑAS REALES ─── */}
       <section id="testimonios" className="py-14 bg-slate-50 border-t border-slate-200/60">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
@@ -797,7 +794,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── NEW SECTION 7: SEGURIDAD Y RESPALDO POSTGRESQL ─── */}
+      {/* ─── SECTION 7: SEGURIDAD Y RESPALDO POSTGRESQL ─── */}
       <section className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
@@ -874,107 +871,8 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── PRICING SECTION ─── */}
-      <section id="precios" className="py-14 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-10">
-          
-          <div className="max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">PLANES Y PRECIOS TRANSPARENTES</span>
-            <h2 className="text-3xl font-black text-slate-900">
-              Elige el plan ideal para tu financiera
-            </h2>
-            <p className="text-xs text-slate-500">Sin comisiones ocultas ni sorpresas. Cancela en cualquier momento.</p>
-          </div>
-
-          <div className="flex items-center justify-center gap-3">
-            <span className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Facturación Mensual</span>
-            <button 
-              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="w-12 h-7 bg-indigo-600 rounded-full p-1 transition-colors relative"
-            >
-              <div className={`w-5 h-5 bg-white rounded-full transition-transform ${billingCycle === 'annual' ? 'translate-x-5' : ''}`} />
-            </button>
-            <span className={`text-xs font-bold flex items-center gap-1.5 ${billingCycle === 'annual' ? 'text-slate-900' : 'text-slate-400'}`}>
-              Facturación Anual 
-              <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Ahorra 20%</span>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-6xl mx-auto">
-            <div className="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Básico / Emprendedor</h3>
-                  <p className="text-xs text-slate-500">Ideal para prestamistas independientes.</p>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">
-                    {billingCycle === 'monthly' ? 'RD$ 1,490' : 'RD$ 1,190'}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">/ mes</span>
-                </div>
-                <ul className="space-y-2.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Hasta 100 préstamos activos</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> 1 Usuario administrador</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Cobro de cuotas e intereses</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Impresión de recibos y PNG</li>
-                </ul>
-              </div>
-              <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl border border-slate-200 hover:border-indigo-600 font-bold text-xs text-slate-700 hover:text-indigo-600 transition-colors">Comenzar prueba gratis</button>
-            </div>
-
-            <div className="bg-gradient-to-b from-indigo-900 to-slate-900 rounded-3xl p-7 text-white shadow-xl relative flex flex-col justify-between space-y-6 border border-indigo-700/50">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[9px] uppercase px-3 py-0.5 rounded-full shadow">
-                MÁS POPULAR
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white">Profesional / Financiera</h3>
-                  <p className="text-xs text-indigo-200">Para negocios en crecimiento con múltiples cobradores.</p>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-white">
-                    {billingCycle === 'monthly' ? 'RD$ 3,490' : 'RD$ 2,790'}
-                  </span>
-                  <span className="text-xs text-indigo-300 font-medium">/ mes</span>
-                </div>
-                <ul className="space-y-2.5 text-xs text-indigo-100 pt-2 border-t border-indigo-800">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Préstamos y clientes ILIMITADOS</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Hasta 5 Usuarios (Cobradores / Cajeros)</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Refinanciamiento en 1 clic</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Recargos por mora y condonaciones</li>
-                </ul>
-              </div>
-              <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 font-bold text-xs text-white shadow transition-all">Comenzar prueba de 14 días</button>
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Corporativo / Enterprise</h3>
-                  <p className="text-xs text-slate-500">Para cadenas de sucursales de gran volumen.</p>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900">
-                    {billingCycle === 'monthly' ? 'RD$ 7,990' : 'RD$ 6,390'}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">/ mes</span>
-                </div>
-                <ul className="space-y-2.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Sucursales y usuarios ilimitados</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Aislamiento de base de datos RLS</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Auditoría detallada de empleados</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Migración guiada desde Excel</li>
-                </ul>
-              </div>
-              <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl border border-slate-200 hover:border-indigo-600 font-bold text-xs text-slate-700 hover:text-indigo-600 transition-colors">Contactar a Ventas</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ─── FAQ SECTION ─── */}
-      <section id="faq" className="py-14 bg-slate-50 border-t border-slate-200/60">
+      <section id="faq" className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-10 space-y-2">
             <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">RESPUESTAS A TUS DUDAS</span>
@@ -983,16 +881,16 @@ const LandingPage: React.FC = () => {
 
           <div className="space-y-3">
             {faqs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all shadow-2xs">
+              <div key={index} className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden transition-all shadow-2xs">
                 <button
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                  className="w-full px-5 py-4 text-left font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between gap-4 hover:bg-slate-50"
+                  className="w-full px-5 py-4 text-left font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between gap-4 hover:bg-slate-100"
                 >
                   <span>{faq.q}</span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180 text-indigo-600' : ''}`} />
                 </button>
                 {openFaq === index && (
-                  <div className="px-5 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100">
+                  <div className="px-5 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-200/60">
                     {faq.a}
                   </div>
                 )}
