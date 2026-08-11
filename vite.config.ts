@@ -1,7 +1,6 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
 import viteCompression from 'vite-plugin-compression';
 
 export default defineConfig(({ mode }) => {
@@ -21,110 +20,6 @@ export default defineConfig(({ mode }) => {
           algorithm: 'gzip',
           ext: '.gz',
         }),
-        VitePWA({
-          registerType: 'autoUpdate',
-          includeAssets: ['logoultramoney_logooriginaldegradadomorado.svg', 'og-image.svg', 'pwa-icon.svg'],
-          manifestFilename: 'manifest.json',
-          manifest: {
-            name: 'UltraMoney',
-            short_name: 'UltraMoney',
-            description: 'UltraMoney es una plataforma moderna para administrar préstamos, clientes, pagos, caja y cartera. Diseñada para prestamistas y financieras.',
-            theme_color: '#4F46E5',
-            background_color: '#ffffff',
-            display: 'standalone',
-            orientation: 'portrait',
-            scope: '/',
-            start_url: '/',
-            icons: [
-              {
-                src: '/pwa-icon.svg',
-                sizes: '192x192',
-                type: 'image/svg+xml',
-                purpose: 'any'
-              },
-              {
-                src: '/pwa-icon.svg',
-                sizes: '512x512',
-                type: 'image/svg+xml',
-                purpose: 'maskable'
-              }
-            ]
-          },
-          workbox: {
-            cacheId: 'ultramoney-v2',
-            cleanupOutdatedCaches: true,
-            skipWaiting: true,
-            clientsClaim: true,
-            maximumFileSizeToCacheInBytes: 10485760, // 10MB to ensure large JS chunks are precached
-            globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
-            runtimeCaching: [
-              {
-                urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-                handler: 'CacheFirst',
-                options: {
-                  cacheName: 'google-fonts-cache',
-                  expiration: {
-                    maxEntries: 10,
-                    maxAgeSeconds: 60 * 60 * 24 * 365
-                  },
-                  cacheableResponse: {
-                    statuses: [0, 200]
-                  }
-                }
-              },
-              {
-                urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-                handler: 'CacheFirst',
-                options: {
-                  cacheName: 'gstatic-fonts-cache',
-                  expiration: {
-                    maxEntries: 10,
-                    maxAgeSeconds: 60 * 60 * 24 * 365
-                  },
-                  cacheableResponse: {
-                    statuses: [0, 200]
-                  }
-                }
-              },
-              {
-                urlPattern: /^https:\/\/[a-z0-9]+\.[a-z-]+\.insforge\.app\/rest\/v1\/.*/i,
-                handler: 'NetworkFirst',
-                options: {
-                  cacheName: 'insforge-api-get-cache',
-                  expiration: {
-                    maxEntries: 100,
-                    maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
-                  },
-                  cacheableResponse: {
-                    statuses: [0, 200]
-                  }
-                }
-              },
-              {
-                urlPattern: /^https:\/\/[a-z0-9]+\.[a-z-]+\.insforge\.app\/rest\/v1\/.*/i,
-                handler: 'NetworkOnly',
-                method: 'POST',
-                options: {
-                  backgroundSync: {
-                    name: 'insforge-api-post-queue',
-                    options: { maxRetentionTime: 24 * 60 }
-                  }
-                }
-              },
-              {
-                urlPattern: /^https:\/\/[a-z0-9]+\.[a-z-]+\.insforge\.app\/rest\/v1\/.*/i,
-                handler: 'NetworkOnly',
-                method: 'PATCH',
-                options: {
-                  backgroundSync: {
-                    name: 'insforge-api-patch-queue',
-                    options: { maxRetentionTime: 24 * 60 }
-                  }
-                }
-              }
-            ]
-          }
-        })
       ],
       build: {
         rollupOptions: {

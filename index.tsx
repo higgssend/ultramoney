@@ -4,22 +4,21 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { Toaster } from 'sonner';
 import { HelmetProvider } from 'react-helmet-async';
-import { registerSW } from 'virtual:pwa-register';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// FORCE KILL OLD SERVICE WORKER AND RECREATE IT (Requested by User)
-if ('serviceWorker' in navigator && !localStorage.getItem('sw_force_recreated_v4')) {
+// Unregister any leftover Service Workers from previous PWA build
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
       registration.unregister();
     }
-    localStorage.setItem('sw_force_recreated_v4', 'true');
-    console.log("Service Worker eliminado forzosamente. Recargando para recrearlo...");
-    window.location.reload();
+  });
+  caches.keys().then((cacheNames) => {
+    cacheNames.forEach((name) => caches.delete(name));
   });
 }
 
@@ -61,17 +60,7 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-// Register PWA Service Worker for automatic background updates
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh() {
-    console.log('Nueva versión detectada. Actualizando silenciosamente...');
-    updateSW(true); // Forzar actualización automática sin preguntar
-  },
-  onOfflineReady() {
-    console.log('App is ready for offline use.');
-  },
-});
+
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(

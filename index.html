@@ -157,6 +157,23 @@
 }
 </script>
 <link rel="stylesheet" href="/index.css">
+  <!-- Unregister any Service Workers (PWA removed) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+          console.log('[SW] Unregistered:', registration.scope);
+        }
+      });
+      caches.keys().then(function(cacheNames) {
+        cacheNames.forEach(function(cacheName) {
+          caches.delete(cacheName);
+          console.log('[Cache] Deleted:', cacheName);
+        });
+      });
+    }
+  </script>
 </head>
   <body>
     <div class="bg-noise"></div>
