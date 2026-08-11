@@ -150,11 +150,23 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const installments = loanData.installments || loanData.durationWeeks || 1;
     const paymentFrequency = loanData.paymentFrequency || loanData.frequency || 'Semanal';
     
+    const isRedito = Boolean(loanData.loanType && (
+      loanData.loanType.includes('Rédito') || 
+      loanData.loanType.includes('Redito') || 
+      loanData.loanType.includes('Solo Interé') || 
+      loanData.loanType.includes('Pagaré Abierto')
+    ));
+
     let ttp = loanData.amount;
-    if (loanData.loanType === 'Amortización' || (loanData.loanType as string).startsWith('Amortizado')) {
-       ttp = loanData.amount + (loanData.amount * (loanData.interestRate / 100) * installments);
+    let instAmt = 0;
+
+    if (isRedito) {
+      ttp = loanData.amount; // Capital balance
+      instAmt = Math.round(loanData.amount * (loanData.interestRate / 100) * 100) / 100; // Periodic interest
+    } else {
+      ttp = Math.round((loanData.amount + (loanData.amount * (loanData.interestRate / 100))) * 100) / 100;
+      instAmt = Math.round((ttp / (installments > 0 ? installments : 1)) * 100) / 100;
     }
-    const instAmt = ttp / installments;
 
     const clientObj = clients.find(c => c.id === loanData.clientId);
     const clientName = clientObj ? `${clientObj.name} ${clientObj.lastName || ''}`.trim() : (loanData.clientName || 'Cliente');

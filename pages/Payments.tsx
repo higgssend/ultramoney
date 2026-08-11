@@ -112,9 +112,27 @@ const Payments: React.FC = () => {
 
   // --- Logic to Generate Installments ---
   const generateInstallments = (loan: Loan): Installment[] => {
+    const isRedito = Boolean(loan.loanType && (
+      loan.loanType.includes('Rédito') || 
+      loan.loanType.includes('Redito') || 
+      loan.loanType.includes('Solo Interé') || 
+      loan.loanType.includes('Pagaré Abierto')
+    ));
+
+    if (isRedito) {
+      const interestAmount = Math.round(loan.remainingBalance * (loan.interestRate / 100) * 100) / 100;
+      return [{
+        number: 1,
+        date: loan.nextPaymentDate || loan.startDate,
+        amount: interestAmount,
+        status: loan.status === 'Atrasado' ? 'Atrasado' : 'Pendiente',
+        paidAmount: 0
+      }];
+    }
+
     const installments: Installment[] = [];
-    const count = loan.durationWeeks; 
-    const amountPerInstallment = loan.totalToPay / count;
+    const count = loan.durationWeeks && loan.durationWeeks > 0 ? loan.durationWeeks : 1; 
+    const amountPerInstallment = Math.round((loan.totalToPay / count) * 100) / 100;
     
     // Total paid so far
     let totalPaidSoFar = loan.totalToPay - loan.remainingBalance;
@@ -145,13 +163,32 @@ const Payments: React.FC = () => {
             date,
             amount: amountPerInstallment,
             status,
-            paidAmount: paidOnThis
+            paidAmount: Math.round(paidOnThis * 100) / 100
         });
     }
     return installments;
   };
 
   const currentLoanInstallments = selectedLoan ? generateInstallments(selectedLoan) : [];
+
+  // Auto-populate periodic interest when selecting a Rédito loan
+  useEffect(() => {
+    if (!selectedLoan) return;
+    const isRedito = Boolean(selectedLoan.loanType && (
+      selectedLoan.loanType.includes('Rédito') || 
+      selectedLoan.loanType.includes('Redito') || 
+      selectedLoan.loanType.includes('Solo Interé') || 
+      selectedLoan.loanType.includes('Pagaré Abierto')
+    ));
+
+    if (isRedito) {
+      setPaymentType('Interes');
+      setPaymentMode('manual');
+      const interestAmount = Math.round(selectedLoan.remainingBalance * (selectedLoan.interestRate / 100) * 100) / 100;
+      setPayAmount(interestAmount.toFixed(2));
+      setPayNote('Pago de Interés (Rédito)');
+    }
+  }, [selectedLoanId]);
 
   // --- Grouping Logic for Monitor ---
   const getClientGroups = () => {
