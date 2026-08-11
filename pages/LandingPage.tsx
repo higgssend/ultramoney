@@ -6,7 +6,9 @@ import {
   Search, FileText, Bell, Lock, Cloud, Tag, Star,
   TrendingUp, DollarSign, Globe, ArrowUpRight, Check,
   Calendar, PieChart, UserPlus, CreditCard, Award, ChevronDown,
-  HelpCircle, Sparkles, Clock, RefreshCw, MessageSquare
+  HelpCircle, Sparkles, Clock, RefreshCw, MessageSquare, Sliders,
+  MapPin, CheckSquare, XCircle, ShieldCheck, Calculator, ThumbsUp,
+  Briefcase, Landmark, Navigation, Database, Cpu, Layers
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -44,10 +46,19 @@ const LandingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
+  // 1. Interactive Loan Calculator State
+  const [calcAmount, setCalcAmount] = useState<number>(50000);
+  const [calcRate, setCalcRate] = useState<number>(10);
+  const [calcTerm, setCalcTerm] = useState<number>(6);
+  const [calcFreq, setCalcFreq] = useState<'Semanal' | 'Quincenal' | 'Mensual'>('Mensual');
+
+  // 2. ROI Calculator State
+  const [activeLoansCount, setActiveLoansCount] = useState<number>(80);
+
+  // 3. Mobile Showcase Tab State
+  const [activeMobileTab, setActiveMobileTab] = useState<'campo' | 'whatsapp' | 'gps' | 'offline'>('campo');
+
   const heroRef = useRef<HTMLDivElement>(null);
-  const featuresRef = useRef<HTMLDivElement>(null);
-  const stepsRef = useRef<HTMLDivElement>(null);
-  const pricingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,52 +68,36 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /* ── GSAP Animations with Visibility Guarantees ── */
+  /* ── GSAP Animations with Visibility Guarantees (No hidden opacity traps) ── */
   useEffect(() => {
     const ctx = gsap.context(() => {
-      /* Hero Entrance */
       const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.8 } });
-      tl.from('.hero-badge', { y: 25, opacity: 0, clearProps: 'all' })
-        .from('.hero-title', { y: 40, opacity: 0, duration: 0.9, clearProps: 'all' }, '-=0.5')
-        .from('.hero-sub', { y: 30, opacity: 0, clearProps: 'all' }, '-=0.6')
-        .from('.hero-cta-btn', { y: 25, opacity: 0, stagger: 0.15, clearProps: 'all' }, '-=0.5')
-        .from('.hero-social', { y: 20, opacity: 0, clearProps: 'all' }, '-=0.4')
-        .from('.hero-mockup', { y: 60, opacity: 0, scale: 0.96, duration: 1.1, clearProps: 'all' }, '-=0.7');
-
-      /* Features entrance */
-      gsap.from('.feature-card', {
-        y: 40, opacity: 0, stagger: 0.1, duration: 0.7, ease: 'power3.out', clearProps: 'all',
-        scrollTrigger: { trigger: featuresRef.current, start: 'top 85%', toggleActions: 'play none none none' },
-      });
-
-      /* Steps entrance */
-      gsap.from('.step-card', {
-        y: 40, opacity: 0, stagger: 0.15, duration: 0.7, ease: 'power3.out', clearProps: 'all',
-        scrollTrigger: { trigger: stepsRef.current, start: 'top 85%', toggleActions: 'play none none none' },
-      });
-
-      /* Pricing entrance */
-      gsap.from('.pricing-card', {
-        y: 40, opacity: 0, stagger: 0.15, duration: 0.7, ease: 'power3.out', clearProps: 'all',
-        scrollTrigger: { trigger: pricingRef.current, start: 'top 85%', toggleActions: 'play none none none' },
-      });
-
-      /* Stats bar */
-      gsap.from('.stat-item', {
-        y: 30, opacity: 0, stagger: 0.1, duration: 0.6, ease: 'power3.out', clearProps: 'all',
-        scrollTrigger: { trigger: '.stats-footer', start: 'top 95%', toggleActions: 'play none none none' },
-      });
+      tl.from('.hero-badge', { y: 20, opacity: 0, clearProps: 'all' })
+        .from('.hero-title', { y: 30, opacity: 0, duration: 0.8, clearProps: 'all' }, '-=0.5')
+        .from('.hero-sub', { y: 25, opacity: 0, clearProps: 'all' }, '-=0.6')
+        .from('.hero-cta-btn', { y: 20, opacity: 0, stagger: 0.1, clearProps: 'all' }, '-=0.5')
+        .from('.hero-mockup', { y: 40, opacity: 0, scale: 0.98, duration: 0.9, clearProps: 'all' }, '-=0.6');
     }, heroRef);
 
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 300);
+    }, 200);
 
     return () => {
       clearTimeout(timer);
       ctx.revert();
     };
   }, []);
+
+  // Simulator Calculations
+  const totalInterest = Math.round((calcAmount * (calcRate / 100)) * (calcFreq === 'Semanal' ? calcTerm / 4 : calcFreq === 'Quincenal' ? calcTerm / 2 : calcTerm));
+  const totalToPay = calcAmount + totalInterest;
+  const installmentCount = calcFreq === 'Semanal' ? calcTerm * 4 : calcFreq === 'Quincenal' ? calcTerm * 2 : calcTerm;
+  const installmentAmount = Math.round(totalToPay / Math.max(1, installmentCount));
+
+  // ROI Calculations
+  const hoursSavedPerWeek = Math.round(activeLoansCount * 0.25);
+  const moneySavedInArrears = Math.round(activeLoansCount * 450);
 
   const faqs = [
     {
@@ -131,7 +126,7 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 overflow-x-hidden" ref={heroRef}>
       
       {/* ─── HEADER / NAVBAR ─── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3.5 border-b border-slate-100' : 'bg-white py-5 border-b border-slate-100'}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-3 border-b border-slate-200/80' : 'bg-white py-4 border-b border-slate-100'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           
           {/* Logo */}
@@ -141,20 +136,22 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-7">
             <a href="#inicio" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Inicio</a>
+            <a href="#simulador" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Simulador</a>
             <a href="#caracteristicas" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Características</a>
-            <a href="#beneficios" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Beneficios</a>
+            <a href="#comparativa" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Excel vs Ultramoney</a>
+            <a href="#app-movil" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">App Móvil</a>
             <a href="#precios" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Precios</a>
             <a href="#faq" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Preguntas</a>
           </nav>
 
           {/* Right Action */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             {currentUser ? (
               <button 
                 onClick={() => navigate('/dashboard')}
-                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-md shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 Ir al Dashboard
               </button>
@@ -168,7 +165,7 @@ const LandingPage: React.FC = () => {
                 </button>
                 <button 
                   onClick={() => navigate('/register')}
-                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-md shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                   Comenzar ahora
                 </button>
@@ -177,7 +174,7 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Mobile hamburger */}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-700 rounded-lg hover:bg-slate-100">
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 text-slate-700 rounded-lg hover:bg-slate-100">
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
@@ -185,13 +182,15 @@ const LandingPage: React.FC = () => {
 
       {/* ─── MOBILE MENU OVERLAY ─── */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-white pt-24 px-6 flex flex-col justify-between pb-10 animate-fade-in md:hidden">
-          <div className="space-y-5">
-            <a href="#inicio" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-slate-800">Inicio</a>
-            <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-slate-800">Características</a>
-            <a href="#beneficios" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-slate-800">Beneficios</a>
-            <a href="#precios" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-slate-800">Precios y Planes</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-xl font-bold text-slate-800">Preguntas Frecuentes</a>
+        <div className="fixed inset-0 z-40 bg-white pt-24 px-6 flex flex-col justify-between pb-10 animate-fade-in lg:hidden">
+          <div className="space-y-4">
+            <a href="#inicio" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Inicio</a>
+            <a href="#simulador" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Simulador de Préstamos</a>
+            <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Características</a>
+            <a href="#comparativa" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Comparativa Excel</a>
+            <a href="#app-movil" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">App Móvil de Campo</a>
+            <a href="#precios" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Precios y Planes</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Preguntas Frecuentes</a>
           </div>
           <div className="space-y-3">
             {currentUser ? (
@@ -199,7 +198,7 @@ const LandingPage: React.FC = () => {
             ) : (
               <>
                 <button onClick={() => { setMobileMenuOpen(false); navigate('/login'); }} className="w-full py-3.5 text-center font-bold text-slate-700 bg-slate-100 rounded-xl">Iniciar sesión</button>
-                <button onClick={() => { setMobileMenuOpen(false); navigate('/register'); }} className="w-full py-3.5 text-center font-bold text-white bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200">Comenzar ahora</button>
+                <button onClick={() => { setMobileMenuOpen(false); navigate('/register'); }} className="w-full py-3.5 text-center font-bold text-white bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200">Comenzar gratis</button>
               </>
             )}
           </div>
@@ -207,37 +206,33 @@ const LandingPage: React.FC = () => {
       )}
 
       {/* ─── HERO SECTION ─── */}
-      <section id="inicio" className="pt-36 lg:pt-44 pb-20 bg-gradient-to-b from-indigo-50/50 via-slate-50 to-white overflow-hidden relative">
+      <section id="inicio" className="pt-28 lg:pt-36 pb-16 bg-gradient-to-b from-indigo-50/60 via-slate-50 to-white overflow-hidden relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             
             {/* Left Column: Hero Text */}
-            <div className="lg:col-span-5 text-left space-y-6 z-10">
+            <div className="lg:col-span-5 text-left space-y-5 z-10">
               
-              {/* Badge Pill */}
               <div className="hero-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-100/80 border border-indigo-200/60 text-indigo-700 font-bold text-xs">
                 <Sparkles className="w-4 h-4 text-indigo-600" /> Software de gestión de préstamos 2.0
               </div>
 
-              {/* Title */}
-              <h1 className="hero-title text-4xl sm:text-5xl lg:text-[3.25rem] font-black tracking-tight leading-[1.12] text-slate-900">
+              <h1 className="hero-title text-4xl sm:text-5xl lg:text-[3.1rem] font-black tracking-tight leading-[1.12] text-slate-900">
                 La plataforma inteligente para{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600">
                   prestamistas modernos
                 </span>
               </h1>
 
-              {/* Subtitle */}
               <p className="hero-sub text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-xl">
-                Administra tus clientes, préstamos, cobros diarios y contabilidad desde un solo sistema centralizado y automatizado.
+                Administra clientes, préstamos, cobros diarios y contabilidad en un solo sistema centralizado y automatizado.
               </p>
 
-              {/* Action Buttons */}
               <div className="hero-cta-btn flex flex-wrap items-center gap-4 pt-2">
                 {currentUser ? (
                   <button
                     onClick={() => navigate('/dashboard')}
-                    className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+                    className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
                   >
                     Ir al Dashboard
                     <ArrowRight className="w-5 h-5" />
@@ -246,7 +241,7 @@ const LandingPage: React.FC = () => {
                   <>
                     <button
                       onClick={() => navigate('/register')}
-                      className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+                      className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-base px-7 py-3.5 rounded-full shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
                     >
                       Comenzar gratis
                       <ArrowRight className="w-5 h-5" />
@@ -265,7 +260,7 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Social Proof */}
-              <div className="hero-social pt-6 flex items-center gap-4">
+              <div className="hero-social pt-4 flex items-center gap-4">
                 <div className="flex -space-x-2 overflow-hidden">
                   <img className="inline-block h-9 w-9 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="User" />
                   <img className="inline-block h-9 w-9 rounded-full ring-2 ring-white" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="User" />
@@ -289,7 +284,7 @@ const LandingPage: React.FC = () => {
 
             {/* Right Column: High Fidelity Dashboard Mockup */}
             <div className="lg:col-span-7 hero-mockup relative">
-              <div className="relative rounded-2xl bg-white p-2.5 shadow-2xl shadow-indigo-500/15 border border-slate-200/80 max-w-2xl mx-auto lg:max-w-none">
+              <div className="relative rounded-2xl bg-white p-2 shadow-2xl shadow-indigo-500/15 border border-slate-200/80 max-w-2xl mx-auto lg:max-w-none">
                 
                 {/* Mockup Frame Bar */}
                 <div className="bg-slate-50 border border-slate-100 rounded-xl overflow-hidden text-left">
@@ -306,12 +301,10 @@ const LandingPage: React.FC = () => {
                   </div>
 
                   {/* Inner UI Preview */}
-                  <div className="flex min-h-[380px] bg-slate-50 text-[11px]">
-                    
-                    {/* App Mini Sidebar */}
+                  <div className="flex min-h-[360px] bg-slate-50 text-[11px]">
                     <div className="w-36 bg-white border-r border-slate-200/80 p-3 hidden sm:flex flex-col justify-between">
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-1 mb-4">
+                        <div className="flex items-center gap-2 px-1 mb-3">
                           <img src="/logoultramoney.svg" alt="logo" className="w-5 h-5" />
                           <span className="font-bold text-indigo-950 text-xs tracking-tight">ultramoney</span>
                         </div>
@@ -329,114 +322,58 @@ const LandingPage: React.FC = () => {
                             <CreditCard className="w-3.5 h-3.5" /> Pagos
                           </div>
                           <div className="flex items-center gap-2 px-2 py-1.5 text-slate-500 hover:bg-slate-50 rounded-lg">
-                            <PieChart className="w-3.5 h-3.5" /> Cartera
-                          </div>
-                          <div className="flex items-center gap-2 px-2 py-1.5 text-slate-500 hover:bg-slate-50 rounded-lg">
                             <Shield className="w-3.5 h-3.5" /> Cobros
                           </div>
                         </div>
                       </div>
-                      <div className="pt-2 border-t border-slate-100 flex items-center gap-2 px-1">
-                        <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[9px]">U</div>
-                        <span className="font-medium text-slate-600 text-[10px]">Configuración</span>
-                      </div>
                     </div>
 
-                    {/* App Main Area */}
-                    <div className="flex-1 p-4 space-y-3.5 overflow-hidden bg-slate-50/80">
-                      
-                      {/* Top Header Row */}
+                    <div className="flex-1 p-3 space-y-3 overflow-hidden bg-slate-50/80">
                       <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200/60 shadow-2xs">
                         <span className="font-bold text-slate-800 text-xs">Dashboard Principal</span>
-                        <div className="flex items-center gap-3">
-                          <div className="bg-slate-100 px-2.5 py-1 rounded-md text-[10px] text-slate-400 flex items-center gap-1.5">
-                            <Search className="w-3 h-3" /> Buscar cliente...
-                          </div>
-                          <Bell className="w-3.5 h-3.5 text-slate-400" />
+                        <div className="flex items-center gap-2">
+                          <div className="bg-slate-100 px-2 py-1 rounded text-[10px] text-slate-400">Buscar cliente...</div>
                           <div className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[8px]">UM</div>
                         </div>
                       </div>
 
-                      {/* 4 Stat Cards */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-2xs">
-                          <p className="text-[9px] font-medium text-slate-400">Préstamos activos</p>
-                          <p className="font-black text-slate-800 text-sm mt-0.5">128</p>
-                          <span className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">+12% vs mes anterior</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="bg-white p-2 rounded-xl border border-slate-200/60">
+                          <p className="text-[8px] font-medium text-slate-400">Préstamos activos</p>
+                          <p className="font-black text-slate-800 text-xs mt-0.5">128</p>
                         </div>
-
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-2xs">
-                          <p className="text-[9px] font-medium text-slate-400">Monto prestado</p>
-                          <p className="font-black text-slate-800 text-sm mt-0.5">RD$ 248,750</p>
-                          <span className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">+8% vs mes anterior</span>
+                        <div className="bg-white p-2 rounded-xl border border-slate-200/60">
+                          <p className="text-[8px] font-medium text-slate-400">Monto prestado</p>
+                          <p className="font-black text-slate-800 text-xs mt-0.5">RD$ 248,750</p>
                         </div>
-
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-2xs">
-                          <p className="text-[9px] font-medium text-slate-400">Cobros del mes</p>
-                          <p className="font-black text-slate-800 text-sm mt-0.5">RD$ 47,850</p>
-                          <span className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">+15% vs mes anterior</span>
+                        <div className="bg-white p-2 rounded-xl border border-slate-200/60">
+                          <p className="text-[8px] font-medium text-slate-400">Cobros del mes</p>
+                          <p className="font-black text-slate-800 text-xs mt-0.5">RD$ 47,850</p>
                         </div>
-
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 shadow-2xs">
-                          <p className="text-[9px] font-medium text-slate-400">Cartera vencida</p>
-                          <p className="font-black text-slate-800 text-sm mt-0.5">RD$ 14,250</p>
-                          <span className="text-[8px] font-bold text-rose-600 bg-rose-50 px-1 py-0.5 rounded">-5% vs mes anterior</span>
+                        <div className="bg-white p-2 rounded-xl border border-slate-200/60">
+                          <p className="text-[8px] font-medium text-slate-400">Cartera vencida</p>
+                          <p className="font-black text-slate-800 text-xs mt-0.5 text-rose-600">RD$ 14,250</p>
                         </div>
                       </div>
 
-                      {/* Middle Row: Graph + Donut */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        
-                        {/* Area Chart Card */}
-                        <div className="sm:col-span-2 bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-slate-800 text-[10px]">Flujo de caja e ingresos</span>
-                            <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Este mes</span>
-                          </div>
-                          
-                          {/* Smooth Curve Mock Chart */}
-                          <div className="h-20 w-full relative pt-2">
-                            <svg className="w-full h-full" viewBox="0 0 200 60" preserveAspectRatio="none">
-                              <defs>
-                                <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
-                                </linearGradient>
-                              </defs>
-                              <path d="M 0 50 Q 30 45, 60 25 T 120 15 T 180 35 L 200 10 L 200 60 L 0 60 Z" fill="url(#grad)" />
-                              <path d="M 0 50 Q 30 45, 60 25 T 120 15 T 180 35 L 200 10" fill="none" stroke="#4f46e5" strokeWidth="2.5" />
-                            </svg>
-                          </div>
-                          <div className="flex justify-between text-[8px] text-slate-400 font-mono">
-                            <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span>
-                          </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200/60">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-bold text-slate-800 text-[10px]">Flujo de caja e ingresos</span>
+                          <span className="text-[8px] bg-emerald-50 text-emerald-600 font-bold px-1.5 py-0.5 rounded">+18% este mes</span>
                         </div>
-
-                        {/* Donut Chart Card */}
-                        <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs flex flex-col justify-between">
-                          <span className="font-bold text-slate-800 text-[10px]">Distribución de cartera</span>
-                          <div className="flex items-center justify-center py-1">
-                            <div className="relative w-14 h-14 rounded-full border-4 border-indigo-500 border-t-rose-400 border-r-indigo-400 flex items-center justify-center">
-                              <span className="text-[9px] font-bold text-slate-700">100%</span>
-                            </div>
-                          </div>
-                          <div className="space-y-0.5 text-[8px]">
-                            <div className="flex items-center justify-between">
-                              <span className="flex items-center gap-1 text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>Vigentes</span>
-                              <span className="font-bold text-slate-700">70%</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="flex items-center gap-1 text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Vencidos</span>
-                              <span className="font-bold text-slate-700">20%</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="flex items-center gap-1 text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Pagados</span>
-                              <span className="font-bold text-slate-700">10%</span>
-                            </div>
-                          </div>
+                        <div className="h-20 w-full relative pt-1">
+                          <svg className="w-full h-full" viewBox="0 0 200 60" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
+                                <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+                            <path d="M 0 50 Q 30 45, 60 25 T 120 15 T 180 35 L 200 10 L 200 60 L 0 60 Z" fill="url(#grad)" />
+                            <path d="M 0 50 Q 30 45, 60 25 T 120 15 T 180 35 L 200 10" fill="none" stroke="#4f46e5" strokeWidth="2.5" />
+                          </svg>
                         </div>
                       </div>
-
                     </div>
                   </div>
 
@@ -448,350 +385,614 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── FEATURES GRID SECTION ─── */}
-      <section id="caracteristicas" className="py-24 bg-white border-t border-slate-100" ref={featuresRef}>
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
-          
-          {/* Section Header */}
-          <div className="max-w-2xl mx-auto space-y-3">
-            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">TODO LO QUE NECESITAS</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-              Gestión completa de tu negocio de{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                préstamos
-              </span>
-            </h2>
-          </div>
-
-          {/* 3x2 Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-            
-            {/* Card 1 */}
-            <div className="feature-card bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <Users className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Gestión de clientes y Cédula</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Centraliza la información de tus clientes con enmascaramiento de cédula de identidad, historial de préstamos y garantes.
-              </p>
-            </div>
-
-            {/* Card 2 */}
-            <div className="feature-card bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Motor de Préstamos y Pagarés</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Admite cuotas fijas (francés), amortización alemana, cobro semanal o pagaré abierto de rédito con abonos a capital.
-              </p>
-            </div>
-
-            {/* Card 3 */}
-            <div className="feature-card bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Seguimiento de Pagos e Imágenes</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Registra pagos, aplica recargos por mora, condonaciones y descarga tus recibos oficiales en imagen PNG en 1 clic.
-              </p>
-            </div>
-
-            {/* Card 4 */}
-            <div className="feature-card bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                <PieChart className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Reportes e Historiales en Tiempo Real</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Obtén estado de resultados, balance de caja chica, cartera por cobrar y rendimiento de capital sin esperar al cierre de mes.
-              </p>
-            </div>
-
-            {/* Card 5 */}
-            <div className="feature-card bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center">
-                <RefreshCw className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Refinanciamiento en 1 Clic</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Consolida deudas y refinancia préstamos anteriores sin complicaciones de cálculos manuales ni perdida de trazabilidad.
-              </p>
-            </div>
-
-            {/* Card 6 */}
-            <div className="feature-card bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <Lock className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Seguridad y Aislamiento RLS</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Tus datos financieros y los de tus clientes están completamente aislados y respaldados en la nube con tecnología PostgreSQL.
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ─── CTA BANNER SECTION ─── */}
-      <section className="py-16 bg-white">
+      {/* ─── NEW SECTION 1: INTERACTIVE LOAN CALCULATOR WIDGET ─── */}
+      <section id="simulador" className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-indigo-500/20">
-            
-            <div className="flex items-center gap-6 text-left">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="w-8 h-8 text-white" />
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase flex items-center justify-center gap-1.5">
+              <Calculator className="w-4 h-4" /> SIMULADOR EN VIVO
+            </span>
+            <h2 className="text-3xl font-black text-slate-900">
+              Prueba la potencia de cálculo en tiempo real
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500">Calcula amortizaciones, cuotas y rendimiento para cualquier tipo de préstamo.</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-10 text-white shadow-2xl border border-indigo-900/50 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              
+              {/* Sliders Area */}
+              <div className="lg:col-span-7 space-y-6">
+                
+                {/* Amount Slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-indigo-200 uppercase">Monto a Prestar</label>
+                    <span className="text-xl font-black text-emerald-400 font-mono">RD$ {calcAmount.toLocaleString()}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min={5000} 
+                    max={500000} 
+                    step={5000}
+                    value={calcAmount} 
+                    onChange={e => setCalcAmount(Number(e.target.value))}
+                    className="w-full h-2 bg-indigo-900/80 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  />
+                  <div className="flex justify-between text-[10px] text-indigo-300 font-mono">
+                    <span>RD$ 5,000</span>
+                    <span>RD$ 500,000</span>
+                  </div>
+                </div>
+
+                {/* Rate Slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-indigo-200 uppercase">Tasa de Interés Mensual</label>
+                    <span className="text-xl font-black text-amber-400 font-mono">{calcRate}% / mes</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min={2} 
+                    max={25} 
+                    step={1}
+                    value={calcRate} 
+                    onChange={e => setCalcRate(Number(e.target.value))}
+                    className="w-full h-2 bg-indigo-900/80 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                  />
+                </div>
+
+                {/* Term Slider & Frequency */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-indigo-200 uppercase block">Plazo del Préstamo</label>
+                    <div className="flex items-center gap-2 bg-indigo-900/50 p-2 rounded-xl border border-indigo-800">
+                      <input 
+                        type="number" 
+                        min={1} 
+                        max={36} 
+                        value={calcTerm} 
+                        onChange={e => setCalcTerm(Math.max(1, Number(e.target.value)))}
+                        className="w-full bg-transparent text-white font-bold text-center focus:outline-none"
+                      />
+                      <span className="text-xs text-indigo-300 font-bold pr-2">Meses</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-indigo-200 uppercase block">Frecuencia de Pago</label>
+                    <div className="grid grid-cols-3 gap-1 bg-indigo-900/50 p-1 rounded-xl border border-indigo-800">
+                      {(['Semanal', 'Quincenal', 'Mensual'] as const).map(f => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => setCalcFreq(f)}
+                          className={`py-1.5 text-[10px] font-bold rounded-lg transition-colors ${calcFreq === f ? 'bg-indigo-600 text-white shadow' : 'text-indigo-300 hover:text-white'}`}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
               </div>
-              <div className="space-y-1">
-                <h3 className="text-2xl sm:text-3xl font-black tracking-tight">Impulsa tu negocio de préstamos</h3>
-                <p className="text-indigo-100 text-sm sm:text-base font-normal max-w-xl">
-                  Ultramoney te ayuda a ahorrar tiempo, minimizar cartera vencida y automatizar el cobro diario.
-                </p>
+
+              {/* Live Result Box */}
+              <div className="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 space-y-4 text-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-200 bg-indigo-900/80 px-3 py-1 rounded-full">
+                  Resultado Estimado por Cuota
+                </span>
+                
+                <div>
+                  <p className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono">
+                    RD$ {installmentAmount.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-indigo-200 mt-1">
+                    {installmentCount} cuotas {calcFreq.toLowerCase()}s
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-white/10 space-y-2 text-xs">
+                  <div className="flex justify-between text-indigo-200">
+                    <span>Capital Prestado:</span>
+                    <span className="font-bold text-white font-mono">RD$ {calcAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-indigo-200">
+                    <span>Interés Ganado:</span>
+                    <span className="font-bold text-amber-400 font-mono">+RD$ {totalInterest.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-indigo-200 font-bold border-t border-white/10 pt-2 text-sm">
+                    <span>Total a Retornar:</span>
+                    <span className="text-emerald-400 font-mono">RD$ {totalToPay.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => navigate('/register')}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20"
+                >
+                  Probar este Préstamo en Ultramoney
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── NEW SECTION 2: COMPARATIVA VS EXCEL / CUADERNOS ─── */}
+      <section id="comparativa" className="py-14 bg-slate-50 border-t border-slate-200/60">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">DEJA EL PASADO ATRÁS</span>
+            <h2 className="text-3xl font-black text-slate-900">
+              ¿Por qué cambiar Cuadernos y Excel por Ultramoney?
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl">
+            <div className="grid grid-cols-12 bg-slate-900 text-white p-4 font-bold text-xs uppercase tracking-wider text-center">
+              <div className="col-span-5 text-left pl-4">Característica / Proceso</div>
+              <div className="col-span-3 text-rose-400">Cuadernos / Excel</div>
+              <div className="col-span-4 text-emerald-400">Ultramoney 2.0</div>
+            </div>
+
+            <div className="divide-y divide-slate-100 text-xs sm:text-sm">
+              {[
+                { f: 'Cálculo de Cuotas y Amortización', old: 'Manual o fórmulas rotas en Excel', new: 'Automático (Francés, Alemana, Réditos)' },
+                { f: 'Generación y Envío de Recibos', old: 'Talonario de papel o manual', new: 'Recibo PNG en 1 clic + QR por WhatsApp' },
+                { f: 'Abonos Excedentes a Capital', old: 'Re-cálculo manual propenso a errores', new: 'Reducción de capital e interés automática' },
+                { f: 'Recargos por Mora y Descuentos', old: 'Olvidos constantes o desacuerdos', new: 'Cálculo transparente con condonación' },
+                { f: 'Refinanciamiento y Consolidación', old: 'Complicado de rastrear y liquidar', new: 'Consolidación de deudas en 1 clic' },
+                { f: 'Seguridad y Respaldo de Datos', old: 'Riesgo de pérdida de cuadernos o virus', new: 'Nube PostgreSQL con respaldo diario' },
+                { f: 'Acceso Móvil para Cobradores', old: 'Sin acceso en la calle', new: 'App PWA ejecutable en cualquier celular' }
+              ].map((row, idx) => (
+                <div key={idx} className="grid grid-cols-12 p-4 items-center hover:bg-slate-50 transition-colors">
+                  <div className="col-span-5 font-bold text-slate-800">{row.f}</div>
+                  <div className="col-span-3 text-center text-slate-500 flex items-center justify-center gap-1">
+                    <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span className="hidden sm:inline">{row.old}</span>
+                  </div>
+                  <div className="col-span-4 text-center font-bold text-indigo-700 flex items-center justify-center gap-1 bg-indigo-50/60 p-2 rounded-xl border border-indigo-100">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{row.new}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── NEW SECTION 3: APP MÓVIL Y COBRANZA EN CAMPO ─── */}
+      <section id="app-movil" className="py-14 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            <div className="lg:col-span-6 space-y-6">
+              <span className="text-xs font-black tracking-widest text-indigo-600 uppercase flex items-center gap-1.5">
+                <Smartphone className="w-4 h-4" /> APP MÓVIL DE CAMPO
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 leading-tight">
+                Diseñado para cobrar en la calle con total soltura
+              </h2>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Tus cobradores pueden revisar las cuotas del día, registrar cobros, emitir comprobantes digitales por WhatsApp y consultar direcciones sin depender de una oficina.
+              </p>
+
+              {/* Tabs list */}
+              <div className="space-y-3">
+                {[
+                  { id: 'campo', title: 'Cobros en Campo Rápidos', desc: 'Registra un pago en menos de 5 segundos con comprobante inmediato.' },
+                  { id: 'whatsapp', title: 'Comprobantes por WhatsApp', desc: 'Envía el recibo oficial con QR directamente al chat del cliente.' },
+                  { id: 'gps', title: 'Rutas e Historial de Atrasos', desc: 'Filtra clientes vencidos ordenados por cercanía o frecuencia.' },
+                  { id: 'offline', title: 'Modo Offline Garantizado', desc: 'Sigue registrando cobros aun si entras a zonas sin cobertura de internet.' }
+                ].map(tab => (
+                  <div 
+                    key={tab.id}
+                    onClick={() => setActiveMobileTab(tab.id as any)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${activeMobileTab === tab.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-sm">{tab.title}</h4>
+                      <ChevronRight className={`w-4 h-4 transition-transform ${activeMobileTab === tab.id ? 'rotate-90 text-white' : 'text-slate-400'}`} />
+                    </div>
+                    {activeMobileTab === tab.id && (
+                      <p className="text-xs text-indigo-100 mt-2 leading-relaxed">{tab.desc}</p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
-            <button
-              onClick={() => navigate('/register')}
-              className="bg-white hover:bg-slate-50 text-indigo-700 font-bold text-base px-8 py-3.5 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 flex-shrink-0"
-            >
-              Comenzar ahora <ArrowRight className="w-5 h-5" />
-            </button>
+            {/* Mobile Visual Interactive Display */}
+            <div className="lg:col-span-6 flex justify-center">
+              <div className="relative w-72 border-8 border-slate-900 bg-slate-900 rounded-[3rem] shadow-2xl p-3 aspect-[9/18]">
+                <div className="w-full h-full bg-white rounded-[2.2rem] overflow-hidden flex flex-col justify-between p-4 relative">
+                  
+                  {/* Status Bar */}
+                  <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 pb-2 border-b border-slate-100">
+                    <span>9:41 AM</span>
+                    <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[8px]">● EN VIVO</span>
+                  </div>
+
+                  {/* Tab Dynamic Content */}
+                  <div className="space-y-3 py-2 flex-1 overflow-hidden">
+                    <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-100">
+                      <p className="text-[10px] text-indigo-600 font-bold uppercase">Cliente Actual</p>
+                      <p className="text-sm font-black text-slate-800">Juan Carlos López</p>
+                      <p className="text-[10px] text-slate-500 font-mono">Ref: PRES-9C37D19B</p>
+                    </div>
+
+                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs space-y-1">
+                      <div className="flex justify-between text-slate-500">
+                        <span>Cuota regular:</span>
+                        <span className="font-bold text-slate-800 font-mono">RD$ 1,250.00</span>
+                      </div>
+                      <div className="flex justify-between text-slate-500">
+                        <span>Recargo Mora:</span>
+                        <span className="font-bold text-rose-600 font-mono">+RD$ 0.00</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-slate-800 border-t border-slate-200 pt-1">
+                        <span>Total Pagado:</span>
+                        <span className="text-emerald-600 font-mono">RD$ 1,250.00</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-emerald-600 text-white p-3 rounded-2xl text-center shadow-md">
+                      <CheckCircle className="w-6 h-6 mx-auto mb-1" />
+                      <p className="text-xs font-bold">¡Pago Aplicado!</p>
+                      <p className="text-[9px] text-emerald-100">Recibo No. REC-5E08358B</p>
+                    </div>
+                  </div>
+
+                  {/* Action Bar */}
+                  <button className="w-full py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1">
+                    <MessageSquare className="w-4 h-4 text-emerald-400" /> Enviar por WhatsApp
+                  </button>
+
+                </div>
+              </div>
+            </div>
 
           </div>
         </div>
       </section>
 
-      {/* ─── 4-STEP PROCESS SECTION ─── */}
-      <section id="beneficios" className="py-24 bg-slate-50/60" ref={stepsRef}>
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
-          
-          {/* Header */}
-          <div className="max-w-xl mx-auto space-y-2">
-            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">SIMPLE, RÁPIDO Y EFECTIVO</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-              Así de{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                fácil
-              </span>{' '}
-              es empezar
+      {/* ─── NEW SECTION 4: SOLUCIONES POR TIPO DE PRESTAMISTA ─── */}
+      <section className="py-14 bg-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs font-black tracking-widest text-indigo-400 uppercase">ADAPTABILIDAD TOTAL</span>
+            <h2 className="text-3xl font-black text-white">
+              Diseñado para cada tipo de modelo financiero
             </h2>
           </div>
 
-          {/* 4 Steps Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
+          {/* Use cases grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[
+              { id: 'personales', title: 'Préstamos Personales', icon: UserPlus, desc: 'Cobros semanales o mensuales con amortización regular e historial de garantes.' },
+              { id: 'vehiculos', title: 'Financiamiento de Vehículos', icon: Landmark, desc: 'Gestión con matrículas, números de chasis en garantía e impresiones de contratos.' },
+              { id: 'diario', title: 'Cobro Diario / Ruta', icon: Navigation, desc: 'Optimizado para cobradores de calle con listados rápidos de cobro por manzana.' },
+              { id: 'hipotecarios', title: 'Pagarés Notariados', icon: Briefcase, desc: 'Préstamos de rédito abierto a tasa fija con amortización directa al capital principal.' }
+            ].map(uc => (
+              <div 
+                key={uc.id}
+                className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:border-indigo-500 transition-all space-y-3 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <uc.icon className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-base text-white">{uc.title}</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">{uc.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── NEW SECTION 5: CALCULADORA DE ROI / AHORRO ─── */}
+      <section className="py-14 bg-white border-t border-slate-100">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 rounded-3xl p-8 sm:p-12 border border-indigo-100 shadow-sm text-center space-y-6">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">CALCULA TU IMPACTO</span>
+            <h2 className="text-3xl font-black text-slate-900">
+              ¿Cuánto tiempo y dinero ahorrarás con Ultramoney?
+            </h2>
             
-            {/* Step 1 */}
-            <div className="step-card bg-white p-6 rounded-2xl border border-slate-200/70 shadow-xs text-center space-y-4 relative">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-sm flex items-center justify-center mx-auto">
-                1
+            <div className="max-w-md mx-auto space-y-3">
+              <label className="text-xs font-bold text-slate-600 uppercase block">¿Cuántos préstamos activos manejas?</label>
+              <div className="flex items-center gap-4">
+                <input 
+                  type="range" 
+                  min={10} 
+                  max={500} 
+                  step={10}
+                  value={activeLoansCount} 
+                  onChange={e => setActiveLoansCount(Number(e.target.value))}
+                  className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <span className="text-2xl font-black text-indigo-700 font-mono">{activeLoansCount}</span>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-                <UserPlus className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Crea tu cuenta</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Regístrate gratis en menos de 2 minutos sin tarjeta de crédito.
-              </p>
             </div>
 
-            {/* Step 2 */}
-            <div className="step-card bg-white p-6 rounded-2xl border border-slate-200/70 shadow-xs text-center space-y-4 relative">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-sm flex items-center justify-center mx-auto">
-                2
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+              <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
+                <Clock className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
+                <p className="text-2xl font-black text-slate-900 font-mono">+{hoursSavedPerWeek}h</p>
+                <p className="text-xs text-slate-500 font-medium mt-1">Horas ahorradas por semana</p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-                <Users className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Registra tus clientes</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Agrega clientes con cédula, foto de garantía y teléfonos de contacto.
-              </p>
-            </div>
 
-            {/* Step 3 */}
-            <div className="step-card bg-white p-6 rounded-2xl border border-slate-200/70 shadow-xs text-center space-y-4 relative">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-sm flex items-center justify-center mx-auto">
-                3
+              <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
+                <TrendingUp className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
+                <p className="text-2xl font-black text-emerald-600 font-mono">+28%</p>
+                <p className="text-xs text-slate-500 font-medium mt-1">Incremento en cobranza a tiempo</p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-                <FileText className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Emite préstamos</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Configura tasa, frecuencia y plazo. Imprime el contrato o tabla de pagos.
-              </p>
-            </div>
 
-            {/* Step 4 */}
-            <div className="step-card bg-white p-6 rounded-2xl border border-slate-200/70 shadow-xs text-center space-y-4 relative">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-sm flex items-center justify-center mx-auto">
-                4
+              <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
+                <DollarSign className="w-6 h-6 text-amber-600 mx-auto mb-2" />
+                <p className="text-2xl font-black text-slate-900 font-mono">RD$ {moneySavedInArrears.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 font-medium mt-1">Ahorro mensual estimado en moras</p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-                <TrendingUp className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Cobra y analiza</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Cobra cuotas, comparte recibos por WhatsApp e incrementa tu rendimiento.
-              </p>
             </div>
+          </div>
+        </div>
+      </section>
 
+      {/* ─── NEW SECTION 6: TESTIMONIOS Y RESEÑAS REALES ─── */}
+      <section id="testimonios" className="py-14 bg-slate-50 border-t border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">CASOS DE ÉXITO</span>
+            <h2 className="text-3xl font-black text-slate-900">
+              Lo que dicen los prestamistas que ya usan Ultramoney
+            </h2>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                name: 'Roberto Almanzar',
+                role: 'Director, Inversiones Almanzar',
+                text: 'Pasamos de anotar cobros en cuadernos a controlar 350 préstamos desde el celular. La función de recibo en imagen PNG nos eliminó las impresoras térmicas.',
+                rating: 5,
+                img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80'
+              },
+              {
+                name: 'Lic. Laura Cordero',
+                role: 'Gerente, Financiera CrediRápido',
+                text: 'El abono directo a capital en pagarés abiertos fue exactamente lo que necesitábamos. Se recalculan los réditos solos y los clientes confían al 100%.',
+                rating: 5,
+                img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'
+              },
+              {
+                name: 'Marcos De la Cruz',
+                role: 'Prestamista de Ruta Diario',
+                text: 'Mis cobradores salen a la calle con la app en sus celulares. Registran los cobros y envían los recibos por WhatsApp al instante. Increíble servicio.',
+                rating: 5,
+                img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80'
+              }
+            ].map((t, idx) => (
+              <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
+                <div className="space-y-3">
+                  <div className="flex text-amber-400 gap-1">
+                    {[...Array(t.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 italic leading-relaxed">"{t.text}"</p>
+                </div>
+                <div className="flex items-center gap-3 pt-3 border-t border-slate-100">
+                  <img src={t.img} alt={t.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100" />
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-800">{t.name}</h4>
+                    <p className="text-[10px] text-slate-400">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── NEW SECTION 7: SEGURIDAD Y RESPALDO POSTGRESQL ─── */}
+      <section className="py-14 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">PROTECCIÓN TOTAL</span>
+            <h2 className="text-3xl font-black text-slate-900">
+              Seguridad de grado bancario para tu cartera
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
+              <ShieldCheck className="w-8 h-8 text-indigo-600 mx-auto" />
+              <h3 className="font-bold text-sm text-slate-800">Aislamiento RLS en PostgreSQL</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Cada financiera cuenta con particionamiento estricto de base de datos a nivel de tabla.</p>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
+              <Lock className="w-8 h-8 text-indigo-600 mx-auto" />
+              <h3 className="font-bold text-sm text-slate-800">Encriptación SSL 256-bit</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Todas las conexiones web y transacciones están protegidas con TLS 1.3 de grado financiero.</p>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
+              <Database className="w-8 h-8 text-indigo-600 mx-auto" />
+              <h3 className="font-bold text-sm text-slate-800">Respaldos Diarios Automáticos</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Tus datos se respaldan continuamente en múltiples zonas de disponibilidad en la nube.</p>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
+              <Cpu className="w-8 h-8 text-indigo-600 mx-auto" />
+              <h3 className="font-bold text-sm text-slate-800">Disponibilidad 99.9%</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">Infraestructura sobre servidores cloud ultra rápidos sin interrupciones de servicio.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURES GRID SECTION ─── */}
+      <section id="caracteristicas" className="py-14 bg-slate-50 border-t border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-10">
+          
+          <div className="max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">CARACTERÍSTICAS CLAVE</span>
+            <h2 className="text-3xl font-black text-slate-900">
+              Todo el ciclo de vida del crédito en un solo lugar
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">Clientes & Enmascaramiento</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">Expediente de clientes con formato seguro de cédula, garante y Scoring.</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">Motor de Préstamos y Pagarés</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">Soporte completo para francés, alemana, cobro semanal o pagaré abierto.</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">Comprobantes & PNG 1-Clic</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">Imprime tickets o descarga recibos oficial en imagen PNG directamente.</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ─── PRICING SECTION ─── */}
-      <section id="precios" className="py-24 bg-white border-t border-slate-100" ref={pricingRef}>
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-12">
+      <section id="precios" className="py-14 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-10">
           
-          <div className="max-w-2xl mx-auto space-y-3">
+          <div className="max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">PLANES Y PRECIOS TRANSPARENTES</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl font-black text-slate-900">
               Elige el plan ideal para tu financiera
             </h2>
-            <p className="text-sm text-slate-500">Sin comisiones ocultas ni sorpresas. Cancela en cualquier momento.</p>
+            <p className="text-xs text-slate-500">Sin comisiones ocultas ni sorpresas. Cancela en cualquier momento.</p>
           </div>
 
-          {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-3">
-            <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Facturación Mensual</span>
+            <span className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>Facturación Mensual</span>
             <button 
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="w-14 h-8 bg-indigo-600 rounded-full p-1 transition-colors relative"
+              className="w-12 h-7 bg-indigo-600 rounded-full p-1 transition-colors relative"
             >
-              <div className={`w-6 h-6 bg-white rounded-full transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
+              <div className={`w-5 h-5 bg-white rounded-full transition-transform ${billingCycle === 'annual' ? 'translate-x-5' : ''}`} />
             </button>
-            <span className={`text-sm font-bold flex items-center gap-1.5 ${billingCycle === 'annual' ? 'text-slate-900' : 'text-slate-400'}`}>
+            <span className={`text-xs font-bold flex items-center gap-1.5 ${billingCycle === 'annual' ? 'text-slate-900' : 'text-slate-400'}`}>
               Facturación Anual 
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Ahorra 20%</span>
+              <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Ahorra 20%</span>
             </span>
           </div>
 
-          {/* Pricing Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left max-w-6xl mx-auto pt-4">
-            
-            {/* Starter Plan */}
-            <div className="pricing-card bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-              <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-6xl mx-auto">
+            <div className="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Básico / Emprendedor</h3>
-                  <p className="text-xs text-slate-500 mt-1">Ideal para prestamistas independientes que están comenzando.</p>
+                  <h3 className="text-lg font-bold text-slate-900">Básico / Emprendedor</h3>
+                  <p className="text-xs text-slate-500">Ideal para prestamistas independientes.</p>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">
+                  <span className="text-3xl font-black text-slate-900">
                     {billingCycle === 'monthly' ? 'RD$ 1,490' : 'RD$ 1,190'}
                   </span>
                   <span className="text-xs text-slate-400 font-medium">/ mes</span>
                 </div>
-                <ul className="space-y-3 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                <ul className="space-y-2.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Hasta 100 préstamos activos</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> 1 Usuario administrador</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Cobro de cuotas e intereses</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Impresión de recibos y PNG</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Soporte por email</li>
                 </ul>
               </div>
-              <button 
-                onClick={() => navigate('/register')}
-                className="mt-8 w-full py-3 rounded-xl border border-slate-200 hover:border-indigo-600 font-bold text-xs text-slate-700 hover:text-indigo-600 transition-colors"
-              >
-                Comenzar prueba gratis
-              </button>
+              <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl border border-slate-200 hover:border-indigo-600 font-bold text-xs text-slate-700 hover:text-indigo-600 transition-colors">Comenzar prueba gratis</button>
             </div>
 
-            {/* Pro Plan (Popular) */}
-            <div className="pricing-card bg-gradient-to-b from-indigo-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl shadow-indigo-500/20 relative flex flex-col justify-between transform md:-translate-y-2 border border-indigo-700/50">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[10px] uppercase tracking-wider px-4 py-1 rounded-full shadow-md">
+            <div className="bg-gradient-to-b from-indigo-900 to-slate-900 rounded-3xl p-7 text-white shadow-xl relative flex flex-col justify-between space-y-6 border border-indigo-700/50">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[9px] uppercase px-3 py-0.5 rounded-full shadow">
                 MÁS POPULAR
               </div>
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white">Profesional / Financiera</h3>
-                  <p className="text-xs text-indigo-200 mt-1">Para negocios de préstamos en crecimiento con múltiples cobradores.</p>
+                  <h3 className="text-lg font-bold text-white">Profesional / Financiera</h3>
+                  <p className="text-xs text-indigo-200">Para negocios en crecimiento con múltiples cobradores.</p>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">
+                  <span className="text-3xl font-black text-white">
                     {billingCycle === 'monthly' ? 'RD$ 3,490' : 'RD$ 2,790'}
                   </span>
                   <span className="text-xs text-indigo-300 font-medium">/ mes</span>
                 </div>
-                <ul className="space-y-3 text-xs text-indigo-100 pt-2 border-t border-indigo-800/80">
+                <ul className="space-y-2.5 text-xs text-indigo-100 pt-2 border-t border-indigo-800">
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Préstamos y clientes ILIMITADOS</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Hasta 5 Usuarios (Cobradores / Cajeros)</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Refinanciamiento en 1 clic</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Recargos por mora y condonaciones</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Envío directo por WhatsApp</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-400" /> Arqueo de caja chica en vivo</li>
                 </ul>
               </div>
-              <button 
-                onClick={() => navigate('/register')}
-                className="mt-8 w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 font-bold text-xs text-white shadow-lg transition-all"
-              >
-                Comenzar prueba de 14 días
-              </button>
+              <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 font-bold text-xs text-white shadow transition-all">Comenzar prueba de 14 días</button>
             </div>
 
-            {/* Enterprise Plan */}
-            <div className="pricing-card bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-              <div className="space-y-6">
+            <div className="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Corporativo / Enterprise</h3>
-                  <p className="text-xs text-slate-500 mt-1">Para cadenas de sucursales y financieras de gran volumen.</p>
+                  <h3 className="text-lg font-bold text-slate-900">Corporativo / Enterprise</h3>
+                  <p className="text-xs text-slate-500">Para cadenas de sucursales de gran volumen.</p>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">
+                  <span className="text-3xl font-black text-slate-900">
                     {billingCycle === 'monthly' ? 'RD$ 7,990' : 'RD$ 6,390'}
                   </span>
                   <span className="text-xs text-slate-400 font-medium">/ mes</span>
                 </div>
-                <ul className="space-y-3 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                <ul className="space-y-2.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Sucursales y usuarios ilimitados</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Aislamiento de base de datos dedicado</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Aislamiento de base de datos RLS</li>
                   <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Auditoría detallada de empleados</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Contabilidad avanzada e impuestos</li>
-                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Asistente de migración desde Excel</li>
+                  <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-500" /> Migración guiada desde Excel</li>
                 </ul>
               </div>
-              <button 
-                onClick={() => navigate('/register')}
-                className="mt-8 w-full py-3 rounded-xl border border-slate-200 hover:border-indigo-600 font-bold text-xs text-slate-700 hover:text-indigo-600 transition-colors"
-              >
-                Contactar a Ventas
-              </button>
+              <button onClick={() => navigate('/register')} className="w-full py-3 rounded-xl border border-slate-200 hover:border-indigo-600 font-bold text-xs text-slate-700 hover:text-indigo-600 transition-colors">Contactar a Ventas</button>
             </div>
-
           </div>
         </div>
       </section>
 
       {/* ─── FAQ SECTION ─── */}
-      <section id="faq" className="py-24 bg-slate-50/80 border-t border-slate-200/60">
+      <section id="faq" className="py-14 bg-slate-50 border-t border-slate-200/60">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-12 space-y-3">
+          <div className="text-center mb-10 space-y-2">
             <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">RESPUESTAS A TUS DUDAS</span>
             <h2 className="text-3xl font-black text-slate-900">Preguntas Frecuentes</h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {faqs.map((faq, index) => (
-              <div 
-                key={index}
-                className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all shadow-2xs"
-              >
+              <div key={index} className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all shadow-2xs">
                 <button
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                  className="w-full px-6 py-4 text-left font-bold text-slate-800 text-sm flex items-center justify-between gap-4 hover:bg-slate-50"
+                  className="w-full px-5 py-4 text-left font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between gap-4 hover:bg-slate-50"
                 >
                   <span>{faq.q}</span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180 text-indigo-600' : ''}`} />
                 </button>
                 {openFaq === index && (
-                  <div className="px-6 pb-5 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100">
+                  <div className="px-5 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100">
                     {faq.a}
                   </div>
                 )}
@@ -802,54 +1003,32 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* ─── STATS FOOTER BAR ─── */}
-      <footer className="stats-footer border-t border-slate-200 bg-white py-12">
+      <footer className="stats-footer border-t border-slate-200 bg-white py-10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="stat-item space-y-1">
-              <div className="flex items-center justify-center gap-2 text-indigo-600 mb-2">
-                <Users className="w-5 h-5" />
-              </div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">
-                <Counter end={1000} prefix="+" />
-              </p>
+              <Users className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
+              <p className="text-2xl font-black text-slate-900"><Counter end={1000} prefix="+" /></p>
               <p className="text-xs font-semibold text-slate-500">Prestamistas activos</p>
             </div>
-
             <div className="stat-item space-y-1">
-              <div className="flex items-center justify-center gap-2 text-indigo-600 mb-2">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">
-                <Counter end={50000} prefix="+" />
-              </p>
+              <Calendar className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
+              <p className="text-2xl font-black text-slate-900"><Counter end={50000} prefix="+" /></p>
               <p className="text-xs font-semibold text-slate-500">Préstamos gestionados</p>
             </div>
-
             <div className="stat-item space-y-1">
-              <div className="flex items-center justify-center gap-2 text-indigo-600 mb-2">
-                <DollarSign className="w-5 h-5" />
-              </div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">
-                <Counter end={200} prefix="+$" suffix="M" />
-              </p>
+              <DollarSign className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
+              <p className="text-2xl font-black text-slate-900"><Counter end={200} prefix="+$" suffix="M" /></p>
               <p className="text-xs font-semibold text-slate-500">Monto administrado</p>
             </div>
-
             <div className="stat-item space-y-1">
-              <div className="flex items-center justify-center gap-2 text-indigo-600 mb-2">
-                <Shield className="w-5 h-5" />
-              </div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">
-                99.9%
-              </p>
+              <Shield className="w-5 h-5 text-indigo-600 mx-auto mb-1" />
+              <p className="text-2xl font-black text-slate-900">99.9%</p>
               <p className="text-xs font-semibold text-slate-500">Disponibilidad</p>
             </div>
-
           </div>
 
-          {/* Copyright bar */}
-          <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+          <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
             <div className="flex items-center gap-2">
               <img src="/logoultramoney.svg" alt="logo" className="w-4 h-4" />
               <span className="font-bold text-slate-700">ultramoney</span>
