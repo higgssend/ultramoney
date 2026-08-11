@@ -247,12 +247,33 @@ const Payments: React.FC = () => {
       setPayNote(newSelection.length > 1 ? `Pago de ${newSelection.length} cuotas` : newSelection.length === 1 ? `Pago cuota #${newSelection[0]}` : 'Cuota Regular');
   };
 
+  const handleSaldarFull = () => {
+    if (!selectedLoan) return;
+    setPaymentMode('manual');
+    setPayAmount(selectedLoan.remainingBalance.toFixed(2));
+    setPaymentType('Capital');
+    setPayNote('Saldado Completo del Préstamo');
+  };
+
   const handlePayment = async () => {
     if (!selectedLoanId || !payAmount || !selectedLoan) return;
     
     const amountVal = Number(payAmount);
     const previousBalance = selectedLoan.remainingBalance;
-    const newBalance = Math.max(0, previousBalance - amountVal);
+    
+    const isReditoLoan = Boolean(selectedLoan?.loanType && (selectedLoan.loanType.includes('Rédito') || selectedLoan.loanType.includes('Redito') || selectedLoan.loanType.includes('Solo Interé') || selectedLoan.loanType.includes('Pagaré Abierto')));
+
+    let newBalance = Math.max(0, previousBalance - amountVal);
+    if (isReditoLoan) {
+      if (paymentType === 'Capital') {
+        newBalance = Math.max(0, previousBalance - amountVal);
+      } else if (paymentType === 'Mixto') {
+        const capVal = Number(capitalAmount) || 0;
+        newBalance = Math.max(0, previousBalance - capVal);
+      } else {
+        newBalance = previousBalance; // Solo Intereses: NO se resta del capital
+      }
+    }
     
     const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
     // Register the payment
@@ -610,7 +631,20 @@ const Payments: React.FC = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Monto a Pagar</label>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="block text-sm font-medium text-slate-600">Monto a Pagar</label>
+                                        {selectedLoan && (
+                                            <button 
+                                                type="button" 
+                                                onClick={handleSaldarFull} 
+                                                className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                                                title="Llenar con el monto total necesario para saldar este préstamo"
+                                            >
+                                                <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                                Saldar Completo (${selectedLoan.remainingBalance.toLocaleString()})
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                         <input 

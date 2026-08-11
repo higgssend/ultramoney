@@ -4,6 +4,7 @@ import { useLoans, useClients } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { DataExportToolbar } from '../components/DataExportToolbar';
+import { maskCedula } from '../utils/masks';
 
 const Clients: React.FC = () => {
   const { clients, deleteClient } = useClients();
@@ -232,7 +233,7 @@ const Clients: React.FC = () => {
                             <p className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
                               {client.name} {client.lastName || ''}
                             </p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 font-mono">{client.cedula}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 font-mono">{maskCedula(client.cedula)}</p>
                           </div>
                         </div>
                       </td>
@@ -330,7 +331,7 @@ const Clients: React.FC = () => {
                   <p className="font-bold text-slate-800 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors truncate">
                     {client.name} {client.lastName || ''}
                   </p>
-                  <p className="text-xs text-slate-400 font-mono mb-3">{client.cedula}</p>
+                  <p className="text-xs text-slate-400 font-mono mb-3">{maskCedula(client.cedula)}</p>
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
                     <div>
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Deuda</p>

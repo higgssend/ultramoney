@@ -7,6 +7,7 @@ import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
 import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct } from '../types';
 import { CollateralForm } from './features/CollateralForm';
 import { CustomSelect } from '../components/CustomSelect';
+import { maskCedula } from '../utils/masks';
 
 const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, deleteLoanRequest, loanRequests, loanProducts } = useLoans();
@@ -318,7 +319,7 @@ const LoanRequest: React.FC = () => {
                                 onChange={(e) => setSelectedClientId(e)}
                                 options={[
                                     { value: '', label: '-- Buscar Cliente --' },
-                                    ...clients.map(client => ({ value: client.id, label: `${client.name} - ${client.cedula}` }))
+                                    ...clients.map(client => ({ value: client.id, label: `${client.name} - ${maskCedula(client.cedula)}` }))
                                 ]}
                             />
                         </div>

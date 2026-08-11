@@ -1,19 +1,11 @@
 
 export const maskCedula = (value: string) => {
+  if (!value) return '';
   const v = value.replace(/\D/g, '').substring(0, 11);
-  const parts = [];
-  if (v.length > 3) {
-    parts.push(v.substring(0, 3));
-    if (v.length > 10) {
-      parts.push(v.substring(3, 10));
-      parts.push(v.substring(10, 11));
-    } else {
-      parts.push(v.substring(3));
-    }
-  } else {
-    parts.push(v);
-  }
-  return parts.join('-');
+  if (v.length === 0) return '';
+  if (v.length <= 3) return v;
+  if (v.length <= 10) return `${v.substring(0, 3)}-${v.substring(3)}`;
+  return `${v.substring(0, 3)}-${v.substring(3, 10)}-${v.substring(10, 11)}`;
 };
 
 export const maskPhone = (value: string) => {

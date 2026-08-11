@@ -7,7 +7,7 @@ import {
 import { useClients } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
-import { maskPhone } from '../utils/masks';
+import { maskPhone, maskCedula } from '../utils/masks';
 import { useToast } from '../context/ToastContext';
 import { CustomSelect } from '../components/CustomSelect';
 
@@ -214,8 +214,8 @@ const NewClient: React.FC = () => {
                     required type="text"
                     className={`${inputClass} flex-1`}
                     value={currentClient.cedula || ''}
-                    onChange={e => set('cedula', e.target.value)}
-                    placeholder="Número de documento"
+                    onChange={e => set('cedula', maskCedula(e.target.value))}
+                    placeholder="001-0000000-0"
                   />
                 </div>
               </div>
