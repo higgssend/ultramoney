@@ -202,7 +202,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const oldLoan = loans.find(l => l.id === oldLoanId);
     if (!oldLoan) return;
 
-    await insforge.database.from('loans').update({ status: LoanStatus.REFINANCED }).eq('id', oldLoanId);
+    await insforge.database.from('loans').update({ status: LoanStatus.REFINANCED }).eq('id', oldLoanId).eq('lender_id', currentUser.id);
     
     const installments = newLoanData.installments || newLoanData.durationWeeks || 1;
     const paymentFrequency = newLoanData.paymentFrequency || newLoanData.frequency || 'Semanal';
@@ -266,7 +266,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const { error } = await insforge.database.from('loans').update({
        remainingbalance: newBalance, status: newStatus
-    }).eq('id', loanId);
+    }).eq('id', loanId).eq('lender_id', currentUser.id);
     
     if (!error) {
       await insforge.database.from('transactions').insert([{
@@ -325,7 +325,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       transactionsToInsert.push({ ...baseTx, amount, paymenttype: paymentType || 'Interes' });
     }
 
-    const { error: loanError } = await insforge.database.from('loans').update({ remainingbalance: newBalance, status: newStatus }).eq('id', loanId);
+    const { error: loanError } = await insforge.database.from('loans').update({ remainingbalance: newBalance, status: newStatus }).eq('id', loanId).eq('lender_id', currentUser.id);
     if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
 
     const { data: insertedTxs, error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert).select();
@@ -363,7 +363,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteLoanRequest = async (id: string) => {
-    const { error } = await insforge.database.from('loan_requests').delete().eq('id', id);
+    if (!currentUser) return;
+    const { error } = await insforge.database.from('loan_requests').delete().eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
       setLoanRequests(prev => prev.filter(r => r.id !== id));
       addToast("Solicitud eliminada", "success");
@@ -393,6 +394,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateLoanProduct = async (id: string, updates: Partial<LoanProduct>) => {
+    if (!currentUser) return;
     const payload: any = {};
     if (updates.name !== undefined) payload.name = updates.name;
     if (updates.description !== undefined) payload.description = updates.description;
@@ -401,7 +403,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (updates.interestRate !== undefined) payload.interest_rate = updates.interestRate;
     if (updates.isActive !== undefined) payload.is_active = updates.isActive;
 
-    const { error } = await insforge.database.from('loan_products').update(payload).eq('id', id);
+    const { error } = await insforge.database.from('loan_products').update(payload).eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
         setLoanProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
         addToast("Producto actualizado", "success");
@@ -409,7 +411,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteLoanProduct = async (id: string) => {
-    const { error } = await insforge.database.from('loan_products').delete().eq('id', id);
+    if (!currentUser) return;
+    const { error } = await insforge.database.from('loan_products').delete().eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
         setLoanProducts(prev => prev.filter(p => p.id !== id));
         addToast("Producto eliminado", "success");
