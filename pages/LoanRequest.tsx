@@ -10,10 +10,14 @@ import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 
 const LoanRequest: React.FC = () => {
-  const { addLoanRequest, createLoan, deleteLoanRequest, loanRequests, loanProducts } = useLoans();
+  const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
   const { updateClient, clients } = useClients();
   const { globalCurrency } = useSettings();
   const navigate = useNavigate();
+  
+  // Refinancing State
+  const [isRefinanceEnabled, setIsRefinanceEnabled] = useState(false);
+  const [selectedLoanToRefinance, setSelectedLoanToRefinance] = useState<string>('');
   
   // View State
   const [viewMode, setViewMode] = useState<'create' | 'queue'>('queue');
@@ -207,25 +211,47 @@ const LoanRequest: React.FC = () => {
     }
 
     if (creationMode === 'direct') {
-        createLoan({
-            clientId: selectedClient.id,
-            clientName: selectedClient.name,
-            amount,
-            interestRate: interest,
-            durationWeeks: finalWeeks,
-            frequency: frequency as any,
-            loanType,
-            closingCost,
-            closingCostMode,
-            paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
-            startDate: startDate || new Date().toISOString().split('T')[0],
-            nextPaymentDate: firstPaymentDate || initialNextDate.toISOString().split('T')[0],
-            collateral,
-            loanCategory,
-            note: observations,
-            lateFeePercentage,
-            graceDays
-        });
+        if (isRefinanceEnabled && selectedLoanToRefinance) {
+            refinanceLoan(selectedLoanToRefinance, {
+                clientId: selectedClient.id,
+                clientName: selectedClient.name,
+                amount,
+                interestRate: interest,
+                durationWeeks: finalWeeks,
+                frequency: frequency as any,
+                loanType,
+                closingCost,
+                closingCostMode,
+                paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
+                startDate: startDate || new Date().toISOString().split('T')[0],
+                nextPaymentDate: firstPaymentDate || initialNextDate.toISOString().split('T')[0],
+                collateral,
+                loanCategory,
+                note: observations || `Refinanciamiento del préstamo ${selectedLoanToRefinance}`,
+                lateFeePercentage,
+                graceDays
+            });
+        } else {
+            createLoan({
+                clientId: selectedClient.id,
+                clientName: selectedClient.name,
+                amount,
+                interestRate: interest,
+                durationWeeks: finalWeeks,
+                frequency: frequency as any,
+                loanType,
+                closingCost,
+                closingCostMode,
+                paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
+                startDate: startDate || new Date().toISOString().split('T')[0],
+                nextPaymentDate: firstPaymentDate || initialNextDate.toISOString().split('T')[0],
+                collateral,
+                loanCategory,
+                note: observations,
+                lateFeePercentage,
+                graceDays
+            });
+        }
         
         // If this came from a request, delete the request now that it is a loan
         if (processingRequestId) {
@@ -316,13 +342,67 @@ const LoanRequest: React.FC = () => {
                             <CustomSelect 
                                 className="w-full text-sm"
                                 value={selectedClientId}
-                                onChange={(e) => setSelectedClientId(e)}
+                                onChange={(e) => {
+                                    setSelectedClientId(e);
+                                    setIsRefinanceEnabled(false);
+                                    setSelectedLoanToRefinance('');
+                                }}
                                 options={[
                                     { value: '', label: '-- Buscar Cliente --' },
                                     ...clients.map(client => ({ value: client.id, label: `${client.name} - ${maskCedula(client.cedula)}` }))
                                 ]}
                             />
                         </div>
+                        
+                        {selectedClientId && (
+                            (() => {
+                                const activeLoansForClient = loans.filter(l => l.clientId === selectedClientId && (l.status === 'Vigente' || l.status === 'Activo' || l.status === 'Atrasado') && l.remainingBalance > 0);
+                                if (activeLoansForClient.length === 0) return null;
+                                return (
+                                    <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+                                                <RefreshCw className="w-4 h-4 text-amber-600" />
+                                                <span>¿Refinanciar Préstamo Anterior?</span>
+                                            </div>
+                                            <input 
+                                                type="checkbox"
+                                                checked={isRefinanceEnabled}
+                                                onChange={e => {
+                                                    setIsRefinanceEnabled(e.target.checked);
+                                                    if (e.target.checked && activeLoansForClient.length > 0) {
+                                                        setSelectedLoanToRefinance(activeLoansForClient[0].id);
+                                                    }
+                                                }}
+                                                className="w-5 h-5 accent-amber-600 rounded cursor-pointer"
+                                            />
+                                        </div>
+
+                                        {isRefinanceEnabled && (
+                                            <div className="mt-3 space-y-2 pt-2 border-t border-amber-200/60">
+                                                <label className="block text-xs font-bold text-amber-800">Préstamo a saldar y consolidar:</label>
+                                                <CustomSelect
+                                                    value={selectedLoanToRefinance}
+                                                    onChange={e => setSelectedLoanToRefinance(e)}
+                                                    className="w-full text-xs"
+                                                    options={activeLoansForClient.map(l => ({
+                                                        value: l.id,
+                                                        label: `Préstamo #${l.id.slice(0, 8)} - Balance Pendiente: RD$ ${l.remainingBalance.toLocaleString()}`
+                                                    }))}
+                                                />
+                                                {selectedLoanToRefinance && (
+                                                    <div className="text-xs text-amber-900 font-medium bg-white p-3 rounded-xl border border-amber-200 mt-2 space-y-1">
+                                                        <p>🔄 <strong>Consolidación en 1 Clic:</strong></p>
+                                                        <p>• Saldo anterior a saldar: <strong>RD$ {(loans.find(l => l.id === selectedLoanToRefinance)?.remainingBalance || 0).toLocaleString()}</strong></p>
+                                                        <p>• Desembolso neto al cliente: <strong className="text-emerald-700">RD$ {Math.max(0, amount - (loans.find(l => l.id === selectedLoanToRefinance)?.remainingBalance || 0) - closingCost).toLocaleString()}</strong></p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()
+                        )}
                         </div>
                     </div>
 

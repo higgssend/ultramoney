@@ -41,6 +41,14 @@ interface Installment {
     paidAmount: number;
 }
 
+export const formatReceiptId = (id?: string | null): string => {
+  if (!id) return 'REC-001001';
+  if (id.startsWith('REC-')) return id;
+  if (id.startsWith('TRX-NEW-')) return `REC-${id.replace('TRX-NEW-', '').slice(-6)}`;
+  const clean = id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return `REC-${clean.slice(0, 8)}`;
+};
+
 interface FullReceiptData {
     loanId: string;
     amountPaid: number;
@@ -49,6 +57,9 @@ interface FullReceiptData {
     previousBalance: number;
     newBalance: number;
     transactionId: string;
+    receiptNo: string;
+    lateFeeAmount?: number;
+    discountAmount?: number;
     date: string;
     collateral: string;
     overdueAmount: number;
@@ -86,6 +97,8 @@ const Payments: React.FC = () => {
   const [selectedCashierId, setSelectedCashierId] = useState<string>('');
   const [sidebarFilter, setSidebarFilter] = useState<'hoy' | 'recientes'>('hoy');
   const [capitalAmount, setCapitalAmount] = useState<string>('');
+  const [lateFeeAmount, setLateFeeAmount] = useState<string>('');
+  const [discountAmount, setDiscountAmount] = useState<string>('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -386,32 +399,52 @@ const Payments: React.FC = () => {
     const totalInstallmentsCount = selectedLoan.durationWeeks || selectedLoan.installments || 1;
     const amountPerInst = selectedLoan.totalToPay / totalInstallmentsCount;
     const totalPaidAfterThis = Math.max(0, selectedLoan.totalToPay - newBalance);
-    const paidInstallmentsCalculated = Math.min(
-        totalInstallmentsCount, 
-        Math.floor((totalPaidAfterThis + 0.01) / amountPerInst)
+    const lateVal = Number(lateFeeAmount) || 0;
+    const discVal = Number(discountAmount) || 0;
+    const effectiveTotal = amountVal + lateVal - discVal;
+
+    const tx = await registerPayment(
+        selectedLoanId, 
+        effectiveTotal, 
+        payNote, 
+        paymentDate, 
+        invoiceDate, 
+        paymentType, 
+        Number(capitalAmount), 
+        paymentMethod,
+        selectedCashierId
     );
 
-    // Prepare Detailed Receipt Data
+    const txId = tx?.id || `REC-${String(Date.now()).slice(-6)}`;
+    const formattedRecNo = formatReceiptId(txId);
+    const newBalance = Math.max(0, selectedLoan.remainingBalance - (paymentType === 'Capital' ? amountVal : (paymentType === 'Mixto' ? Number(capitalAmount) : 0)));
+
     setReceiptData({
-        loanId: selectedLoanId,
-        amountPaid: amountVal,
+        loanId: formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType),
+        amountPaid: effectiveTotal,
         clientName: selectedLoan.clientName,
         clientId: selectedLoan.clientId,
-        previousBalance: previousBalance,
+        previousBalance: selectedLoan.remainingBalance,
         newBalance: newBalance,
         transactionId: txId,
+        receiptNo: formattedRecNo,
+        lateFeeAmount: lateVal,
+        discountAmount: discVal,
         date: new Date().toLocaleString(),
-        collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''} (${selectedLoan.collateralRef || ''})` : 'Sin Garantía',
-        overdueAmount: Math.max(0, overdueAmount - amountVal), 
-        overdueInstallments: overdueInsts.length,
-        totalInstallments: totalInstallmentsCount,
-        paidInstallments: paidInstallmentsCalculated,
-        otherLoans: otherActiveLoans,
+        collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''}` : 'Sin Garantía',
+        overdueAmount: 0, 
+        overdueInstallments: 0,
+        totalInstallments: selectedLoan.durationWeeks || selectedLoan.installments || 1,
+        paidInstallments: 1,
+        otherLoans: loans.filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoan.id).map(l => ({id: l.id, balance: l.remainingBalance})),
         cashierName: currentUser?.name || 'Sistema',
         paymentNote: payNote,
         renewalStatus: newBalance < (selectedLoan.totalToPay * 0.5) ? 'DISPONIBLE' : 'No disponible',
         paymentMethod: paymentMethod
     });
+
+    setLateFeeAmount('');
+    setDiscountAmount('');
 
     // Reset Form
     if(paymentMode === 'manual') {
@@ -434,6 +467,8 @@ const Payments: React.FC = () => {
       const totalInstallmentsCount = loan ? (loan.durationWeeks || loan.installments || 1) : 1;
       const otherActiveLoans = loan ? loans.filter(l => l.clientId === loan.clientId && l.id !== loan.id).map(l => ({id: l.id, balance: l.remainingBalance})) : [];
 
+      const formattedRecNo = formatReceiptId(t.id);
+
       setReceiptData({
           loanId: loanId,
           amountPaid: t.amount,
@@ -442,6 +477,7 @@ const Payments: React.FC = () => {
           previousBalance: currentBalance + t.amount,
           newBalance: currentBalance,
           transactionId: t.id,
+          receiptNo: formattedRecNo,
           date: t.date ? new Date(t.date).toLocaleString() : new Date().toLocaleString(),
           collateral: loan?.collateralType ? `${loan.collateralType} - ${loan.collateralDescription || ''}` : 'Sin Garantía',
           overdueAmount: 0, 
@@ -767,8 +803,38 @@ const Payments: React.FC = () => {
                                         type="text" 
                                         value={payNote}
                                         onChange={e => setPayNote(e.target.value)}
-                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Recargo por Mora y Condonación */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-slate-50/70 p-4 border border-slate-200 rounded-xl">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Recargo por Mora / Atraso (Opcional)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 font-bold">$</span>
+                                        <input 
+                                            type="number"
+                                            value={lateFeeAmount}
+                                            onChange={e => setLateFeeAmount(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Condonación / Descuento (Opcional)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">-$</span>
+                                        <input 
+                                            type="number"
+                                            value={discountAmount}
+                                            onChange={e => setDiscountAmount(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                             
@@ -969,35 +1035,41 @@ const Payments: React.FC = () => {
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-sm">
-                              {historyData.length === 0 ? (<tr><td colSpan={7} className="px-6 py-8 text-center text-slate-400">No se encontraron pagos con estos filtros.</td></tr>) : (
+                              {historyData.length === 0 ? (
+                                  <tr>
+                                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
+                                          No se encontraron pagos con estos filtros.
+                                      </td>
+                                  </tr>
+                              ) : (
                                   historyData.map((t) => {
                                       const loan = loans.find(l => l.id === t.referenceId);
                                       const clientName = loan ? loan.clientName : 'Cliente Desconocido';
                                       return (
                                           <tr 
-                                               key={t.id} 
-                                               onClick={() => handleReprintReceipt(t)}
-                                               className="hover:bg-indigo-50/50 cursor-pointer transition-colors group"
-                                               title="Haz clic para ver o imprimir este recibo"
-                                           >
-                                               <td className="px-6 py-4 font-mono text-indigo-600 text-xs font-medium">{t.id}</td>
-                                               <td className="px-6 py-4 text-slate-600">{t.date}</td>
-                                               <td className="px-6 py-4 font-bold text-slate-700 group-hover:text-indigo-700">{clientName}</td>
-                                               <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">{t.referenceId || '-'}</span></td>
-                                               <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={t.description}>{t.description.replace(` - ${clientName}`, '')}</td>
-                                               <td className="px-6 py-4 text-right font-bold text-emerald-600">RD${t.amount.toLocaleString()}</td>
-                                               <td className="px-6 py-4 text-center">
-                                                   <button 
-                                                       type="button"
-                                                       onClick={(e) => { e.stopPropagation(); handleReprintReceipt(t); }} 
-                                                       className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center mx-auto gap-1 text-xs font-bold" 
-                                                       title="Ver Recibo"
-                                                   >
-                                                       <Printer className="w-4 h-4 text-indigo-600" />
-                                                       <span>Recibo</span>
-                                                   </button>
-                                               </td>
-                                           </tr>
+                                              key={t.id} 
+                                              onClick={() => handleReprintReceipt(t)}
+                                              className="hover:bg-indigo-50/50 cursor-pointer transition-colors group"
+                                              title="Haz clic para ver o imprimir este recibo"
+                                          >
+                                              <td className="px-6 py-4 font-mono text-indigo-600 text-xs font-bold">{formatReceiptId(t.id)}</td>
+                                              <td className="px-6 py-4 text-slate-600">{t.date}</td>
+                                              <td className="px-6 py-4 font-bold text-slate-700 group-hover:text-indigo-700">{clientName}</td>
+                                              <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">{t.referenceId ? formatLoanId(t.referenceId) : '-'}</span></td>
+                                              <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={t.description}>{t.description.replace(` - ${clientName}`, '')}</td>
+                                              <td className="px-6 py-4 text-right font-bold text-emerald-600">RD${t.amount.toLocaleString()}</td>
+                                              <td className="px-6 py-4 text-center">
+                                                  <button 
+                                                      type="button"
+                                                      onClick={(e) => { e.stopPropagation(); handleReprintReceipt(t); }} 
+                                                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center mx-auto gap-1 text-xs font-bold" 
+                                                      title="Ver Recibo"
+                                                  >
+                                                      <Printer className="w-4 h-4 text-indigo-600" />
+                                                      <span>Recibo</span>
+                                                  </button>
+                                              </td>
+                                          </tr>
                                       );
                                   })
                               )}
@@ -1169,16 +1241,30 @@ Gracias por su pago.`;
                         </div>
 
                         {/* Metadata */}
-                        <div className="grid grid-cols-2 gap-y-2 text-xs mb-4">
-                            <div className="text-slate-500">Recibo #:</div>
-                            <div className="text-right font-mono font-bold text-slate-700">{data.transactionId}</div>
+                        <div className="grid grid-cols-2 gap-y-2 text-xs mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <div className="text-slate-500 font-bold">No. Recibo:</div>
+                            <div className="text-right font-mono font-bold text-indigo-600 text-sm">{data.receiptNo || formatReceiptId(data.transactionId)}</div>
                             <div className="text-slate-500">Fecha:</div>
-                            <div className="text-right text-slate-700">{data.date}</div>
+                            <div className="text-right text-slate-700 font-medium">{data.date}</div>
                             <div className="text-slate-500">Método de Pago:</div>
-                            <div className="text-right font-bold text-indigo-600 uppercase">{data.paymentMethod || 'Efectivo'}</div>
+                            <div className="text-right font-bold text-indigo-700 uppercase">{data.paymentMethod || 'Efectivo'}</div>
                             <div className="text-slate-500">Cajero:</div>
-                            <div className="text-right text-slate-700 uppercase">{data.cashierName}</div>
+                            <div className="text-right text-slate-700 font-bold uppercase">{data.cashierName}</div>
                         </div>
+
+                        {data.lateFeeAmount && data.lateFeeAmount > 0 ? (
+                            <div className="mb-2 p-2 bg-rose-50 border border-rose-100 rounded text-xs flex justify-between text-rose-700 font-bold">
+                                <span>(+) Recargo por Mora:</span>
+                                <span>+RD$ {data.lateFeeAmount.toLocaleString()}</span>
+                            </div>
+                        ) : null}
+
+                        {data.discountAmount && data.discountAmount > 0 ? (
+                            <div className="mb-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-xs flex justify-between text-emerald-700 font-bold">
+                                <span>(-) Condonación / Descuento:</span>
+                                <span>-RD$ {data.discountAmount.toLocaleString()}</span>
+                            </div>
+                        ) : null}
 
                         <div className="border-t border-slate-100 my-2"></div>
 

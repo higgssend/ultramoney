@@ -173,7 +173,9 @@ export const ReceiptView: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3 py-4 text-xs border-b border-slate-100">
                         <div>
                             <span className="text-slate-400 block font-medium">No. Recibo</span>
-                            <span className="font-mono font-extrabold text-slate-800 text-sm">#{transaction.id.substring(0, 8).toUpperCase()}</span>
+                            <span className="font-mono font-extrabold text-indigo-600 text-sm">
+                                {transaction.id.startsWith('REC-') ? transaction.id : `REC-${transaction.id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}`}
+                            </span>
                         </div>
                         <div className="text-right">
                             <span className="text-slate-400 block font-medium">Fecha y Hora</span>
