@@ -404,13 +404,66 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addLoanRequest = async (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('loan_requests').insert([{
-      lender_id: currentUser.id, client_name: request.clientName, client_phone: request.clientPhone,
-      client_email: request.clientEmail, requested_amount: request.requestedAmount || request.amount, requested_term: request.requestedTerm || request.durationWeeks,
-      purpose: request.purpose || request.loanDestination, notes: request.notes || request.observations, status: 'Pending'
-    }]);
-    if (!error) {
-       addToast("Solicitud enviada", "success");
+    const reqAmount = Number(request.requestedAmount ?? request.amount) || 0;
+    const reqTerm = Number(request.requestedTerm ?? request.durationWeeks) || 1;
+    const reqRate = Number(request.interestRate) || 10;
+    const reqFreq = request.frequency || 'Semanal';
+    const reqType = request.loanType || 'Amortizado (Cuota Fija)';
+    const reqPurpose = request.purpose || request.loanDestination || '';
+    const reqNotes = request.notes || request.observations || '';
+
+    const { data, error } = await insforge.database.from('loan_requests').insert([{
+      lender_id: currentUser.id,
+      client_id: request.clientId,
+      client_name: request.clientName,
+      client_phone: request.clientPhone,
+      client_email: request.clientEmail,
+      requested_amount: reqAmount,
+      amount: reqAmount,
+      requested_term: reqTerm,
+      duration_weeks: reqTerm,
+      interest_rate: reqRate,
+      frequency: reqFreq,
+      loan_type: reqType,
+      closing_cost: request.closingCost || 0,
+      closing_cost_mode: request.closingCostMode || 'Descontado',
+      payment_day: request.paymentDay,
+      purpose: reqPurpose,
+      notes: reqNotes,
+      status: 'Pending'
+    }]).select().single();
+
+    if (data && !error) {
+      const newReq: LoanRequest = {
+        id: data.id,
+        clientId: data.client_id || request.clientId,
+        clientName: data.client_name || request.clientName || 'Sin Nombre',
+        clientPhone: data.client_phone || request.clientPhone,
+        clientEmail: data.client_email || request.clientEmail,
+        requestedAmount: reqAmount,
+        amount: reqAmount,
+        requestedTerm: reqTerm,
+        durationWeeks: reqTerm,
+        interestRate: reqRate,
+        frequency: reqFreq as any,
+        loanType: reqType as any,
+        closingCost: request.closingCost || 0,
+        closingCostMode: (request.closingCostMode || 'Descontado') as any,
+        paymentDay: request.paymentDay,
+        purpose: reqPurpose,
+        loanDestination: reqPurpose,
+        notes: reqNotes,
+        observations: reqNotes,
+        status: 'Pending',
+        requestDate: data.created_at || data.request_date || new Date().toISOString(),
+      };
+
+      setLoanRequests(prev => [newReq, ...prev]);
+      addAuditLog('loan_request_created', `Creó una solicitud de préstamo por RD$ ${reqAmount} para ${newReq.clientName}`);
+      addToast("Solicitud guardada con éxito", "success");
+    } else if (error) {
+      logger.error("Error al crear solicitud de préstamo:", error);
+      addToast(`Error al crear solicitud: ${error.message}`, "error");
     }
   };
 
