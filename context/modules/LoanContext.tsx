@@ -300,26 +300,43 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     let transactionsToInsert: any[] = [];
 
-    if (loan.loanType === 'Rédito') {
-      const currentInterestDue = loan.remainingBalance * (loan.interestRate / 100);
+    const isRedito = (type?: string) => type ? (type.includes('Rédito') || type.includes('Redito') || type.includes('Solo Interé') || type.includes('Pagaré Abierto')) : false;
+
+    let newNextDate = loan.nextPaymentDate;
+
+    if (isRedito(loan.loanType)) {
       if (paymentType === 'Capital') {
         newBalance -= amount;
         transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Capital', description: `${note} (Abono Directo a Capital)` });
-      } else if (paymentType === 'Mixto' && capitalAmount && capitalAmount > 0) {
-        const interestPart = Math.max(0, amount - capitalAmount);
-        newBalance -= capitalAmount;
-        if (capitalAmount > 0) transactionsToInsert.push({ ...baseTx, amount: capitalAmount, paymenttype: 'Capital', description: `${note} (Abono a Capital)` });
-        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, paymenttype: 'Interes', description: `${note} (Interés)` });
+      } else if (paymentType === 'Mixto') {
+        const capitalPart = (capitalAmount && capitalAmount > 0) ? capitalAmount : 0;
+        const interestPart = Math.max(0, amount - capitalPart);
+        newBalance -= capitalPart;
+        if (capitalPart > 0) transactionsToInsert.push({ ...baseTx, amount: capitalPart, paymenttype: 'Capital', description: `${note} (Abono a Capital)` });
+        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
       } else {
-        if (amount > currentInterestDue) {
-          const excessCapital = amount - currentInterestDue;
-          newBalance -= excessCapital;
-          transactionsToInsert.push({ ...baseTx, amount: currentInterestDue, paymenttype: 'Interes', description: `${note} (Pago Rédito/Interés)` });
-          transactionsToInsert.push({ ...baseTx, amount: excessCapital, paymenttype: 'Capital', description: `${note} (Abono a Capital por Excedente)` });
-        } else {
-          transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Interes', description: `${note} (Pago Rédito/Interés)` });
+        // Solo Intereses (Rédito): NO SE RESTA DEL CAPITAL!
+        newBalance = loan.remainingBalance;
+        transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
+      }
+
+      // Avanzar fecha de próximo pago al pagar intereses
+      if (paymentType !== 'Capital' && loan.nextPaymentDate) {
+        const currentNext = new Date(loan.nextPaymentDate.includes('T') ? loan.nextPaymentDate : loan.nextPaymentDate + 'T00:00:00');
+        if (!isNaN(currentNext.getTime())) {
+          if (loan.frequency === 'Mensual') {
+            currentNext.setMonth(currentNext.getMonth() + 1);
+          } else if (loan.frequency === 'Quincenal') {
+            currentNext.setDate(currentNext.getDate() + 15);
+          } else if (loan.frequency === 'Diario') {
+            currentNext.setDate(currentNext.getDate() + 1);
+          } else {
+            currentNext.setDate(currentNext.getDate() + 7);
+          }
+          newNextDate = currentNext.toISOString().split('T')[0];
         }
       }
+
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
     } else {
       newBalance -= amount;
@@ -327,12 +344,14 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       transactionsToInsert.push({ ...baseTx, amount, paymenttype: paymentType || 'Interes' });
     }
 
-    const { error: loanError } = await insforge.database.from('loans').update({ remainingbalance: newBalance, status: newStatus }).eq('id', loanId).eq('lender_id', currentUser.id);
+    const { error: loanError } = await insforge.database.from('loans').update({
+      remainingbalance: newBalance, status: newStatus, next_payment_date: newNextDate
+    }).eq('id', loanId).eq('lender_id', currentUser.id);
     if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
 
     const { data: insertedTxs, error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert).select();
     if (!trxError && insertedTxs) {
-      setLoans(prev => prev.map(l => l.id === loanId ? { ...l, remainingBalance: newBalance, status: newStatus } : l));
+      setLoans(prev => prev.map(l => l.id === loanId ? { ...l, remainingBalance: newBalance, status: newStatus, nextPaymentDate: newNextDate } : l));
       addAuditLog('payment_registered', `Registró pago de RD$ ${amount} para el préstamo ${loanId}`);
       addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
       

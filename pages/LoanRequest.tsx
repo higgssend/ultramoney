@@ -60,9 +60,32 @@ const LoanRequest: React.FC = () => {
   const [schedulePreview, setSchedulePreview] = useState<InstallmentPreview[]>([]);
   const [activeProduct, setActiveProduct] = useState<LoanProduct | null>(null);
 
+  // Dates State
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [firstPaymentDate, setFirstPaymentDate] = useState<string>('');
+
   const selectedClient = clients.find(c => c.id === selectedClientId);
 
-
+  useEffect(() => {
+    if (!startDate) return;
+    const start = new Date(startDate);
+    if (isNaN(start.getTime())) return;
+    let next = new Date(start);
+    if (frequency === 'Mensual') {
+      if (start.getDate() >= paymentDay) {
+        next = new Date(start.getFullYear(), start.getMonth() + 1, paymentDay);
+      } else {
+        next = new Date(start.getFullYear(), start.getMonth(), paymentDay);
+      }
+    } else if (frequency === 'Quincenal') {
+      next.setDate(next.getDate() + 15);
+    } else if (frequency === 'Diario') {
+      next.setDate(next.getDate() + 1);
+    } else {
+      next.setDate(next.getDate() + 7);
+    }
+    setFirstPaymentDate(next.toISOString().split('T')[0]);
+  }, [startDate, frequency, paymentDay]);
   
   const handleProductSelect = (productId: string) => {
       setSelectedProductId(productId);
@@ -194,10 +217,11 @@ const LoanRequest: React.FC = () => {
             closingCost,
             closingCostMode,
             paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
-            startDate: new Date().toISOString().split('T')[0],
-            nextPaymentDate: initialNextDate.toISOString().split('T')[0],
+            startDate: startDate || new Date().toISOString().split('T')[0],
+            nextPaymentDate: firstPaymentDate || initialNextDate.toISOString().split('T')[0],
             collateral,
             loanCategory,
+            note: observations,
             lateFeePercentage,
             graceDays
         });
@@ -322,11 +346,11 @@ const LoanRequest: React.FC = () => {
                             </div>
                             <div 
                                 onClick={() => { setLoanType('Rédito'); setCalcMode('time'); }}
-                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType === 'Rédito (Solo Interés)' ? 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' : 'border-slate-200 hover:border-slate-300'}`}
+                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${(loanType === 'Rédito' || loanType.includes('Rédito')) ? 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
                                 <div className="flex justify-between">
                                     <span className="font-bold text-sm">Pagaré Abierto (Rédito)</span>
-                                    {loanType === 'Rédito (Solo Interés)' && <FileCheck className="w-5 h-5 text-purple-600" />}
+                                    {(loanType === 'Rédito' || loanType.includes('Rédito')) && <FileCheck className="w-5 h-5 text-purple-600" />}
                                 </div>
                                 <span className="text-xs opacity-70">Solo paga interés. Capital al final.</span>
                             </div>
@@ -442,15 +466,42 @@ const LoanRequest: React.FC = () => {
                                 </div>
                             )}
                             
-                            {loanType === 'Rédito (Solo Interés)' && (
-                                <div className="md:col-span-2 bg-purple-50 border border-purple-100 p-4 rounded-xl">
+                            {/* Date Picker Grid */}
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Fecha de Inicio / Desembolso</label>
+                                    <input 
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-indigo-700 mb-1">Fecha del Primer Cobro / Pago</label>
+                                    <input 
+                                        type="date"
+                                        value={firstPaymentDate}
+                                        onChange={(e) => setFirstPaymentDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-indigo-300 bg-white rounded-lg text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                    <p className="text-[11px] text-indigo-500 mt-1">El cliente pagará su primera cuota/rédito en esta fecha.</p>
+                                </div>
+                            </div>
+                            
+                            {(loanType === 'Rédito' || loanType.includes('Rédito')) && (
+                                <div className="md:col-span-2 bg-purple-50 border border-purple-200 p-4 rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
                                         <RefreshCw className="w-4 h-4 text-purple-600" />
-                                        <span className="font-bold text-purple-800 text-sm">Modo Pagaré Abierto</span>
+                                        <span className="font-bold text-purple-800 text-sm">Modo Pagaré Abierto (Rédito)</span>
                                     </div>
-                                    <p className="text-xs text-purple-600">
-                                        Este préstamo no tiene una fecha de fin establecida. El cliente pagará intereses periódicamente hasta que decida saldar el capital completo.
+                                    <p className="text-xs text-purple-700 mb-3">
+                                        Este préstamo no tiene una fecha de fin establecida. El cliente pagará <strong>RD$ {(getPrincipalForCalculation() * (interest / 100)).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong> de intereses cada <strong>{frequency.toLowerCase()}</strong> a partir del <strong>{firstPaymentDate || 'día programado'}</strong> hasta cancelar el capital.
                                     </p>
+                                    <div className="grid grid-cols-2 gap-3 text-xs bg-white/80 p-3 rounded-lg border border-purple-100">
+                                        <div><span className="text-slate-500 block">Interés por periodo:</span><span className="font-bold text-purple-900">RD$ {(getPrincipalForCalculation() * (interest / 100)).toLocaleString()} / {frequency}</span></div>
+                                        <div><span className="text-slate-500 block">Primer cobro programado:</span><span className="font-bold text-purple-900">{firstPaymentDate || 'Por definir'}</span></div>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -675,9 +726,9 @@ const LoanRequest: React.FC = () => {
                                 <div className="text-center text-4xl font-bold bg-white/10 py-4 rounded-2xl backdrop-blur-sm border border-white/10">
                                 ${calculateInstallment().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
-                                {loanType === 'Rédito (Solo Interés)' && (
+                                {(loanType === 'Rédito' || loanType.includes('Rédito')) && (
                                     <p className="text-center text-[10px] text-indigo-200 mt-2 bg-black/20 rounded py-1 px-2">
-                                        * Cliente debe pagar esto cada {frequency}
+                                        * Cliente debe pagar esto cada {frequency} (Primer cobro: {firstPaymentDate})
                                     </p>
                                 )}
                             </div>

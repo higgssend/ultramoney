@@ -592,7 +592,7 @@ const Payments: React.FC = () => {
                                     ))}
                                 </div>
                             </div>
-                            {selectedLoan?.loanType === 'Rédito' && (
+                            {(selectedLoan?.loanType && (selectedLoan.loanType.includes('Rédito') || selectedLoan.loanType.includes('Redito') || selectedLoan.loanType.includes('Solo Interé') || selectedLoan.loanType.includes('Pagaré Abierto'))) && (
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-slate-600 mb-1">Tipo de Pago (Pagaré Abierto)</label>
                                     <CustomSelect 
@@ -650,7 +650,7 @@ const Payments: React.FC = () => {
                                 </div>
                             )}
 
-                            {paymentType === 'Mixto' && selectedLoan?.loanType === 'Rédito' && (
+                            {paymentType === 'Mixto' && selectedLoan?.loanType && (selectedLoan.loanType.includes('Rédito') || selectedLoan.loanType.includes('Redito') || selectedLoan.loanType.includes('Solo Interé') || selectedLoan.loanType.includes('Pagaré Abierto')) && (
                                 <div className="mb-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
                                     <label className="block text-sm font-medium text-indigo-700 mb-1">Monto a abonar al Capital</label>
                                     <div className="relative">
