@@ -96,7 +96,8 @@ const Login: React.FC = () => {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
       }
 
-      navigate('/dashboard');
+      // Full reload so AuthContext picks up the session cleanly
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Credenciales inválidas. Por favor verifica tu correo y contraseña.';
       setError(errorMsg);

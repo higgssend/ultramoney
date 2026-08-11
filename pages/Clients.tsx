@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Search, Plus, Phone, MapPin, Eye, Edit, Users, TrendingUp, AlertCircle, CheckCircle, Clock, Star, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { Search, Plus, Phone, MapPin, Eye, Edit, Users, TrendingUp, AlertCircle, CheckCircle, Clock, ChevronRight, LayoutGrid, List, Trash2 } from 'lucide-react';
 import { useLoans, useClients } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 
 const Clients: React.FC = () => {
-  const { clients } = useClients();
+  const { clients, deleteClient } = useClients();
   const { loans } = useLoans();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [statusFilter, setStatusFilter] = useState<string>('Todos');
+  const [deleteConfirm, setDeleteConfirm] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredClients = clients.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,6 +60,14 @@ const Clients: React.FC = () => {
     const first = name.charAt(0).toUpperCase();
     const last = (lastName || '').charAt(0).toUpperCase();
     return last ? `${first}${last}` : first;
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return;
+    setIsDeleting(true);
+    await deleteClient(deleteConfirm.id);
+    setIsDeleting(false);
+    setDeleteConfirm(null);
   };
 
   const avatarColors = [
@@ -279,6 +289,13 @@ const Clients: React.FC = () => {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(client); }}
+                            className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -340,6 +357,45 @@ const Clients: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-sm w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-rose-100 dark:bg-rose-900/30 rounded-xl">
+                <Trash2 className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 dark:text-white">Eliminar Cliente</h3>
+                <p className="text-xs text-slate-500">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-5">
+              ¿Estás seguro que deseas eliminar a <span className="font-bold text-slate-800 dark:text-white">{deleteConfirm.name} {deleteConfirm.lastName || ''}</span>? Se eliminarán todos sus datos asociados.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl font-semibold text-sm transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+              >
+                {isDeleting ? (
+                  <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Eliminando...</>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Eliminar</>  
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

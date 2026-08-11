@@ -185,6 +185,18 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
+  const deleteClient = async (id: string): Promise<void> => {
+    if (!currentUser) return;
+    const { error } = await insforge.database.from('clients').delete().eq('id', id);
+    if (!error) {
+      setClients(prev => prev.filter(c => c.id !== id));
+      addToast('Cliente eliminado exitosamente', 'success');
+    } else {
+      logger.error('Error al eliminar cliente:', error);
+      addToast(`Error al eliminar cliente: ${error?.message || 'Error desconocido'}`, 'error');
+    }
+  };
+
   const updateClient = async (updatedClient: Client) => {
     if (!currentUser) return;
     const routeIdClean = updatedClient.routeId && updatedClient.routeId.trim() !== '' ? updatedClient.routeId : null;
@@ -313,7 +325,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   return (
     <ClientContext.Provider value={{
       clients, clientNotes, clientDocuments, routes,
-      addClient, updateClient, addClientNote, addClientDocument, removeClientDocument, generateClientPin,
+      addClient, updateClient, deleteClient, addClientNote, addClientDocument, removeClientDocument, generateClientPin,
       addRoute, updateRoute, deleteRoute, refreshClients
     }}>
       {children}
