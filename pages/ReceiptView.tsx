@@ -131,13 +131,20 @@ export const ReceiptView: React.FC = () => {
     const totalPaidSoFar = Math.max(0, totalToPay - currentBalance);
     const paidInstallmentsCount = amountPerInst > 0 ? Math.min(totalInstallments, Math.floor((totalPaidSoFar + 0.01) / amountPerInst)) : 0;
 
-    const formattedDate = transaction.date ? new Date(transaction.date).toLocaleDateString('es-DO', {
-        year: 'numeric', month: 'long', day: 'numeric'
-    }) : new Date().toLocaleDateString('es-DO');
+    const rawDateStr = (transaction as any).created_at || transaction.date;
+    const parsedDate = rawDateStr 
+        ? (rawDateStr.includes('T') 
+            ? new Date(rawDateStr) 
+            : new Date(`${rawDateStr}T${new Date().toTimeString().split(' ')[0]}`)) 
+        : new Date();
 
-    const formattedTime = transaction.date ? new Date(transaction.date).toLocaleTimeString('es-DO', {
-        hour: '2-digit', minute: '2-digit'
-    }) : '';
+    const formattedDate = parsedDate.toLocaleDateString('es-DO', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const formattedTime = parsedDate.toLocaleTimeString('es-DO', {
+        hour: '2-digit', minute: '2-digit', hour12: true
+    });
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col py-8 sm:px-6 lg:px-8 relative overflow-hidden print:bg-white print:py-0 print:px-0">

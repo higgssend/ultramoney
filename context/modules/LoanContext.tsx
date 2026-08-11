@@ -305,9 +305,16 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let newBalance = loan.remainingBalance;
     let newStatus = loan.status;
 
+    const nowISO = new Date().toISOString();
+    const nowTimeStr = nowISO.split('T')[1];
+    const txDate = paymentDate ? (paymentDate.includes('T') ? paymentDate : `${paymentDate}T${nowTimeStr}`) : nowISO;
+
     const baseTx = {
-      lender_id: currentUser.id, date: paymentDate || new Date().toISOString().split('T')[0],
-      type: 'Ingreso', description: note, referenceid: loanId
+      lender_id: currentUser.id, 
+      date: txDate,
+      type: 'Ingreso', 
+      description: note, 
+      referenceid: loanId
     };
 
     let transactionsToInsert: any[] = [];

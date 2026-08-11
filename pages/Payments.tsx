@@ -411,7 +411,7 @@ const Payments: React.FC = () => {
         receiptNo: formattedRecNo,
         lateFeeAmount: lateVal,
         discountAmount: discVal,
-        date: new Date().toLocaleString(),
+        date: new Date().toLocaleString('es-DO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
         collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''}` : 'Sin Garantía',
         overdueAmount: 0, 
         overdueInstallments: 0,
@@ -1006,7 +1006,9 @@ const Payments: React.FC = () => {
                                               title="Haz clic para ver o imprimir este recibo"
                                           >
                                               <td className="px-6 py-4 font-mono text-indigo-600 text-xs font-bold">{formatReceiptId(t.id)}</td>
-                                              <td className="px-6 py-4 text-slate-600">{t.date}</td>
+                                              <td className="px-6 py-4 text-slate-600 font-medium">
+                                                  {t.date.includes('T') ? new Date(t.date).toLocaleString('es-DO', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : t.date}
+                                              </td>
                                               <td className="px-6 py-4 font-bold text-slate-700 group-hover:text-indigo-700">{clientName}</td>
                                               <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">{t.referenceId ? formatLoanId(t.referenceId) : '-'}</span></td>
                                               <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={t.description}>{t.description.replace(` - ${clientName}`, '')}</td>
