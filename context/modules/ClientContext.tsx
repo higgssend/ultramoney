@@ -43,9 +43,9 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
     try {
       const [clientsRes, notesRes, docsRes] = await Promise.all([
-        insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
-        insforge.database.from('client_notes').select('*').order('created_at', { ascending: false }),
-        insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
+        insforge.database.from('clients').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+        insforge.database.from('client_notes').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+        insforge.database.from('client_documents').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
       ]);
 
       if (clientsRes.data) {
@@ -187,7 +187,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const deleteClient = async (id: string): Promise<void> => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('clients').delete().eq('id', id);
+    const { error } = await insforge.database.from('clients').delete().eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
       setClients(prev => prev.filter(c => c.id !== id));
       addToast('Cliente eliminado exitosamente', 'success');
@@ -226,7 +226,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       status: updatedClient.status,
       clientpin: updatedClient.clientPin,
       creditscore: updatedClient.creditScore
-    }).eq('id', updatedClient.id);
+    }).eq('id', updatedClient.id).eq('lender_id', currentUser.id);
     
     if (!error) {
       setClients(prev => prev.map(c => c.id === updatedClient.id ? { ...c, ...updatedClient } : c));

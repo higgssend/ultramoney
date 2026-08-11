@@ -68,17 +68,20 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     const fetchSettings = async () => {
       try {
         const [settingsRes, bitacoraRes] = await Promise.all([
-          insforge.database.from('company_settings').select('*').maybeSingle(),
-          insforge.database.from('bitacora_logs').select('*').order('created_at', { ascending: false })
+          insforge.database.from('company_settings').select('*').eq('lender_id', currentUser.id).maybeSingle(),
+          insforge.database.from('bitacora_logs').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
         ]);
 
         if (settingsRes.data) {
           setCompanySettings({
             name: settingsRes.data.name, slogan: settingsRes.data.slogan, rnc: settingsRes.data.rnc,
             address: settingsRes.data.address, phone: settingsRes.data.phone, email: settingsRes.data.email,
-            currency: settingsRes.data.currency, termsAndConditions: settingsRes.data.terms_and_conditions
+            currency: settingsRes.data.currency || 'DOP', termsAndConditions: settingsRes.data.terms_and_conditions,
+            logoUrl: settingsRes.data.logourl
           });
           if (settingsRes.data.currency === 'USD') setGlobalCurrencyState('USD');
+        } else {
+          setCompanySettings(initialCompanySettings);
         }
         if (bitacoraRes.data) {
            setAuditLogs((bitacoraRes.data as AuditLogDB[]).map((l) => ({
@@ -98,19 +101,20 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [currentUser]);
 
   const updateCompanySettings = async (settings: CompanySettings) => {
+    if (!currentUser) return;
     const payload = {
-      lender_id: currentUser?.id, name: settings.name, slogan: settings.slogan, rnc: settings.rnc,
+      lender_id: currentUser.id, name: settings.name, slogan: settings.slogan, rnc: settings.rnc,
       address: settings.address, phone: settings.phone, email: settings.email, currency: settings.currency,
-      terms_and_conditions: settings.termsAndConditions
+      terms_and_conditions: settings.termsAndConditions, logourl: settings.logoUrl
     };
     
-    // Check if exists
-    const { data: existing } = await insforge.database.from('company_settings').select('id').maybeSingle();
+    // Check if exists for this lender
+    const { data: existing } = await insforge.database.from('company_settings').select('lender_id').eq('lender_id', currentUser.id).maybeSingle();
     
     if (existing) {
-      await insforge.database.from('company_settings').update(payload).eq('id', existing.id);
+      await insforge.database.from('company_settings').update(payload).eq('lender_id', currentUser.id);
     } else {
-      await insforge.database.from('company_settings').insert(payload);
+      await insforge.database.from('company_settings').insert([payload]);
     }
     
     setCompanySettings(settings);

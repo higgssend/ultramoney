@@ -58,9 +58,9 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const fetchLoans = async () => {
       try {
         const [loansRes, productsRes, requestsRes] = await Promise.all([
-          insforge.database.from('loans').select('*').order('created_at', { ascending: false }),
+          insforge.database.from('loans').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('loan_products').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('loan_requests').select('*').order('created_at', { ascending: false })
+          insforge.database.from('loan_requests').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
         ]);
 
         if (loansRes.data) {

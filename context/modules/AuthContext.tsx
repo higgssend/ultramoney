@@ -130,8 +130,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           insforge.database.from('roles').select('*').order('name'),
           insforge.database.from('cargos').select('*').order('name'),
           insforge.database.from('user_profiles').select('*').order('created_at'),
-          insforge.database.from('api_keys').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('employees').select('*').order('created_at', { ascending: false })
+          insforge.database.from('api_keys').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('employees').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
         ]);
 
         if (rolesRes.data) setRoles(rolesRes.data);
@@ -231,6 +231,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
          await insforge.database.from('usuario_roles').insert(roleInserts);
       }
       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      if (currentUser && currentUser.id === updatedUser.id) {
+        setCurrentUser(prev => prev ? { ...prev, name: updatedUser.name, email: updatedUser.email } : null);
+      }
       addToast("Usuario actualizado", "success");
     }
   };
