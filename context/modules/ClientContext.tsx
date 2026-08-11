@@ -42,11 +42,10 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
     try {
-      const [clientsRes, notesRes, docsRes, routesRes] = await Promise.all([
+      const [clientsRes, notesRes, docsRes] = await Promise.all([
         insforge.database.from('clients').select('*').order('created_at', { ascending: false }),
         insforge.database.from('client_notes').select('*').order('created_at', { ascending: false }),
         insforge.database.from('client_documents').select('*').order('created_at', { ascending: false }),
-        insforge.database.from('routes').select('*').order('created_at', { ascending: false })
       ]);
 
       if (clientsRes.data) {
@@ -77,7 +76,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           status: (c.status || 'Activo') as Client['status'],
           joinedDate: c.joineddate || c.created_at,
           clientPin: c.clientpin,
-          guarantors: c.guarantors,
+          guarantors: [],
           currency: (c.currency || 'DOP') as 'DOP' | 'USD',
         })));
       }
@@ -92,11 +91,17 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           fileUrl: d.file_url, uploadDate: d.upload_date, tags: d.tags || []
         })));
       }
-      if (routesRes.data) {
-        setRoutes((routesRes.data as RouteDB[]).map((r) => ({
-          id: r.id, name: r.name, description: r.description,
-          collectorId: r.collector_id, status: (r.status || 'Activa') as Route['status'], createdAt: r.created_at || ''
-        })));
+      // Routes are optional - table may not exist yet
+      try {
+        const routesRes = await insforge.database.from('routes').select('*').order('created_at', { ascending: false });
+        if (routesRes.data) {
+          setRoutes((routesRes.data as RouteDB[]).map((r) => ({
+            id: r.id, name: r.name, description: r.description,
+            collectorId: r.collector_id, status: (r.status || 'Activa') as Route['status'], createdAt: r.created_at || ''
+          })));
+        }
+      } catch {
+        logger.warn('Routes table not found, skipping.');
       }
     } catch (error) {
       logger.error("Error fetching clients:", error);

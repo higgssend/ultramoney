@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, MapPin, Plus, Crosshair, Map, Hash, Save, ArrowLeft, Building, Briefcase } from 'lucide-react';
+import {
+  User, Phone, MapPin, Plus, Crosshair, Save, ArrowLeft,
+  Building, Briefcase, Mail, ChevronRight, CheckCircle,
+  AlertTriangle, Hash, FileText, Camera
+} from 'lucide-react';
 import { useClients } from '../context/StoreContext';
 import { Client } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -7,292 +11,530 @@ import { maskPhone } from '../utils/masks';
 import { useToast } from '../context/ToastContext';
 import { CustomSelect } from '../components/CustomSelect';
 
+const STEPS = [
+  { id: 1, label: 'Datos Personales', icon: User },
+  { id: 2, label: 'Contacto', icon: Phone },
+  { id: 3, label: 'Información Laboral', icon: Briefcase },
+];
+
 const NewClient: React.FC = () => {
-    const { id } = useParams();
-    const isEditMode = Boolean(id);
-    const { clients, addClient, updateClient, routes, addClientDocument } = useClients();
-    const navigate = useNavigate();
-    const { addToast } = useToast();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const { clients, addClient, updateClient, routes, addClientDocument } = useClients();
+  const navigate = useNavigate();
+  const { addToast } = useToast();
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [currentClient, setCurrentClient] = useState<Partial<Client>>({
-        name: '', lastName: '', sex: 'Masculino', phone: '', whatsapp: '', phoneHome: '', 
-        cedula: '', documentType: 'Cedula', address: '', province: '', sector: '', 
-        referenceAddress: '', companyName: '', jobPosition: '', income: 0, 
-        routeId: '', routeSequence: 0
-    });
+  const [currentClient, setCurrentClient] = useState<Partial<Client>>({
+    name: '', lastName: '', sex: 'Masculino', phone: '', whatsapp: '', phoneHome: '',
+    cedula: '', documentType: 'Cedula', email: '', address: '', province: '', sector: '',
+    municipality: '', referenceAddress: '', companyName: '', jobPosition: '', occupation: '',
+    income: 0, routeId: '', routeSequence: 0, creditScore: 100
+  });
 
-    const [docFile, setDocFile] = useState<string>('');
+  const [docFile, setDocFile] = useState<string>('');
 
-    useEffect(() => {
-        if (isEditMode && id) {
-            const client = clients.find(c => c.id === id);
-            if (client) {
-                setCurrentClient(client);
-            } else {
-                addToast('Cliente no encontrado', 'error');
-                navigate('/clientes');
-            }
-        }
-    }, [isEditMode, id, clients, navigate, addToast]);
+  useEffect(() => {
+    if (isEditMode && id) {
+      const client = clients.find(c => c.id === id);
+      if (client) {
+        setCurrentClient(client);
+      } else {
+        addToast('Cliente no encontrado', 'error');
+        navigate('/clientes');
+      }
+    }
+  }, [isEditMode, id, clients, navigate, addToast]);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setDocFile(reader.result as string);
-            reader.readAsDataURL(file);
-        }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setDocFile(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCaptureLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentClient({ ...currentClient, coordinates: { lat: position.coords.latitude, lng: position.coords.longitude } });
+          addToast('Ubicación GPS capturada', 'success');
+        },
+        () => addToast('No se pudo obtener la ubicación. Verifica los permisos del navegador.', 'error')
+      );
+    } else {
+      addToast('Geolocalización no disponible en este navegador', 'error');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const finalClient = {
+      ...currentClient,
+      name: currentClient.name?.trim() || '',
+      phone: currentClient.phone?.trim() || 'N/A',
+      address: currentClient.address?.trim() || 'N/A',
+      cedula: currentClient.cedula?.trim() || 'N/A',
+      documentType: currentClient.documentType || 'Cedula',
     };
 
-    const handleCaptureLocation = () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                setCurrentClient({
-                    ...currentClient, 
-                    coordinates: { lat: position.coords.latitude, lng: position.coords.longitude }
-                });
-                addToast('Ubicación capturada correctamente', 'success');
-            }, () => addToast('Error al capturar ubicación. Verifique los permisos del navegador.', 'error'));
-        } else {
-            addToast('Geolocalización no soportada por el navegador', 'error');
+    try {
+      if (isEditMode && finalClient.id) {
+        await updateClient(finalClient as Client);
+        navigate('/clientes');
+      } else {
+        const newClient = await addClient(finalClient as Omit<Client, 'id' | 'joinedDate'>);
+        if (newClient) {
+          if (docFile && currentClient.documentType) {
+            await addClientDocument({
+              id: Date.now().toString(),
+              clientId: newClient.id,
+              title: `Documento de Identidad (${currentClient.documentType})`,
+              type: currentClient.documentType === 'Cedula' ? 'Cedula' : 'Otro',
+              fileUrl: docFile,
+              fileType: docFile.startsWith('data:image') ? 'image/jpeg' : 'application/pdf',
+              uploadDate: new Date().toISOString().split('T')[0]
+            });
+          }
+          navigate('/clientes');
         }
-    };
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        // Safeguard for DB NOT NULL constraints on optional UI fields
-        const finalClient = {
-            ...currentClient,
-            phone: currentClient.phone?.trim() ? currentClient.phone : 'N/A',
-            address: currentClient.address?.trim() ? currentClient.address : 'N/A',
-            cedula: currentClient.cedula?.trim() ? currentClient.cedula : 'N/A',
-            documentType: currentClient.documentType || 'Otro'
-        };
+  const set = (field: keyof Client, value: any) => setCurrentClient(prev => ({ ...prev, [field]: value }));
 
-        if (isEditMode && finalClient.id) {
-            await updateClient(finalClient);
-            navigate('/clientes');
-        } else {
-            const newClient = await addClient(finalClient as Omit<Client, 'id' | 'joinedDate'>);
-            if (newClient) {
-                if (docFile && currentClient.documentType) {
-                    await addClientDocument({
-                        id: Date.now().toString(),
-                        clientId: newClient.id,
-                        title: `Documento de Identidad (${currentClient.documentType})`,
-                        type: currentClient.documentType === 'Cedula' ? 'Cedula' : 'Otro',
-                        fileUrl: docFile,
-                        fileType: docFile.startsWith('data:image') ? 'image/jpeg' : 'application/pdf',
-                        uploadDate: new Date().toISOString().split('T')[0]
-                    });
-                }
-                navigate('/clientes');
-            }
-        }
-    };
+  const inputClass = "w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 outline-none dark:text-white text-sm transition-all placeholder-slate-400 dark:placeholder-slate-600";
+  const labelClass = "block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2";
 
-    return (
-        <div className="p-4 max-w-5xl mx-auto pb-24">
-            <div className="flex items-center gap-4 mb-8">
-                <button 
-                    onClick={() => navigate('/clientes')} 
-                    className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-                </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                        {isEditMode ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">
-                        {isEditMode ? 'Modifica los datos del cliente seleccionado' : 'Ingresa la información básica para registrar un nuevo cliente.'}
-                    </p>
-                </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* 1. Datos Personales */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-indigo-50/50 dark:bg-indigo-900/10">
-                        <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        <h2 className="font-bold text-slate-800 dark:text-white">Datos Personales</h2>
-                    </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                                Nombre(s) <span className="text-rose-500">*</span>
-                            </label>
-                            <input required type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.name} onChange={e => setCurrentClient({...currentClient, name: e.target.value})} placeholder="Ej. Juan Carlos" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Apellidos (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.lastName || ''} onChange={e => setCurrentClient({...currentClient, lastName: e.target.value})} placeholder="Ej. Pérez" />
-                        </div>
-                        
-                        <div className="lg:col-span-1">
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                                Documento de Identidad <span className="text-rose-500">*</span>
-                            </label>
-                            <div className="flex">
-                                <CustomSelect 
-                                    className="w-32 rounded-r-none border-r-0"
-                                    value={currentClient.documentType || 'Cedula'} 
-                                    onChange={e => setCurrentClient({...currentClient, documentType: e as any})}
-                                    options={[
-                                        { value: 'Cedula', label: 'Cédula' },
-                                        { value: 'Pasaporte', label: 'Pasaporte' },
-                                        { value: 'Licencia', label: 'Licencia' },
-                                        { value: 'ID', label: 'ID' },
-                                        { value: 'Otro', label: 'Otro' }
-                                    ]}
-                                />
-                                <input required type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-r-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white transition-all" 
-                                    value={currentClient.cedula} onChange={e => setCurrentClient({...currentClient, cedula: e.target.value})} placeholder="Número de documento..." />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Sexo (Opcional)</label>
-                            <CustomSelect 
-                                className="w-full"
-                                value={currentClient.sex || 'Masculino'} 
-                                onChange={e => setCurrentClient({...currentClient, sex: e as any})}
-                                options={[
-                                    { value: 'Masculino', label: 'Masculino' },
-                                    { value: 'Femenino', label: 'Femenino' },
-                                    { value: 'Otro', label: 'Otro' }
-                                ]}
-                            />
-                        </div>
-                        
-                        {!isEditMode && (
-                        <div className="lg:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Adjuntar Imagen de ID (Opcional)</label>
-                            <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="w-full text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400 cursor-pointer border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900" />
-                        </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* 2. Contacto y Ubicación */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-emerald-50/50 dark:bg-emerald-900/10">
-                        <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                        <h2 className="font-bold text-slate-800 dark:text-white">Contacto y Ubicación</h2>
-                    </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Teléfono Principal (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.phone} onChange={e => setCurrentClient({...currentClient, phone: maskPhone(e.target.value)})} placeholder="(809) 000-0000" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">WhatsApp (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.whatsapp || ''} onChange={e => setCurrentClient({...currentClient, whatsapp: maskPhone(e.target.value)})} placeholder="(809) 000-0000" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Teléfono Casa (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.phoneHome || ''} onChange={e => setCurrentClient({...currentClient, phoneHome: maskPhone(e.target.value)})} placeholder="(809) 000-0000" />
-                        </div>
-                        
-                        <div className="md:col-span-3">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Dirección Física (Opcional)</label>
-                            <div className="flex gap-2">
-                                <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all" 
-                                    value={currentClient.address} onChange={e => setCurrentClient({...currentClient, address: e.target.value})} placeholder="Calle, Número, Sector..." />
-                                <button type="button" onClick={handleCaptureLocation} className="px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 whitespace-nowrap" title="Capturar GPS">
-                                    <Crosshair className="w-5 h-5" />
-                                    <span className="hidden sm:inline">Capturar GPS</span>
-                                </button>
-                            </div>
-                            {currentClient.coordinates && (
-                                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1 font-medium bg-emerald-50 dark:bg-emerald-900/20 w-fit px-2 py-1 rounded-md">
-                                    <MapPin className="w-3.5 h-3.5"/> Ubicación GPS capturada exitosamente
-                                </p>
-                            )}
-                        </div>
-                        
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Provincia (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.province || ''} onChange={e => setCurrentClient({...currentClient, province: e.target.value})} placeholder="Ej. Santo Domingo" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Punto de Referencia (Opcional)</label>
-                            <input type="text" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all" 
-                                value={currentClient.referenceAddress || ''} onChange={e => setCurrentClient({...currentClient, referenceAddress: e.target.value})} placeholder="Cerca de..." />
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. Laboral y Ruta */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-amber-50/50 dark:bg-amber-900/10">
-                        <Briefcase className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                        <h2 className="font-bold text-slate-800 dark:text-white">Laboral y Ruta</h2>
-                    </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="lg:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Empresa / Trabajo (Opcional)</label>
-                            <div className="relative">
-                                <Building className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <input type="text" className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none dark:text-white transition-all" 
-                                    value={currentClient.companyName || ''} onChange={e => setCurrentClient({...currentClient, companyName: e.target.value})} placeholder="Nombre de empresa" />
-                            </div>
-                        </div>
-                        
-                        <div className="lg:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Ingresos Mensuales (Opcional)</label>
-                            <input type="number" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none dark:text-white transition-all font-bold text-amber-600 dark:text-amber-400" 
-                                value={currentClient.income || ''} onChange={e => setCurrentClient({...currentClient, income: Number(e.target.value)})} placeholder="0.00" />
-                        </div>
-                        
-                        <div className="lg:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Zona / Ruta (Opcional)</label>
-                            <div className="relative">
-                                <Map className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <CustomSelect 
-                                    className="w-full"
-                                    value={currentClient.routeId || ''} 
-                                    onChange={e => setCurrentClient({...currentClient, routeId: e})}
-                                    options={[
-                                        { value: '', label: '-- Sin ruta asignada --' },
-                                        ...routes.map(r => ({ value: r.id, label: r.name }))
-                                    ]}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="lg:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Orden de Cobro (Secuencia)</label>
-                            <div className="relative">
-                                <Hash className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <input type="number" className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none dark:text-white transition-all" 
-                                    value={currentClient.routeSequence || 0} onChange={e => setCurrentClient({...currentClient, routeSequence: Number(e.target.value)})} placeholder="Ej. 1" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex gap-4 pt-4 justify-end border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onClick={() => navigate('/clientes')} className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold transition-all shadow-sm">
-                        Cancelar
-                    </button>
-                    <button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-md flex items-center gap-2 transition-all">
-                        <Save className="w-5 h-5" />
-                        {isEditMode ? 'Guardar Cambios' : 'Registrar Cliente'}
-                    </button>
-                </div>
-                
-            </form>
+  return (
+    <div className="max-w-3xl mx-auto pb-24 px-4">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8 pt-2">
+        <button
+          onClick={() => navigate('/clientes')}
+          className="p-2.5 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {isEditMode ? 'Editar Cliente' : 'Nuevo Cliente'}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {isEditMode ? 'Modifica la información del cliente' : 'Completa el formulario para registrar un nuevo cliente'}
+          </p>
         </div>
-    );
+      </div>
+
+      {/* Step Indicator (only for new client) */}
+      {!isEditMode && (
+        <div className="flex items-center gap-2 mb-8">
+          {STEPS.map((s, i) => {
+            const Icon = s.icon;
+            const active = step === s.id;
+            const done = step > s.id;
+            return (
+              <React.Fragment key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => s.id < step && setStep(s.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${active ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-indigo-900/30' : done ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default'}`}
+                >
+                  {done ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{s.label}</span>
+                  <span className="sm:hidden">{s.id}</span>
+                </button>
+                {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* STEP 1: Datos Personales */}
+        {(isEditMode || step === 1) && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 dark:to-transparent">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-800 dark:text-white text-sm">Datos Personales</h2>
+                <p className="text-xs text-slate-500">Información básica de identificación</p>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={labelClass}>Nombre(s) <span className="text-rose-500">*</span></label>
+                <input
+                  required type="text" className={inputClass}
+                  value={currentClient.name || ''}
+                  onChange={e => set('name', e.target.value)}
+                  placeholder="Ej. Juan Carlos"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Apellidos</label>
+                <input
+                  type="text" className={inputClass}
+                  value={currentClient.lastName || ''}
+                  onChange={e => set('lastName', e.target.value)}
+                  placeholder="Ej. Pérez García"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className={labelClass}>Documento de Identidad <span className="text-rose-500">*</span></label>
+                <div className="flex gap-2">
+                  <div className="w-36">
+                    <CustomSelect
+                      className="w-full"
+                      value={currentClient.documentType || 'Cedula'}
+                      onChange={v => set('documentType', v)}
+                      options={[
+                        { value: 'Cedula', label: 'Cédula' },
+                        { value: 'Pasaporte', label: 'Pasaporte' },
+                        { value: 'Licencia', label: 'Licencia' },
+                        { value: 'ID', label: 'ID' },
+                        { value: 'Otro', label: 'Otro' }
+                      ]}
+                    />
+                  </div>
+                  <input
+                    required type="text"
+                    className={`${inputClass} flex-1`}
+                    value={currentClient.cedula || ''}
+                    onChange={e => set('cedula', e.target.value)}
+                    placeholder="Número de documento"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClass}>Sexo</label>
+                <CustomSelect
+                  className="w-full"
+                  value={currentClient.sex || 'Masculino'}
+                  onChange={v => set('sex', v)}
+                  options={[
+                    { value: 'Masculino', label: 'Masculino' },
+                    { value: 'Femenino', label: 'Femenino' },
+                    { value: 'Otro', label: 'Otro' }
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Email</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email" className={`${inputClass} pl-10`}
+                    value={currentClient.email || ''}
+                    onChange={e => set('email', e.target.value)}
+                    placeholder="correo@ejemplo.com"
+                  />
+                </div>
+              </div>
+
+              {!isEditMode && (
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Imagen del Documento (Opcional)</label>
+                  <label className="flex items-center gap-3 w-full px-4 py-3 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/10 transition-all group">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                      {docFile ? <CheckCircle className="w-5 h-5 text-emerald-600" /> : <Camera className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">
+                        {docFile ? '✓ Imagen seleccionada' : 'Seleccionar imagen o PDF'}
+                      </p>
+                      <p className="text-xs text-slate-400">JPG, PNG, PDF hasta 5MB</p>
+                    </div>
+                    <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="hidden" />
+                  </label>
+                </div>
+              )}
+            </div>
+            {!isEditMode && step === 1 && (
+              <div className="px-6 pb-6 flex justify-end">
+                <button type="button" onClick={() => setStep(2)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm flex items-center gap-2 transition-all shadow-sm">
+                  Siguiente <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 2: Contacto y Ubicación */}
+        {(isEditMode || step === 2) && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-900/20 dark:to-transparent">
+              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-800 dark:text-white text-sm">Contacto y Ubicación</h2>
+                <p className="text-xs text-slate-500">Teléfonos y dirección del cliente</p>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label className={labelClass}>Teléfono Principal</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type="text" className={`${inputClass} pl-10`}
+                    value={currentClient.phone || ''}
+                    onChange={e => set('phone', maskPhone(e.target.value))}
+                    placeholder="(809) 000-0000"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>WhatsApp</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.whatsapp || ''}
+                  onChange={e => set('whatsapp', maskPhone(e.target.value))}
+                  placeholder="(809) 000-0000"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Teléfono Casa</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.phoneHome || ''}
+                  onChange={e => set('phoneHome', maskPhone(e.target.value))}
+                  placeholder="(809) 000-0000"
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className={labelClass}>Dirección Física</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input type="text" className={`${inputClass} pl-10`}
+                      value={currentClient.address || ''}
+                      onChange={e => set('address', e.target.value)}
+                      placeholder="Calle, Número, Sector..."
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCaptureLocation}
+                    title="Capturar GPS"
+                    className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors flex items-center gap-2 text-sm font-semibold shrink-0"
+                  >
+                    <Crosshair className="w-4 h-4" />
+                    <span className="hidden sm:inline">GPS</span>
+                  </button>
+                </div>
+                {currentClient.coordinates && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1.5 font-medium">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    GPS capturado: {currentClient.coordinates.lat.toFixed(5)}, {currentClient.coordinates.lng.toFixed(5)}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className={labelClass}>Provincia</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.province || ''}
+                  onChange={e => set('province', e.target.value)}
+                  placeholder="Ej. Santo Domingo"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Municipio</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.municipality || ''}
+                  onChange={e => set('municipality', e.target.value)}
+                  placeholder="Ej. Santo Domingo Este"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Sector</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.sector || ''}
+                  onChange={e => set('sector', e.target.value)}
+                  placeholder="Ej. Los Mina"
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className={labelClass}>Punto de Referencia</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.referenceAddress || ''}
+                  onChange={e => set('referenceAddress', e.target.value)}
+                  placeholder="Ej. Cerca de la Farmacia Cruz Verde"
+                />
+              </div>
+            </div>
+            {!isEditMode && step === 2 && (
+              <div className="px-6 pb-6 flex justify-between">
+                <button type="button" onClick={() => setStep(1)} className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
+                  <ArrowLeft className="w-4 h-4" /> Anterior
+                </button>
+                <button type="button" onClick={() => setStep(3)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm flex items-center gap-2 transition-all shadow-sm">
+                  Siguiente <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 3: Información Laboral */}
+        {(isEditMode || step === 3) && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-900/20 dark:to-transparent">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                <Briefcase className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-800 dark:text-white text-sm">Información Laboral</h2>
+                <p className="text-xs text-slate-500">Empleo, ingresos y asignación de ruta</p>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={labelClass}>Empresa / Lugar de Trabajo</label>
+                <div className="relative">
+                  <Building className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type="text" className={`${inputClass} pl-10`}
+                    value={currentClient.companyName || ''}
+                    onChange={e => set('companyName', e.target.value)}
+                    placeholder="Nombre de empresa"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Cargo / Posición</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.jobPosition || ''}
+                  onChange={e => set('jobPosition', e.target.value)}
+                  placeholder="Ej. Gerente de Ventas"
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Ocupación / Profesión</label>
+                <input type="text" className={inputClass}
+                  value={currentClient.occupation || ''}
+                  onChange={e => set('occupation', e.target.value)}
+                  placeholder="Ej. Comerciante"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Ingresos Mensuales (RD$)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">$</span>
+                  <input type="number" min="0" className={`${inputClass} pl-8 font-semibold text-amber-600 dark:text-amber-400`}
+                    value={currentClient.income || ''}
+                    onChange={e => set('income', Number(e.target.value))}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {routes.length > 0 && (
+                <>
+                  <div>
+                    <label className={labelClass}>Zona / Ruta</label>
+                    <CustomSelect
+                      className="w-full"
+                      value={currentClient.routeId || ''}
+                      onChange={v => set('routeId', v)}
+                      options={[
+                        { value: '', label: '— Sin ruta —' },
+                        ...routes.map(r => ({ value: r.id, label: r.name }))
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Orden de Cobro</label>
+                    <div className="relative">
+                      <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input type="number" min="0" className={`${inputClass} pl-10`}
+                        value={currentClient.routeSequence || ''}
+                        onChange={e => set('routeSequence', Number(e.target.value))}
+                        placeholder="Ej. 1"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className={labelClass}>Score de Crédito (0–100)</label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-500">Puntuación inicial</span>
+                    <span className={`text-sm font-bold ${(currentClient.creditScore || 0) >= 80 ? 'text-emerald-600' : (currentClient.creditScore || 0) >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
+                      {currentClient.creditScore || 100} pts
+                    </span>
+                  </div>
+                  <input
+                    type="range" min="0" max="100" step="5"
+                    value={currentClient.creditScore || 100}
+                    onChange={e => set('creditScore', Number(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        {(isEditMode || step === 3) && (
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            {!isEditMode && (
+              <button type="button" onClick={() => setStep(2)} className="flex-1 sm:flex-none px-5 py-3 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                <ArrowLeft className="w-4 h-4" /> Anterior
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('/clientes')}
+              className="flex-1 sm:flex-none px-5 py-3 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl font-semibold text-sm transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-indigo-200 dark:shadow-indigo-900/30 active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  {isEditMode ? 'Guardar Cambios' : 'Registrar Cliente'}
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+      </form>
+    </div>
+  );
 };
 
 export default NewClient;
