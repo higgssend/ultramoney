@@ -291,7 +291,12 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const generateClientPin = (clientId: string) => {
     const newPin = Math.floor(1000 + Math.random() * 9000).toString();
-    updateClient({ id: clientId, clientPin: newPin });
+    const existing = clients.find(c => c.id === clientId);
+    if (existing) {
+      updateClient({ ...existing, clientPin: newPin });
+    } else {
+      insforge.database.from('clients').update({ clientpin: newPin }).eq('id', clientId);
+    }
     return newPin;
   };
 
