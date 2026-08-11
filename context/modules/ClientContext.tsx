@@ -109,7 +109,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const addClient = async (client: Omit<Client, 'id'>): Promise<Client | void> => {
     if (!currentUser) return;
-    const { data, error } = await insforge.database.from('clients').insert({
+    const { data, error } = await insforge.database.from('clients').insert([{
       lender_id: currentUser.id, name: client.name, lastname: client.lastName, cedula: client.cedula,
       documenttype: client.documentType, email: client.email, phone: client.phone, whatsapp: client.whatsapp,
       phonehome: client.phoneHome, address: client.address, province: client.province, municipality: client.municipality,
@@ -118,7 +118,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       routesequence: client.routeSequence, occupation: client.occupation, sex: client.sex,
       income: client.income, creditscore: client.creditScore, status: 'Al Día', joineddate: new Date().toISOString().split('T')[0],
       clientpin: Math.floor(1000 + Math.random() * 9000).toString(), guarantors: client.guarantors || []
-    }).select().single();
+    }]).select().single();
     
     if (data && !error) {
       const newClient: Client = {
@@ -160,10 +160,10 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const addClientNote = async (note: ClientNote) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('client_notes').insert({
+    const { error } = await insforge.database.from('client_notes').insert([{
       lender_id: currentUser.id, client_id: note.clientId, content: note.content,
       date: note.date, created_by: currentUser.name || 'Agente'
-    }).select().single();
+    }]).select().single();
     if (!error) {
       refreshClients(); // Refetch to get updated list
       addToast("Nota agregada", "success");
@@ -187,10 +187,10 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
        fileUrl = data.publicUrl;
     }
 
-    const { error } = await insforge.database.from('client_documents').insert({
+    const { error } = await insforge.database.from('client_documents').insert([{
       lender_id: currentUser.id, client_id: doc.clientId, title: doc.title, type: doc.type,
       file_url: fileUrl, upload_date: doc.uploadDate, tags: doc.tags || []
-    });
+    }]);
     if (!error) {
       refreshClients();
       addToast("Documento agregado", "success");

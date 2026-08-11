@@ -142,10 +142,10 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       action, details, timestamp: new Date().toISOString()
     };
     setAuditLogs(prev => [log, ...prev]);
-    await insforge.database.from('bitacora_logs').insert({
+    await insforge.database.from('bitacora_logs').insert([{
       lender_id: currentUser.id, user_id: currentUser.id, user_name: currentUser.name || currentUser.email || 'Sistema',
       action, details
-    });
+    }]);
   };
 
   const enqueuePdf = (job: Omit<PdfJob, 'id'>) => {

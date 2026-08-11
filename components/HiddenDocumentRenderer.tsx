@@ -45,7 +45,7 @@ export const HiddenDocumentRenderer: React.FC = () => {
           const docLink = publicData.publicUrl;
           
           // Save URL to client_documents table
-          await insforge.database.from('client_documents').insert({
+          await insforge.database.from('client_documents').insert([{
             client_id: job.client.id,
             title: `Documento ${job.type} - ${new Date().toLocaleDateString('es-DO')}`,
             type: job.type,
@@ -53,7 +53,7 @@ export const HiddenDocumentRenderer: React.FC = () => {
             file_type: 'application/pdf',
             upload_date: new Date().toISOString(),
             lender_id: job.client.lender_id || '' // Must pass lender_id for RLS
-          });
+          }]);
 
           console.log(`Successfully generated and uploaded ${job.type} PDF for client ${job.client.name}`);
         } catch (err) {

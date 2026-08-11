@@ -156,7 +156,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const instAmt = ttp / installments;
 
-    const { data, error } = await insforge.database.from('loans').insert({
+    const { data, error } = await insforge.database.from('loans').insert([{
       lender_id: currentUser.id, clientid: loanData.clientId, amount: loanData.amount,
       interestrate: loanData.interestRate, installments: installments, durationweeks: installments,
       installmentamount: instAmt,
@@ -164,7 +164,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       startdate: loanData.startDate, next_payment_date: loanData.nextPaymentDate,
       status: LoanStatus.ACTIVE, remainingbalance: ttp, totaltopay: ttp, loantype: loanData.loanType,
       collateralref: loanData.guarantorId, collateraldescription: loanData.note
-    }).select().single();
+    }]).select().single();
 
     if (data && !error) {
       const newLoan: Loan = {
@@ -197,7 +197,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const instAmtRef = ttp / installments;
     
-    const { data, error } = await insforge.database.from('loans').insert({
+    const { data, error } = await insforge.database.from('loans').insert([{
       lender_id: currentUser.id, clientid: newLoanData.clientId, amount: newLoanData.amount,
       interestrate: newLoanData.interestRate, installments: installments, durationweeks: installments,
       installmentamount: instAmtRef,
@@ -205,7 +205,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       startdate: newLoanData.startDate, next_payment_date: newLoanData.nextPaymentDate,
       status: LoanStatus.ACTIVE, remainingbalance: ttp, totaltopay: ttp, loantype: newLoanData.loanType,
       collateralref: newLoanData.guarantorId, collateraldescription: `Refinanciamiento del préstamo ${oldLoanId}`
-    }).select().single();
+    }]).select().single();
 
     if (data && !error) {
       setLoans(prev => prev.map(l => l.id === oldLoanId ? { ...l, status: LoanStatus.REFINANCED } : l));
@@ -237,10 +237,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }).eq('id', loanId);
     
     if (!error) {
-      await insforge.database.from('transactions').insert({
+      await insforge.database.from('transactions').insert([{
         lender_id: currentUser.id, date: new Date().toISOString().split('T')[0],
         type: 'Perdón de Deuda', amount, description: note, referenceid: loanId
-      });
+      }]);
       setLoans(prev => prev.map(l => l.id === loanId ? { ...l, remainingBalance: newBalance, status: newStatus } : l));
       addAuditLog('loan_forgiven', `Perdonó RD$ ${amount} al préstamo ${loanId}`);
       addToast("Deuda perdonada", "success");
@@ -320,11 +320,11 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addLoanRequest = async (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('loan_requests').insert({
+    const { error } = await insforge.database.from('loan_requests').insert([{
       lender_id: currentUser.id, client_name: request.clientName, client_phone: request.clientPhone,
       client_email: request.clientEmail, requested_amount: request.requestedAmount || request.amount, requested_term: request.requestedTerm || request.durationWeeks,
       purpose: request.purpose || request.loanDestination, notes: request.notes || request.observations, status: 'Pending'
-    });
+    }]);
     if (!error) {
        addToast("Solicitud enviada", "success");
     }
@@ -340,7 +340,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addLoanProduct = async (product: Omit<LoanProduct, 'id' | 'createdAt'>) => {
     if (!currentUser) return;
-    const { data, error } = await insforge.database.from('loan_products').insert({
+    const { data, error } = await insforge.database.from('loan_products').insert([{
         name: product.name, description: product.description, min_amount: product.minAmount,
         max_amount: product.maxAmount, interest_rate: product.interestRate, interest_type: product.interestType,
         frequency: product.frequency, default_installments: product.defaultInstallments,
@@ -351,7 +351,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         amortization_method: product.amortizationMethod, payment_order: product.paymentOrder,
         recalculate_interest_on_early_payoff: product.recalculateInterestOnEarlyPayoff,
         capitalization_frequency: product.capitalizationFrequency, lender_id: currentUser.id
-    }).select().single();
+    }]).select().single();
     if (data && !error) {
         setLoanProducts(prev => [{...product, id: data.id, createdAt: data.created_at} as LoanProduct, ...prev]);
         addToast("Producto creado exitosamente", "success");

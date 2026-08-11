@@ -107,10 +107,10 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     if (!currentUser) return;
     if (activeCashShift) { addToast("Ya tienes una caja abierta", 'error'); return; }
     
-    const { error } = await insforge.database.from('cash_shifts').insert({
+    const { error } = await insforge.database.from('cash_shifts').insert([{
       lender_id: currentUser.id, user_id: currentUser.id, user_name: currentUser.name || currentUser.email || 'Cajero',
       opened_at: new Date().toISOString(), initial_amount: initialAmount, status: 'Abierta', notes
-    });
+    }]);
     if (error) { addToast("Error al abrir caja", 'error'); }
     else {
       addAuditLog('cash_shift_opened', `Abrió caja con RD$ ${initialAmount}`);
@@ -162,18 +162,18 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('transactions').insert(transaction);
+    const { error } = await insforge.database.from('transactions').insert([transaction]);
     if (error) addToast("Error al registrar transacción", 'error');
     else addToast("Transacción registrada", "success");
   };
 
   const addBankAccount = async (account: BankAccount) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('bank_accounts').insert({
+    const { error } = await insforge.database.from('bank_accounts').insert([{
       lender_id: currentUser.id, bank_name: account.bankName, account_name: account.accountName,
       account_number: account.accountNumber, account_type: account.accountType,
       currency: account.currency, status: account.status, initial_balance: account.initialBalance
-    });
+    }]);
     if (!error) {
        addToast("Cuenta bancaria agregada", "success");
        const { data } = await insforge.database.from('bank_accounts').select('*').order('created_at', { ascending: false });
@@ -198,7 +198,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       loan_id: visit.loanId, date: visit.date, status: visit.status, notes: visit.notes,
       amount_collected: visit.amountCollected, location: visit.location, promised_date: visit.promisedDate
     };
-    const { error } = await insforge.database.from('collector_visits').insert(payload);
+    const { error } = await insforge.database.from('collector_visits').insert([payload]);
     if (!error) addToast("Visita registrada", "success");
   };
 

@@ -207,9 +207,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const newUserId = data.user?.id;
       if (newUserId) {
-        await insforge.database.from('user_profiles').insert({
+        await insforge.database.from('user_profiles').insert([{
           id: newUserId, lender_id: currentUser?.id, name: user.name, username: user.username, email: user.email, employee_id: user.employeeId
-        });
+        }]);
         if (user.roleIds && user.roleIds.length > 0) {
            const roleInserts = user.roleIds.map(rid => ({ user_id: newUserId, role_id: rid }));
            await insforge.database.from('usuario_roles').insert(roleInserts);
@@ -236,9 +236,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addRole = async (role: Role) => {
-    const { data, error } = await insforge.database.from('roles').insert({
+    const { data, error } = await insforge.database.from('roles').insert([{
       lender_id: currentUser?.id, name: role.name, description: role.description, permissions: role.permissions
-    }).select().single();
+    }]).select().single();
     if (data && !error) setRoles(prev => [...prev, data]);
   };
 
@@ -253,9 +253,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addCargo = async (cargo: Cargo) => {
-    const { data, error } = await insforge.database.from('cargos').insert({
+    const { data, error } = await insforge.database.from('cargos').insert([{
       lender_id: currentUser?.id, name: cargo.name, description: cargo.description, permissions: (cargo as any).permissions
-    }).select().single();
+    }]).select().single();
     if (data && !error) setCargos(prev => [...prev, data]);
   };
 
@@ -277,7 +277,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       collections: employee.collections, sucursal_id: empAny.sucursalId, cargo_id: employee.cargoId,
       username: employee.username, employee_pin: employee.employeePin
     };
-    const { data, error } = await insforge.database.from('employees').insert(payload).select().single();
+    const { data, error } = await insforge.database.from('employees').insert([payload]).select().single();
     if (data && !error) {
       const newEmp: Employee = {
         id: data.id, name: data.name, phone: data.phone, assignedRoute: data.assigned_route,

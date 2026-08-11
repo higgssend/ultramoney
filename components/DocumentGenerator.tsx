@@ -74,12 +74,12 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       setDocumentUrl(docLink);
       
       // Save URL to client_documents table
-      await insforge.database.from('client_documents').insert({
+      await insforge.database.from('client_documents').insert([{
         client_id: client.id,
         name: `Documento ${docType} - ${todayStr}`,
         url: docLink,
         upload_date: new Date().toISOString()
-      });
+      }]);
 
       addToast('Documento guardado en la nube exitosamente', 'success');
     } catch (err: any) {

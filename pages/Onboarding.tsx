@@ -46,7 +46,7 @@ const Onboarding: React.FC = () => {
           logoUrl: formData.logoUrl
         }).eq('lender_id', currentUser?.id);
       } else {
-        await insforge.database.from('company_settings').insert({
+        await insforge.database.from('company_settings').insert([{
           lender_id: currentUser?.id,
           name: formData.name,
           slogan: formData.slogan,
@@ -54,7 +54,7 @@ const Onboarding: React.FC = () => {
           address: formData.address,
           phone: formData.phone,
           logoUrl: formData.logoUrl
-        });
+        }]);
       }
 
       // Update local state if needed
