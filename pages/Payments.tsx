@@ -83,7 +83,8 @@ const Payments: React.FC = () => {
   const [selectedInstallments, setSelectedInstallments] = useState<number[]>([]); 
   const [paymentType, setPaymentType] = useState<'Interes' | 'Capital' | 'Mixto'>('Interes');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
-  const [selectedCashierId, setSelectedCashierId] = useState('');
+  const [selectedCashierId, setSelectedCashierId] = useState<string>('');
+  const [sidebarFilter, setSidebarFilter] = useState<'hoy' | 'recientes'>('hoy');
   const [capitalAmount, setCapitalAmount] = useState<string>('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -424,40 +425,34 @@ const Payments: React.FC = () => {
   };
 
   const handleReprintReceipt = (t: import('../types').Transaction) => {
-      const loan = loans.find(l => l.id === t.referenceId);
-      if(!loan) return;
+      const loan = loans.find(l => l.id === t.referenceId || (l.clientName && t.description.toLowerCase().includes(l.clientName.toLowerCase())));
+      const client = loan ? clients.find(c => c.id === loan.clientId) : clients.find(c => t.description.includes(c.name));
 
-      // Reconstruct historical snapshot (mocked for demo as we don't have event sourcing)
-      const currentBalance = loan.remainingBalance;
-      
-      const totalInstallmentsCount = loan.durationWeeks || loan.installments || 1;
-      const amountPerInst = loan.totalToPay / totalInstallmentsCount;
-      const totalPaidSoFar = Math.max(0, loan.totalToPay - currentBalance);
-      const paidInstallmentsCalculated = Math.min(
-          totalInstallmentsCount, 
-          Math.floor((totalPaidSoFar + 0.01) / amountPerInst)
-      );
-
-      const otherActiveLoans = loans.filter(l => l.clientId === loan.clientId && l.id !== loan.id).map(l => ({id: l.id, balance: l.remainingBalance}));
+      const clientName = loan ? loan.clientName : (client ? `${client.name} ${client.lastName || ''}` : t.description);
+      const loanId = loan ? loan.id : (t.referenceId || t.id.slice(0, 8));
+      const currentBalance = loan ? loan.remainingBalance : 0;
+      const totalInstallmentsCount = loan ? (loan.durationWeeks || loan.installments || 1) : 1;
+      const otherActiveLoans = loan ? loans.filter(l => l.clientId === loan.clientId && l.id !== loan.id).map(l => ({id: l.id, balance: l.remainingBalance})) : [];
 
       setReceiptData({
-          loanId: t.referenceId,
+          loanId: loanId,
           amountPaid: t.amount,
-          clientName: loan.clientName,
-          clientId: loan.clientId,
-          previousBalance: currentBalance + t.amount, // Approximate
+          clientName: clientName,
+          clientId: client ? client.id : (loan ? loan.clientId : 'N/A'),
+          previousBalance: currentBalance + t.amount,
           newBalance: currentBalance,
           transactionId: t.id,
-          date: new Date(t.date).toLocaleString(),
-          collateral: loan.collateralType ? `${loan.collateralType} - ${loan.collateralDescription}` : 'N/A',
+          date: t.date ? new Date(t.date).toLocaleString() : new Date().toLocaleString(),
+          collateral: loan?.collateralType ? `${loan.collateralType} - ${loan.collateralDescription || ''}` : 'Sin Garantía',
           overdueAmount: 0, 
           overdueInstallments: 0,
           totalInstallments: totalInstallmentsCount,
-          paidInstallments: paidInstallmentsCalculated,
+          paidInstallments: 1,
           otherLoans: otherActiveLoans,
           cashierName: currentUser?.name || 'Sistema',
           paymentNote: t.description,
-          renewalStatus: currentBalance < (loan.totalToPay * 0.5) ? 'DISPONIBLE' : 'No disponible'
+          renewalStatus: loan && currentBalance < (loan.totalToPay * 0.5) ? 'DISPONIBLE' : 'No disponible',
+          paymentMethod: (t as any).paymentMethod || 'Efectivo'
       });
   };
 
@@ -480,6 +475,13 @@ const Payments: React.FC = () => {
   const todayPayments = transactions.filter(t => 
     t.type === 'Ingreso' && t.category === 'Pago Préstamo' && t.date === new Date().toISOString().split('T')[0]
   );
+
+  const recentPayments = transactions
+    .filter(t => t.type === 'Ingreso' && t.category === 'Pago Préstamo')
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 25);
+
+  const displayedSidebarPayments = sidebarFilter === 'hoy' ? todayPayments : recentPayments;
 
   return (
     <div className="space-y-6 animate-fade-in relative">
@@ -656,7 +658,7 @@ const Payments: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
                                 <div>
                                     <div className="flex justify-between items-center mb-1">
-                                        <label className="block text-sm font-medium text-slate-600">Fecha Emisión (Factura)</label>
+                                        <label className="block text-sm font-medium text-slate-600">Fecha Emisión (Comprobante)</label>
                                         <button type="button" onClick={() => setInvoiceDate(new Date().toISOString().split('T')[0])} className="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors">Hoy</button>
                                     </div>
                                     <input 
@@ -828,21 +830,56 @@ const Payments: React.FC = () => {
 
         {/* Recent Payments Sidebar */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 h-fit">
-            <h3 className="font-bold text-slate-800 mb-4 flex items-center justify-between">
-                <span>Cobros de Hoy</span>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-bold">
+                    <button 
+                        type="button" 
+                        onClick={() => setSidebarFilter('hoy')} 
+                        className={`px-2.5 py-1 rounded-md transition-all ${sidebarFilter === 'hoy' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        Hoy ({todayPayments.length})
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={() => setSidebarFilter('recientes')} 
+                        className={`px-2.5 py-1 rounded-md transition-all ${sidebarFilter === 'recientes' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        Recientes ({recentPayments.length})
+                    </button>
+                </div>
                 <Receipt className="w-4 h-4 text-slate-400" />
-            </h3>
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
-                {todayPayments.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-4">No hay cobros hoy.</p>
+            </div>
+
+            <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+                {displayedSidebarPayments.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                        <p className="text-sm font-medium mb-2">No hay cobros registrados {sidebarFilter === 'hoy' ? 'hoy' : 'recientes'}.</p>
+                        {sidebarFilter === 'hoy' && recentPayments.length > 0 && (
+                            <button 
+                                type="button" 
+                                onClick={() => setSidebarFilter('recientes')} 
+                                className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100"
+                            >
+                                Ver últimos cobros grabados ({recentPayments.length})
+                            </button>
+                        )}
+                    </div>
                 ) : (
-                    todayPayments.map(t => (
-                        <div key={t.id} className="flex justify-between items-center pb-3 border-b border-slate-50 last:border-0 last:pb-0">
+                    displayedSidebarPayments.map(t => (
+                        <div 
+                            key={t.id} 
+                            onClick={() => handleReprintReceipt(t)}
+                            className="flex justify-between items-center p-3 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-indigo-50/60 hover:border-indigo-200 cursor-pointer transition-all group shadow-2xs"
+                            title="Haz clic para ver, imprimir o descargar el Recibo de Pago"
+                        >
                             <div className="overflow-hidden">
-                                <p className="text-sm font-bold text-slate-700 truncate w-32">{t.description}</p>
-                                <p className="text-xs text-slate-400">Ref: {t.referenceId}</p>
+                                <p className="text-sm font-bold text-slate-700 group-hover:text-indigo-700 truncate w-36">{t.description}</p>
+                                <p className="text-xs text-slate-400 font-mono">Ref: {t.referenceId ? formatLoanId(t.referenceId) : t.id.slice(0, 8)}</p>
                             </div>
-                            <span className="font-bold text-emerald-600">+${t.amount.toLocaleString()}</span>
+                            <div className="text-right flex items-center gap-2">
+                                <span className="font-bold text-emerald-600 text-sm">+${t.amount.toLocaleString()}</span>
+                                <Printer className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                            </div>
                         </div>
                     ))
                 )}
@@ -937,15 +974,30 @@ const Payments: React.FC = () => {
                                       const loan = loans.find(l => l.id === t.referenceId);
                                       const clientName = loan ? loan.clientName : 'Cliente Desconocido';
                                       return (
-                                          <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
-                                              <td className="px-6 py-4 font-mono text-indigo-600 text-xs">{t.id}</td>
-                                              <td className="px-6 py-4 text-slate-600">{t.date}</td>
-                                              <td className="px-6 py-4 font-bold text-slate-700">{clientName}</td>
-                                              <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">{t.referenceId || '-'}</span></td>
-                                              <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={t.description}>{t.description.replace(` - ${clientName}`, '')}</td>
-                                              <td className="px-6 py-4 text-right font-bold text-emerald-600">RD${t.amount.toLocaleString()}</td>
-                                              <td className="px-6 py-4 text-center"><button onClick={() => handleReprintReceipt(t)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Ver Recibo"><FileText className="w-4 h-4" /></button></td>
-                                          </tr>
+                                          <tr 
+                                               key={t.id} 
+                                               onClick={() => handleReprintReceipt(t)}
+                                               className="hover:bg-indigo-50/50 cursor-pointer transition-colors group"
+                                               title="Haz clic para ver o imprimir este recibo"
+                                           >
+                                               <td className="px-6 py-4 font-mono text-indigo-600 text-xs font-medium">{t.id}</td>
+                                               <td className="px-6 py-4 text-slate-600">{t.date}</td>
+                                               <td className="px-6 py-4 font-bold text-slate-700 group-hover:text-indigo-700">{clientName}</td>
+                                               <td className="px-6 py-4"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">{t.referenceId || '-'}</span></td>
+                                               <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={t.description}>{t.description.replace(` - ${clientName}`, '')}</td>
+                                               <td className="px-6 py-4 text-right font-bold text-emerald-600">RD${t.amount.toLocaleString()}</td>
+                                               <td className="px-6 py-4 text-center">
+                                                   <button 
+                                                       type="button"
+                                                       onClick={(e) => { e.stopPropagation(); handleReprintReceipt(t); }} 
+                                                       className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center mx-auto gap-1 text-xs font-bold" 
+                                                       title="Ver Recibo"
+                                                   >
+                                                       <Printer className="w-4 h-4 text-indigo-600" />
+                                                       <span>Recibo</span>
+                                                   </button>
+                                               </td>
+                                           </tr>
                                       );
                                   })
                               )}
