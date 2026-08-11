@@ -179,18 +179,21 @@ export interface LoanRequest {
 
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
-export function formatLoanId(id: string, category?: string, type?: string): string {
-  if (!id) return '';
-  // Try to use category first (e.g. Personal -> PER), then type (e.g. Amortizado -> AMO)
-  let prefix = 'PRE';
+export function formatLoanId(id?: string | null, category?: string, type?: string): string {
+  if (!id) return 'PRES-000000';
+  if (id.startsWith('PRES-') || id.startsWith('PER-') || id.startsWith('AMO-') || id.startsWith('RED-')) return id;
+  
+  let prefix = 'PRES';
   if (category) {
     prefix = category.substring(0, 3).toUpperCase();
   } else if (type) {
-    prefix = type.substring(0, 3).toUpperCase();
+    if (type.includes('Rédito') || type.includes('Redito')) prefix = 'RED';
+    else if (type.includes('Amortizado')) prefix = 'AMO';
+    else prefix = type.substring(0, 3).toUpperCase();
   }
   
-  // Use the last 6 characters of the UUID to make it look like a short identifier
-  const shortHash = id.split('-').pop()?.substring(0, 6).toUpperCase() || id.substring(0, 6).toUpperCase();
+  const clean = id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  const shortHash = clean.slice(0, 8);
   
   return `${prefix}-${shortHash}`;
 }

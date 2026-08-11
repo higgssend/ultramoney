@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounting, useSettings } from '../context/StoreContext';
-import { Download, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock } from 'lucide-react';
+import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock } from 'lucide-react';
 import { Transaction, Loan, Client, formatLoanId } from '../types';
 import { insforge } from '../lib/insforge';
+import html2canvas from 'html2canvas';
 
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
@@ -15,7 +16,24 @@ export const ReceiptView: React.FC = () => {
     const [client, setClient] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleDownloadImage = async () => {
+        const element = document.getElementById('printable-voucher-card');
+        if (!element) return;
+        try {
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `Recibo_${transactionId || 'Pago'}.png`;
+            link.click();
+        } catch (e) {
+            console.error("Error exportando imagen:", e);
+        }
+    };
         const fetchReceiptDetails = async () => {
             if (!transactionId) {
                 setLoading(false);
@@ -132,22 +150,31 @@ export const ReceiptView: React.FC = () => {
             <div className="sm:mx-auto w-full max-w-lg relative z-10 print:max-w-none">
                 
                 {/* Action Bar - Hidden on print */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4 flex items-center justify-between print:hidden">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
                     <span className="font-bold text-slate-700 flex items-center gap-2 text-sm">
                         <CheckCircle className="w-5 h-5 text-emerald-500" />
                         Comprobante Oficial de Pago
                     </span>
-                    <button 
-                        onClick={handlePrint}
-                        className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-colors"
-                    >
-                        <Download className="w-4 h-4" />
-                        Imprimir / Descargar
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleDownloadImage}
+                            className="px-3.5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-500/20 hover:bg-emerald-700 transition-colors"
+                        >
+                            <Image className="w-4 h-4" />
+                            Descargar Imagen (PNG)
+                        </button>
+                        <button 
+                            onClick={handlePrint}
+                            className="px-3.5 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md hover:bg-slate-700 transition-colors"
+                        >
+                            <Download className="w-4 h-4" />
+                            Imprimir / Ticket
+                        </button>
+                    </div>
                 </div>
 
                 {/* Main Receipt Voucher Card */}
-                <div className="bg-white shadow-xl sm:rounded-3xl border border-slate-200 p-6 sm:p-8 print:shadow-none print:border-none print:p-2">
+                <div id="printable-voucher-card" className="bg-white shadow-xl sm:rounded-3xl border border-slate-200 p-6 sm:p-8 print:shadow-none print:border-none print:p-2">
                     
                     {/* Header */}
                     <div className="text-center pb-6 border-b border-dashed border-slate-300">

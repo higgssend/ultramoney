@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft } from 'lucide-react';
+import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft, Image } from 'lucide-react';
 import { useClients, useAuth, useSettings, useLoans, useAccounting } from '../context/StoreContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { toast } from 'sonner';
+import html2canvas from 'html2canvas';
 import { LoanEngine } from '../utils/LoanEngine';
 import { Loan, CompanySettings, PaymentMethod, formatLoanId } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
+import { maskCedula } from '../utils/masks';
 
 // WhatsApp Official Icon SVG
 const WhatsAppIcon = () => (
@@ -565,7 +567,7 @@ const Payments: React.FC = () => {
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs text-slate-500">
-                                            <span>Ref: {loan.id} {client && `• ${client.cedula}`}</span>
+                                            <span>Ref: #{formatLoanId(loan.id, loan.loanCategory, loan.loanType)} {client && `• ${maskCedula(client.cedula)}`}</span>
                                             <span>{loan.frequency}</span>
                                         </div>
                                     </div>
@@ -1137,7 +1139,7 @@ Gracias por su pago.`;
                                 <p style="margin-top:5px"><strong>RECIBO DE INGRESO - CAJA</strong></p>
                             </div>
                             
-                            <div class="row"><span>Recibo #:</span> <span>${data.transactionId}</span></div>
+                            <div class="row"><span>Recibo #:</span> <span>${data.receiptNo || formatReceiptId(data.transactionId)}</span></div>
                             <div class="row"><span>Fecha:</span> <span>${data.date}</span></div>
                             <div class="row"><span>Método Pago:</span> <span>${data.paymentMethod || 'Efectivo'}</span></div>
                             <div class="row"><span>Cajero:</span> <span>${data.cashierName}</span></div>
@@ -1145,7 +1147,7 @@ Gracias por su pago.`;
                             <div class="divider"></div>
                             
                             <div class="row"><strong>Cliente:</strong> <span style="text-align:right">${data.clientName}</span></div>
-                            <div class="row"><span>Préstamo:</span> <span>${data.loanId}</span></div>
+                            <div class="row"><span>Préstamo #:</span> <span>${formatLoanId(data.loanId)}</span></div>
                             <div class="row"><span>Garantía:</span> <span style="text-align:right; max-width: 150px;">${data.collateral}</span></div>
                             
                             <div class="divider"></div>
@@ -1190,6 +1192,28 @@ Gracias por su pago.`;
         }
     };
 
+    const handleDownloadImage = async () => {
+        const element = document.getElementById('printable-receipt');
+        if (!element) return;
+        try {
+            toast.info("Generando imagen del recibo...");
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `Recibo_${data.receiptNo || formatReceiptId(data.transactionId)}.png`;
+            link.click();
+            toast.success("Recibo guardado como imagen PNG");
+        } catch (err) {
+            console.error("Error al exportar imagen:", err);
+            toast.error("No se pudo generar la imagen del recibo");
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -1202,7 +1226,7 @@ Gracias por su pago.`;
                     <button onClick={onClose} className="p-1 hover:bg-slate-700 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
 
-                {/* Printable Content Area (Hidden logic handled by window.open but shown here for preview) */}
+                {/* Printable Content Area */}
                 <div id="printable-receipt" className="p-6 overflow-y-auto bg-slate-50 flex-1">
                     <div className="bg-white p-6 border border-slate-200 shadow-sm rounded-lg text-sm">
                         
@@ -1251,11 +1275,11 @@ Gracias por su pago.`;
                         <div className="mb-4">
                             <div className="flex justify-between mb-1">
                                 <span className="font-bold text-slate-700">Cliente:</span>
-                                <span className="text-right">{data.clientName}</span>
+                                <span className="text-right font-semibold">{data.clientName}</span>
                             </div>
                             <div className="flex justify-between text-xs text-slate-500 mb-1">
                                 <span>Ref. Préstamo:</span>
-                                <span>{data.loanId}</span>
+                                <span className="font-mono font-bold text-indigo-600">{formatLoanId(data.loanId)}</span>
                             </div>
                             {data.collateral !== 'Sin Garantía' && (
                                 <div className="mt-2 bg-yellow-50 p-2 rounded border border-yellow-100 text-xs">
@@ -1269,15 +1293,15 @@ Gracias por su pago.`;
                         <div className="bg-slate-50 rounded border border-slate-200 p-3 mb-4">
                             <div className="flex justify-between text-slate-500 text-xs mb-1">
                                 <span>Balance Anterior</span>
-                                <span>${data.previousBalance.toLocaleString()}</span>
+                                <span>RD$ {data.previousBalance.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center text-emerald-700 font-bold text-base mb-2 border-b border-slate-200 pb-2">
                                 <span>(-) ABONO</span>
-                                <span>${data.amountPaid.toLocaleString()}</span>
+                                <span>RD$ {data.amountPaid.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between font-bold text-slate-800">
                                 <span>Nuevo Balance</span>
-                                <span>${data.newBalance.toLocaleString()}</span>
+                                <span>RD$ {data.newBalance.toLocaleString()}</span>
                             </div>
                             <div className="text-[10px] text-slate-400 mt-2 text-right italic">{data.paymentNote}</div>
                         </div>
@@ -1286,15 +1310,11 @@ Gracias por su pago.`;
                         <div className="space-y-2 text-xs mb-4">
                             <div className="flex justify-between">
                                 <span className="text-rose-600 font-bold">Monto Vencido</span>
-                                <span className="font-bold text-rose-600">${data.overdueAmount.toLocaleString()}</span>
+                                <span className="font-bold text-rose-600">RD$ {data.overdueAmount.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-slate-500">Cuotas Atrasadas</span>
                                 <span className="text-slate-700">{data.overdueInstallments}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-500">Mora / Cargos</span>
-                                <span className="text-slate-700">$0.00</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-slate-500">Total Pagado</span>
@@ -1312,8 +1332,8 @@ Gracias por su pago.`;
                                 <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Otros Préstamos Activos</p>
                                 {data.otherLoans.map(ol => (
                                     <div key={ol.id} className="flex justify-between text-xs text-slate-600">
-                                        <span>{ol.id}</span>
-                                        <span>${ol.balance.toLocaleString()}</span>
+                                        <span className="font-mono">{formatLoanId(ol.id)}</span>
+                                        <span>RD$ {ol.balance.toLocaleString()}</span>
                                     </div>
                                 ))}
                             </div>
@@ -1334,16 +1354,22 @@ Gracias por su pago.`;
                 {/* Actions Footer */}
                 <div className="p-4 border-t border-slate-200 bg-white grid grid-cols-2 gap-3">
                     <button 
-                        onClick={handleCopyLink}
-                        className="col-span-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 font-bold py-3 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200"
+                        onClick={handleDownloadImage}
+                        className="col-span-2 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-emerald-600/20"
                     >
-                        <FileText className="w-5 h-5" /> Copiar Link Web del Recibo
+                        <Image className="w-5 h-5" /> 🖼️ Descargar Recibo como Imagen (PNG)
+                    </button>
+                    <button 
+                        onClick={handleCopyLink}
+                        className="col-span-2 flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 font-bold py-2.5 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 text-xs"
+                    >
+                        <FileText className="w-4 h-4" /> Copiar Link Web del Recibo
                     </button>
                     <button 
                         onClick={handlePrint}
                         className="col-span-2 flex items-center justify-center gap-2 bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-700 transition-colors shadow-lg"
                     >
-                        <Printer className="w-5 h-5" /> Imprimir Recibo Local
+                        <Printer className="w-5 h-5" /> Imprimir Recibo Local / Ticket
                     </button>
                     <a 
                         href={whatsappLink} 
