@@ -302,13 +302,19 @@ const Payments: React.FC = () => {
 
     let newBalance = Math.max(0, previousBalance - amountVal);
     if (isReditoLoan) {
+      const currentInterestDue = Math.round((previousBalance * (selectedLoan.interestRate / 100)) * 100) / 100;
       if (paymentType === 'Capital') {
         newBalance = Math.max(0, previousBalance - amountVal);
       } else if (paymentType === 'Mixto') {
         const capVal = Number(capitalAmount) || 0;
         newBalance = Math.max(0, previousBalance - capVal);
       } else {
-        newBalance = previousBalance; // Solo Intereses: NO se resta del capital
+        if (amountVal > currentInterestDue && currentInterestDue > 0) {
+          const excessCapital = Math.round((amountVal - currentInterestDue) * 100) / 100;
+          newBalance = Math.max(0, previousBalance - excessCapital);
+        } else {
+          newBalance = previousBalance;
+        }
       }
     }
     

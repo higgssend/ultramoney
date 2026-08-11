@@ -317,6 +317,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let newNextDate = loan.nextPaymentDate;
 
     if (isRedito(loan.loanType)) {
+      const currentInterestDue = Math.round((loan.remainingBalance * (loan.interestRate / 100)) * 100) / 100;
+
       if (paymentType === 'Capital') {
         newBalance -= amount;
         transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Capital', description: `${note} (Abono Directo a Capital)` });
@@ -327,9 +329,26 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (capitalPart > 0) transactionsToInsert.push({ ...baseTx, amount: capitalPart, paymenttype: 'Capital', description: `${note} (Abono a Capital)` });
         if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
       } else {
-        // Solo Intereses (Rédito): NO SE RESTA DEL CAPITAL!
-        newBalance = loan.remainingBalance;
-        transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
+        // Solo Intereses (Rédito): Si el pago supera el interés del periodo, el excedente abona automáticamente al capital!
+        if (amount > currentInterestDue && currentInterestDue > 0) {
+          const excessCapital = Math.round((amount - currentInterestDue) * 100) / 100;
+          newBalance = Math.max(0, loan.remainingBalance - excessCapital);
+          transactionsToInsert.push({ 
+            ...baseTx, 
+            amount: currentInterestDue, 
+            paymenttype: 'Interes', 
+            description: `${note} (Pago Rédito/Interés)` 
+          });
+          transactionsToInsert.push({ 
+            ...baseTx, 
+            amount: excessCapital, 
+            paymenttype: 'Capital', 
+            description: `${note} (Abono a Capital por Excedente)` 
+          });
+        } else {
+          newBalance = loan.remainingBalance;
+          transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
+        }
       }
 
       // Avanzar fecha de próximo pago al pagar intereses
