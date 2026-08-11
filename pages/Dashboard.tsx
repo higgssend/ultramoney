@@ -124,43 +124,93 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
           title="Cartera por Cobrar"
-          value={`$${totalPortfolio.toLocaleString()}`}
-          trend="+12% mes anterior"
+          value={`RD$ ${totalPortfolio.toLocaleString()}`}
+          trend="Ver Préstamos ➔"
           trendUp={true}
           icon={Banknote}
-          gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
+          gradient="bg-gradient-to-br from-indigo-600 to-purple-700"
           glowColor="shadow-indigo-500/30"
+          onClick={() => navigate('/prestamos')}
         />
 
         <StatCard
           title="Clientes Activos"
           value={activeClientsCount.toString()}
-          trend="+5% mes anterior"
+          trend="Ver Clientes ➔"
           trendUp={true}
           icon={Users}
-          gradient="bg-gradient-to-br from-blue-500 to-cyan-500"
+          gradient="bg-gradient-to-br from-blue-600 to-cyan-600"
           glowColor="shadow-blue-500/30"
+          onClick={() => navigate('/clientes')}
         />
 
         <StatCard
           title="Mora / Atrasos"
-          value={`$${overdueAmount.toLocaleString()}`}
-          trend="Atención requerida"
+          value={`RD$ ${overdueAmount.toLocaleString()}`}
+          trend="Gestionar Mora ➔"
           trendUp={false}
           icon={AlertTriangle}
-          gradient="bg-gradient-to-br from-amber-500 to-orange-600"
+          gradient="bg-gradient-to-br from-amber-500 to-rose-600"
           glowColor="shadow-orange-500/30"
+          onClick={() => navigate('/atrasos')}
         />
 
         <StatCard
           title="Balance en Caja"
-          value={`$${balance.toLocaleString()}`}
-          trend="Disponible"
+          value={`RD$ ${balance.toLocaleString()}`}
+          trend="Ver Movimientos ➔"
           trendUp={true}
           icon={Wallet}
-          gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+          gradient="bg-gradient-to-br from-emerald-500 to-teal-700"
           glowColor="shadow-emerald-500/30"
+          onClick={() => navigate('/caja')}
         />
+      </div>
+
+      {/* Quick Actions Shortcuts Bar */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Accesos Rápidos / Acciones Frecuentes</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button 
+            onClick={() => navigate('/solicitud')}
+            className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-2xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all font-bold text-sm border border-indigo-100/50 group"
+          >
+            <div className="p-2 bg-indigo-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span>Nuevo Préstamo</span>
+          </button>
+          
+          <button 
+            onClick={() => navigate('/pagos')}
+            className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-2xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all font-bold text-sm border border-emerald-100/50 group"
+          >
+            <div className="p-2 bg-emerald-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+              <Banknote className="w-5 h-5" />
+            </div>
+            <span>Registrar Cobro</span>
+          </button>
+
+          <button 
+            onClick={() => navigate('/clientes')}
+            className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all font-bold text-sm border border-blue-100/50 group"
+          >
+            <div className="p-2 bg-blue-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+              <Users className="w-5 h-5" />
+            </div>
+            <span>Gestionar Clientes</span>
+          </button>
+
+          <button 
+            onClick={() => navigate('/atrasos')}
+            className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all font-bold text-sm border border-rose-100/50 group"
+          >
+            <div className="p-2 bg-rose-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <span>Cobranza & Mora</span>
+          </button>
+        </div>
       </div>
 
       {/* Portfolio At Risk (PAR) Section */}
@@ -171,31 +221,46 @@ const Dashboard: React.FC = () => {
                       <AlertTriangle className="w-5 h-5 text-rose-500" />
                       Métricas de Riesgo (Cartera PAR)
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Total en riesgo: <span className="font-bold text-rose-500">${parTotal.toLocaleString()} ({parTotalPercent}%)</span> del portafolio.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total en riesgo: <span className="font-bold text-rose-500">RD$ {parTotal.toLocaleString()} ({parTotalPercent}%)</span> del portafolio.</p>
               </div>
+              <button 
+                  onClick={() => navigate('/atrasos')}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
+              >
+                  Ver Cobranza <ArrowUpRight className="w-4 h-4" />
+              </button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50">
+              <div 
+                  onClick={() => navigate('/atrasos')}
+                  className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50 cursor-pointer hover:bg-rose-100/70 transition-all hover:-translate-y-0.5 group"
+              >
                   <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-bold text-rose-800 dark:text-rose-400">PAR 30</span>
+                      <span className="text-sm font-bold text-rose-800 dark:text-rose-400 group-hover:underline">PAR 30</span>
                       <span className="text-xs font-bold text-rose-500 bg-rose-100 dark:bg-rose-900/50 px-2 py-1 rounded-lg">1-30 Días</span>
                   </div>
-                  <div className="text-2xl font-bold text-rose-600 dark:text-rose-300">${par30.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-rose-600 dark:text-rose-300">RD$ {par30.toLocaleString()}</div>
               </div>
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/50">
+              <div 
+                  onClick={() => navigate('/atrasos')}
+                  className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/50 cursor-pointer hover:bg-orange-100/70 transition-all hover:-translate-y-0.5 group"
+              >
                   <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-bold text-orange-800 dark:text-orange-400">PAR 60</span>
+                      <span className="text-sm font-bold text-orange-800 dark:text-orange-400 group-hover:underline">PAR 60</span>
                       <span className="text-xs font-bold text-orange-500 bg-orange-100 dark:bg-orange-900/50 px-2 py-1 rounded-lg">31-60 Días</span>
                   </div>
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">${par60.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">RD$ {par60.toLocaleString()}</div>
               </div>
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/50">
+              <div 
+                  onClick={() => navigate('/atrasos')}
+                  className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/50 cursor-pointer hover:bg-red-100/70 transition-all hover:-translate-y-0.5 group"
+              >
                   <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-bold text-red-800 dark:text-red-400">PAR 90+</span>
+                      <span className="text-sm font-bold text-red-800 dark:text-red-400 group-hover:underline">PAR 90+</span>
                       <span className="text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/50 px-2 py-1 rounded-lg">&gt; 60 Días</span>
                   </div>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-300">${par90.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-300">RD$ {par90.toLocaleString()}</div>
               </div>
           </div>
       </div>
@@ -204,11 +269,17 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Chart Section */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-[420px]">
+        <div 
+            onClick={() => navigate('/reportes')}
+            className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-[420px] cursor-pointer hover:border-indigo-200 transition-all group"
+        >
           <div className="flex justify-between items-center mb-6">
             <div>
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Flujo de Caja</h3>
-                <p className="text-xs text-slate-400">Entradas vs Salidas</p>
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                    Flujo de Caja
+                    <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400">Entradas vs Salidas (Haz clic para ver reportes detallados)</p>
             </div>
           </div>
           
@@ -233,7 +304,7 @@ const Dashboard: React.FC = () => {
                   cursor={{fill: '#f8fafc', opacity: 0.8}}
                   contentStyle={{backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#1e293b', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
                   itemStyle={{color: '#1e293b', fontWeight: 'bold'}}
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                  formatter={(value: number) => [`RD$ ${value.toLocaleString()}`, '']}
                 />
                 <Area 
                     type="monotone" 
@@ -252,6 +323,7 @@ const Dashboard: React.FC = () => {
         <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[420px] flex flex-col">
           <div className="flex justify-between items-center mb-6 shrink-0">
             <h3 className="font-bold text-slate-800 dark:text-white text-lg">Actividad Reciente</h3>
+            <button onClick={() => navigate('/pagos')} className="text-xs text-indigo-600 font-bold hover:underline">Ver Todo</button>
           </div>
           
           <div className="space-y-5 overflow-y-auto pr-2 flex-1 custom-scrollbar">
@@ -261,7 +333,11 @@ const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 recentTransactions.map((t) => (
-                <div key={t.id} className="flex items-center justify-between group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-2 -mx-2 rounded-xl transition-colors">
+                <div 
+                    key={t.id} 
+                    onClick={() => navigate('/pagos')}
+                    className="flex items-center justify-between group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-2 -mx-2 rounded-xl transition-colors"
+                >
                     <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
                             t.type === 'Ingreso' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
@@ -269,12 +345,12 @@ const Dashboard: React.FC = () => {
                             {t.type === 'Ingreso' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                         </div>
                         <div className="overflow-hidden">
-                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate w-32 md:w-24 lg:w-32">{t.description}</p>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate w-32 md:w-24 lg:w-32 group-hover:text-indigo-600">{t.description}</p>
                             <p className="text-xs text-slate-400 truncate w-32">{t.date}</p>
                         </div>
                     </div>
                     <span className={`text-sm font-bold ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-200'}`}>
-                    {t.type === 'Ingreso' ? '+' : '-'}${t.amount.toLocaleString()}
+                    {t.type === 'Ingreso' ? '+' : '-'}RD$ {t.amount.toLocaleString()}
                     </span>
                 </div>
                 ))
@@ -288,6 +364,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
 
       {/* Floating Action Button (Mobile) */}
       <div className="fixed bottom-24 right-6 md:hidden z-30">

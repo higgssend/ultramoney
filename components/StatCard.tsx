@@ -10,13 +10,17 @@ interface StatCardProps {
   gradient?: string; // Expects full class string e.g., 'bg-gradient-to-br from-purple-500 to-indigo-600'
   glowColor?: string; // Expects shadow color class e.g., 'shadow-indigo-500/30'
   color?: string; // Fallback for old usage
+  onClick?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, trend, trendUp, icon: Icon, gradient, glowColor, color }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, trend, trendUp, icon: Icon, gradient, glowColor, color, onClick }) => {
   if (gradient) {
     // Vibrant Gradient Card Style (White Theme + Neon Pop)
     return (
-      <div className={`rounded-3xl p-6 text-white ${gradient} relative overflow-hidden transition-transform hover:-translate-y-1 shadow-xl ${glowColor || 'shadow-indigo-500/30'}`}>
+      <div 
+        onClick={onClick}
+        className={`rounded-3xl p-6 text-white ${gradient} relative overflow-hidden transition-all duration-200 hover:-translate-y-1 shadow-xl ${glowColor || 'shadow-indigo-500/30'} ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98] ring-2 ring-transparent hover:ring-white/40' : ''}`}
+      >
         {/* Abstract Shapes for Texture */}
         <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/20 rounded-full blur-3xl"></div>
         <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-black/10 rounded-full blur-2xl"></div>
@@ -27,7 +31,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, trend, trendUp, icon:
           
           {trend && (
             <div className="mt-4 flex items-center gap-2">
-              <span className="bg-white/25 px-2.5 py-1 rounded-lg text-xs font-bold backdrop-blur-md shadow-sm border border-white/10">
+              <span className="bg-white/25 px-2.5 py-1 rounded-lg text-xs font-bold backdrop-blur-md shadow-sm border border-white/10 flex items-center gap-1">
                 {trend}
               </span>
             </div>
