@@ -18,9 +18,37 @@ const Dashboard: React.FC = () => {
   const stats = getFinancialStats();
 
   // Filters State
-  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year'>('month');
+  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('month');
 
-  // Metrics Logic (Filtered could be implemented here based on dateRange)
+  const isDateInRange = (dateStr: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return false;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (dateRange === 'today') {
+      const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return dStart.getTime() === todayStart.getTime();
+    }
+
+    if (dateRange === 'week') {
+      const weekAgo = new Date(todayStart);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return d >= weekAgo;
+    }
+
+    if (dateRange === 'month') {
+      const monthAgo = new Date(todayStart);
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      return d >= monthAgo;
+    }
+
+    return true;
+  };
+
+  // Metrics Logic
   const currencyLoans = loans.filter(l => (l.currency || 'DOP') === globalCurrency);
   const totalPortfolio = currencyLoans.reduce((sum, loan) => sum + (Number(loan.remainingBalance) || 0), 0);
   const activeClientsCount = clients.filter(c => c.status === 'Activo').length; 
@@ -51,38 +79,103 @@ const Dashboard: React.FC = () => {
   const parTotal = par30 + par60 + par90;
   const parTotalPercent = totalPortfolio > 0 ? ((parTotal / totalPortfolio) * 100).toFixed(1) : '0';
 
-  const recentTransactions = transactions.slice(0, 5);
+  const filteredTransactions = transactions.filter(t => (t.currency || 'DOP') === globalCurrency && isDateInRange(t.date));
+  const recentTransactions = (filteredTransactions.length > 0 ? filteredTransactions : transactions).slice(0, 5);
 
-  // Dynamic Chart Data Logic
-  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  
-  const chartDataMap = new Map<number, { income: number, expense: number }>();
-  const currentMonth = new Date().getMonth();
-  for (let i = 5; i >= 0; i--) {
-    let m = currentMonth - i;
-    if (m < 0) m += 12;
-    chartDataMap.set(m, { income: 0, expense: 0 });
-  }
+  // Dynamic Chart Data Logic based on dateRange
+  const getChartData = () => {
+    if (dateRange === 'today') {
+      const hours = ['8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+      const map = new Map<string, number>();
+      hours.forEach(h => map.set(h, 0));
+      
+      const todayStr = new Date().toISOString().split('T')[0];
+      transactions
+        .filter(t => (t.currency || 'DOP') === globalCurrency && t.type === 'Ingreso' && t.date.startsWith(todayStr))
+        .forEach(t => {
+          const dt = new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00');
+          const hr = dt.getHours();
+          let label = '12:00';
+          if (hr < 9) label = '8:00';
+          else if (hr < 11) label = '10:00';
+          else if (hr < 13) label = '12:00';
+          else if (hr < 15) label = '14:00';
+          else if (hr < 17) label = '16:00';
+          else if (hr < 19) label = '18:00';
+          else label = '20:00';
+          map.set(label, (map.get(label) || 0) + Number(t.amount));
+        });
 
-  transactions.filter(t => (t.currency || 'DOP') === globalCurrency).forEach(t => {
-    const dateObj = new Date(t.date);
-    // Only include transactions from the last 6 months to avoid year overlap issues for this simple view
-    const diffMonths = (new Date().getFullYear() - dateObj.getFullYear()) * 12 + (currentMonth - dateObj.getMonth());
-    if (diffMonths >= 0 && diffMonths <= 5) {
-      const m = dateObj.getMonth();
-      if (chartDataMap.has(m)) {
-        const current = chartDataMap.get(m)!;
-        if (t.type === 'Ingreso') current.income += Number(t.amount);
-        if (t.type === 'Gasto') current.expense += Number(t.amount);
-      }
+      return Array.from(map.entries()).map(([name, income]) => ({ name, income, expense: 0 }));
     }
-  });
 
-  const data = Array.from(chartDataMap.entries()).map(([m, vals]) => ({
-    name: monthNames[m],
-    income: vals.income,
-    expense: vals.expense
-  }));
+    if (dateRange === 'week') {
+      const dayLabels = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const now = new Date();
+      const result: { name: string; income: number; expense: number; dateStr: string }[] = [];
+      
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        result.push({ name: dayLabels[d.getDay()], income: 0, expense: 0, dateStr });
+      }
+
+      transactions
+        .filter(t => (t.currency || 'DOP') === globalCurrency)
+        .forEach(t => {
+          const tDateStr = t.date.split('T')[0];
+          const found = result.find(r => r.dateStr === tDateStr);
+          if (found) {
+            if (t.type === 'Ingreso') found.income += Number(t.amount);
+            if (t.type === 'Gasto') found.expense += Number(t.amount);
+          }
+        });
+
+      return result.map(({ name, income, expense }) => ({ name, income, expense }));
+    }
+
+    // Default 'month'
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const chartDataMap = new Map<number, { income: number; expense: number }>();
+    const currentMonth = new Date().getMonth();
+    for (let i = 5; i >= 0; i--) {
+      let m = currentMonth - i;
+      if (m < 0) m += 12;
+      chartDataMap.set(m, { income: 0, expense: 0 });
+    }
+
+    transactions.filter(t => (t.currency || 'DOP') === globalCurrency).forEach(t => {
+      const dateObj = new Date(t.date);
+      const diffMonths = (new Date().getFullYear() - dateObj.getFullYear()) * 12 + (currentMonth - dateObj.getMonth());
+      if (diffMonths >= 0 && diffMonths <= 5) {
+        const m = dateObj.getMonth();
+        if (chartDataMap.has(m)) {
+          const current = chartDataMap.get(m)!;
+          if (t.type === 'Ingreso') current.income += Number(t.amount);
+          if (t.type === 'Gasto') current.expense += Number(t.amount);
+        }
+      }
+    });
+
+    return Array.from(chartDataMap.entries()).map(([m, vals]) => ({
+      name: monthNames[m],
+      income: vals.income,
+      expense: vals.expense
+    }));
+  };
+
+  const data = getChartData();
+
+  const getDateLabel = () => {
+    if (dateRange === 'today') {
+      return new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    if (dateRange === 'week') {
+      return 'Esta Semana (Últimos 7 Días)';
+    }
+    return `Este Mes (${new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`;
+  };
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
@@ -97,25 +190,25 @@ const Dashboard: React.FC = () => {
             <div className="flex bg-white dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
                 <button 
                     onClick={() => setDateRange('today')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${dateRange === 'today' ? 'bg-indigo-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${dateRange === 'today' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}
                 >
                     Hoy
                 </button>
                 <button 
                     onClick={() => setDateRange('week')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${dateRange === 'week' ? 'bg-indigo-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${dateRange === 'week' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}
                 >
                     Semana
                 </button>
                 <button 
                     onClick={() => setDateRange('month')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${dateRange === 'month' ? 'bg-indigo-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${dateRange === 'month' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'}`}
                 >
                     Mes
                 </button>
             </div>
-            <div className="hidden md:block text-sm font-medium text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-                {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+            <div className="hidden md:block text-sm font-medium text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm capitalize">
+                {getDateLabel()}
             </div>
         </div>
       </div>
