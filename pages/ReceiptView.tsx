@@ -34,6 +34,8 @@ export const ReceiptView: React.FC = () => {
             console.error("Error exportando imagen:", e);
         }
     };
+
+    useEffect(() => {
         const fetchReceiptDetails = async () => {
             if (!transactionId) {
                 setLoading(false);
@@ -100,10 +102,6 @@ export const ReceiptView: React.FC = () => {
 
         fetchReceiptDetails();
     }, [transactionId, transactions]);
-
-    const handlePrint = () => {
-        window.print();
-    };
 
     if (loading) {
         return (
