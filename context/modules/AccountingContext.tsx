@@ -60,10 +60,10 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     const fetchData = async () => {
       try {
         const [trxRes, banksRes, shiftsRes, visitsRes] = await Promise.all([
-          insforge.database.from('transactions').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('bank_accounts').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('cash_shifts').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('collector_visits').select('*').order('created_at', { ascending: false })
+          insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('bank_accounts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('cash_shifts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('collector_visits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
         ]);
 
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
@@ -116,7 +116,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       addAuditLog('cash_shift_opened', `Abrió caja con RD$ ${initialAmount}`);
       addToast(`Caja abierta con RD$ ${initialAmount}`, 'success');
       // Fetch again to update state properly
-      const { data } = await insforge.database.from('cash_shifts').select('*').order('created_at', { ascending: false });
+      const { data } = await insforge.database.from('cash_shifts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false });
       if (data) setCashShifts((data as CashShiftDB[]).map((s) => ({
          id: s.id, userId: s.user_id, userName: s.user_name, openedAt: s.opened_at, closedAt: s.closed_at,
          initialAmount: Number(s.initial_amount) || 0, finalCashCount: s.final_cash_count,
@@ -162,7 +162,8 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     if (!currentUser) return;
-    const { error } = await insforge.database.from('transactions').insert([transaction]);
+    const payload = { ...transaction, lender_id: currentUser.id };
+    const { error } = await insforge.database.from('transactions').insert([payload]);
     if (error) addToast("Error al registrar transacción", 'error');
     else addToast("Transacción registrada", "success");
   };
@@ -176,7 +177,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     }]);
     if (!error) {
        addToast("Cuenta bancaria agregada", "success");
-       const { data } = await insforge.database.from('bank_accounts').select('*').order('created_at', { ascending: false });
+       const { data } = await insforge.database.from('bank_accounts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false });
        if(data) {
           setBankAccounts(data.map((b: any) => ({
             id: b.id, bankName: b.bank_name, accountName: b.account_name, accountNumber: b.account_number,

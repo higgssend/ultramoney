@@ -58,7 +58,9 @@ const MigrationCenter: React.FC = () => {
 
   useEffect(() => {
     const fetchLogs = async () => {
-      const { data, error } = await insforge.database.from('migration_history').select('*').order('created_at', { ascending: false });
+      const { data: userData } = await insforge.auth.getCurrentUser();
+      if (!userData?.user) return;
+      const { data, error } = await insforge.database.from('migration_history').select('*').eq('user_id', userData.user.id).order('created_at', { ascending: false });
       if (!error && data) {
         setLogs(data.map(d => ({
           id: d.id,
