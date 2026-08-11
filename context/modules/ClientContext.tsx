@@ -109,52 +109,114 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const addClient = async (client: Omit<Client, 'id'>): Promise<Client | void> => {
     if (!currentUser) return;
+    
+    const routeIdClean = client.routeId && client.routeId.trim() !== '' ? client.routeId : null;
+
     const { data, error } = await insforge.database.from('clients').insert([{
-      lender_id: currentUser.id, name: client.name, lastname: client.lastName, cedula: client.cedula,
-      documenttype: client.documentType, email: client.email, phone: client.phone, whatsapp: client.whatsapp,
-      phonehome: client.phoneHome, address: client.address, province: client.province, municipality: client.municipality,
-      sector: client.sector, referenceaddress: client.referenceAddress, companyname: client.companyName,
-      jobposition: client.jobPosition, coordinates: client.coordinates, routeid: client.routeId,
-      routesequence: client.routeSequence, occupation: client.occupation, sex: client.sex,
-      income: client.income, creditscore: client.creditScore, status: 'Al Día', joineddate: new Date().toISOString().split('T')[0],
-      clientpin: Math.floor(1000 + Math.random() * 9000).toString(), guarantors: client.guarantors || []
+      lender_id: currentUser.id,
+      name: client.name,
+      lastname: client.lastName || null,
+      cedula: client.cedula,
+      documenttype: client.documentType || 'Cedula',
+      email: client.email || null,
+      phone: client.phone,
+      whatsapp: client.whatsapp || null,
+      phonehome: client.phoneHome || null,
+      address: client.address,
+      province: client.province || null,
+      municipality: client.municipality || null,
+      sector: client.sector || null,
+      referenceaddress: client.referenceAddress || null,
+      companyname: client.companyName || null,
+      jobposition: client.jobPosition || null,
+      coordinates: client.coordinates || null,
+      routeid: routeIdClean,
+      routesequence: client.routeSequence || 0,
+      occupation: client.occupation || null,
+      sex: client.sex || 'Otro',
+      income: client.income || 0,
+      creditscore: client.creditScore || 100,
+      status: 'Al Día',
+      joineddate: new Date().toISOString().split('T')[0],
+      clientpin: Math.floor(1000 + Math.random() * 9000).toString()
     }]).select().single();
     
     if (data && !error) {
       const newClient: Client = {
-        id: data.id, name: data.name, lastName: data.lastname, cedula: data.cedula, documentType: data.documenttype,
-        email: data.email, phone: data.phone, whatsapp: data.whatsapp, phoneHome: data.phonehome,
-        address: data.address, province: data.province, municipality: data.municipality, sector: data.sector,
-        referenceAddress: data.referenceaddress, companyName: data.companyname, jobPosition: data.jobposition,
-        coordinates: data.coordinates, routeId: data.routeid, routeSequence: data.routesequence,
-        occupation: data.occupation, sex: data.sex, income: data.income, creditScore: data.creditscore,
-        status: data.status, joinedDate: data.joineddate || data.created_at, clientPin: data.clientpin, guarantors: data.guarantors
+        id: data.id,
+        name: data.name,
+        lastName: data.lastname || '',
+        cedula: data.cedula || '',
+        documentType: data.documenttype || 'Cedula',
+        email: data.email || '',
+        phone: data.phone || '',
+        whatsapp: data.whatsapp || '',
+        phoneHome: data.phonehome || '',
+        address: data.address || '',
+        province: data.province || '',
+        municipality: data.municipality || '',
+        sector: data.sector || '',
+        referenceAddress: data.referenceaddress || '',
+        companyName: data.companyname || '',
+        jobPosition: data.jobposition || '',
+        coordinates: data.coordinates || undefined,
+        routeId: data.routeid || '',
+        routeSequence: data.routesequence || 0,
+        occupation: data.occupation || '',
+        sex: data.sex || 'Otro',
+        income: data.income || 0,
+        creditScore: data.creditscore || 100,
+        status: data.status || 'Al Día',
+        joinedDate: data.joineddate || data.created_at,
+        clientPin: data.clientpin || '',
+        guarantors: []
       };
       setClients(prev => [newClient, ...prev]);
-      addToast("Cliente agregado", "success");
+      addToast("Cliente agregado exitosamente", "success");
       return newClient;
     } else {
-      addToast("Error al crear cliente", "error");
+      logger.error("Error al crear cliente:", error);
+      addToast(`Error al crear cliente: ${error?.message || 'Error desconocido'}`, "error");
     }
   };
 
   const updateClient = async (updatedClient: Client) => {
     if (!currentUser) return;
+    const routeIdClean = updatedClient.routeId && updatedClient.routeId.trim() !== '' ? updatedClient.routeId : null;
+
     const { error } = await insforge.database.from('clients').update({
-      name: updatedClient.name, lastname: updatedClient.lastName, cedula: updatedClient.cedula,
-      documenttype: updatedClient.documentType, email: updatedClient.email, phone: updatedClient.phone,
-      whatsapp: updatedClient.whatsapp, phonehome: updatedClient.phoneHome, address: updatedClient.address,
-      province: updatedClient.province, municipality: updatedClient.municipality, sector: updatedClient.sector,
-      referenceaddress: updatedClient.referenceAddress, companyname: updatedClient.companyName,
-      jobposition: updatedClient.jobPosition, coordinates: updatedClient.coordinates, routeid: updatedClient.routeId,
-      routesequence: updatedClient.routeSequence, occupation: updatedClient.occupation, sex: updatedClient.sex,
-      income: updatedClient.income, status: updatedClient.status, clientpin: updatedClient.clientPin,
-      guarantors: updatedClient.guarantors, creditscore: updatedClient.creditScore
+      name: updatedClient.name,
+      lastname: updatedClient.lastName || null,
+      cedula: updatedClient.cedula,
+      documenttype: updatedClient.documentType,
+      email: updatedClient.email || null,
+      phone: updatedClient.phone,
+      whatsapp: updatedClient.whatsapp || null,
+      phonehome: updatedClient.phoneHome || null,
+      address: updatedClient.address,
+      province: updatedClient.province || null,
+      municipality: updatedClient.municipality || null,
+      sector: updatedClient.sector || null,
+      referenceaddress: updatedClient.referenceAddress || null,
+      companyname: updatedClient.companyName || null,
+      jobposition: updatedClient.jobPosition || null,
+      coordinates: updatedClient.coordinates || null,
+      routeid: routeIdClean,
+      routesequence: updatedClient.routeSequence || 0,
+      occupation: updatedClient.occupation || null,
+      sex: updatedClient.sex,
+      income: updatedClient.income || 0,
+      status: updatedClient.status,
+      clientpin: updatedClient.clientPin,
+      creditscore: updatedClient.creditScore
     }).eq('id', updatedClient.id);
     
     if (!error) {
       setClients(prev => prev.map(c => c.id === updatedClient.id ? { ...c, ...updatedClient } : c));
-      addToast("Cliente actualizado", "success");
+      addToast("Cliente actualizado exitosamente", "success");
+    } else {
+      logger.error("Error al actualizar cliente:", error);
+      addToast(`Error al actualizar cliente: ${error?.message || 'Error desconocido'}`, "error");
     }
   };
 

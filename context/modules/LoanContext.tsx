@@ -156,14 +156,27 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const instAmt = ttp / installments;
 
+    const clientObj = clients.find(c => c.id === loanData.clientId);
+    const clientName = clientObj ? `${clientObj.name} ${clientObj.lastName || ''}`.trim() : (loanData.clientName || 'Cliente');
+
     const { data, error } = await insforge.database.from('loans').insert([{
-      lender_id: currentUser.id, clientid: loanData.clientId, amount: loanData.amount,
-      interestrate: loanData.interestRate, installments: installments, durationweeks: installments,
+      lender_id: currentUser.id,
+      clientid: loanData.clientId,
+      clientname: clientName,
+      amount: loanData.amount,
+      interestrate: loanData.interestRate,
+      installments: installments,
+      durationweeks: installments,
       installmentamount: instAmt,
       frequency: paymentFrequency,
-      startdate: loanData.startDate, next_payment_date: loanData.nextPaymentDate,
-      status: LoanStatus.ACTIVE, remainingbalance: ttp, totaltopay: ttp, loantype: loanData.loanType,
-      collateralref: loanData.guarantorId, collateraldescription: loanData.note
+      startdate: loanData.startDate,
+      next_payment_date: loanData.nextPaymentDate || null,
+      status: LoanStatus.ACTIVE,
+      remainingbalance: ttp,
+      totaltopay: ttp,
+      loantype: loanData.loanType,
+      collateralref: loanData.guarantorId || null,
+      collateraldescription: loanData.note || null
     }]).select().single();
 
     if (data && !error) {
@@ -177,7 +190,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       setLoans(prev => [newLoan, ...prev]);
       addAuditLog('loan_created', `Creó un préstamo por RD$ ${loanData.amount}`);
-      addToast("Préstamo creado", "success");
+      addToast("Préstamo creado exitosamente", "success");
+    } else {
+      logger.error("Error al crear préstamo:", error);
+      addToast(`Error al crear préstamo: ${error?.message || 'Error desconocido'}`, "error");
     }
   };
 
@@ -197,14 +213,27 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const instAmtRef = ttp / installments;
     
+    const clientObj = clients.find(c => c.id === newLoanData.clientId);
+    const clientName = clientObj ? `${clientObj.name} ${clientObj.lastName || ''}`.trim() : (newLoanData.clientName || 'Cliente');
+
     const { data, error } = await insforge.database.from('loans').insert([{
-      lender_id: currentUser.id, clientid: newLoanData.clientId, amount: newLoanData.amount,
-      interestrate: newLoanData.interestRate, installments: installments, durationweeks: installments,
+      lender_id: currentUser.id,
+      clientid: newLoanData.clientId,
+      clientname: clientName,
+      amount: newLoanData.amount,
+      interestrate: newLoanData.interestRate,
+      installments: installments,
+      durationweeks: installments,
       installmentamount: instAmtRef,
       frequency: paymentFrequency,
-      startdate: newLoanData.startDate, next_payment_date: newLoanData.nextPaymentDate,
-      status: LoanStatus.ACTIVE, remainingbalance: ttp, totaltopay: ttp, loantype: newLoanData.loanType,
-      collateralref: newLoanData.guarantorId, collateraldescription: `Refinanciamiento del préstamo ${oldLoanId}`
+      startdate: newLoanData.startDate,
+      next_payment_date: newLoanData.nextPaymentDate || null,
+      status: LoanStatus.ACTIVE,
+      remainingbalance: ttp,
+      totaltopay: ttp,
+      loantype: newLoanData.loanType,
+      collateralref: newLoanData.guarantorId || null,
+      collateraldescription: `Refinanciamiento del préstamo ${oldLoanId}`
     }]).select().single();
 
     if (data && !error) {
@@ -219,7 +248,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       setLoans(prev => [newLoan, ...prev]);
       addAuditLog('loan_refinanced', `Refinanció el préstamo ${oldLoanId}`);
-      addToast("Préstamo refinanciado", "success");
+      addToast("Préstamo refinanciado exitosamente", "success");
+    } else {
+      logger.error("Error al refinanciar préstamo:", error);
+      addToast(`Error al refinanciar préstamo: ${error?.message || 'Error desconocido'}`, "error");
     }
   };
 
