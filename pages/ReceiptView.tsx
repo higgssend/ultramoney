@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounting, useSettings } from '../context/StoreContext';
-import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock } from 'lucide-react';
+import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft } from 'lucide-react';
 import { Transaction, Loan, Client, formatLoanId } from '../types';
 import { insforge } from '../lib/insforge';
 import html2canvas from 'html2canvas';
@@ -149,10 +149,9 @@ export const ReceiptView: React.FC = () => {
                 
                 {/* Action Bar - Hidden on print */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
-                    <span className="font-bold text-slate-700 flex items-center gap-2 text-sm">
-                        <CheckCircle className="w-5 h-5 text-emerald-500" />
-                        Comprobante Oficial de Pago
-                    </span>
+                    <Link to="/pagos" className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors">
+                        <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
+                    </Link>
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={handleDownloadImage}

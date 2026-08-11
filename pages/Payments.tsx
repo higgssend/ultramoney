@@ -84,8 +84,8 @@ const Payments: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // State
-  const [activeTab, setActiveTab] = useState<'registrar' | 'monitor' | 'historial'>('registrar');
+  // State - Default to 'historial' as requested
+  const [activeTab, setActiveTab] = useState<'registrar' | 'monitor' | 'historial'>('historial');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   
@@ -427,7 +427,7 @@ const Payments: React.FC = () => {
     setLateFeeAmount('');
     setDiscountAmount('');
 
-    // Reset Form
+    // Reset Form & Navigate directly to full Receipt Page View
     if(paymentMode === 'manual') {
         setSelectedLoanId(null);
         setSearchTerm('');
@@ -436,41 +436,13 @@ const Payments: React.FC = () => {
         setPayAmount('');
         setPayNote('Cuota Regular');
     }
+
+    toast.success("Pago registrado exitosamente");
+    navigate(`/recibo/${actualTxId}`);
   };
 
   const handleReprintReceipt = (t: import('../types').Transaction) => {
-      const loan = loans.find(l => l.id === t.referenceId || (l.clientName && t.description.toLowerCase().includes(l.clientName.toLowerCase())));
-      const client = loan ? clients.find(c => c.id === loan.clientId) : clients.find(c => t.description.includes(c.name));
-
-      const clientName = loan ? loan.clientName : (client ? `${client.name} ${client.lastName || ''}` : t.description);
-      const loanId = loan ? loan.id : (t.referenceId || t.id.slice(0, 8));
-      const currentBalance = loan ? loan.remainingBalance : 0;
-      const totalInstallmentsCount = loan ? (loan.durationWeeks || loan.installments || 1) : 1;
-      const otherActiveLoans = loan ? loans.filter(l => l.clientId === loan.clientId && l.id !== loan.id).map(l => ({id: l.id, balance: l.remainingBalance})) : [];
-
-      const formattedRecNo = formatReceiptId(t.id);
-
-      setReceiptData({
-          loanId: loanId,
-          amountPaid: t.amount,
-          clientName: clientName,
-          clientId: client ? client.id : (loan ? loan.clientId : 'N/A'),
-          previousBalance: currentBalance + t.amount,
-          newBalance: currentBalance,
-          transactionId: t.id,
-          receiptNo: formattedRecNo,
-          date: t.date ? new Date(t.date).toLocaleString() : new Date().toLocaleString(),
-          collateral: loan?.collateralType ? `${loan.collateralType} - ${loan.collateralDescription || ''}` : 'Sin Garantía',
-          overdueAmount: 0, 
-          overdueInstallments: 0,
-          totalInstallments: totalInstallmentsCount,
-          paidInstallments: 1,
-          otherLoans: otherActiveLoans,
-          cashierName: currentUser?.name || 'Sistema',
-          paymentNote: t.description,
-          renewalStatus: loan && currentBalance < (loan.totalToPay * 0.5) ? 'DISPONIBLE' : 'No disponible',
-          paymentMethod: (t as any).paymentMethod || 'Efectivo'
-      });
+      navigate(`/recibo/${t.id}`);
   };
 
   const toggleClientExpand = (clientId: string) => {
