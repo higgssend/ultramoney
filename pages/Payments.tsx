@@ -171,7 +171,7 @@ const Payments: React.FC = () => {
 
   const currentLoanInstallments = selectedLoan ? generateInstallments(selectedLoan) : [];
 
-  // Auto-populate periodic interest when selecting a Rédito loan
+  // Auto-populate amount & settings when selectedLoan is resolved
   useEffect(() => {
     if (!selectedLoan) return;
     const isRedito = Boolean(selectedLoan.loanType && (
@@ -187,8 +187,48 @@ const Payments: React.FC = () => {
       const interestAmount = Math.round(selectedLoan.remainingBalance * (selectedLoan.interestRate / 100) * 100) / 100;
       setPayAmount(interestAmount.toFixed(2));
       setPayNote('Pago de Interés (Rédito)');
+    } else {
+      const insts = generateInstallments(selectedLoan);
+      const pendingInst = insts.find(i => i.status !== 'Pagado');
+      const sugerida = pendingInst ? (pendingInst.amount - pendingInst.paidAmount) : selectedLoan.remainingBalance;
+      setPayAmount((Math.round(sugerida * 100) / 100).toFixed(2));
     }
-  }, [selectedLoanId]);
+  }, [selectedLoan?.id, loans.length]);
+
+  const getSuggestedAutoAmount = () => {
+    if (!selectedLoan) return 0;
+    const isRedito = Boolean(selectedLoan.loanType && (
+      selectedLoan.loanType.includes('Rédito') || 
+      selectedLoan.loanType.includes('Redito') || 
+      selectedLoan.loanType.includes('Solo Interé') || 
+      selectedLoan.loanType.includes('Pagaré Abierto')
+    ));
+    if (isRedito) {
+      return Math.round(selectedLoan.remainingBalance * (selectedLoan.interestRate / 100) * 100) / 100;
+    }
+    const pendingInst = currentLoanInstallments.find(i => i.status !== 'Pagado');
+    return pendingInst ? Math.round((pendingInst.amount - pendingInst.paidAmount) * 100) / 100 : selectedLoan.remainingBalance;
+  };
+
+  const autoSuggestedAmount = getSuggestedAutoAmount();
+
+  const handlePaymentTypeChange = (newType: 'Interes' | 'Capital' | 'Mixto') => {
+    setPaymentType(newType);
+    if (!selectedLoan) return;
+    if (newType === 'Interes') {
+      const interestAmount = Math.round(selectedLoan.remainingBalance * (selectedLoan.interestRate / 100) * 100) / 100;
+      setPayAmount(interestAmount.toFixed(2));
+      setPayNote('Pago de Interés (Rédito)');
+    } else if (newType === 'Capital') {
+      setPayAmount(selectedLoan.remainingBalance.toFixed(2));
+      setPayNote('Abono Directo a Capital');
+    } else if (newType === 'Mixto') {
+      const interestAmount = Math.round(selectedLoan.remainingBalance * (selectedLoan.interestRate / 100) * 100) / 100;
+      setPayAmount(interestAmount.toFixed(2));
+      setCapitalAmount('0.00');
+      setPayNote('Pago Mixto (Interés + Capital)');
+    }
+  };
 
   // --- Grouping Logic for Monitor ---
   const getClientGroups = () => {
@@ -657,35 +697,53 @@ const Payments: React.FC = () => {
                                 </div>
                             </div>
                             {(selectedLoan?.loanType && (selectedLoan.loanType.includes('Rédito') || selectedLoan.loanType.includes('Redito') || selectedLoan.loanType.includes('Solo Interé') || selectedLoan.loanType.includes('Pagaré Abierto'))) && (
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Tipo de Pago (Pagaré Abierto)</label>
-                                    <CustomSelect 
-                                        value={paymentType}
-                                        onChange={(e) => setPaymentType(e as any)}
-                                        className="w-full"
-                                        options={[
-                                            { value: 'Interes', label: 'Solo Intereses (Réditos)' },
-                                            { value: 'Capital', label: 'Abono Directo a Capital' },
-                                            { value: 'Mixto', label: 'Interés + Abono a Capital (Mixto)' }
-                                        ]}
-                                    />
-                                </div>
-                            )}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-slate-600 mb-1">Tipo de Pago (Pagaré Abierto)</label>
+                                        <CustomSelect 
+                                            value={paymentType}
+                                            onChange={(e) => handlePaymentTypeChange(e as any)}
+                                            className="w-full"
+                                            options={[
+                                                { value: 'Interes', label: 'Solo Intereses (Réditos)' },
+                                                { value: 'Capital', label: 'Abono Directo a Capital' },
+                                                { value: 'Mixto', label: 'Interés + Abono a Capital (Mixto)' }
+                                            ]}
+                                        />
+                                    </div>
+                                )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
                                 <div>
                                     <div className="flex justify-between items-center mb-1">
                                         <label className="block text-sm font-medium text-slate-600">Monto a Pagar</label>
                                         {selectedLoan && (
-                                            <button 
-                                                type="button" 
-                                                onClick={handleSaldarFull} 
-                                                className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
-                                                title="Llenar con el monto total necesario para saldar este préstamo"
-                                            >
-                                                <CheckCircle className="w-3 h-3 text-emerald-600" />
-                                                Saldar Completo (${selectedLoan.remainingBalance.toLocaleString()})
-                                            </button>
+                                            <div className="flex items-center gap-1.5">
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => {
+                                                        const isRedito = Boolean(selectedLoan.loanType && (selectedLoan.loanType.includes('Rédito') || selectedLoan.loanType.includes('Redito') || selectedLoan.loanType.includes('Solo Interé') || selectedLoan.loanType.includes('Pagaré Abierto')));
+                                                        if (isRedito) {
+                                                            handlePaymentTypeChange('Interes');
+                                                        } else {
+                                                            setPayAmount(autoSuggestedAmount.toFixed(2));
+                                                        }
+                                                    }} 
+                                                    className="text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                                                    title="Cargar automáticamente el monto regular / interés sugerido"
+                                                >
+                                                    ⚡ Auto (${autoSuggestedAmount.toLocaleString()})
+                                                </button>
+
+                                                <button 
+                                                    type="button" 
+                                                    onClick={handleSaldarFull} 
+                                                    className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                                                    title="Llenar con el monto total para saldar este préstamo"
+                                                >
+                                                    <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                                    Saldar (${selectedLoan.remainingBalance.toLocaleString()})
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                     <div className="relative">
