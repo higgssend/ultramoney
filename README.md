@@ -1,127 +1,107 @@
-# Elevate Project - Sistema de Gestión Financiera
-
-## 1. Descripción General
-**Elevate Project** es una solución integral basada en la web (SPA) diseñada para la administración eficiente de empresas de préstamos, financieras y gestión de cobros. El sistema centraliza el ciclo de vida del crédito, desde la solicitud y evaluación del cliente hasta la gestión de cobros, contabilidad y análisis de rentabilidad.
-
-El sistema está construido con una arquitectura moderna "Mobile-First", asegurando que los cobradores y administradores puedan utilizar todas las funcionalidades tanto desde dispositivos móviles en ruta como desde escritorios en oficina.
+# 💳 ULTRAMONEY - Sistema de Gestión Financiera, Préstamos y Cobranza
 
 ---
 
-## 2. Ficha Técnica
+## 📌 1. Descripción General del Sistema
+
+**UltraMoney** es un sistema integral de administración financiera, préstamos, cobros, contabilidad y control de morosidad desarrollado bajo arquitectura SPA (Single Page Application) y PWA (Progressive Web App). 
+
+Está diseñado para operar tanto en estaciones de trabajo fijas (escritorio en oficina) como en dispositivos móviles (cobradores en ruta), con capacidades de sincronización en tiempo real, emisión de recibos en impresoras térmicas, control de seguridad por RLS en **InsForge PostgreSQL**, y recálculo inteligente de excedentes a capital para préstamos a rédito/pagaré abierto.
+
+---
+
+## 🏗️ 2. Ficha Técnica & Arquitectura de Software
 
 ### Stack Tecnológico
-*   **Frontend Core:** React 18 (Hooks, Functional Components).
-*   **Lenguaje:** TypeScript (Tipado estático estricto para modelos financieros).
-*   **Estilos & UI:** 
-    *   Tailwind CSS (Motor de estilos utilitarios).
-    *   Diseño Responsivo (Mobile, Tablet, Desktop).
-    *   Animaciones CSS nativas para transiciones de interfaz.
-*   **Enrutamiento:** React Router DOM v6+.
-*   **Gestión de Estado:** React Context API (StoreContext) para manejo global de datos sin dependencias externas pesadas (Redux/Zustand).
-*   **Visualización de Datos:** Recharts para gráficos financieros y estadísticos.
-*   **Iconografía:** Lucide React.
-
-### Arquitectura de Software
-*   **Patrón:** Single Page Application (SPA).
-*   **Estructura de Directorios:**
-    *   `/components`: Componentes reutilizables (UI Kit, Sidebar, Modales).
-    *   `/pages`: Vistas principales correspondientes a las rutas.
-    *   `/context`: Lógica de negocio y persistencia de estado volátil.
-    *   `/types`: Definiciones de interfaces TypeScript (Modelos de Datos).
-*   **Seguridad:** Validación de formularios y manejo seguro de tipos. (Nota: En producción, requiere integración con Backend seguro para Auth y BD).
-
-### Modelos de Datos Principales
-*   **Client:** Perfil completo, score crediticio, documentos digitales.
-*   **Loan:** Motor financiero (Cálculo de amortización, interés simple/compuesto, frecuencias).
-*   **Transaction:** Libro mayor de contabilidad (Ingresos/Gastos).
+* **Frontend Core:** React 18, TypeScript (tipado estático estricto).
+* **Build Tool:** Vite 6+.
+* **Backend-as-a-Service (BaaS):** InsForge PostgreSQL 15, PostgREST API, WebSockets Realtime, Edge File Storage.
+* **Seguridad Database:** Row-Level Security (RLS) activo en las 18 tablas del esquema (`rowsecurity: true`).
+* **Estilos & UI:** Tailwind CSS 3.4, Lucide React Icons.
+* **PWA:** Manifest PWA nativo con iconos vectoriales (`/logoultramoney.svg`, `/pwa-icon.svg`), instalable en Android, iOS y Desktop.
+* **Visualización de Datos:** Recharts para gráficos de ingresos y cartera.
 
 ---
 
-## 3. Módulos y Funcionalidades
+## 🗄️ 3. Base de Datos & Seguridad (InsForge PostgreSQL)
 
-### A. Dashboard Ejecutivo (`/`)
-*   **KPIs en Tiempo Real:** Visualización de Cartera por Cobrar, Clientes Activos, Mora Total y Balance en Caja.
-*   **Gráficos:** Flujo de caja anual (Ingresos vs Gastos).
-*   **Actividad Reciente:** Feed de las últimas transacciones realizadas en el sistema.
+### A. Conexión SDK
+```typescript
+import { createClient } from '@insforge/sdk';
 
-### B. Gestión de Clientes (`/clientes`)
-*   **Expediente Digital:**
-    *   Datos personales, contacto, laborales y financieros.
-    *   **Score Crediticio:** Barra visual de calificación del cliente.
-    *   **Documentos:** Carga y visualización (con zoom) de Cédulas, Contratos y Garantías (Imágenes/PDF).
-    *   **Historial:** Visualización unificada de préstamos históricos y pagos.
-*   **CRUD Completo:** Creación, Edición y Bloqueo de clientes.
+export const insforge = createClient({
+  baseUrl: 'https://sxwv82iw.us-east.insforge.app',
+  anonKey: 'v1.public.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+});
+```
 
-### C. Motor de Préstamos (`/solicitud`, `/prestamos`)
-*   **Calculadora de Amortización:**
-    *   Soporte para frecuencias: Diario, Semanal, Quincenal, Mensual.
-    *   Cálculo automático de intereses y cuotas.
-*   **Estado de Préstamos:**
-    *   Indicadores visuales de estado: Al día (Azul), Atrasado (Ámbar), Vencido (Rojo), Pagado (Verde).
-    *   Barra de progreso de pago (Capital vs Interés).
-
-### D. Módulo de Cobranza y Pagos (`/pagos`)
-*   **Dos Modos de Operación:**
-    1.  **Registro Manual:** Pago por monto libre o selección específica de cuotas en la tabla de amortización.
-    2.  **Monitor de Cuotas:** Vista agrupada por cliente para ver rápidamente quién debe pagar hoy o quién está en mora.
-*   **Recibos:** Generación automática de recibos de pago digitales listos para imprimir o compartir.
-
-### E. Contabilidad y Caja (`/caja`, `/contabilidad`)
-*   **Control de Caja Chica:** Monitoreo de entradas y salidas diarias.
-*   **Libro Mayor (Contabilidad Profunda):** Registro inmutable de todas las transacciones financieras con filtros por categoría (Capital, Operativo, Nómina, etc.).
-*   **Reporte de Ganancias (`/ganancia`):** Análisis de rentabilidad neta (Ingresos Operativos - Gastos Operativos).
-
-### F. Herramientas Auxiliares
-*   **Datapréstamos (`/consultar`):** Simulación de consulta a buró de crédito externo.
-*   **Facturación (`/facturas`):** Generación de facturas por servicios o venta de artículos recuperados.
-*   **App Clientes (`/app-clientes`):** Vista previa de cómo el cliente final visualiza su estado de cuenta desde su móvil.
-*   **Clasificación (`/clasificacion`):** Reglas de negocio para categorización automática de clientes (A, B, C).
+### B. Esquema de Tablas
+1. `clients`: Perfil del cliente, cédula dominicana formateada (`XXX-XXXXXXX-X`), fotos, garante principal y garante solidario.
+2. `loans`: Préstamos amortizados o a rédito, capital desembolsado, tasa de interés, balance pendiente (`remainingBalance`), frecuencia y fechas.
+3. `transactions`: Libro diario de ingresos (`Pago Préstamo`, `Interés`, `Capital`) y egresos (`Desembolso`, `Gasto Operativo`).
+4. `loan_requests`: Solicitudes de crédito en proceso de evaluación y aprobación.
+5. `accounting_entries` & `daily_cash_cuts`: Entradas contables y cierres diarios de caja.
 
 ---
 
-## 4. Instalación y Despliegue
+## 🧮 4. Motor Financiero & Reglas de Negocio
 
-Este proyecto utiliza una estructura estándar de React.
+### Préstamos Amortizados (Cuotas Fijas / Francés)
+- Distribución de capital e interés por cada cuota.
+- Redondeo seguro a 2 decimales (`Math.round(val * 100) / 100`).
 
-### Requisitos
-*   Node.js v16.0.0 o superior.
-*   NPM o Yarn.
+### Préstamos a Rédito / Pagaré Abierto (`Solo Intereses`)
+- **Cuota Periódica de Interés**: $\text{remainingBalance} \times \frac{\text{interestRate}}{100}$.
+- **Regla del Sobrante a Capital (Capital Surplus Rule)**:
+  - Cuando un pago excede el interés debido del periodo, el dinero sobrante **se abona automáticamente al saldo de capital** (`remainingBalance -= Excedente`).
+  - Se genera un registro automático de `"Abono a Capital por Excedente"`.
+  - **Recálculo Dinámico**: Los intereses de los siguientes periodos se calculan de inmediato sobre el nuevo capital reducido.
+- **Acción Rápida "Saldar Préstamo Completo"**: Botón de 1 clic para liquidar todo el capital restante y cerrar la deuda.
 
-### Pasos de Instalación
-1.  Clonar el repositorio.
-2.  Instalar dependencias:
-    ```bash
-    npm install
-    ```
-3.  Iniciar servidor de desarrollo:
-    ```bash
-    npm run dev
-    ```
-4.  Construir para producción:
-    ```bash
-    npm run build
-    ```
+---
 
-### Estructura de Archivos Clave
-```text
-src/
-├── components/
-│   ├── Sidebar.tsx       # Navegación principal
-│   ├── StatCard.tsx      # Tarjetas de métricas
-│   └── MobileNav.tsx     # Navegación inferior móvil
-├── pages/
-│   ├── ClientDetail.tsx  # Lógica compleja de perfil de cliente
-│   ├── Payments.tsx      # Lógica de amortización y cobros
-│   └── Dashboard.tsx     # Vista principal
-├── context/
-│   └── StoreContext.tsx  # "Base de datos" en memoria y lógica de negocio
-└── types.ts              # Contratos de datos (Interfaces)
+## 📱 5. Guía Completa de Módulos (UI / UX)
+
+### 📊 Dashboard Ejecutivo (`/`)
+KPIs de cartera, ingresos de hoy/mes, mora acumulada y balance de caja.
+
+### 👤 Gestión de Clientes (`/clientes`, `/clientes/:id`, `NewClient.tsx`)
+- Formateo de Cédula Dominicana (`001-0982341-2`).
+- Adjuntos digitalizados en InsForge Storage (contratos, fotos, garantias).
+
+### 📝 Solicitudes y Préstamos (`/solicitud`, `/prestamos`)
+- Formulario reactivo con fechas flexibles de emisión y primer pago.
+- Resumen informativo previo a desembolso.
+
+### 💰 Cobranza & Pagos (`/pagos`, `Payments.tsx`)
+- Autollenado automático del monto a pagar al seleccionar un préstamo.
+- Botón inteligente **`⚡ Auto`** y **`🏁 Saldar`**.
+- Barra lateral de cobros **`[Hoy]`** y **`[Recientes]`** 100% cliqueable para abrir/imprimir el Recibo de Pago oficial.
+- Pestaña de Historial con filtros y reimpresión.
+
+### ⚠️ Monitor de Atrasos (`/atrasos`, `Overdue.tsx`)
+Filtros de días en mora y notificaciones directas por WhatsApp.
+
+---
+
+## 🛠️ 6. Comandos de Instalación y Despliegue
+
+```bash
+# Instalación
+npm install
+
+# Desarrollo Local
+npm run dev
+
+# Compilar Producción
+npm run build
+
+# Despliegue en InsForge Cloud
+npx @insforge/cli deployments deploy . --json
 ```
 
 ---
 
-## 5. Notas del Desarrollador (Senior)
-
-*   **Escalabilidad:** El sistema está diseñado modularmente. Para escalar a miles de usuarios, se recomienda migrar `StoreContext` a un backend (Node.js/Python) y usar React Query para el manejo de estado servidor.
-*   **UX/UI:** Se priorizó la legibilidad y la rapidez de acción (pocos clics para registrar un pago), crucial para el entorno operativo de los cobradores.
-*   **Manejo de Errores:** Se implementaron validaciones en los formularios críticos (creación de préstamos y pagos) para asegurar la integridad financiera de los datos.
+## 📄 Documentación Extensa Adicional
+Para ver el manual técnico paso a paso con todos los detalles de esquemas y código, consulta:
+👉 **[DOCUMENTACION_COMPLETA_ULTRAMONEY.md](file:///c:/Users/Dell/Downloads/ultramoney/DOCUMENTACION_COMPLETA_ULTRAMONEY.md)**
