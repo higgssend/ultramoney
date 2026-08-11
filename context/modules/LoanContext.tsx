@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Loan, LoanProduct, LoanRequest, LoanStatus, LoanType, PaymentMethod } from '../../types';
+import { Loan, LoanProduct, LoanRequest, LoanStatus, LoanType, PaymentMethod, Transaction } from '../../types';
 import type { LoanDB, LoanProductDB, LoanRequestDB, TransactionDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
@@ -181,7 +181,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (data && !error) {
       const newLoan: Loan = {
-        id: data.id, clientId: data.clientid || data.client_id, amount: data.amount, interestRate: data.interestrate || data.interest_rate,
+        id: data.id, clientId: data.clientid || data.client_id, clientName: data.clientname || data.client_name || clientName,
+        amount: data.amount, interestRate: data.interestrate || data.interest_rate,
         installments: data.installments, durationWeeks: data.durationweeks || data.installments, currentInstallment: 0,
         paymentFrequency: data.frequency || data.payment_frequency, frequency: data.frequency || data.payment_frequency,
         startDate: data.startdate || data.start_date, nextPaymentDate: data.next_payment_date,
@@ -239,7 +240,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (data && !error) {
       setLoans(prev => prev.map(l => l.id === oldLoanId ? { ...l, status: LoanStatus.REFINANCED } : l));
       const newLoan: Loan = {
-        id: data.id, clientId: data.clientid || data.client_id, amount: data.amount, interestRate: data.interestrate || data.interest_rate,
+        id: data.id, clientId: data.clientid || data.client_id, clientName: data.clientname || data.client_name || clientName,
+        amount: data.amount, interestRate: data.interestrate || data.interest_rate,
         installments: data.installments, durationWeeks: data.durationweeks || data.installments, currentInstallment: 0,
         paymentFrequency: data.frequency || data.payment_frequency, frequency: data.frequency || data.payment_frequency,
         startDate: data.startdate || data.start_date, nextPaymentDate: data.next_payment_date,
