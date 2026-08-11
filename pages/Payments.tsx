@@ -372,61 +372,40 @@ const Payments: React.FC = () => {
       }
     }
     
-    const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
-    // Register the payment
-    const insertedTxs = await registerPayment(selectedLoanId, amountVal, payNote, paymentDate, invoiceDate, paymentType, capitalAmountVal, paymentMethod, selectedCashierId || undefined);
-    
-    // Logic for Receipt Details
-    const allInstallments = generateInstallments(selectedLoan);
-    const overdueInsts = allInstallments.filter(i => i.status === 'Atrasado' || (i.status !== 'Pagado' && new Date(i.date) < new Date()));
-    const overdueAmount = overdueInsts.reduce((sum, i) => sum + (i.amount - i.paidAmount), 0);
-    
-    // Engine Distribution logic for detailed receipt
-    const distribution = LoanEngine.applyPaymentDistribution(amountVal, overdueAmount > 0 ? (overdueAmount * 0.1) : 0, 0, (selectedLoan.remainingBalance * 0.05), amountVal);
-    // Overdue Mora estimated as 10% of overdue amount, Interest estimated as 5% of remaining balance for receipt demo.
-
-    
-    // Other loans active for client
-    const otherActiveLoans = loans
-        .filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoanId && l.status !== 'Pagado')
-        .map(l => ({ id: l.id, balance: l.remainingBalance }));
-
-    let txId = `TRX-${Date.now()}`;
-    if (insertedTxs && insertedTxs.length > 0) {
-        txId = insertedTxs[0].id;
-    }
-
-    const totalInstallmentsCount = selectedLoan.durationWeeks || selectedLoan.installments || 1;
-    const amountPerInst = selectedLoan.totalToPay / totalInstallmentsCount;
-    const totalPaidAfterThis = Math.max(0, selectedLoan.totalToPay - newBalance);
     const lateVal = Number(lateFeeAmount) || 0;
     const discVal = Number(discountAmount) || 0;
     const effectiveTotal = amountVal + lateVal - discVal;
+    const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
 
-    const tx = await registerPayment(
+    // Register the payment
+    const insertedTx = await registerPayment(
         selectedLoanId, 
         effectiveTotal, 
         payNote, 
         paymentDate, 
         invoiceDate, 
         paymentType, 
-        Number(capitalAmount), 
-        paymentMethod,
-        selectedCashierId
+        capitalAmountVal, 
+        paymentMethod, 
+        selectedCashierId || undefined
     );
+    
+    const actualTxId = insertedTx?.id || `REC-${String(Date.now()).slice(-6)}`;
+    const formattedRecNo = formatReceiptId(actualTxId);
 
-    const txId = tx?.id || `REC-${String(Date.now()).slice(-6)}`;
-    const formattedRecNo = formatReceiptId(txId);
-    const newBalance = Math.max(0, selectedLoan.remainingBalance - (paymentType === 'Capital' ? amountVal : (paymentType === 'Mixto' ? Number(capitalAmount) : 0)));
+    // Other loans active for client
+    const otherActiveLoans = loans
+        .filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoanId && l.status !== 'Pagado')
+        .map(l => ({ id: l.id, balance: l.remainingBalance }));
 
     setReceiptData({
         loanId: formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType),
         amountPaid: effectiveTotal,
         clientName: selectedLoan.clientName,
         clientId: selectedLoan.clientId,
-        previousBalance: selectedLoan.remainingBalance,
+        previousBalance: previousBalance,
         newBalance: newBalance,
-        transactionId: txId,
+        transactionId: actualTxId,
         receiptNo: formattedRecNo,
         lateFeeAmount: lateVal,
         discountAmount: discVal,
@@ -436,7 +415,7 @@ const Payments: React.FC = () => {
         overdueInstallments: 0,
         totalInstallments: selectedLoan.durationWeeks || selectedLoan.installments || 1,
         paidInstallments: 1,
-        otherLoans: loans.filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoan.id).map(l => ({id: l.id, balance: l.remainingBalance})),
+        otherLoans: otherActiveLoans,
         cashierName: currentUser?.name || 'Sistema',
         paymentNote: payNote,
         renewalStatus: newBalance < (selectedLoan.totalToPay * 0.5) ? 'DISPONIBLE' : 'No disponible',
