@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Collateral } from '../../types';
-import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle } from 'lucide-react';
+import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package } from 'lucide-react';
 import { CustomSelect } from '../../components/CustomSelect';
+import { useInventory } from '../../context/StoreContext';
 
 interface CollateralFormProps {
     collateral: Collateral | undefined;
@@ -9,6 +10,9 @@ interface CollateralFormProps {
 }
 
 export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onChange }) => {
+    const { inventory } = useInventory();
+    const availableItems = inventory.filter(i => i.status === 'Disponible');
+    const [selectedStockId, setSelectedStockId] = useState('');
 
     const handleTypeChange = (val: string) => {
         const type = val as Collateral['type'];
@@ -17,6 +21,30 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
         } else {
             onChange({ type, description: '', refNumber: '' });
         }
+    };
+
+    const handleStockSelect = (stockId: string) => {
+        setSelectedStockId(stockId);
+        if (!stockId) return;
+        const item = availableItems.find(i => i.id === stockId);
+        if (!item) return;
+
+        const targetType = item.category === 'Teléfono / Celular' ? 'Teléfono / Celular' : 
+                           item.category === 'Vehículo' ? 'Vehículo' :
+                           item.category === 'Electrodoméstico' ? 'Electrodoméstico' : 'Otro';
+
+        onChange({
+            type: targetType as any,
+            description: `${item.brand || ''} ${item.model || item.name}`.trim(),
+            refNumber: item.serialNumber || '',
+            brand: item.brand,
+            model: item.model,
+            imei2: item.imei2,
+            condition: item.condition,
+            color: item.color,
+            storage: item.storage,
+            estimatedValue: item.cashPrice
+        });
     };
 
     const handleChange = (field: keyof Collateral, value: any) => {
@@ -32,6 +60,11 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
             if (b || m) {
                 updated.description = `${b} ${m}${storage}${color}`.trim();
             }
+        } else if (updated.type === 'Tarjeta de Crédito / Débito') {
+            const b = updated.bankName || '';
+            const c = updated.cardType || 'Tarjeta';
+            const l4 = updated.last4 || updated.refNumber || '';
+            updated.description = `${b} ${c} (Terminada en ${l4})`.trim();
         }
         onChange(updated);
     };
@@ -44,6 +77,29 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
             </h3>
 
             <div className="space-y-4">
+                {/* Optional Stock Item Quick-Selector */}
+                {availableItems.length > 0 && (
+                    <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl space-y-2 mb-2">
+                        <label className="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                            <Package className="w-4 h-4 text-emerald-600" />
+                            Cargar automáticamente desde el Stock / Inventario (Opcional)
+                        </label>
+                        <CustomSelect
+                            value={selectedStockId}
+                            onChange={handleStockSelect}
+                            className="w-full text-xs font-medium"
+                            options={[
+                                { value: '', label: '-- Llenar Formulario Manualmente --' },
+                                ...availableItems.map(item => ({
+                                    value: item.id,
+                                    label: `📦 ${item.name} (${item.brand || ''} ${item.model || ''}) - RD$ ${item.cashPrice.toLocaleString()} [${item.condition || 'Disponible'}]`
+                                }))
+                            ]}
+                        />
+                        <p className="text-[10px] text-emerald-700 font-medium">Seleccionar un ítem del stock autocompletará marca, modelo, IMEI/Serie, condición y precio.</p>
+                    </div>
+                )}
+
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Garantía</label>
                     <CustomSelect 
@@ -53,6 +109,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                         options={[
                             { value: 'Sin Garantía', label: 'Sin Garantía' },
                             { value: 'Teléfono / Celular', label: '📱 Teléfono / Celular / Dispositivo Móvil' },
+                            { value: 'Tarjeta de Crédito / Débito', label: '💳 Tarjeta de Crédito / Débito en Custodia' },
                             { value: 'Vehículo', label: '🚗 Vehículo' },
                             { value: 'Propiedad', label: '🏠 Propiedad Inmobiliaria' },
                             { value: 'Electrodoméstico', label: '📺 Electrodoméstico / Equipo' },
@@ -188,6 +245,99 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                         placeholder="Ej. Sin cargador, Batería 84%, Tapa rayada"
                                         className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
                                     />
+                                </div>
+                            </>
+                        )}
+
+                        {/* 💳 TARJETA DE CRÉDITO / DÉBITO */}
+                        {collateral.type === 'Tarjeta de Crédito / Débito' && (
+                            <>
+                                <div className="md:col-span-2 bg-blue-50/70 border border-blue-100 p-3 rounded-2xl flex items-center gap-2 text-blue-900 text-xs font-semibold mb-1">
+                                    <CreditCard className="w-4 h-4 text-blue-600 shrink-0" />
+                                    <span>Registro de Tarjeta en Custodia (Banco, Marca, Últimos 4 dígitos y Vencimiento)</span>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Banco Emisor</label>
+                                    <CustomSelect
+                                        value={collateral.bankName || ''}
+                                        onChange={(val) => handleChange('bankName', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Banreservas', label: 'Banreservas' },
+                                            { value: 'Banco Popular', label: 'Banco Popular Dominicano' },
+                                            { value: 'Banco BHD', label: 'Banco BHD' },
+                                            { value: 'Scotiabank', label: 'Scotiabank' },
+                                            { value: 'APAP', label: 'Asociación Popular (APAP)' },
+                                            { value: 'Banco Santa Cruz', label: 'Banco Santa Cruz' },
+                                            { value: 'Banco Caribe', label: 'Banco Caribe' },
+                                            { value: 'Banco Promerica', label: 'Banco Promerica' },
+                                            { value: 'Otro Banco', label: 'Otro Banco / Entidad' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Tarjeta</label>
+                                    <CustomSelect
+                                        value={collateral.cardType || 'Visa'}
+                                        onChange={(val) => handleChange('cardType', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Visa Crédito', label: '💳 Visa Crédito' },
+                                            { value: 'Visa Débito', label: '💳 Visa Débito / Nómina' },
+                                            { value: 'Mastercard Crédito', label: '💳 Mastercard Crédito' },
+                                            { value: 'Mastercard Débito', label: '💳 Mastercard Débito' },
+                                            { value: 'American Express', label: '💳 American Express' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Últimos 4 Dígitos de la Tarjeta</label>
+                                    <div className="relative">
+                                        <Hash className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            maxLength={4}
+                                            value={collateral.last4 || collateral.refNumber || ''}
+                                            onChange={(e) => {
+                                                handleChange('last4', e.target.value);
+                                                handleChange('refNumber', e.target.value);
+                                            }}
+                                            placeholder="Ej. 4589"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold font-mono tracking-wider text-base"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Fecha de Vencimiento (MM/AA)</label>
+                                    <input 
+                                        type="text"
+                                        maxLength={5}
+                                        value={collateral.expiryDate || ''}
+                                        onChange={(e) => handleChange('expiryDate', e.target.value)}
+                                        placeholder="Ej. 08/28"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Nombre Impreso en la Tarjeta</label>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.cardHolder || collateral.ownerName || ''}
+                                            onChange={(e) => {
+                                                handleChange('cardHolder', e.target.value);
+                                                handleChange('ownerName', e.target.value);
+                                            }}
+                                            placeholder="Ej. JUAN A. PEREZ (Como figura en la tarjeta)"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium uppercase text-sm"
+                                        />
+                                    </div>
                                 </div>
                             </>
                         )}

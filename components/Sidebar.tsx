@@ -6,7 +6,7 @@ import {
   CalendarClock, AlertTriangle, Wallet, Briefcase, 
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
-  Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign
+  Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package
 } from 'lucide-react';
 import { useAuth, useSettings } from '../context/StoreContext';
 
@@ -54,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Clientes', path: '/clientes', icon: Users },
     { name: 'Portales de Cliente', path: '/portales', icon: Users, highlight: true },
     { name: 'Préstamos', path: '/prestamos', icon: Banknote },
+    { name: 'Inventario / Stock', path: '/inventario', icon: Package },
     { name: 'Pagos', path: '/pagos', icon: CalendarClock },
     { name: 'Atrasos', path: '/atrasos', icon: AlertTriangle },
     { name: 'Caja', path: '/caja', icon: Wallet },

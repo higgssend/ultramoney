@@ -19,9 +19,9 @@ export type LoanType =
 export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
 
 export interface Collateral {
-  type: 'Teléfono / Celular' | 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Otro' | 'Sin Garantía';
+  type: 'Teléfono / Celular' | 'Tarjeta de Crédito / Débito' | 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Otro' | 'Sin Garantía';
   description: string;
-  refNumber: string;        // Matrícula, título, serial, IMEI
+  refNumber: string;        // Matrícula, título, serial, IMEI, últimos 4 dígitos
   brand?: string;           // Marca
   model?: string;           // Modelo
   imei2?: string;           // IMEI 2 (Dual SIM)
@@ -32,6 +32,30 @@ export interface Collateral {
   estimatedValue?: number;  // Valor estimado
   documentIds?: string[];   // IDs de ClientDocument adjuntos
   ownerName?: string;       // Nombre del dueño (si es un tercero)
+
+  // Specific for Credit/Debit Card Collateral
+  bankName?: string;        // Banreservas, Popular, BHD, Scotia, etc.
+  cardType?: string;        // Visa, Mastercard, Amex
+  last4?: string;           // Últimos 4 dígitos
+  cardHolder?: string;      // Nombre en la tarjeta
+  expiryDate?: string;      // Vencimiento MM/AA
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  imei2?: string;
+  condition?: string;
+  color?: string;
+  storage?: string;
+  cashPrice: number;
+  costPrice?: number;
+  status: 'Disponible' | 'Financiado' | 'Vendido';
+  createdAt?: string;
 }
 
 export interface ClientReference {
