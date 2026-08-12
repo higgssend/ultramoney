@@ -384,12 +384,23 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA (LIGHT THEME) ─── */}
+      {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA (LIGHT THEME WITH UNIFORM FINER GRADIENT ICONS) ─── */}
       <section id="caracteristicas" className="py-20 bg-white text-slate-900 border-t border-b border-slate-100 relative overflow-hidden">
+        {/* SVG Definition for Uniform Purple-to-Blue Icon Gradient */}
+        <svg width="0" height="0" className="absolute w-0 h-0 overflow-hidden" aria-hidden="true">
+          <defs>
+            <linearGradient id="purple-blue-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8B5CF6" />   {/* Purple-500 */}
+              <stop offset="50%" stopColor="#6366F1" />  {/* Indigo-500 */}
+              <stop offset="100%" stopColor="#2563EB" /> {/* Blue-600 */}
+            </linearGradient>
+          </defs>
+        </svg>
+
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
-              <Layers className="w-4 h-4 text-amber-500" /> ECOSISTEMA INTEGRAL ULTRANET 2.0
+              <Layers className="w-4 h-4" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.5} /> ECOSISTEMA INTEGRAL ULTRANET 2.0
             </span>
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
               Todos los Módulos del Sistema en una Sola Plataforma
@@ -399,14 +410,14 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Grid of 22 Sidebar Modules (Light Theme with Large Direct Icons) */}
+          {/* Grid of 22 Sidebar Modules (Light Theme with Extra Large Finer Gradient Icons) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
             {/* 1. Dashboard */}
             <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <BarChart3 className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                <BarChart3 className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Panel Principal
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">1. Dashboard Central</h3>
@@ -417,10 +428,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 2. Facturas */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <FileText className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                <FileText className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Facturación
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">2. Facturas & Comprobantes</h3>
@@ -431,10 +442,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 3. Consultar */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Search className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+                <Search className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Evaluación
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">3. Consulta Crediticia</h3>
@@ -445,10 +456,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 4. Solicitud */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <FilePlus className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                <FilePlus className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Originación
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">4. Solicitud & Créditos</h3>
@@ -459,10 +470,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 5. Simulador */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Calculator className="w-10 h-10 text-amber-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
+                <Calculator className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Cálculo
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">5. Simulador Financiero</h3>
@@ -473,10 +484,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 6. Clientes */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Users className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
+                <Users className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Expedientes
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">6. Gestión de Clientes 360°</h3>
@@ -487,10 +498,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 7. Portales de Cliente */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Smartphone className="w-10 h-10 text-cyan-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-100">
+                <Smartphone className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Auto-Servicio
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">7. Portales de Cliente</h3>
@@ -501,10 +512,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 8. Préstamos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Banknote className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                <Banknote className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Cartera Activa
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">8. Administración de Préstamos</h3>
@@ -515,10 +526,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 9. Inventario */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-teal-200 hover:shadow-xl hover:shadow-teal-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Package className="w-10 h-10 text-teal-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                <Package className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Stock
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">9. Inventario / Stock</h3>
@@ -529,10 +540,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 10. Pagos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Calendar className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                <Calendar className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Cobros
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">10. Gestión de Pagos</h3>
@@ -543,10 +554,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 11. Atrasos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <AlertCircle className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
+                <AlertCircle className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Morosidad
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">11. Atrasos & Cobranzas</h3>
@@ -557,10 +568,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 12. Caja */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Wallet className="w-10 h-10 text-amber-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
+                <Wallet className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Efectivo
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">12. Caja Chica</h3>
@@ -573,8 +584,8 @@ const LandingPage: React.FC = () => {
             {/* 13. Bancos */}
             <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Landmark className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                <Landmark className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Bancos & POS
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">13. Cuentas & Bancos</h3>
@@ -585,10 +596,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 14. Cartera */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Briefcase className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+                <Briefcase className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Riesgo
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">14. Cartera & Rutas</h3>
@@ -599,10 +610,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 15. Gastos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <TrendingDown className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
+                <TrendingDown className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Egresos
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">15. Control de Gastos</h3>
@@ -613,10 +624,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 16. Ganancia */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <TrendingUp className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                <TrendingUp className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   P&L
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">16. Ganancias & Utilidades</h3>
@@ -627,10 +638,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 17. Empleados */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <UserPlus className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                <UserPlus className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Nómina
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">17. Empleados & Permisos</h3>
@@ -641,10 +652,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 18. Clasificación */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Tag className="w-10 h-10 text-amber-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
+                <Tag className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Scoring
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">18. Clasificación A/B/C/D</h3>
@@ -655,10 +666,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 19. Cont. Profunda */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <BookOpen className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+                <BookOpen className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Contabilidad
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">19. Contabilidad Profunda</h3>
@@ -669,10 +680,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 20. Bitácora */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <ShieldCheck className="w-10 h-10 text-sky-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
+                <ShieldCheck className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Auditoría
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">20. Bitácora de Auditoría</h3>
@@ -685,8 +696,8 @@ const LandingPage: React.FC = () => {
             {/* 21. Migración */}
             <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Database className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                <Database className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Importación
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">21. Centro de Migración</h3>
@@ -697,10 +708,10 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* 22. Configuración */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <Sliders className="w-10 h-10 text-slate-700 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                <Sliders className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
                   Ajustes
                 </span>
                 <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">22. Configuración General</h3>
