@@ -1,30 +1,32 @@
 import React, { useRef, useCallback } from 'react';
 import { X, Printer, Download, Share2, Image as ImageIcon, Building2, Phone, Mail, MapPin } from 'lucide-react';
-import { InstallmentPreview } from '../../utils/LoanEngine';
-import { LoanType, ClosingCostMode, CompanySettings, Client, Collateral } from '../../types';
+import { LoanEngine, InstallmentPreview } from '../../utils/LoanEngine';
+import { LoanType, ClosingCostMode, CompanySettings, Client, Collateral, Loan, formatContractId } from '../../types';
+import { useSettings } from '../../context/StoreContext';
 
-interface LoanContractModalProps {
+export interface LoanContractModalProps {
   isOpen: boolean;
   onClose: () => void;
+  loan?: Loan;
   // Loan data
-  client: Client | undefined;
-  amount: number;
-  interest: number;
-  weeks: number;
-  frequency: string;
-  loanType: LoanType;
-  closingCost: number;
-  closingCostMode: ClosingCostMode;
-  startDate: string;
-  firstPaymentDate: string;
-  schedulePreview: InstallmentPreview[];
+  client?: Client | undefined;
+  amount?: number;
+  interest?: number;
+  weeks?: number;
+  frequency?: string;
+  loanType?: LoanType;
+  closingCost?: number;
+  closingCostMode?: ClosingCostMode;
+  startDate?: string;
+  firstPaymentDate?: string;
+  schedulePreview?: InstallmentPreview[];
   // Computed
-  netDisbursement: number;
-  totalToPay: number;
-  installmentAmount: number;
-  currency: 'DOP' | 'USD';
+  netDisbursement?: number;
+  totalToPay?: number;
+  installmentAmount?: number;
+  currency?: 'DOP' | 'USD';
   // Company
-  companySettings: CompanySettings;
+  companySettings?: CompanySettings;
   // Item financing
   itemPrice?: number;
   downPayment?: number;
@@ -46,24 +48,74 @@ const fmtDate = (d: string) => {
 const RECEIPT_ID = () => `CTR-${Date.now().toString(36).toUpperCase().slice(-8)}`;
 
 export const LoanContractModal: React.FC<LoanContractModalProps> = ({
-  isOpen, onClose, client, amount, interest, weeks, frequency, loanType,
+  isOpen, onClose, loan, client, amount, interest, weeks, frequency, loanType,
   closingCost, closingCostMode, startDate, firstPaymentDate, schedulePreview,
   netDisbursement, totalToPay, installmentAmount, currency, companySettings,
   itemPrice, downPayment, downPaymentMode, financedAmount, customContractId,
   collateral
 }) => {
+  const settingsCtx = useSettings();
+  const activeCompanySettings = companySettings || settingsCtx.companySettings;
+
+  const effectiveClient = client || (loan ? {
+    id: loan.clientId,
+    name: loan.clientName,
+    cedula: loan.clientCedula || 'S/N',
+    phone: loan.clientPhone || 'N/A',
+    address: loan.clientAddress || 'N/A'
+  } as Client : undefined);
+
+  const effectiveAmount = amount ?? loan?.amount ?? 0;
+  const effectiveInterest = interest ?? loan?.interestRate ?? 0;
+  const effectiveWeeks = weeks ?? loan?.durationWeeks ?? loan?.installments ?? 1;
+  const effectiveFrequency = frequency ?? loan?.frequency ?? 'Mensual';
+  const effectiveLoanType: LoanType = (loanType ?? loan?.loanType ?? 'Amortizado (Cuota Fija)') as LoanType;
+  const effectiveClosingCost = closingCost ?? loan?.closingCost ?? 0;
+  const effectiveClosingCostMode: ClosingCostMode = (closingCostMode ?? loan?.closingCostMode ?? 'Descontado') as ClosingCostMode;
+  const effectiveStartDate = startDate ?? loan?.startDate ?? new Date().toISOString().split('T')[0];
+  const effectiveFirstPaymentDate = firstPaymentDate ?? loan?.firstPaymentDate ?? loan?.nextPaymentDate ?? effectiveStartDate;
+
+  const effectiveItemPrice = itemPrice ?? loan?.itemPrice;
+  const effectiveDownPayment = downPayment ?? loan?.downPayment;
+  const effectiveDownPaymentMode = downPaymentMode ?? loan?.downPaymentMode;
+
+  const effectiveSchedulePreview: InstallmentPreview[] = (schedulePreview && schedulePreview.length > 0)
+    ? schedulePreview
+    : (loan ? LoanEngine.calculateSchedule(
+        loan.amount,
+        loan.interestRate,
+        loan.durationWeeks || loan.installments || 1,
+        loan.frequency,
+        loan.startDate,
+        loan.firstPaymentDate,
+        loan.loanType,
+        loan.closingCost,
+        loan.closingCostMode,
+        loan.itemPrice,
+        loan.downPayment,
+        loan.downPaymentMode
+      ).installments : []);
+
+  const effectiveNetDisbursement = netDisbursement ?? loan?.netDisbursementAmount ?? effectiveAmount;
+  const effectiveTotalToPay = (totalToPay && totalToPay > 0) ? totalToPay : (loan?.totalToPay ?? (effectiveAmount + (effectiveAmount * (effectiveInterest / 100))));
+  const effectiveInstallmentAmount = installmentAmount ?? loan?.installmentAmount ?? (effectiveWeeks > 0 ? Math.round(effectiveTotalToPay / effectiveWeeks) : 0);
+  const effectiveCurrency = currency ?? loan?.currency ?? activeCompanySettings.currency ?? 'DOP';
+  const effectiveContractId = customContractId || (loan ? formatContractId(loan.id) : undefined);
+  const effectiveCollateral = collateral || (loan?.collaterals?.[0] || (loan?.collateralType ? { type: loan.collateralType as any, description: loan.collateralDescription || '', refNumber: loan.collateralRefNumber || '' } : undefined));
+
   const printRef = useRef<HTMLDivElement>(null);
-  const contractId = customContractId || useRef(RECEIPT_ID()).current;
+  const contractIdRef = useRef(RECEIPT_ID());
+  const contractId = effectiveContractId || contractIdRef.current;
 
-  const isAmortized = loanType.includes('Amortizado') || loanType.includes('Financiamiento');
-  const isRedito = loanType.includes('Rédito') || loanType.includes('Pagaré');
-  const isFinancing = loanType.includes('Financiamiento');
+  const isAmortized = effectiveLoanType.includes('Amortizado') || effectiveLoanType.includes('Financiamiento');
+  const isRedito = effectiveLoanType.includes('Rédito') || effectiveLoanType.includes('Pagaré');
+  const isFinancing = effectiveLoanType.includes('Financiamiento');
 
-  const effectivePrincipal = (isFinancing && itemPrice && itemPrice > 0) ? ((downPayment && downPayment > 0) ? Math.max(0, itemPrice - downPayment) : itemPrice) : (amount || 0);
-  const effectiveTotalInterest = interest > 0 ? effectivePrincipal * (interest / 100) : 0;
-  const effectiveTotalToPay = (totalToPay && totalToPay > 0) ? totalToPay : (effectivePrincipal + effectiveTotalInterest);
-  const effectiveInstallment = (installmentAmount && installmentAmount > 0) ? installmentAmount : (effectiveTotalToPay / (weeks || 1));
-  const totalInterestAmount = Math.max(0, effectiveTotalToPay - effectivePrincipal);
+  const effectivePrincipal = (isFinancing && effectiveItemPrice && effectiveItemPrice > 0) ? ((effectiveDownPayment && effectiveDownPayment > 0) ? Math.max(0, effectiveItemPrice - effectiveDownPayment) : effectiveItemPrice) : (effectiveAmount || 0);
+  const effectiveTotalInterest = effectiveInterest > 0 ? effectivePrincipal * (effectiveInterest / 100) : 0;
+  const computedTotalToPay = (effectiveTotalToPay && effectiveTotalToPay > 0) ? effectiveTotalToPay : (effectivePrincipal + effectiveTotalInterest);
+  const computedInstallment = (effectiveInstallmentAmount && effectiveInstallmentAmount > 0) ? effectiveInstallmentAmount : (computedTotalToPay / (effectiveWeeks || 1));
+  const totalInterestAmount = Math.max(0, computedTotalToPay - effectivePrincipal);
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -106,11 +158,11 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`Contrato-${(client?.name || 'Prestamo').replace(/\s+/g, '_')}-${contractId}.pdf`);
+      pdf.save(`Contrato-${(effectiveClient?.name || 'Prestamo').replace(/\s+/g, '_')}-${contractId}.pdf`);
     } catch (err) {
       console.error("Error generando PDF:", err);
     }
-  }, [client, contractId]);
+  }, [effectiveClient, contractId]);
 
   const handleDownloadImage = useCallback(async () => {
     if (!printRef.current) return;
@@ -129,30 +181,30 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
       });
 
       const link = document.createElement('a');
-      link.download = `Contrato-${(client?.name || 'Prestamo').replace(/\s+/g, '_')}-${contractId}.png`;
+      link.download = `Contrato-${(effectiveClient?.name || 'Prestamo').replace(/\s+/g, '_')}-${contractId}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (err) {
       console.error("Error generando imagen:", err);
     }
-  }, [client, contractId]);
+  }, [effectiveClient, contractId]);
 
   const handleWhatsApp = useCallback(() => {
     const txt = encodeURIComponent(
-      `📋 *Resumen de Préstamo - ${companySettings.name}*\n\n` +
-      `👤 Cliente: ${client?.name} ${client?.lastName || ''}\n` +
-      `💰 Capital Solicitado: ${fmt(amount, currency)}\n` +
-      `📈 Interés Total: ${fmt(totalInterestAmount, currency)}\n` +
-      `💵 Neto Entregado: ${fmt(netDisbursement, currency)}\n` +
-      `📊 Tasa: ${interest}%\n` +
-      `📅 Plazo: ${weeks} cuotas (${frequency})\n` +
-      `💵 Cuota Periódica: ${fmt(installmentAmount, currency)}\n` +
-      `🧾 TOTAL A PAGAR: ${fmt(totalToPay, currency)}\n\n` +
-      `Primer pago: ${fmtDate(firstPaymentDate)}\n` +
+      `📋 *Resumen de Préstamo - ${activeCompanySettings.name}*\n\n` +
+      `👤 Cliente: ${effectiveClient?.name} ${effectiveClient?.lastName || ''}\n` +
+      `💰 Capital Solicitado: ${fmt(effectiveAmount, effectiveCurrency)}\n` +
+      `📈 Interés Total: ${fmt(totalInterestAmount, effectiveCurrency)}\n` +
+      `💵 Neto Entregado: ${fmt(effectiveNetDisbursement, effectiveCurrency)}\n` +
+      `📊 Tasa: ${effectiveInterest}%\n` +
+      `📅 Plazo: ${effectiveWeeks} cuotas (${effectiveFrequency})\n` +
+      `💵 Cuota Periódica: ${fmt(computedInstallment, effectiveCurrency)}\n` +
+      `🧾 TOTAL A PAGAR: ${fmt(computedTotalToPay, effectiveCurrency)}\n\n` +
+      `Primer pago: ${fmtDate(effectiveFirstPaymentDate)}\n` +
       `N° Contrato: ${contractId}`
     );
     window.open(`https://wa.me/?text=${txt}`, '_blank');
-  }, [client, amount, interest, weeks, frequency, installmentAmount, totalToPay, totalInterestAmount, netDisbursement, firstPaymentDate, currency, companySettings, contractId]);
+  }, [effectiveClient, effectiveAmount, effectiveInterest, effectiveWeeks, effectiveFrequency, computedInstallment, computedTotalToPay, totalInterestAmount, effectiveNetDisbursement, effectiveFirstPaymentDate, effectiveCurrency, activeCompanySettings, contractId]);
 
   if (!isOpen) return null;
 
@@ -223,33 +275,33 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
             {/* Company Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-6 border-b-2 border-slate-200">
               <div className="flex items-center gap-4">
-                {companySettings.logoUrl ? (
-                  <img src={companySettings.logoUrl} alt="Logo" className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-xl" crossOrigin="anonymous" />
+                {activeCompanySettings.logoUrl ? (
+                  <img src={activeCompanySettings.logoUrl} alt="Logo" className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-xl" crossOrigin="anonymous" />
                 ) : (
                   <div className="h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
                     <Building2 className="w-7 h-7 text-white" />
                   </div>
                 )}
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-black text-slate-900">{companySettings.name}</h1>
-                  {companySettings.slogan && <p className="text-xs text-slate-400 italic">{companySettings.slogan}</p>}
-                  {companySettings.rnc && <p className="text-xs text-slate-500 font-bold mt-0.5">RNC: {companySettings.rnc}</p>}
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900">{activeCompanySettings.name}</h1>
+                  {activeCompanySettings.slogan && <p className="text-xs text-slate-400 italic">{activeCompanySettings.slogan}</p>}
+                  {activeCompanySettings.rnc && <p className="text-xs text-slate-500 font-bold mt-0.5">RNC: {activeCompanySettings.rnc}</p>}
                 </div>
               </div>
               <div className="text-left sm:text-right text-xs text-slate-500 space-y-1">
-                {companySettings.phone && (
+                {activeCompanySettings.phone && (
                   <div className="flex items-center gap-1 sm:justify-end font-semibold text-slate-700">
-                    <Phone className="w-3 h-3 text-indigo-500" /> {companySettings.phone}
+                    <Phone className="w-3 h-3 text-indigo-500" /> {activeCompanySettings.phone}
                   </div>
                 )}
-                {companySettings.email && (
+                {activeCompanySettings.email && (
                   <div className="flex items-center gap-1 sm:justify-end">
-                    <Mail className="w-3 h-3 text-indigo-500" /> {companySettings.email}
+                    <Mail className="w-3 h-3 text-indigo-500" /> {activeCompanySettings.email}
                   </div>
                 )}
-                {companySettings.address && (
+                {activeCompanySettings.address && (
                   <div className="flex items-center gap-1 sm:justify-end">
-                    <MapPin className="w-3 h-3 text-indigo-500" /> {companySettings.address}
+                    <MapPin className="w-3 h-3 text-indigo-500" /> {activeCompanySettings.address}
                   </div>
                 )}
               </div>
@@ -263,7 +315,7 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
               <div className="flex items-center justify-center gap-4 mt-1.5 text-xs text-slate-500">
                 <span>N° Contrato: <strong className="text-indigo-600 font-mono">{contractId}</strong></span>
                 <span>•</span>
-                <span>Emisión: <strong className="text-slate-800">{fmtDate(startDate || new Date().toISOString().split('T')[0])}</strong></span>
+                <span>Emisión: <strong className="text-slate-800">{fmtDate(effectiveStartDate || new Date().toISOString().split('T')[0])}</strong></span>
               </div>
             </div>
 
@@ -273,19 +325,19 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">Nombre Completo</span>
-                  <p className="font-black text-slate-900 text-base">{client?.name} {client?.lastName || ''}</p>
+                  <p className="font-black text-slate-900 text-base">{effectiveClient?.name} {effectiveClient?.lastName || ''}</p>
                 </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">Cédula / Documento</span>
-                  <p className="font-bold text-slate-800 font-mono">{client?.cedula || '—'}</p>
+                  <p className="font-bold text-slate-800 font-mono">{effectiveClient?.cedula || '—'}</p>
                 </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">Teléfono de Contacto</span>
-                  <p className="font-bold text-slate-800">{client?.phone || '—'}</p>
+                  <p className="font-bold text-slate-800">{effectiveClient?.phone || '—'}</p>
                 </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">Dirección Residencia</span>
-                  <p className="font-bold text-slate-800 truncate">{client?.address || '—'}</p>
+                  <p className="font-bold text-slate-800 truncate">{effectiveClient?.address || '—'}</p>
                 </div>
               </div>
             </div>
@@ -300,40 +352,40 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Tipo de Operación</span>
-                    <span className="font-bold text-slate-900">{loanType}</span>
+                    <span className="font-bold text-slate-900">{effectiveLoanType}</span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Capital Solicitado</span>
-                    <span className="font-bold text-slate-900">{fmt(amount, currency)}</span>
+                    <span className="font-bold text-slate-900">{fmt(effectiveAmount, effectiveCurrency)}</span>
                   </div>
                   
                   {isFinancing && (
                     <>
                       <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                         <span className="text-xs text-slate-500 font-medium">Precio de Venta</span>
-                        <span className="font-bold text-slate-800">{fmt(itemPrice || 0, currency)}</span>
+                        <span className="font-bold text-slate-800">{fmt(effectiveItemPrice || 0, effectiveCurrency)}</span>
                       </div>
-                      {downPayment && downPayment > 0 ? (
+                      {effectiveDownPayment && effectiveDownPayment > 0 ? (
                         <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                           <span className="text-xs text-slate-500 font-medium">Inicial Pagado</span>
-                          <span className="font-bold text-emerald-600">{fmt(downPayment, currency)} ({downPaymentMode || 'Efectivo'})</span>
+                          <span className="font-bold text-emerald-600">{fmt(effectiveDownPayment, effectiveCurrency)} ({effectiveDownPaymentMode || 'Efectivo'})</span>
                         </div>
                       ) : null}
                     </>
                   )}
 
-                  {closingCost > 0 && (
+                  {effectiveClosingCost > 0 && (
                     <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
-                      <span className="text-xs text-amber-700 font-medium">Gastos de Cierre ({closingCostMode})</span>
+                      <span className="text-xs text-amber-700 font-medium">Gastos de Cierre ({effectiveClosingCostMode})</span>
                       <span className="font-bold text-amber-700">
-                        {closingCostMode === 'Descontado' ? '-' : '+'}{fmt(closingCost, currency)}
+                        {effectiveClosingCostMode === 'Descontado' ? '-' : '+'}{fmt(effectiveClosingCost, effectiveCurrency)}
                       </span>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center py-2 bg-emerald-50 px-3 rounded-xl border border-emerald-200">
                     <span className="text-xs text-emerald-800 font-black uppercase">Monto Neto a Entregar</span>
-                    <span className="font-black text-emerald-700 text-base">{fmt(netDisbursement || effectivePrincipal, currency)}</span>
+                    <span className="font-black text-emerald-700 text-base">{fmt(effectiveNetDisbursement || effectivePrincipal, effectiveCurrency)}</span>
                   </div>
                 </div>
 
@@ -341,26 +393,26 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Tasa de Interés</span>
-                    <span className="font-bold text-slate-900">{interest}% ({frequency})</span>
+                    <span className="font-bold text-slate-900">{effectiveInterest}% ({effectiveFrequency})</span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-rose-600 font-medium">Interés Total a Pagar</span>
-                    <span className="font-bold text-rose-600">{fmt(totalInterestAmount, currency)}</span>
+                    <span className="font-bold text-rose-600">{fmt(totalInterestAmount, effectiveCurrency)}</span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Plazo de Cuotas</span>
                     <span className="font-bold text-slate-900">
-                      {isRedito ? 'Indefinido (Pagaré Abierto)' : `${weeks} cuotas (${frequency})`}
+                      {isRedito ? 'Indefinido (Pagaré Abierto)' : `${effectiveWeeks} cuotas (${effectiveFrequency})`}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Primer Pago</span>
-                    <span className="font-bold text-slate-900">{fmtDate(firstPaymentDate)} ({fmt(effectiveInstallment, currency)} / {frequency})</span>
+                    <span className="font-bold text-slate-900">{fmtDate(effectiveFirstPaymentDate)} ({fmt(computedInstallment, effectiveCurrency)} / {effectiveFrequency})</span>
                   </div>
 
                   <div className="flex justify-between items-center py-2 bg-indigo-50 px-3 rounded-xl border border-indigo-200">
                     <span className="text-xs text-indigo-800 font-black uppercase">{isAmortized ? 'Cuota Fija' : 'Interés Periódico'}</span>
-                    <span className="font-black text-indigo-700 text-base">{fmt(effectiveInstallment, currency)}</span>
+                    <span className="font-black text-indigo-700 text-base">{fmt(computedInstallment, effectiveCurrency)}</span>
                   </div>
                 </div>
 
@@ -368,21 +420,21 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
             </div>
 
             {/* Collateral / Guarantee Section if present */}
-            {collateral && collateral.type && collateral.type !== 'Sin Garantía' && (
+            {effectiveCollateral && effectiveCollateral.type && effectiveCollateral.type !== 'Sin Garantía' && (
               <div className="bg-amber-50 rounded-2xl p-5 mb-6 border border-amber-200">
                 <h3 className="text-xs font-black uppercase tracking-wider text-amber-800 mb-3">Garantía / Prenda Registrada</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
                     <span className="text-slate-500 block font-medium">Tipo de Garantía</span>
-                    <span className="font-extrabold text-slate-900 text-sm">{collateral.type}</span>
+                    <span className="font-extrabold text-slate-900 text-sm">{effectiveCollateral.type}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 block font-medium">Descripción del Bien</span>
-                    <span className="font-bold text-slate-800">{collateral.description || '—'}</span>
+                    <span className="font-bold text-slate-800">{effectiveCollateral.description || '—'}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 block font-medium">Matrícula / Serie / Referencia</span>
-                    <span className="font-bold text-slate-900 font-mono">{collateral.refNumber || '—'}</span>
+                    <span className="font-bold text-slate-900 font-mono">{effectiveCollateral.refNumber || '—'}</span>
                   </div>
                 </div>
               </div>
@@ -393,17 +445,17 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
               <p className="text-xs font-black uppercase tracking-widest text-indigo-200 mb-1">
                 {isRedito ? 'Monto Principal a Mantener en Pagaré' : 'MONTO TOTAL NETO A PAGAR POR EL CLIENTE'}
               </p>
-              <p className="text-4xl font-black">{fmt(effectiveTotalToPay, currency)}</p>
+              <p className="text-4xl font-black">{fmt(computedTotalToPay, effectiveCurrency)}</p>
               <p className="text-xs text-indigo-200/90 mt-1 font-medium">
-                (Capital {fmt(effectivePrincipal, currency)} + Intereses {fmt(totalInterestAmount, currency)})
+                (Capital {fmt(effectivePrincipal, effectiveCurrency)} + Intereses {fmt(totalInterestAmount, effectiveCurrency)})
               </p>
             </div>
 
             {/* Installment Table Preview */}
-            {isAmortized && schedulePreview.length > 0 && (
+            {isAmortized && effectiveSchedulePreview.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-xs font-black uppercase tracking-wider text-indigo-600 mb-3">
-                  Tabla de Amortización Completa ({schedulePreview.length} Cuotas)
+                  Tabla de Amortización Completa ({effectiveSchedulePreview.length} Cuotas)
                 </h3>
                 <div className="overflow-x-auto rounded-2xl border border-slate-200">
                   <table className="w-full text-xs">
@@ -418,21 +470,21 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {schedulePreview.map((row, i) => (
+                      {effectiveSchedulePreview.map((row, i) => (
                         <tr key={i} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}`}>
                           <td className="py-2 px-3 font-bold text-slate-400">{row.installmentNumber}</td>
                           <td className="py-2 px-3 font-semibold text-slate-800">{fmtDate(row.dueDate)}</td>
                           <td className="py-2 px-3 text-right text-slate-700">
-                            {row.principal != null ? fmt(row.principal, currency) : '—'}
+                            {row.principal != null ? fmt(row.principal, effectiveCurrency) : '—'}
                           </td>
                           <td className="py-2 px-3 text-right font-medium text-rose-600">
-                            {row.interest != null ? fmt(row.interest, currency) : '—'}
+                            {row.interest != null ? fmt(row.interest, effectiveCurrency) : '—'}
                           </td>
                           <td className="py-2 px-3 text-right font-black text-indigo-700">
-                            {fmt(row.total, currency)}
+                            {fmt(row.total, effectiveCurrency)}
                           </td>
                           <td className="py-2 px-3 text-right font-medium text-slate-500">
-                            {row.balance != null ? fmt(row.balance, currency) : '—'}
+                            {row.balance != null ? fmt(row.balance, effectiveCurrency) : '—'}
                           </td>
                         </tr>
                       ))}
@@ -441,7 +493,7 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                       <tr className="bg-indigo-50 border-t-2 border-indigo-200">
                         <td colSpan={4} className="py-2.5 px-3 font-black text-indigo-900 text-xs uppercase">TOTALES GENERALES</td>
                         <td className="py-2.5 px-3 text-right font-black text-indigo-700 text-sm">
-                          {fmt(totalToPay, currency)}
+                          {fmt(computedTotalToPay, effectiveCurrency)}
                         </td>
                         <td />
                       </tr>
@@ -452,10 +504,10 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
             )}
 
             {/* Terms and Conditions */}
-            {companySettings.termsAndConditions && (
+            {activeCompanySettings.termsAndConditions && (
               <div className="mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
                 <p className="font-bold text-slate-800 mb-1 uppercase text-[10px] tracking-wider">Términos y Condiciones Contractuales</p>
-                <p>{companySettings.termsAndConditions}</p>
+                <p>{activeCompanySettings.termsAndConditions}</p>
               </div>
             )}
 
@@ -464,20 +516,20 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
               <div className="text-center">
                 <div className="border-b-2 border-slate-400 pb-2 mb-2 h-14" />
                 <p className="text-xs font-black text-slate-800">Firma del Prestatario</p>
-                <p className="text-xs text-slate-600">{client?.name} {client?.lastName || ''}</p>
-                <p className="text-xs text-slate-400 font-mono">{client?.cedula || ''}</p>
+                <p className="text-xs text-slate-600">{effectiveClient?.name} {effectiveClient?.lastName || ''}</p>
+                <p className="text-xs text-slate-400 font-mono">{effectiveClient?.cedula || ''}</p>
               </div>
               <div className="text-center">
                 <div className="border-b-2 border-slate-400 pb-2 mb-2 h-14" />
                 <p className="text-xs font-black text-slate-800">Firma del Prestamista / Autorizado</p>
-                <p className="text-xs text-slate-600">{companySettings.name}</p>
-                <p className="text-xs text-slate-400 font-mono">RNC: {companySettings.rnc || '—'}</p>
+                <p className="text-xs text-slate-600">{activeCompanySettings.name}</p>
+                <p className="text-xs text-slate-400 font-mono">RNC: {activeCompanySettings.rnc || '—'}</p>
               </div>
             </div>
 
             {/* Document Footer */}
             <div className="mt-8 pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400">
-              <p>Documento oficial emitido por {companySettings.name} • N° Contrato {contractId} • Fecha {new Date().toLocaleDateString('es-DO')}</p>
+              <p>Documento oficial emitido por {activeCompanySettings.name} • N° Contrato {contractId} • Fecha {new Date().toLocaleDateString('es-DO')}</p>
             </div>
 
           </div>{/* end printable document */}

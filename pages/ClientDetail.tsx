@@ -11,6 +11,7 @@ import { useSettings, useClients, useLoans, useAccounting } from '../context/Sto
 import { LoanStatus, BankAccount, Client, Loan, Transaction, ClientDocument, formatLoanId } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ContractViewer } from './features/ContractViewer';
+import { LoanContractModal } from './features/LoanContractModal';
 import { DocumentGenerator, DocumentType } from '../components/DocumentGenerator';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 import { CustomSelect } from '../components/CustomSelect';
@@ -486,13 +487,19 @@ const ClientDetail: React.FC = () => {
                                          <span className="text-sm font-bold text-slate-700 dark:text-white">${loan.installmentAmount.toLocaleString()} / {loan.frequency}</span>
                                      </div>
                                  </div>
-                                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
+                                     <button 
+                                         onClick={() => setSelectedContractLoan(loan)}
+                                         className="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-extrabold transition-all flex justify-center items-center gap-1.5 shadow-md"
+                                     >
+                                         <FileText className="w-4 h-4" /> Ver Contrato Oficial & Desglose
+                                     </button>
                                      <div className="flex gap-2">
                                          <button 
                                              onClick={() => navigate(`/documentos/${client.id}?loanId=${loan.id}`)}
                                              className="flex-1 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
                                          >
-                                             <FileText className="w-4 h-4" /> Ver Documentos
+                                             <FileText className="w-4 h-4" /> Documentos
                                          </button>
                                          <button 
                                              onClick={() => navigate('/pagos', { state: { loanId: loan.id } })}
@@ -501,10 +508,6 @@ const ClientDetail: React.FC = () => {
                                              <Receipt className="w-4 h-4" /> Pagos
                                          </button>
                                      </div>
-                                     {loan.status !== 'Completado' && (
-                                         <button 
-                                             onClick={() => handleSendReminder(loan)}
-                                             className="w-full py-2 mt-2 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
                                          >
                                              <MessageCircle className="w-4 h-4" /> Recordatorio WhatsApp
                                          </button>
@@ -748,10 +751,10 @@ const ClientDetail: React.FC = () => {
                                                   </div>
                                                   <div className="flex items-center gap-1">
                                                       <button 
-                                                          onClick={() => window.open(contratoUrl, '_blank')} 
-                                                          className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all"
+                                                          onClick={() => setSelectedContractLoan(l)} 
+                                                          className="px-2.5 py-1 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all shadow-sm"
                                                       >
-                                                          <Eye className="w-3 h-3" /> Ver
+                                                          <Eye className="w-3 h-3" /> Ver Documento Oficial & Desglose
                                                       </button>
                                                       <button 
                                                           onClick={() => {

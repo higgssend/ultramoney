@@ -8,6 +8,9 @@ import { DataExportToolbar } from '../components/DataExportToolbar';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
+import { LoanContractModal } from './features/LoanContractModal';
+
 const Loans: React.FC = () => {
   const { loans, refinanceLoan, forgiveDebt } = useLoans();
   const { companySettings } = useSettings();
@@ -16,6 +19,7 @@ const Loans: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'TODOS' | 'A tiempo' | 'Atrasado' | 'Vencido' | 'Pagado'>('TODOS');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [contractLoan, setContractLoan] = useState<Loan | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'refinance' | 'collateral' | 'forgiveness'>('summary');
 
   // Refinance State
@@ -507,10 +511,10 @@ const Loans: React.FC = () => {
                                         <DollarSign className="w-6 h-6" /> Registrar Nuevo Pago
                                     </button>
                                     <button 
-                                        onClick={() => generatePDFContract(selectedLoan)}
-                                        className="md:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all text-lg"
-                                    >
-                                        <Printer className="w-6 h-6" /> Pagaré / Contrato
+                                         onClick={() => setContractLoan(selectedLoan)}
+                                         className="md:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-extrabold flex items-center justify-center gap-2 hover:shadow-lg shadow-indigo-600/30 transition-all text-base"
+                                     >
+                                         <FileText className="w-5 h-5" /> Documento Oficial & Desglose
                                     </button>
                                  </div>
                              </div>
@@ -659,8 +663,13 @@ const Loans: React.FC = () => {
                  </div>
              </div>
           </div>
+      {contractLoan && (
+        <LoanContractModal
+          isOpen={Boolean(contractLoan)}
+          onClose={() => setContractLoan(null)}
+          loan={contractLoan}
+        />
       )}
-
     </div>
   );
 };

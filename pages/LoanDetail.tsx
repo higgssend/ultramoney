@@ -14,6 +14,7 @@ import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
 import { LoanEngine } from '../utils/LoanEngine';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
+import { LoanContractModal } from './features/LoanContractModal';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +33,7 @@ export const LoanDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'payments' | 'documents' | 'collateral' | 'refinance' | 'forgiveness'>(initialTab);
   const [docType, setDocType] = useState<'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo'>('pagare');
   const [showSharingModal, setShowSharingModal] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
 
   // Refinance state
   const [refinanceAmount, setRefinanceAmount] = useState<number>(0);
@@ -567,6 +569,13 @@ export const LoanDetail: React.FC = () => {
             className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all"
           >
             <DollarSign className="w-4 h-4" /> Registrar Pago
+          </button>
+          <button
+            onClick={() => setShowContractModal(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all shadow-md shadow-indigo-500/20"
+            title="Ver Contrato Oficial y Desglose Financiero Integral"
+          >
+            <FileText className="w-4 h-4" /> Ver Contrato Oficial & Desglose
           </button>
           <button
             onClick={() => setShowSharingModal(true)}
@@ -1711,6 +1720,15 @@ export const LoanDetail: React.FC = () => {
           client={client}
           companyName={companySettings?.companyName || companySettings?.name}
           onClose={() => setShowSharingModal(false)}
+        />
+      )}
+
+      {showContractModal && loan && (
+        <LoanContractModal
+          isOpen={showContractModal}
+          onClose={() => setShowContractModal(false)}
+          loan={loan}
+          client={client}
         />
       )}
 
