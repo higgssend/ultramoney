@@ -384,373 +384,327 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA ─── */}
-      <section id="caracteristicas" className="py-20 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))] pointer-events-none" />
-        
+      {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA (LIGHT THEME) ─── */}
+      <section id="caracteristicas" className="py-20 bg-white text-slate-900 border-t border-b border-slate-100 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-black uppercase tracking-widest shadow-inner">
-              <Layers className="w-4 h-4 text-amber-400 animate-pulse" /> ECOSISTEMA INTEGRAL ULTRANET 2.0
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
+              <Layers className="w-4 h-4 text-amber-500" /> ECOSISTEMA INTEGRAL ULTRANET 2.0
             </span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
               Todos los Módulos del Sistema en una Sola Plataforma
             </h2>
-            <p className="text-sm sm:text-base text-slate-300">
+            <p className="text-sm sm:text-base text-slate-600">
               Descubre las 22 herramientas especializadas diseñadas para automatizar el ciclo completo de tus préstamos, cobros, cartera y contabilidad.
             </p>
           </div>
 
-          {/* Grid of 22 Sidebar Modules */}
+          {/* Grid of 22 Sidebar Modules (Light Theme with Large Direct Icons) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
             {/* 1. Dashboard */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <BarChart3 className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                <BarChart3 className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
                   Panel Principal
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">1. Dashboard Central</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">1. Dashboard Central</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Panel de control en tiempo real con indicadores KPIs de capital colocado, cobros del día, morosidad acumulada y ganancias netas.
                 </p>
               </div>
             </div>
 
             {/* 2. Facturas */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-blue-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                <FileText className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
                   Facturación
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">2. Facturas & Comprobantes</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">2. Facturas & Comprobantes</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Emisión, descarga e impresión en PDF/Ticket de facturas comerciales, comprobantes de ingreso y comprobantes fiscales (NCF).
                 </p>
               </div>
             </div>
 
             {/* 3. Consultar */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Search className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                <Search className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
                   Evaluación
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">3. Consulta Crediticia</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">3. Consulta Crediticia</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Evaluación instantánea de historial crediticio, score de morosidad y validación de antecedentes de clientes en 1 clic.
                 </p>
               </div>
             </div>
 
             {/* 4. Solicitud */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <FilePlus className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <FilePlus className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
                   Originación
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">4. Solicitud & Créditos</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">4. Solicitud & Créditos</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Originación de préstamos, financiamiento de vehículos o electrodomésticos (con/sin inicial) y aprobación estructurada.
                 </p>
               </div>
             </div>
 
             {/* 5. Simulador */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-600/30 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Calculator className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                <Calculator className="w-10 h-10 text-amber-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
                   Cálculo
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">5. Simulador Financiero</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">5. Simulador Financiero</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Calculadora interactiva para proyectar amortizaciones, cuotas semanales/quincenales/mensuales y tasas de interés.
                 </p>
               </div>
             </div>
 
             {/* 6. Clientes */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Users className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                <Users className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
                   Expedientes
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">6. Gestión de Clientes 360°</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">6. Gestión de Clientes 360°</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Expediente digital completo, foto de perfil con recortador, cédula, garantes principales, garantes solidarios y ubicación.
                 </p>
               </div>
             </div>
 
             {/* 7. Portales de Cliente */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-cyan-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-cyan-200 hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-cyan-600/30 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Smartphone className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">
+                <Smartphone className="w-10 h-10 text-cyan-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-700 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-100">
                   Auto-Servicio
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">7. Portales de Cliente</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">7. Portales de Cliente</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Acceso web privado para que los clientes consulten sus préstamos activos, fechas de pago y recibos por WhatsApp.
                 </p>
               </div>
             </div>
 
             {/* 8. Préstamos */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Banknote className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <Banknote className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
                   Cartera Activa
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">8. Administración de Préstamos</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">8. Administración de Préstamos</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Control centralizado de cartera activa, contrato legal oficial, desglose financiero, refinanciamiento y liquidación.
                 </p>
               </div>
             </div>
 
             {/* 9. Inventario */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-teal-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-teal-200 hover:shadow-xl hover:shadow-teal-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-teal-600/30 text-teal-400 border border-teal-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Package className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded-full border border-teal-500/20">
+                <Package className="w-10 h-10 text-teal-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
                   Stock
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">9. Inventario / Stock</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">9. Inventario / Stock</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Control de inventario de equipos, vehículos, celulares y artículos dados en crédito con prendas en garantía.
                 </p>
               </div>
             </div>
 
             {/* 10. Pagos */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Calendar className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <Calendar className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
                   Cobros
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">10. Gestión de Pagos</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">10. Gestión de Pagos</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Registro rápido de cobros, abonos a capital, impresión térmica de tickets y recibos digitales QR por WhatsApp.
                 </p>
               </div>
             </div>
 
             {/* 11. Atrasos */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                <AlertCircle className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
                   Morosidad
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">11. Atrasos & Cobranzas</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">11. Atrasos & Cobranzas</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Monitoreo de morosos, cálculo automático de recargos por mora pactada y alertas de seguimiento inmediato.
                 </p>
               </div>
             </div>
 
             {/* 12. Caja */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-600/30 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Wallet className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                <Wallet className="w-10 h-10 text-amber-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
                   Efectivo
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">12. Caja Chica</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">12. Caja Chica</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Apertura, cierre y arqueo diario de caja chica, control de flujos de efectivo en tiempo real y cuadre de ingresos/egresos.
                 </p>
               </div>
             </div>
 
             {/* 13. Bancos */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Landmark className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                <Landmark className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
                   Bancos & POS
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">13. Cuentas & Bancos</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">13. Cuentas & Bancos</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Conciliación de cuentas bancarias (USD/DOP), tarjetas de crédito y terminales Verifone/POS para cobros digitales.
                 </p>
               </div>
             </div>
 
             {/* 14. Cartera */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Briefcase className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                <Briefcase className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
                   Riesgo
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">14. Cartera & Rutas</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">14. Cartera & Rutas</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Análisis de salud de cartera, distribución por cobrador, rutas de cobro en terreno y mapa de riesgo crediticio.
                 </p>
               </div>
             </div>
 
             {/* 15. Gastos */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:shadow-rose-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <TrendingDown className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                <TrendingDown className="w-10 h-10 text-rose-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
                   Egresos
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">15. Control de Gastos</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">15. Control de Gastos</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Registro categorizado de gastos operativos, comisiones de cobradores, nómina y costos fijos de la financiera.
                 </p>
               </div>
             </div>
 
             {/* 16. Ganancia */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <TrendingUp className="w-10 h-10 text-emerald-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
                   P&L
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">16. Ganancias & Utilidades</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">16. Ganancias & Utilidades</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Estado de pérdidas y ganancias, proyección de intereses devengados vs cobrados y análisis de rentabilidad.
                 </p>
               </div>
             </div>
 
             {/* 17. Empleados */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-blue-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <UserPlus className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                <UserPlus className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
                   Nómina
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">17. Empleados & Permisos</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">17. Empleados & Permisos</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Control de personal, cobradores, administradores, asignación de permisos RLS y auditoría de rendimiento.
                 </p>
               </div>
             </div>
 
             {/* 18. Clasificación */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-600/30 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Tag className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                <Tag className="w-10 h-10 text-amber-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
                   Scoring
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">18. Clasificación A/B/C/D</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">18. Clasificación A/B/C/D</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Segmentación automática de clientes por nivel de riesgo (Categorías A, B, C, D) y comportamiento de pago.
                 </p>
               </div>
             </div>
 
             {/* 19. Cont. Profunda */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                <BookOpen className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
                   Contabilidad
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">19. Contabilidad Profunda</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">19. Contabilidad Profunda</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Asientos contables automáticos, catálogo de cuentas, libro diario y balance general sin intervención manual.
                 </p>
               </div>
             </div>
 
             {/* 20. Bitácora */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-sky-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-sky-600/30 text-sky-400 border border-sky-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                <ShieldCheck className="w-10 h-10 text-sky-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
                   Auditoría
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">20. Bitácora de Auditoría</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">20. Bitácora de Auditoría</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Registro inalterable de auditoría que registra cada creación, edición o eliminación realizada en la plataforma.
                 </p>
               </div>
             </div>
 
             {/* 21. Migración */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Database className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                <Database className="w-10 h-10 text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
                   Importación
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">21. Centro de Migración</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">21. Centro de Migración</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Importación masiva de datos desde Excel/CSV mediante inteligencia artificial y herramientas de reversión (rollback).
                 </p>
               </div>
             </div>
 
             {/* 22. Configuración */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-slate-400/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-slate-600/30 text-slate-300 border border-slate-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Sliders className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-300 bg-slate-500/10 px-2.5 py-0.5 rounded-full border border-slate-500/20">
+                <Sliders className="w-10 h-10 text-slate-700 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
                   Ajustes
                 </span>
-                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">22. Configuración General</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">22. Configuración General</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
                   Configuración de nombre comercial, sello notarial, tasas predeterminadas, WhatsApp API y seguridad.
                 </p>
               </div>
