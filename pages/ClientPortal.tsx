@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../context/StoreContext';
-import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar } from 'lucide-react';
-import { Loan, Transaction, CompanySettings, Client } from '../types';
-import { useParams } from 'react-router-dom';
+import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar, ExternalLink, Printer } from 'lucide-react';
+import { Loan, Transaction, CompanySettings, Client, formatLoanId, formatReceiptId } from '../types';
+import { useParams, Link } from 'react-router-dom';
 import { insforge } from '../lib/insforge';
-import { addWeeks, addMonths, addDays } from 'date-fns';
 
 export const ClientPortal: React.FC = () => {
     const { companySettings } = useSettings();
@@ -26,24 +25,24 @@ export const ClientPortal: React.FC = () => {
     const [clientTransactions, setClientTransactions] = useState<Transaction[]>([]);
     const [clientDocuments, setClientDocuments] = useState<any[]>([]);
 
-    // Helper for theoretical installments
+    // Helper for theoretical installment calculation
     const getInstallmentAmount = (loan: Loan) => {
-        if (!loan.durationWeeks || loan.durationWeeks <= 0) return loan.amount;
-        return (loan.amount / loan.durationWeeks) + ((loan.amount * (loan.interestRate / 100)));
+        const total = loan.totalToPay || loan.amount || 0;
+        const count = loan.durationWeeks || 1;
+        if (total > 0 && count > 0) return total / count;
+        return loan.amount || 0;
     };
 
     const getNextDate = (loan: Loan) => {
-        if (!loan.startDate) return new Date();
-        const start = new Date(loan.startDate);
-        // Approximation based on frequency
-        if (loan.frequency === 'Semanal') return addWeeks(start, 1);
-        if (loan.frequency === 'Quincenal') return addDays(start, 15);
-        if (loan.frequency === 'Mensual') return addMonths(start, 1);
-        if (loan.frequency === 'Diario') return addDays(start, 1);
-        return start;
+        const nextStr = loan.nextPaymentDate || loan.startDate;
+        if (nextStr) {
+            const parsed = new Date(nextStr);
+            if (!isNaN(parsed.getTime())) return parsed;
+        }
+        return new Date();
     };
 
-    // Initial Auth Check
+    // Initial Client Lookup
     useEffect(() => {
         if (!clientId) return;
         
@@ -58,7 +57,7 @@ export const ClientPortal: React.FC = () => {
                     query = query.eq('portal_alias', clientId);
                 }
                 
-                const { data: cData, error: clientErr } = await query.single();
+                const { data: cData, error: clientErr } = await query.maybeSingle();
                 
                 if (clientErr || !cData) {
                     setNotFound(true);
@@ -75,20 +74,25 @@ export const ClientPortal: React.FC = () => {
 
                 const mappedClient: Client = {
                     ...foundClient,
-                    clientPin: foundClient.clientpin,
-                    portalAlias: foundClient.portal_alias,
-                    portalActive: foundClient.portal_active
+                    id: foundClient.id,
+                    name: foundClient.name || 'Cliente',
+                    lastName: foundClient.lastname || foundClient.lastName || '',
+                    cedula: foundClient.cedula || '',
+                    phone: foundClient.phone || '',
+                    clientPin: foundClient.clientpin || foundClient.clientPin,
+                    portalAlias: foundClient.portal_alias || foundClient.portalAlias,
+                    portalActive: foundClient.portal_active ?? foundClient.portalActive ?? true
                 };
                 
                 setClient(mappedClient);
 
-                // If no pin is set, we bypass auth
+                // If no pin is set or portal is open, fetch details & authenticate immediately
                 if (!mappedClient.clientPin) {
                     await fetchClientDetails(mappedClient.id);
                     setIsAuthenticated(true);
                 }
             } catch (err) {
-                console.error("Error fetching client for portal:", err);
+                console.error("Error cargando portal de cliente:", err);
                 setNotFound(true);
             } finally {
                 setIsLoading(false);
@@ -99,24 +103,99 @@ export const ClientPortal: React.FC = () => {
 
     const fetchClientDetails = async (id: string) => {
         try {
-            const { data: lData } = await insforge.database.from('loans').select('*').eq('clientId', id);
-            if (lData) {
-                setClientLoans(lData as any);
+            // 1. Fetch Loans for this client with column name fallback
+            let { data: lData } = await insforge.database
+                .from('loans')
+                .select('*')
+                .eq('clientid', id);
+
+            if (!lData || lData.length === 0) {
+                const { data: lData2 } = await insforge.database
+                    .from('loans')
+                    .select('*')
+                    .eq('client_id', id);
+                if (lData2) lData = lData2;
+            }
+
+            if (!lData || lData.length === 0) {
+                const { data: lData3 } = await insforge.database
+                    .from('loans')
+                    .select('*')
+                    .eq('clientId', id);
+                if (lData3) lData = lData3;
+            }
+
+            if (lData && lData.length > 0) {
+                // Map Postgres raw fields to standard Loan interface
+                const mappedLoans: Loan[] = lData.map((l: any) => ({
+                    ...l,
+                    id: l.id,
+                    amount: Number(l.amount || 0),
+                    remainingBalance: Number(l.remainingbalance ?? l.remaining_balance ?? l.remainingBalance ?? l.amount ?? 0),
+                    totalToPay: Number(l.totaltopay ?? l.total_to_pay ?? l.totalToPay ?? l.amount ?? 0),
+                    loanType: l.loantype || l.loan_type || l.loanType || 'Préstamo Personal',
+                    loanCategory: l.loancategory || l.loan_category || l.loanCategory || 'Personal',
+                    frequency: l.frequency || 'Mensual',
+                    interestRate: Number(l.interestrate ?? l.interest_rate ?? l.interestRate ?? 0),
+                    durationWeeks: Number(l.durationweeks ?? l.duration_weeks ?? l.durationWeeks ?? l.installments ?? 1),
+                    status: l.status || 'Activo',
+                    startDate: l.startdate || l.start_date || l.startDate || l.created_at,
+                    nextPaymentDate: l.nextpaymentdate || l.next_payment_date || l.nextPaymentDate,
+                }));
+
+                setClientLoans(mappedLoans);
+
                 const lIds = lData.map((l: any) => l.id);
                 if (lIds.length > 0) {
-                    const { data: tData } = await insforge.database.from('transactions').select('*').in('referenceId', lIds);
+                    // 2. Fetch Transactions for these loan IDs
+                    let { data: tData } = await insforge.database
+                        .from('transactions')
+                        .select('*')
+                        .in('referenceid', lIds);
+
+                    if (!tData || tData.length === 0) {
+                        const { data: tData2 } = await insforge.database
+                            .from('transactions')
+                            .select('*')
+                            .in('reference_id', lIds);
+                        if (tData2) tData = tData2;
+                    }
+
+                    if (!tData || tData.length === 0) {
+                        const { data: tData3 } = await insforge.database
+                            .from('transactions')
+                            .select('*')
+                            .in('referenceId', lIds);
+                        if (tData3) tData = tData3;
+                    }
+
                     if (tData) {
-                        setClientTransactions(tData.sort((a: any,b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+                        const mappedTx: Transaction[] = tData.map((t: any) => ({
+                            ...t,
+                            id: t.id,
+                            amount: Number(t.amount || 0),
+                            date: t.date || t.created_at || new Date().toISOString(),
+                            description: t.description || 'Pago de Préstamo',
+                            paymentMethod: t.paymentmethod || t.payment_method || t.paymentMethod || 'Efectivo',
+                            paymentType: t.paymenttype || t.payment_type || t.paymentType || 'Ingreso',
+                            referenceId: t.referenceid || t.reference_id || t.referenceId
+                        }));
+                        setClientTransactions(mappedTx.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                     }
                 }
             }
-            // Fetch Documents
-            const { data: docsData } = await insforge.database.from('client_documents').select('*').eq('client_id', id);
+
+            // 3. Fetch Documents
+            const { data: docsData } = await insforge.database
+                .from('client_documents')
+                .select('*')
+                .eq('client_id', id);
+
             if (docsData) {
                 setClientDocuments(docsData);
             }
         } catch (err) {
-            console.error("Error fetching details", err);
+            console.error("Error cargando detalles del cliente en portal:", err);
         }
     };
 
@@ -129,7 +208,7 @@ export const ClientPortal: React.FC = () => {
             return;
         }
         
-        if (client.clientPin !== pin) {
+        if (client.clientPin && client.clientPin !== pin) {
             setAuthError('PIN incorrecto.');
             return;
         }
@@ -140,8 +219,9 @@ export const ClientPortal: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p className="text-slate-600 font-bold text-sm">Cargando portal de cliente...</p>
             </div>
         );
     }
@@ -252,7 +332,7 @@ export const ClientPortal: React.FC = () => {
                         <div className="flex items-center gap-3">
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-bold text-slate-800">{client?.name}</p>
-                                <p className="text-xs text-slate-500">Miembro desde {client?.joinedDate ? new Date(client.joinedDate).getFullYear() : 'N/A'}</p>
+                                {client?.cedula && <p className="text-xs text-slate-500 font-mono">Cédula: {client.cedula}</p>}
                             </div>
                             <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
                                 {client?.name.charAt(0)}{client?.lastName?.charAt(0)}
@@ -267,14 +347,14 @@ export const ClientPortal: React.FC = () => {
                 {/* Active Loans Section */}
                 <section>
                     <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4">
-                        <CreditCard className="w-5 h-5 mr-2 text-indigo-500" /> Mis Préstamos
+                        <CreditCard className="w-5 h-5 mr-2 text-indigo-500" /> Mis Préstamos ({clientLoans.length})
                     </h2>
                     
                     {clientLoans.length === 0 ? (
                         <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
                             <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
                             <h3 className="text-lg font-bold text-slate-800">No tienes préstamos activos</h3>
-                            <p className="text-slate-500 mt-1">Tu cuenta está al día.</p>
+                            <p className="text-slate-500 mt-1">Tu cuenta está completamente al día.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -290,7 +370,7 @@ export const ClientPortal: React.FC = () => {
                                                 <h3 className="text-2xl font-bold text-slate-900">
                                                     RD$ {loan.remainingBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                                                 </h3>
-                                                <p className="text-xs text-slate-400 mt-1">Saldo Restante</p>
+                                                <p className="text-xs text-slate-400 mt-1">Saldo Restante Pendiente</p>
                                             </div>
                                         </div>
                                         
@@ -313,8 +393,9 @@ export const ClientPortal: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-between items-center">
-                                        <span className="text-xs text-slate-500 font-mono">ID: {loan.id.substring(0,8).toUpperCase()}</span>
+                                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                                        <span className="text-slate-500 font-bold">Préstamo Ref:</span>
+                                        <span className="text-indigo-600 font-mono font-black text-sm">{formatLoanId(loan.id)}</span>
                                     </div>
                                 </div>
                             ))}
@@ -325,17 +406,17 @@ export const ClientPortal: React.FC = () => {
                 {/* Recent Documents & Receipts */}
                 <section>
                     <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4">
-                        <FileText className="w-5 h-5 mr-2 text-indigo-500" /> Mis Documentos y Recibos
+                        <FileText className="w-5 h-5 mr-2 text-indigo-500" /> Mis Recibos de Pago y Documentos
                     </h2>
                     
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         {clientDocuments.length === 0 && clientTransactions.length === 0 ? (
                             <div className="p-8 text-center">
-                                <p className="text-slate-500">No hay documentos generados recientemente.</p>
+                                <p className="text-slate-500">No hay documentos ni pagos registrados recientemente.</p>
                             </div>
                         ) : (
                             <ul className="divide-y divide-slate-100">
-                                {/* First show actual uploaded PDF documents */}
+                                {/* Uploaded PDF documents */}
                                 {clientDocuments.map(doc => (
                                     <li key={doc.id} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center">
                                         <div className="flex items-center gap-4">
@@ -353,25 +434,40 @@ export const ClientPortal: React.FC = () => {
                                     </li>
                                 ))}
                                 
-                                {/* Fallback list for transactions that didn't generate a PDF */}
-                                {clientTransactions.slice(0, 5).map(t => {
-                                    // If we already have a PDF for this receipt (approximate match), maybe skip it, but let's just show it
+                                {/* Official Payment Receipts */}
+                                {clientTransactions.map(t => {
                                     return (
-                                        <li key={t.id} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center">
+                                        <li key={t.id} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center flex-wrap gap-3">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
                                                     <CheckCircle className="w-5 h-5 text-emerald-600" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-slate-800">Recibo de Pago: {t.description}</p>
-                                                    <p className="text-xs text-slate-500">{new Date(t.date).toLocaleDateString('es-DO')} • RD$ {t.amount.toLocaleString()}</p>
+                                                    <p className="font-semibold text-slate-800 flex items-center gap-2">
+                                                        <span>Recibo {formatReceiptId(t.id)}</span>
+                                                        <span className="text-xs font-mono bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold">
+                                                            {t.paymentMethod}
+                                                        </span>
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        {new Date(t.date).toLocaleDateString('es-DO')} • {t.description}
+                                                    </p>
                                                 </div>
                                             </div>
-                                            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                                                Procesado
-                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-black text-emerald-600 text-base">
+                                                    RD$ {t.amount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                                </span>
+                                                <Link 
+                                                    to={`/recibo/${t.id}`}
+                                                    target="_blank"
+                                                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                                                >
+                                                    <Printer className="w-3.5 h-3.5" /> Ver Recibo
+                                                </Link>
+                                            </div>
                                         </li>
-                                    )
+                                    );
                                 })}
                             </ul>
                         )}
