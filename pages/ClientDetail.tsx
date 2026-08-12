@@ -94,8 +94,7 @@ const ClientDetail: React.FC = () => {
   };
 
   const handleEditClick = () => {
-      setEditFormData({ ...client });
-      setIsEditModalOpen(true);
+    navigate(`/clientes/editar/${client.id}`);
   };
 
   const handleAvatarChangeInDetail = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,16 +233,16 @@ const ClientDetail: React.FC = () => {
           <div className="px-8 pb-8">
             <div className="flex flex-col md:flex-row gap-6 items-end -mt-12 mb-6">
                 <div className="relative group shrink-0">
-                  <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-800 p-1 shadow-lg shadow-slate-200/50 dark:shadow-none rotate-3 transform overflow-hidden">
+                  <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-800 p-1 shadow-lg shadow-slate-200/50 dark:shadow-none overflow-hidden">
                     {client.avatarUrl ? (
-                      <img src={client.avatarUrl} alt={client.name} className="w-full h-full rounded-xl object-cover" />
+                      <img src={client.avatarUrl} alt={client.name} className="w-full h-full rounded-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-3xl font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-600">
+                      <div className="w-full h-full bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-3xl font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-600">
                         {client.name.charAt(0)}
                       </div>
                     )}
                   </div>
-                  <label className="absolute -bottom-2 -right-2 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-110 z-10" title="Cambiar y recortar foto">
+                  <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full shadow-lg cursor-pointer transition-transform hover:scale-110 z-10" title="Cambiar y recortar foto">
                     <Camera className="w-4 h-4" />
                     <input type="file" accept="image/*" onChange={handleAvatarChangeInDetail} className="hidden" />
                   </label>

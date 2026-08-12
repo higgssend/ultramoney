@@ -190,35 +190,38 @@ const NewClient: React.FC = () => {
               </div>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Foto de Perfil con Recorte Cuadrado */}
+              {/* Foto de Perfil Circular (Opcional) */}
               <div className="md:col-span-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center gap-5">
                 <div className="relative group shrink-0">
                   {currentClient.avatarUrl ? (
                     <img
                       src={currentClient.avatarUrl}
                       alt="Foto Cliente"
-                      className="w-24 h-24 rounded-2xl object-cover border-2 border-indigo-600 shadow-md"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-indigo-600 shadow-md"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex flex-col items-center justify-center border-2 border-dashed border-indigo-300 dark:border-indigo-700">
+                    <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex flex-col items-center justify-center border-2 border-dashed border-indigo-300 dark:border-indigo-700">
                       <User className="w-8 h-8" />
                       <span className="text-[10px] font-bold mt-1">Sin Foto</span>
                     </div>
                   )}
-                  <label className="absolute -bottom-2 -right-2 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-105">
+                  <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full shadow-lg cursor-pointer transition-transform hover:scale-110">
                     <Camera className="w-4 h-4" />
                     <input type="file" accept="image/*" onChange={handleAvatarFileSelect} className="hidden" />
                   </label>
                 </div>
 
                 <div className="space-y-1 text-center sm:text-left">
-                  <h4 className="font-bold text-slate-800 dark:text-white text-sm">Foto de Perfil del Cliente</h4>
+                  <h4 className="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-2">
+                    Foto de Perfil del Cliente
+                    <span className="text-[10px] font-normal text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">Opcional</span>
+                  </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sube una fotografía. Podrás recortar libremente la imagen en un recuadro cuadrado antes de guardar.
+                    La fotografía es opcional. Puedes subir una imagen y recortarla en formato circular.
                   </p>
                   <label className="inline-flex items-center gap-1.5 px-3.5 py-2 mt-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer shadow-xs transition-all">
                     <Camera className="w-3.5 h-3.5 text-indigo-600" />
-                    {currentClient.avatarUrl ? 'Cambiar y Recortar Foto' : 'Subir y Recortar Foto'}
+                    {currentClient.avatarUrl ? 'Cambiar Foto Circular' : 'Subir Foto Circular'}
                     <input type="file" accept="image/*" onChange={handleAvatarFileSelect} className="hidden" />
                   </label>
                 </div>

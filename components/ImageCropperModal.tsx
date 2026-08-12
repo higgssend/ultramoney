@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { ZoomIn, ZoomOut, RotateCw, Check, X, Move, Crop } from 'lucide-react';
 
 interface ImageCropperModalProps {
@@ -21,7 +21,6 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
-  // Reset position when zoom changes
   const handleZoomChange = (newZoom: number) => {
     const clampedZoom = Math.min(Math.max(newZoom, 1), 4);
     setZoom(clampedZoom);
@@ -49,32 +48,32 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     setIsDragging(false);
   };
 
-  // Perform square crop on canvas
+  // Circular Canvas Crop
   const handleApplyCrop = () => {
     const img = imageRef.current;
     if (!img) return;
 
     const canvas = document.createElement('canvas');
-    const targetSize = 400; // 400x400 output square avatar
+    const targetSize = 400; // 400x400 output circular avatar
     canvas.width = targetSize;
     canvas.height = targetSize;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Fill white background
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, targetSize, targetSize);
-
-    // Save context state
+    // Create circular clipping path
     ctx.save();
-    // Move to center of canvas for rotation and zoom
+    ctx.beginPath();
+    ctx.arc(targetSize / 2, targetSize / 2, targetSize / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
+    // Move to center for scale and rotation
     ctx.translate(targetSize / 2, targetSize / 2);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(zoom, zoom);
 
-    // Calculate crop ratio relative to preview window
-    const boxSize = 260; // 260px preview square box
+    const boxSize = 260; // 260px preview circle box
     const scaleFactor = targetSize / boxSize;
 
     const drawX = position.x * scaleFactor;
@@ -92,7 +91,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
     ctx.restore();
 
-    const croppedBase64 = canvas.toDataURL('image/jpeg', 0.92);
+    const croppedBase64 = canvas.toDataURL('image/png', 0.95);
     onCropComplete(croppedBase64);
   };
 
@@ -107,8 +106,8 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               <Crop className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-base">Recortar Foto de Perfil</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Ajusta la foto dentro del recuadro cuadrado</p>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">Recortar Foto (Circular)</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ajusta la foto dentro del círculo (Opcional)</p>
             </div>
           </div>
           <button
@@ -119,10 +118,10 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           </button>
         </div>
 
-        {/* Crop Viewport & Canvas Area */}
-        <div className="p-6 flex flex-col items-center justify-center bg-slate-950 relative select-none overflow-hidden min-h-[320px]">
+        {/* Circular Crop Viewport */}
+        <div className="p-8 flex flex-col items-center justify-center bg-slate-950 relative select-none overflow-hidden min-h-[340px]">
           
-          {/* Square Crop Viewport overlay */}
+          {/* Circular Frame Overlay */}
           <div
             ref={containerRef}
             onMouseDown={handleMouseDown}
@@ -131,21 +130,8 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             onTouchStart={handleMouseDown}
             onTouchMove={handleMouseMove}
             onTouchEnd={handleMouseUp}
-            className="w-[260px] h-[260px] relative rounded-2xl overflow-hidden border-2 border-white shadow-2xl cursor-grab active:cursor-grabbing z-10 bg-black/40 flex items-center justify-center"
+            className="w-[260px] h-[260px] relative rounded-full overflow-hidden border-4 border-indigo-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] cursor-grab active:cursor-grabbing z-10 flex items-center justify-center"
           >
-            {/* Grid overlay lines */}
-            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none z-20 opacity-30 border border-white/40">
-              <div className="border-r border-b border-white"></div>
-              <div className="border-r border-b border-white"></div>
-              <div className="border-b border-white"></div>
-              <div className="border-r border-b border-white"></div>
-              <div className="border-r border-b border-white"></div>
-              <div className="border-b border-white"></div>
-              <div className="border-r border-white"></div>
-              <div className="border-r border-white"></div>
-              <div></div>
-            </div>
-
             {/* Target Image being transformed */}
             <img
               ref={imageRef}
@@ -161,8 +147,8 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             />
           </div>
 
-          <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1">
-            <Move className="w-3.5 h-3.5" /> Arrastra la foto para encuadrarla dentro del cuadro
+          <p className="text-[11px] text-slate-400 mt-4 flex items-center gap-1">
+            <Move className="w-3.5 h-3.5" /> Arrastra y centra la imagen dentro del círculo
           </p>
         </div>
 
@@ -210,7 +196,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                 onClick={handleApplyCrop}
                 className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all"
               >
-                <Check className="w-4 h-4" /> Aplicar Recorte
+                <Check className="w-4 h-4" /> Aplicar Foto Circular
               </button>
             </div>
           </div>
