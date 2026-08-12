@@ -180,20 +180,20 @@ export interface LoanRequest {
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
 export function formatLoanId(id?: string | null, _category?: string, _type?: string): string {
-  if (!id) return 'No. 000000';
-  if (id.startsWith('No. ')) return id;
-  const digits = id.replace(/\D/g, '');
+  if (!id) return '000000';
+  const cleanId = id.replace(/^No\.\s*/i, '');
+  const digits = cleanId.replace(/\D/g, '');
   if (digits.length >= 1) {
     const num = parseInt(digits.slice(-6), 10) || 1;
-    return `No. ${String(num).padStart(6, '0')}`;
+    return String(num).padStart(6, '0');
   }
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash << 5) - hash + id.charCodeAt(i);
+  for (let i = 0; i < cleanId.length; i++) {
+    hash = (hash << 5) - hash + cleanId.charCodeAt(i);
     hash |= 0;
   }
   const num = (Math.abs(hash) % 999999) + 1;
-  return `No. ${String(num).padStart(6, '0')}`;
+  return String(num).padStart(6, '0');
 }
 
 export function formatReceiptId(id?: string | null): string {

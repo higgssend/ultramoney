@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounting, useSettings } from '../context/StoreContext';
-import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle } from 'lucide-react';
+import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check } from 'lucide-react';
 import { Transaction, Loan, Client, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
@@ -15,6 +16,7 @@ export const ReceiptView: React.FC = () => {
     const [loan, setLoan] = useState<any | null>(null);
     const [client, setClient] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
 
     const handlePrint = () => {
         window.print();
@@ -189,6 +191,21 @@ export const ReceiptView: React.FC = () => {
         hour: '2-digit', minute: '2-digit', hour12: true
     });
 
+    const handleCopyReceiptLink = () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        toast.success("¡Enlace directo del recibo copiado al portapapeles!");
+        setTimeout(() => setCopied(false), 2500);
+    };
+
+    const handleShareWhatsApp = () => {
+        const clientName = client?.name || loan?.clientname || 'Cliente';
+        const url = window.location.href;
+        const text = `🏢 *${companySettings.name}*\n📄 *Recibo de Pago*: ${formattedReceiptNo}\n👤 *Cliente*: ${clientName}\n💰 *Monto*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col py-8 sm:px-6 lg:px-8 relative overflow-hidden print:bg-white print:py-0 print:px-0">
             {/* Background glowing effects */}
@@ -202,7 +219,21 @@ export const ReceiptView: React.FC = () => {
                     <Link to="/pagos" className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors">
                         <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
                     </Link>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button 
+                            onClick={handleCopyReceiptLink}
+                            className="px-3.5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-colors"
+                        >
+                            {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                            {copied ? '¡Copiado!' : 'Copiar Link del Recibo'}
+                        </button>
+                        <button 
+                            onClick={handleShareWhatsApp}
+                            className="px-3.5 py-2 bg-[#25D366] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md hover:bg-[#20b85c] transition-colors"
+                        >
+                            <Share2 className="w-4 h-4" />
+                            WhatsApp
+                        </button>
                         <button 
                             onClick={handleDownloadImage}
                             className="px-3.5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-500/20 hover:bg-emerald-700 transition-colors"
@@ -215,7 +246,7 @@ export const ReceiptView: React.FC = () => {
                             className="px-3.5 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md hover:bg-slate-700 transition-colors"
                         >
                             <Download className="w-4 h-4" />
-                            Imprimir / Ticket
+                            Imprimir Ticket
                         </button>
                     </div>
                 </div>

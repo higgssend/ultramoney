@@ -1182,6 +1182,12 @@ Gracias por su pago.`;
         }
     };
 
+    const handleCopyLink = () => {
+        const link = `${window.location.origin}/recibo/${data.transactionId}`;
+        navigator.clipboard.writeText(link);
+        toast.success("¡Enlace directo del recibo copiado al portapapeles!");
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
