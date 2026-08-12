@@ -960,6 +960,7 @@ const LoanRequest: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
+                        )}
                     </div>
 
                     {/* Bank Account Disbursement Config */}
