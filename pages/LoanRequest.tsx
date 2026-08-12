@@ -1299,6 +1299,8 @@ const LoanRequest: React.FC = () => {
           }} 
           onNavigateToDetail={() => navigate(`/prestamos/${createdLoanForSharing.id}`)} 
         />
+      )}
+
       {isBankModalOpen && (
         <BankAccountsModal 
           isOpen={isBankModalOpen} 
