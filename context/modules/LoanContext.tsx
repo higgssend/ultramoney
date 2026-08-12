@@ -326,8 +326,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!loan) return null;
 
     try {
-      const isInterestOnly = loan.loanType?.includes('Rédito') || loan.loanType?.includes('Pagaré Abierto');
-      const pType = paymentData.paymentType || (isInterestOnly ? 'Interes' : 'Mixto');
+      const pType = paymentData.paymentType || 'Mixto';
       const pMethod = paymentData.paymentMethod || 'Efectivo';
       const payDate = paymentData.date || new Date().toISOString().split('T')[0];
 
@@ -352,7 +351,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (txData && !txError) {
         let newBalance = loan.remainingBalance;
-        if (!isInterestOnly || pType === 'Capital' || pType === 'Mixto') {
+        // Deduct from balance if payment is Capital or Mixto (or if loan balance needs deduction)
+        if (pType === 'Capital' || pType === 'Mixto') {
           newBalance = Math.max(0, loan.remainingBalance - paymentData.amount);
         }
 
@@ -373,7 +373,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           )
         );
 
-        addToast(`Pago histórico de RD$ ${paymentData.amount.toLocaleString()} registrado con fecha ${payDate}`, 'success');
+        addToast(`Pago histórico de RD$ ${paymentData.amount.toLocaleString()} registrado con éxito. Recibo: ${formatReceiptId(txData.id)}`, 'success');
         addAuditLog('historical_payment_added', `Añadió pago histórico de RD$ ${paymentData.amount} al préstamo #${loan.id}`);
 
         return mapTransaction(txData as any);

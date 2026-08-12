@@ -45,10 +45,12 @@ export const ReceiptView: React.FC = () => {
             }
 
             try {
-                // 1. Fetch transaction directly from DB if not in local store
-                let txData: any = transactions.find(t => t.id === transactionId);
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(transactionId as string);
                 
-                if (!txData) {
+                // 1. Fetch transaction directly from DB if not in local store
+                let txData: any = transactions.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId);
+                
+                if (!txData && isUuid) {
                     const { data, error } = await insforge.database
                         .from('transactions')
                         .select('*')
@@ -63,6 +65,28 @@ export const ReceiptView: React.FC = () => {
                             paymentMethod: data.paymentmethod || data.payment_method || data.paymentMethod || 'Efectivo',
                             invoiceDate: data.invoicedate || data.invoice_date || data.invoiceDate
                         };
+                    }
+                }
+
+                if (!txData && !isUuid) {
+                    // Search DB by substring / fallback receipt format match
+                    const { data } = await insforge.database
+                        .from('transactions')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(200);
+
+                    if (data) {
+                        const match = data.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId || formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, ''));
+                        if (match) {
+                            txData = {
+                                ...match,
+                                referenceId: match.referenceid || match.reference_id || match.referenceId,
+                                paymentType: match.paymenttype || match.payment_type || match.paymentType,
+                                paymentMethod: match.paymentmethod || match.payment_method || match.paymentMethod || 'Efectivo',
+                                invoiceDate: match.invoicedate || match.invoice_date || match.invoiceDate
+                            };
+                        }
                     }
                 }
 
