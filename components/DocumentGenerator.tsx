@@ -84,6 +84,21 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
   const activeTransaction = transaction || (loanTransactions.length > 0 ? loanTransactions[0] : undefined);
 
+  // Real Overdue & Mora Calculation
+  const nextPayDateObj = currentLoan?.nextPaymentDate ? new Date(currentLoan.nextPaymentDate) : null;
+  const todayStart = new Date();
+  todayStart.setHours(0,0,0,0);
+
+  const isDateOverdue = nextPayDateObj ? (nextPayDateObj.getTime() < todayStart.getTime()) : false;
+  const isLoanOverdue = currentLoan ? (currentLoan.status === 'Atrasado' || (currentLoan.status === 'Activo' && isDateOverdue)) : false;
+  
+  const daysLate = (currentLoan && isLoanOverdue && nextPayDateObj)
+    ? Math.max(1, Math.floor((todayStart.getTime() - nextPayDateObj.getTime()) / (1000 * 3600 * 24)))
+    : 0;
+
+  const installmentAmount = currentLoan?.installmentAmount || (currentLoan ? Math.round((currentLoan.totalToPay || currentLoan.amount) / (currentLoan.durationWeeks || 1)) : 0);
+  const lateFeeAmount = isLoanOverdue ? Math.round(installmentAmount * 0.05) : 0;
+
   // Advanced Collateral Analysis & Structured Legal Wording
   let collateralType = 'Sin Garantía';
   let collateralDescription = '';
@@ -635,35 +650,90 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             )}
 
-            {/* 6. CARTA DE COBRO (MORA) */}
+            {/* 6. CARTA DE COBRO (MORA VS RECORDATORIO AL DÍA DINÁMICO) */}
             {docType === 'carta_cobro' && (
               <div>
-                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-rose-700">
-                  NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y EJECUCIÓN DE GARANTÍA
-                </h2>
-                <div className="content space-y-3.5 text-justify">
-                  <p><strong>FECHA:</strong> {todayStr}</p>
-                  <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
-                  <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
-                  <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
-                  <p className="pt-2">Estimado(a) cliente:</p>
-                  <p>
-                    Le informamos por este medio formal que la cuota correspondiente a su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO Y MORA</strong> por un saldo pendiente de <strong>RD$ {(currentLoan?.remainingBalance || 0).toLocaleString()}</strong>.
-                  </p>
-                  <p>
-                    Garantía en riesgo de ejecución: <strong>{collateralText}</strong>.
-                  </p>
-                  <p>
-                    Le requerimos ponerse en contacto con nuestra gerencia de cobros en un plazo no mayor a 48 horas a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones judiciales de cobro extrajudicial y ejecución de la garantía notarial.
-                  </p>
-                </div>
+                {isLoanOverdue ? (
+                  /* CASO 1: CLIENTE REALMENTE TIENE MORA / ATRASO */
+                  <div>
+                    <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-rose-700">
+                      NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y COBRO DE MORA
+                    </h2>
+                    <div className="content space-y-3.5 text-justify">
+                      <p><strong>FECHA:</strong> {todayStr}</p>
+                      <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
+                      <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
+                      <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
+                      <p className="pt-2">Estimado(a) cliente:</p>
+                      
+                      <p>
+                        Le informamos por este medio formal que la cuota correspondiente a su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO Y MORA</strong> por acumular un total de <strong>{daysLate} días transcurridos de mora</strong> desde la fecha de vencimiento pactada (<strong>{currentLoan?.nextPaymentDate || 'Vencida'}</strong>).
+                      </p>
+                      
+                      <div className="my-4 p-4 border border-rose-200 bg-rose-50/70 rounded-xl font-sans text-xs space-y-1">
+                        <p className="font-bold text-rose-900 border-b border-rose-200 pb-1 uppercase">DESGLOSE DEL BALANCE EN MORA:</p>
+                        <p className="flex justify-between"><span>Monto de la Cuota Pendiente:</span> <strong className="font-mono">RD$ {installmentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong></p>
+                        <p className="flex justify-between"><span>Recargo por Mora Moratoria (5% Pactado):</span> <strong className="font-mono text-rose-700">RD$ {lateFeeAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong></p>
+                        <p className="flex justify-between border-t border-rose-200 pt-1 text-xs font-black text-rose-800"><span>TOTAL A REGULARIZAR:</span> <span className="font-mono">RD$ {(installmentAmount + lateFeeAmount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span></p>
+                      </div>
 
-                <div className="signatures flex justify-center mt-16 pt-8 font-sans">
-                  <div className="sig-block text-center w-6/12">
-                    <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
-                    <div className="text-xs text-slate-500">GERENCIA DE COBRANZAS Y LEGAL</div>
+                      <p>
+                        Garantía en riesgo de ejecución notarial: <strong>{collateralText}</strong>.
+                      </p>
+                      
+                      <p>
+                        Le requerimos formalmente ponerse en contacto con nuestra gerencia de cobros en un plazo improrrogable no mayor a <strong>48 horas</strong> a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones de cobro extrajudicial, mora judicial y ejecución de la garantía legal.
+                      </p>
+                    </div>
+
+                    <div className="signatures flex justify-center mt-16 pt-8 font-sans">
+                      <div className="sig-block text-center w-6/12">
+                        <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
+                        <div className="text-xs text-slate-500">GERENCIA DE COBRANZAS Y LEGAL</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* CASO 2: CLIENTE ESTÁ AL DÍA (SIN MORA) */
+                  <div>
+                    <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-emerald-700">
+                      NOTIFICACIÓN DE ESTADO AL DÍA Y RECORDATORIO PREVENTIVO
+                    </h2>
+                    <div className="content space-y-3.5 text-justify">
+                      <p><strong>FECHA:</strong> {todayStr}</p>
+                      <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
+                      <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
+                      <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
+                      <p className="pt-2">Estimado(a) cliente:</p>
+                      
+                      <p>
+                        Le certificamos por este medio formal que a la fecha de hoy, su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>TOTALMENTE AL DÍA Y SIN NINGÚN REGISTRO DE MORA (0 DÍAS DE MORA)</strong>.
+                      </p>
+
+                      <div className="my-4 p-4 border border-emerald-200 bg-emerald-50/70 rounded-xl font-sans text-xs space-y-1">
+                        <p className="font-bold text-emerald-900 border-b border-emerald-200 pb-1 uppercase">ESTADO DE PRÓXIMO VENCIMIENTO:</p>
+                        <p className="flex justify-between"><span>Próxima Fecha de Pago Programada:</span> <strong className="font-bold text-emerald-800">{currentLoan?.nextPaymentDate || 'Al Día'}</strong></p>
+                        <p className="flex justify-between"><span>Monto de la Próxima Cuota:</span> <strong className="font-mono">RD$ {installmentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong></p>
+                        <p className="flex justify-between"><span>Recargo por Mora Actual:</span> <strong className="font-mono text-emerald-700">RD$ 0.00 (SIN MORA)</strong></p>
+                      </div>
+
+                      <p>
+                        Garantía vinculada en condición normal: <strong>{collateralText}</strong>.
+                      </p>
+
+                      <p>
+                        Agradecemos la puntualidad demostrada en el cumplimiento de sus compromisos financieros con nuestra institución.
+                      </p>
+                    </div>
+
+                    <div className="signatures flex justify-center mt-16 pt-8 font-sans">
+                      <div className="sig-block text-center w-6/12">
+                        <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
+                        <div className="text-xs text-slate-500">DEPARTAMENTO DE CRÉDITO Y COBROS</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

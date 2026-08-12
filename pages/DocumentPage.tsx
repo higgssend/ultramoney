@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   FileText, Printer, Download, ArrowLeft, Shield, CheckCircle, X, 
   CloudUpload, MessageCircle, CreditCard, Car, Home, FileCode, FileImage, 
-  Eye, Sparkles, RefreshCw
+  Eye, Sparkles, RefreshCw, AlertTriangle
 } from 'lucide-react';
 import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId } from '../types';
 import jsPDF from 'jspdf';
@@ -84,6 +84,22 @@ export const DocumentPage: React.FC = () => {
   });
 
   const activeTransaction = loanTransactions.length > 0 ? loanTransactions[0] : undefined;
+
+  // Real Overdue & Mora Calculation
+  const nextPayDateObj = currentLoan?.nextPaymentDate ? new Date(currentLoan.nextPaymentDate) : null;
+  const todayStart = new Date();
+  todayStart.setHours(0,0,0,0);
+
+  const isDateOverdue = nextPayDateObj ? (nextPayDateObj.getTime() < todayStart.getTime()) : false;
+  const isLoanOverdue = currentLoan ? (currentLoan.status === 'Atrasado' || (currentLoan.status === 'Activo' && isDateOverdue)) : false;
+  
+  const daysLate = (currentLoan && isLoanOverdue && nextPayDateObj)
+    ? Math.max(1, Math.floor((todayStart.getTime() - nextPayDateObj.getTime()) / (1000 * 3600 * 24)))
+    : 0;
+
+  const installmentAmount = currentLoan?.installmentAmount || (currentLoan ? Math.round((currentLoan.totalToPay || currentLoan.amount) / (currentLoan.durationWeeks || 1)) : 0);
+  const lateFeeAmount = isLoanOverdue ? Math.round(installmentAmount * 0.05) : 0;
+  const totalRegularizeAmount = (currentLoan?.remainingBalance || installmentAmount) + lateFeeAmount;
 
   // Advanced Collateral Analysis & Structured Legal Wording
   let collateralType = 'Sin Garantía';
@@ -267,6 +283,12 @@ export const DocumentPage: React.FC = () => {
     
     if (docType === 'recibo' && activeTransaction) {
       message += `Te enviamos el recibo oficial de tu pago por ${amountStr} del Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
+    } else if (docType === 'carta_cobro') {
+      if (isLoanOverdue) {
+        message += `⚠️ NOTIFICACIÓN DE MORA: Le recordamos que su Préstamo #${currentLoan ? formatLoanId(currentLoan.id) : ''} presenta ${daysLate} días de mora por un saldo de RD$ ${totalRegularizeAmount.toLocaleString()}.\n`;
+      } else {
+        message += `ℹ️ NOTIFICACIÓN: Le recordamos que su Préstamo #${currentLoan ? formatLoanId(currentLoan.id) : ''} está al día. Su próxima cuota vence el ${currentLoan?.nextPaymentDate || ''}.\n`;
+      }
     } else if (docType === 'pagare' || docType === 'contrato') {
       message += `Adjunto encontrarás el ${docType} oficial firmado relativo a tu Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
     } else {
@@ -373,7 +395,7 @@ export const DocumentPage: React.FC = () => {
                   <span className="font-mono">Préstamo {formatLoanId(l.id)}</span>
                   <span>• RD$ {(l.amount || 0).toLocaleString()}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-lg font-black ${
-                    l.status === 'Activo' ? (isSelected ? 'bg-indigo-800 text-white' : 'bg-emerald-100 text-emerald-700') : 'bg-slate-200 text-slate-700'
+                    l.status === 'Atrasado' ? 'bg-rose-500 text-white' : (l.status === 'Activo' ? (isSelected ? 'bg-indigo-800 text-white' : 'bg-emerald-100 text-emerald-700') : 'bg-slate-200 text-slate-700')
                   }`}>
                     {l.status || 'Activo'}
                   </span>
@@ -384,18 +406,58 @@ export const DocumentPage: React.FC = () => {
         </div>
       )}
 
-      {/* Dynamic Collateral Banner */}
+      {/* Real Overdue / Mora Analysis Banner */}
       {currentLoan && (
-        <div className="bg-amber-50/90 dark:bg-amber-950/50 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/60 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
-          <div className="flex items-center gap-2.5 font-bold">
-            {collateralType === 'Vehículo' && <Car className="w-5 h-5 text-amber-600" />}
-            {collateralType === 'Propiedad' && <Home className="w-5 h-5 text-amber-600" />}
-            {collateralType !== 'Vehículo' && collateralType !== 'Propiedad' && <Shield className="w-5 h-5 text-amber-600" />}
-            <span>Garantía Legal Asociada al Préstamo #{formatLoanId(currentLoan.id)}: <strong className="uppercase">{collateralType}</strong></span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Mora Status Banner */}
+          <div className={`p-4 rounded-2xl border flex items-center justify-between text-xs font-bold ${
+            isLoanOverdue 
+              ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900/60 text-rose-900 dark:text-rose-200'
+              : 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              {isLoanOverdue ? (
+                <div className="p-2 bg-rose-100 dark:bg-rose-900/60 rounded-xl text-rose-600"><AlertTriangle className="w-5 h-5" /></div>
+              ) : (
+                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/60 rounded-xl text-emerald-600"><CheckCircle className="w-5 h-5" /></div>
+              )}
+              <div>
+                <p className="uppercase text-[10px] tracking-wider opacity-80">Estado de Mora en Sistema</p>
+                <p className="text-sm font-extrabold">
+                  {isLoanOverdue ? `ATRASADO EN MORA (${daysLate} DÍAS)` : 'PRÉSTAMO AL DÍA (0 DÍAS DE MORA)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              {isLoanOverdue ? (
+                <div>
+                  <span className="block text-[10px] opacity-80">Recargo Mora (5%):</span>
+                  <span className="text-sm font-black text-rose-700 dark:text-rose-400">RD$ {lateFeeAmount.toLocaleString()}</span>
+                </div>
+              ) : (
+                <div>
+                  <span className="block text-[10px] opacity-80">Próximo Vencimiento:</span>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{currentLoan.nextPaymentDate || 'Sin fecha'}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <span className="font-mono font-bold text-xs truncate max-w-lg bg-amber-100 dark:bg-amber-900/50 px-3 py-1 rounded-xl">
-            {collateralDescription ? `${collateralDescription} ` : ''} {collateralRefNumber ? `(Matrícula/Ref #${collateralRefNumber})` : ''}
-          </span>
+
+          {/* Collateral Banner */}
+          <div className="bg-amber-50/90 dark:bg-amber-950/50 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/60 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-2.5 font-bold">
+              {collateralType === 'Vehículo' && <Car className="w-5 h-5 text-amber-600" />}
+              {collateralType === 'Propiedad' && <Home className="w-5 h-5 text-amber-600" />}
+              {collateralType !== 'Vehículo' && collateralType !== 'Propiedad' && <Shield className="w-5 h-5 text-amber-600" />}
+              <span>Garantía Legal Vinculada: <strong className="uppercase">{collateralType}</strong></span>
+            </div>
+            <span className="font-mono font-bold text-xs truncate max-w-xs bg-amber-100 dark:bg-amber-900/50 px-3 py-1 rounded-xl">
+              {collateralDescription ? `${collateralDescription} ` : ''} {collateralRefNumber ? `(Ref #${collateralRefNumber})` : ''}
+            </span>
+          </div>
+
         </div>
       )}
 
@@ -433,9 +495,9 @@ export const DocumentPage: React.FC = () => {
         </button>
         <button
           onClick={() => setDocType('carta_cobro')}
-          className={`px-5 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center gap-2 ${docType === 'carta_cobro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+          className={`px-5 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center gap-2 ${docType === 'carta_cobro' ? (isLoanOverdue ? 'bg-rose-600 text-white shadow-md' : 'bg-emerald-600 text-white shadow-md') : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
-          <FileText className="w-4 h-4" /> Carta de Cobro (Mora)
+          <FileText className="w-4 h-4" /> {isLoanOverdue ? 'Carta de Cobro (Mora)' : 'Notificación (Al Día)'}
         </button>
       </div>
 
@@ -609,7 +671,9 @@ export const DocumentPage: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-slate-500 font-bold uppercase text-[10px] block">Estado del Préstamo</span>
-                      <span className="font-extrabold text-emerald-700 uppercase text-sm">{currentLoan.status}</span>
+                      <span className={`font-extrabold uppercase text-sm ${isLoanOverdue ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        {isLoanOverdue ? `ATRASADO (${daysLate} DÍAS)` : currentLoan.status}
+                      </span>
                     </div>
                   </div>
 
@@ -741,35 +805,90 @@ export const DocumentPage: React.FC = () => {
             </div>
           )}
 
-          {/* 6. CARTA DE COBRO (MORA) */}
+          {/* 6. CARTA DE COBRO (MORA VS RECORDATORIO AL DÍA DINÁMICO) */}
           {docType === 'carta_cobro' && (
             <div>
-              <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline font-sans text-rose-700">
-                NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y EJECUCIÓN DE GARANTÍA
-              </h2>
-              <div className="content space-y-4 text-justify">
-                <p><strong>FECHA:</strong> {todayStr}</p>
-                <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
-                <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
-                <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
-                <p className="pt-2">Estimado(a) cliente:</p>
-                <p>
-                  Le informamos por este medio formal que la cuota correspondiente a su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO Y MORA</strong> por un saldo pendiente de <strong>RD$ {(currentLoan?.remainingBalance || 0).toLocaleString()}</strong>.
-                </p>
-                <p>
-                  Garantía en riesgo de ejecución: <strong>{collateralText}</strong>.
-                </p>
-                <p>
-                  Le requerimos ponerse en contacto con nuestra gerencia de cobros en un plazo no mayor a 48 horas a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones judiciales de cobro extrajudicial y ejecución de la garantía notarial.
-                </p>
-              </div>
+              {isLoanOverdue ? (
+                /* CASO 1: CLIENTE REALMENTE TIENE MORA / ATRASO */
+                <div>
+                  <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline font-sans text-rose-700">
+                    NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y COBRO DE MORA
+                  </h2>
+                  <div className="content space-y-4 text-justify">
+                    <p><strong>FECHA:</strong> {todayStr}</p>
+                    <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
+                    <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
+                    <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
+                    <p className="pt-2">Estimado(a) cliente:</p>
+                    
+                    <p>
+                      Le informamos por este medio formal que la cuota correspondiente a su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO Y MORA</strong> por acumular un total de <strong>{daysLate} días transcurridos de mora</strong> desde la fecha de vencimiento pactada (<strong>{currentLoan?.nextPaymentDate || 'Vencida'}</strong>).
+                    </p>
+                    
+                    <div className="my-5 p-4 border border-rose-200 bg-rose-50/70 rounded-xl font-sans text-xs space-y-1.5">
+                      <p className="font-bold text-rose-900 border-b border-rose-200 pb-1 uppercase">DESGLOSE DEL BALANCE EN MORA:</p>
+                      <p className="flex justify-between"><span>Monto de la Cuota Pendiente:</span> <strong className="font-mono">RD$ {installmentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong></p>
+                      <p className="flex justify-between"><span>Recargo por Mora Moratoria (5% Pactado):</span> <strong className="font-mono text-rose-700">RD$ {lateFeeAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong></p>
+                      <p className="flex justify-between border-t border-rose-200 pt-1 text-sm font-black text-rose-800"><span>TOTAL A REGULARIZAR:</span> <span className="font-mono">RD$ {(installmentAmount + lateFeeAmount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span></p>
+                    </div>
 
-              <div className="signatures flex justify-center mt-20 pt-8 font-sans">
-                <div className="sig-block text-center w-6/12">
-                  <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
-                  <div className="text-xs text-slate-500">GERENCIA DE COBRANZAS Y LEGAL</div>
+                    <p>
+                      Garantía en riesgo de ejecución notarial: <strong>{collateralText}</strong>.
+                    </p>
+                    
+                    <p>
+                      Le requerimos formalmente ponerse en contacto con nuestra gerencia de cobros en un plazo improrrogable no mayor a <strong>48 horas</strong> a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones de cobro extrajudicial, mora judicial y ejecución de la garantía legal.
+                    </p>
+                  </div>
+
+                  <div className="signatures flex justify-center mt-20 pt-8 font-sans">
+                    <div className="sig-block text-center w-6/12">
+                      <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
+                      <div className="text-xs text-slate-500">GERENCIA DE COBRANZAS Y LEGAL</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* CASO 2: CLIENTE ESTÁ AL DÍA (SIN MORA) */
+                <div>
+                  <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline font-sans text-emerald-700">
+                    NOTIFICACIÓN DE ESTADO AL DÍA Y RECORDATORIO PREVENTIVO
+                  </h2>
+                  <div className="content space-y-4 text-justify">
+                    <p><strong>FECHA:</strong> {todayStr}</p>
+                    <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
+                    <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
+                    <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
+                    <p className="pt-2">Estimado(a) cliente:</p>
+                    
+                    <p>
+                      Le certificamos por este medio formal que a la fecha de hoy, su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>TOTALMENTE AL DÍA Y SIN NINGÚN REGISTRO DE MORA (0 DÍAS DE MORA)</strong>.
+                    </p>
+
+                    <div className="my-5 p-4 border border-emerald-200 bg-emerald-50/70 rounded-xl font-sans text-xs space-y-1.5">
+                      <p className="font-bold text-emerald-900 border-b border-emerald-200 pb-1 uppercase">ESTADO DE PRÓXIMO VENCIMIENTO:</p>
+                      <p className="flex justify-between"><span>Próxima Fecha de Pago Programada:</span> <strong className="font-bold text-emerald-800">{currentLoan?.nextPaymentDate || 'Al Día'}</strong></p>
+                      <p className="flex justify-between"><span>Monto de la Próxima Cuota:</span> <strong className="font-mono">RD$ {installmentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong></p>
+                      <p className="flex justify-between"><span>Recargo por Mora Actual:</span> <strong className="font-mono text-emerald-700">RD$ 0.00 (SIN MORA)</strong></p>
+                    </div>
+
+                    <p>
+                      Garantía vinculada en condición normal: <strong>{collateralText}</strong>.
+                    </p>
+
+                    <p>
+                      Agradecemos la puntualidad demostrada en el cumplimiento de sus compromisos financieros con nuestra institución.
+                    </p>
+                  </div>
+
+                  <div className="signatures flex justify-center mt-20 pt-8 font-sans">
+                    <div className="sig-block text-center w-6/12">
+                      <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
+                      <div className="text-xs text-slate-500">DEPARTAMENTO DE CRÉDITO Y COBROS</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
