@@ -952,8 +952,8 @@ export const LoanDetail: React.FC = () => {
           </div>
 
           {/* Printable Document Paper */}
-          <div className="p-6 md:p-10 bg-slate-200 dark:bg-slate-950 rounded-3xl shadow-inner border border-slate-300 dark:border-slate-800 flex justify-center">
-            <div id="loan-printable-document" className="bg-white text-slate-900 p-12 md:p-16 rounded-xl shadow-2xl border border-slate-300 w-full max-w-4xl font-serif text-sm leading-relaxed min-h-[850px]">
+          <div className="p-2 sm:p-6 md:p-10 bg-slate-200 dark:bg-slate-950 rounded-3xl shadow-inner border border-slate-300 dark:border-slate-800 flex justify-center overflow-x-auto">
+            <div id="loan-printable-document" className="bg-white text-slate-900 p-5 sm:p-10 md:p-16 rounded-xl shadow-2xl border border-slate-300 w-full max-w-4xl font-serif text-sm leading-relaxed min-h-[850px] overflow-x-auto">
               
               {/* Document Header */}
               <div className="header text-center border-b-2 border-slate-900 pb-5 mb-8">

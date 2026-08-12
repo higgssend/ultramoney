@@ -75,22 +75,46 @@ const Loans: React.FC = () => {
       setForgiveNote('');
       setSelectedLoan(null);
   };
+
+    const getAmortizationTable = (loan: Loan) => {
+      if (!loan) return [];
+      const count = loan.durationWeeks > 0 ? loan.durationWeeks : 12;
+      const engineSchedule = LoanEngine.generateAmortizationSchedule(
+          loan.amount || 0,
+          loan.interestRate || 0,
+          count,
+          loan.frequency || 'Semanal',
+          loan.startDate || new Date().toISOString().split('T')[0],
+          { amortizationMethod: 'Amortizado' },
+          loan.loanType || 'Amortizado'
+      );
+
+      return (engineSchedule || []).map(s => ({
+          period: s.installmentNumber,
+          date: s.date,
+          principal: s.principal,
+          interest: s.interest,
+          amount: s.total,
+          balance: s.balance
+      }));
+  };
   
   const generatePDFContract = (loan: Loan) => {
+      if (!loan) return;
       const doc = new jsPDF();
       doc.setFontSize(18);
       doc.text("Pagare Notarial / Contrato de Prestamo", 105, 20, { align: "center" });
       
       doc.setFontSize(12);
-      doc.text(`Prestamo ID: #${loan.id.substring(0,8)}`, 20, 40);
-      doc.text(`Cliente: ${loan.clientName}`, 20, 50);
-      doc.text(`Monto Prestado: $${loan.amount.toLocaleString()}`, 20, 60);
-      doc.text(`Tasa de Interes: ${loan.interestRate}%`, 20, 70);
-      doc.text(`Fecha de Emision: ${loan.startDate}`, 20, 80);
+      doc.text(`Prestamo ID: #${(loan.id || '').substring(0,8)}`, 20, 40);
+      doc.text(`Cliente: ${loan.clientName || 'N/A'}`, 20, 50);
+      doc.text(`Monto Prestado: $${(loan.amount || 0).toLocaleString()}`, 20, 60);
+      doc.text(`Tasa de Interes: ${loan.interestRate || 0}%`, 20, 70);
+      doc.text(`Fecha de Emision: ${loan.startDate || 'N/A'}`, 20, 80);
       
       doc.text("DECLARACION LEGAL", 105, 100, { align: "center" });
       doc.setFontSize(10);
-      const legalText = `Por medio del presente PAGARE NOTARIAL, yo, ${loan.clientName}, me comprometo a pagar incondicionalmente la suma de $${loan.totalToPay.toLocaleString()} en pagos de $${loan.installmentAmount.toLocaleString()} de manera ${loan.frequency}. En caso de incumplimiento, acepto los cargos por mora estipulados.`;
+      const legalText = `Por medio del presente PAGARE NOTARIAL, yo, ${loan.clientName || ''}, me comprometo a pagar incondicionalmente la suma de $${(loan.totalToPay || 0).toLocaleString()} en pagos de $${(loan.installmentAmount || 0).toLocaleString()} de manera ${loan.frequency || 'Semanal'}. En caso de incumplimiento, acepto los cargos por mora estipulados.`;
       doc.text(legalText, 20, 110, { maxWidth: 170 });
       
       // AutoTable
@@ -99,44 +123,19 @@ const Loans: React.FC = () => {
       ]);
       
       autoTable(doc, {
-          startY: 140,
-          head: [['Cuota', 'Fecha', 'Capital', 'Interes', 'Cuota Total', 'Balance Restante']],
+          startY: 130,
+          head: [['#', 'Fecha', 'Capital', 'Interés', 'Cuota', 'Balance']],
           body: tableData,
       });
 
-      const finalY = (doc as any).lastAutoTable.finalY || 150;
+      const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY : 200;
       doc.text("_________________________", 60, finalY + 40, { align: "center" });
       doc.text("Firma del Cliente", 60, finalY + 50, { align: "center" });
       
       doc.text("_________________________", 150, finalY + 40, { align: "center" });
       doc.text("Firma Empresa / Prestamista", 150, finalY + 50, { align: "center" });
 
-      doc.save(`Contrato_${loan.clientName}_${loan.id.substring(0,5)}.pdf`);
-  };
-
-    const getAmortizationTable = (loan: Loan) => {
-      const isRedito = (loan.loanType || '').includes('Rédito');
-      const count = loan.durationWeeks > 0 ? loan.durationWeeks : 12; // Default show 12 periods for Rédito view
-      
-      // We will delegate to LoanEngine to get the true schedule regardless of the type
-      const engineSchedule = LoanEngine.generateAmortizationSchedule(
-          loan.amount,
-          loan.interestRate,
-          count,
-          loan.frequency,
-          loan.startDate,
-          { amortizationMethod: 'Amortizado' },
-          loan.loanType
-      );
-
-      return engineSchedule.map(s => ({
-          period: s.installmentNumber,
-          date: s.date,
-          principal: s.principal,
-          interest: s.interest,
-          amount: s.total,
-          balance: s.balance
-      }));
+      doc.save(`Contrato_${loan.clientName || 'Cliente'}_${(loan.id || '').substring(0,5)}.pdf`);
   };
 
   return (

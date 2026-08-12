@@ -218,37 +218,37 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
           </div>
 
           {/* Printable Contract Document */}
-          <div id="loan-contract-print-root" ref={printRef} className="bg-white p-8 sm:p-12 font-sans text-slate-800 leading-relaxed" style={{ fontFamily: "'Inter', 'Helvetica', sans-serif" }}>
+          <div id="loan-contract-print-root" ref={printRef} className="bg-white p-4 sm:p-8 md:p-12 font-sans text-slate-800 leading-relaxed overflow-x-auto" style={{ fontFamily: "'Inter', 'Helvetica', sans-serif" }}>
 
             {/* Company Header */}
-            <div className="flex items-center justify-between mb-8 pb-6 border-b-2 border-slate-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pb-6 border-b-2 border-slate-200">
               <div className="flex items-center gap-4">
                 {companySettings.logoUrl ? (
-                  <img src={companySettings.logoUrl} alt="Logo" className="h-16 w-16 object-contain rounded-xl" crossOrigin="anonymous" />
+                  <img src={companySettings.logoUrl} alt="Logo" className="h-14 w-14 sm:h-16 sm:w-16 object-contain rounded-xl" crossOrigin="anonymous" />
                 ) : (
-                  <div className="h-16 w-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
-                    <Building2 className="w-8 h-8 text-white" />
+                  <div className="h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
+                    <Building2 className="w-7 h-7 text-white" />
                   </div>
                 )}
                 <div>
-                  <h1 className="text-2xl font-black text-slate-900">{companySettings.name}</h1>
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-900">{companySettings.name}</h1>
                   {companySettings.slogan && <p className="text-xs text-slate-400 italic">{companySettings.slogan}</p>}
                   {companySettings.rnc && <p className="text-xs text-slate-500 font-bold mt-0.5">RNC: {companySettings.rnc}</p>}
                 </div>
               </div>
-              <div className="text-right text-xs text-slate-500 space-y-1">
+              <div className="text-left sm:text-right text-xs text-slate-500 space-y-1">
                 {companySettings.phone && (
-                  <div className="flex items-center gap-1 justify-end font-semibold text-slate-700">
+                  <div className="flex items-center gap-1 sm:justify-end font-semibold text-slate-700">
                     <Phone className="w-3 h-3 text-indigo-500" /> {companySettings.phone}
                   </div>
                 )}
                 {companySettings.email && (
-                  <div className="flex items-center gap-1 justify-end">
+                  <div className="flex items-center gap-1 sm:justify-end">
                     <Mail className="w-3 h-3 text-indigo-500" /> {companySettings.email}
                   </div>
                 )}
                 {companySettings.address && (
-                  <div className="flex items-center gap-1 justify-end">
+                  <div className="flex items-center gap-1 sm:justify-end">
                     <MapPin className="w-3 h-3 text-indigo-500" /> {companySettings.address}
                   </div>
                 )}

@@ -61,35 +61,38 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Get exact rendered dimensions of image in DOM
+    const renderedWidth = img.offsetWidth || img.clientWidth || 300;
+    const renderedHeight = img.offsetHeight || img.clientHeight || 300;
+
+    const cropBoxSize = 240; // 240px viewport circle cutout
+    const scaleFactor = targetSize / cropBoxSize;
+
     ctx.save();
+    // Clip circle
     ctx.beginPath();
     ctx.arc(targetSize / 2, targetSize / 2, targetSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
 
+    // Center canvas
     ctx.translate(targetSize / 2, targetSize / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(zoom, zoom);
 
-    const cropBoxSize = 240; // 240px circle overlay
-    const scaleFactor = targetSize / cropBoxSize;
-
+    // Apply drag position scaled to output canvas
     const drawX = position.x * scaleFactor;
     const drawY = position.y * scaleFactor;
 
-    const natW = img.naturalWidth || 300;
-    const natH = img.naturalHeight || 300;
-    const baseScale = Math.max(cropBoxSize / natW, cropBoxSize / natH);
-
-    const renderW = natW * baseScale * scaleFactor;
-    const renderH = natH * baseScale * scaleFactor;
+    // Apply zoom and draw exact scaled dimensions
+    const drawW = renderedWidth * zoom * scaleFactor;
+    const drawH = renderedHeight * zoom * scaleFactor;
 
     ctx.drawImage(
       img,
-      -renderW / 2 + drawX,
-      -renderH / 2 + drawY,
-      renderW,
-      renderH
+      -drawW / 2 + drawX,
+      -drawH / 2 + drawY,
+      drawW,
+      drawH
     );
 
     ctx.restore();

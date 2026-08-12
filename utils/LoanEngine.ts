@@ -161,15 +161,83 @@ export class LoanEngine {
         return d.toISOString().split('T')[0];
     }
 
-    static getNextDate(currentDate: string, frequency: string): string {
-        switch (frequency) {
-            case 'Diario': return this.addDays(currentDate, 1);
-            case 'Semanal': return this.addDays(currentDate, 7);
-            case 'Quincenal': return this.addDays(currentDate, 15);
-            case 'Mensual': return this.addDays(currentDate, 30);
-            case 'Anual': return this.addDays(currentDate, 365);
-            default: return this.addDays(currentDate, 7);
+    static getNextDate(currentDate: string, frequency: string, stepIndex?: number, startDateStr?: string): string {
+        const baseStr = startDateStr || currentDate;
+        const baseDate = new Date(baseStr.includes('T') ? baseStr : baseStr + 'T12:00:00');
+        const currDate = new Date(currentDate.includes('T') ? currentDate : currentDate + 'T12:00:00');
+
+        if (isNaN(currDate.getTime())) return currentDate;
+
+        if (frequency === 'Mensual') {
+            // Precise monthly calculation taking into account 28, 29, 30, and 31 day months
+            const step = stepIndex !== undefined ? stepIndex : 1;
+            const preferredDay = baseDate.getDate(); // e.g. 31 if started on Jan 31
+            const targetYear = baseDate.getFullYear() + Math.floor((baseDate.getMonth() + step) / 12);
+            const targetMonth = (baseDate.getMonth() + step) % 12;
+            const positiveTargetMonth = targetMonth < 0 ? targetMonth + 12 : targetMonth;
+
+            const daysInMonth = new Date(targetYear, positiveTargetMonth + 1, 0).getDate();
+            const finalDay = Math.min(preferredDay, daysInMonth);
+
+            const next = new Date(targetYear, positiveTargetMonth, finalDay, 12, 0, 0, 0);
+            return next.toISOString().split('T')[0];
         }
+
+        if (frequency === 'Quincenal') {
+            // For Quincenal: 15-day intervals or exact 15th & end of month
+            const preferredDay = baseDate.getDate();
+            if (preferredDay === 15 || preferredDay >= 28) {
+                const step = stepIndex !== undefined ? stepIndex : 1;
+                const monthOffset = Math.floor(step / 2);
+                const isSecondHalf = (step % 2) !== 0;
+                const targetYear = baseDate.getFullYear() + Math.floor((baseDate.getMonth() + monthOffset) / 12);
+                const targetMonth = (baseDate.getMonth() + monthOffset) % 12;
+
+                let finalDay = 15;
+                const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+                if (preferredDay === 15) {
+                    finalDay = isSecondHalf ? daysInMonth : 15;
+                } else {
+                    finalDay = isSecondHalf ? 15 : Math.min(preferredDay, daysInMonth);
+                }
+
+                const next = new Date(targetYear, targetMonth, finalDay, 12, 0, 0, 0);
+                return next.toISOString().split('T')[0];
+            } else {
+                const step = stepIndex !== undefined ? stepIndex : 1;
+                const d = new Date(baseDate.getTime());
+                d.setDate(d.getDate() + (step * 15));
+                return d.toISOString().split('T')[0];
+            }
+        }
+
+        if (frequency === 'Diario') {
+            const step = stepIndex !== undefined ? stepIndex : 1;
+            const d = new Date(baseDate.getTime());
+            d.setDate(d.getDate() + step);
+            return d.toISOString().split('T')[0];
+        }
+
+        if (frequency === 'Semanal') {
+            const step = stepIndex !== undefined ? stepIndex : 1;
+            const d = new Date(baseDate.getTime());
+            d.setDate(d.getDate() + (step * 7));
+            return d.toISOString().split('T')[0];
+        }
+
+        if (frequency === 'Anual') {
+            const step = stepIndex !== undefined ? stepIndex : 1;
+            const preferredDay = baseDate.getDate();
+            const targetYear = baseDate.getFullYear() + step;
+            const targetMonth = baseDate.getMonth();
+            const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            const finalDay = Math.min(preferredDay, daysInMonth);
+            const next = new Date(targetYear, targetMonth, finalDay, 12, 0, 0, 0);
+            return next.toISOString().split('T')[0];
+        }
+
+        return this.addDays(currentDate, 7);
     }
 
     /**
@@ -201,55 +269,39 @@ export class LoanEngine {
         let currentDate = this.getNextDate(startDate, frequency);
 
         if (method === 'Flat') {
-            // Capital + Réditos fijos.
-            // Ejemplo: Principal=10000, Tasa=20% total. Interés Total=2000.
-            // Se paga igual cantidad de capital e interés en cada cuota.
             const totalInterest = this.calculateTotalInterest(principal, interestRate);
             const principalPerInstallment = principal / installments;
             const interestPerInstallment = totalInterest / installments;
             
             for (let i = 1; i <= installments; i++) {
                 currentBalance -= principalPerInstallment;
+                const instDate = this.getNextDate(startDate, frequency, i, startDate);
                 schedule.push({
                     installmentNumber: i,
-                    date: currentDate,
+                    date: instDate,
                     principal: principalPerInstallment,
                     interest: interestPerInstallment,
                     total: principalPerInstallment + interestPerInstallment,
                     balance: Math.max(0, currentBalance)
                 });
-                currentDate = this.getNextDate(currentDate, frequency);
             }
         } 
         else if (method === 'Amortizado' || method === 'DecliningBalance') {
-            // French Amortization (Cuota Fija, interés sobre saldo)
-            // C = P * (r(1+r)^n) / ((1+r)^n - 1)
-            // Asumimos interestRate es Anual. Si frecuencia es Mensual, r = (interestRate/100)/12
-            let r = (interestRate / 100); 
-            // Si la tasa es mensual y la frecuencia es mensual, r = interestRate/100
-            // Aquí hay que definir la lógica de la tasa. Si el usuario ingresa 5% y elige Mensual, r=0.05
-            
-            // Para simplificar, asumiremos que interestRate es la tasa por período en DeclineBalance
-            // Si es 'Amortizado' tradicional sin tasa real, a veces prestamistas lo manejan igual que Flat.
             if (method === 'Amortizado') {
                 const totalInterest = this.calculateTotalInterest(principal, interestRate);
-                const totalDebt = principal + totalInterest;
-                const installmentAmount = totalDebt / installments;
-                
-                // En Amortizado simple dominicano, a veces es igual a Flat
                 const pPerI = principal / installments;
                 const iPerI = totalInterest / installments;
                 for (let i = 1; i <= installments; i++) {
                     currentBalance -= pPerI;
+                    const instDate = this.getNextDate(startDate, frequency, i, startDate);
                     schedule.push({
                         installmentNumber: i,
-                        date: currentDate,
+                        date: instDate,
                         principal: pPerI,
                         interest: iPerI,
                         total: pPerI + iPerI,
                         balance: Math.max(0, currentBalance)
                     });
-                    currentDate = this.getNextDate(currentDate, frequency);
                 }
             } else {
                 // DecliningBalance (Cuota Fija real)
@@ -260,54 +312,50 @@ export class LoanEngine {
                     const interest = currentBalance * periodicRate;
                     const pPayment = installmentAmount - interest;
                     currentBalance -= pPayment;
+                    const instDate = this.getNextDate(startDate, frequency, i, startDate);
                     
                     schedule.push({
                         installmentNumber: i,
-                        date: currentDate,
+                        date: instDate,
                         principal: pPayment,
                         interest: interest,
                         total: installmentAmount,
                         balance: Math.max(0, currentBalance)
                     });
-                    currentDate = this.getNextDate(currentDate, frequency);
                 }
             }
         }
         else if (method === 'Bullet') {
-            // Solo paga interés cada periodo, al final paga interés + capital completo
             const periodicRate = interestRate / 100;
             const interest = principal * periodicRate;
             for (let i = 1; i <= installments; i++) {
                 const isLast = (i === installments);
                 const pPayment = isLast ? principal : 0;
                 currentBalance -= pPayment;
+                const instDate = this.getNextDate(startDate, frequency, i, startDate);
                 schedule.push({
                     installmentNumber: i,
-                    date: currentDate,
+                    date: instDate,
                     principal: pPayment,
                     interest: interest,
                     total: pPayment + interest,
                     balance: Math.max(0, currentBalance)
                 });
-                currentDate = this.getNextDate(currentDate, frequency);
             }
         }
         else if (method === 'Adelantado') {
-            // El interés se cobra al inicio (no se capitaliza en la cuota). Las cuotas son solo de capital puro.
-            // Para la tabla, la primera fila suele representar el descuento o las cuotas no reflejan interés.
-            // Lo reflejaremos como Interés = 0 en las cuotas porque se descontó arriba.
             const pPerI = principal / installments;
             for (let i = 1; i <= installments; i++) {
                 currentBalance -= pPerI;
+                const instDate = this.getNextDate(startDate, frequency, i, startDate);
                 schedule.push({
                     installmentNumber: i,
-                    date: currentDate,
+                    date: instDate,
                     principal: pPerI,
                     interest: 0,
                     total: pPerI,
                     balance: Math.max(0, currentBalance)
                 });
-                currentDate = this.getNextDate(currentDate, frequency);
             }
         }
         else if (method === 'Maturity') {

@@ -17,23 +17,29 @@ const Clients: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredClients = clients.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.cedula.includes(searchTerm) ||
-      (c.phone || '').includes(searchTerm);
+    if (!c) return false;
+    const nameStr = (c.name || '').toLowerCase();
+    const lastNameStr = (c.lastName || '').toLowerCase();
+    const cedulaStr = (c.cedula || '');
+    const phoneStr = (c.phone || '');
+
+    const matchesSearch = nameStr.includes((searchTerm || '').toLowerCase()) ||
+      lastNameStr.includes((searchTerm || '').toLowerCase()) ||
+      cedulaStr.includes(searchTerm || '') ||
+      phoneStr.includes(searchTerm || '');
     const matchesStatus = statusFilter === 'Todos' || c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const getClientLoanStats = (clientId: string) => {
-    const clientLoans = loans.filter(l => l.clientId === clientId);
+    const clientLoans = loans.filter(l => l && l.clientId === clientId);
     const activeLoans = clientLoans.filter(l => l.status !== 'Pagado' && l.status !== 'Rechazado');
-    const activeDebt = activeLoans.reduce((sum, l) => sum + l.remainingBalance, 0);
+    const activeDebt = activeLoans.reduce((sum, l) => sum + (l.remainingBalance || 0), 0);
     let nextPaymentDate: string | null = null;
     let isOverdue = false;
     if (activeLoans.length > 0) {
-      const sorted = [...activeLoans].sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime());
-      nextPaymentDate = sorted[0].nextPaymentDate;
+      const sorted = [...activeLoans].sort((a, b) => new Date(a.nextPaymentDate || '').getTime() - new Date(b.nextPaymentDate || '').getTime());
+      nextPaymentDate = sorted[0]?.nextPaymentDate || null;
       const dateObj = nextPaymentDate ? new Date(nextPaymentDate) : null;
       const daysDiff = (dateObj && !isNaN(dateObj.getTime())) ? Math.ceil((dateObj.getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0;
       isOverdue = daysDiff < 0;

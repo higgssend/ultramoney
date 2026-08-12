@@ -154,11 +154,12 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           )}
         </div>
 
-        {/* Notifications */}
+        {/* Notifications Button & Dropdown */}
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setIsNotifOpen(!isNotifOpen)}
             className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors relative"
+            title="Notificaciones"
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
@@ -170,19 +171,24 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           </button>
 
           {isNotifOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <div className="fixed md:absolute right-2 md:right-0 top-16 md:top-full mt-2 w-[calc(100vw-1rem)] max-w-sm sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
-                <h3 className="font-bold text-slate-800 dark:text-white">Notificaciones</h3>
-                {unreadCount > 0 && (
-                  <button onClick={() => markAllNotificationsAsRead()} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Marcar todas leídas
+                <h3 className="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button onClick={() => markAllNotificationsAsRead()} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Leídas
+                    </button>
+                  )}
+                  <button onClick={() => setIsNotifOpen(false)} className="md:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <X className="w-4 h-4" />
                   </button>
-                )}
+                </div>
               </div>
-              <div className="max-h-[400px] overflow-y-auto">
+              <div className="max-h-[380px] overflow-y-auto">
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
-                    No tienes notificaciones
+                    No tienes notificaciones por el momento
                   </div>
                 ) : (
                   notifications.map(n => (
@@ -195,19 +201,19 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                           {n.type === 'warning' ? <ShieldAlert className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                         </div>
                         <div className="flex-1">
-                          <p className={`text-sm ${!n.read ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-700 dark:text-slate-300'}`}>{n.title}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{n.message}</p>
+                          <p className={`text-xs ${!n.read ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-700 dark:text-slate-300'}`}>{n.title}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{n.message}</p>
                           <div className="flex items-center justify-between mt-2">
                             <span className="text-[10px] text-slate-400 font-medium">{new Date(n.date).toLocaleString()}</span>
-                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-2">
                               {n.link && (
-                                <button onClick={() => { navigate(n.link!); setIsNotifOpen(false); }} className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                                <button onClick={() => { navigate(n.link!); setIsNotifOpen(false); }} className="text-xs text-indigo-600 dark:text-indigo-400 font-bold">
                                   Ver
                                 </button>
                               )}
                               {!n.read && (
-                                <button onClick={() => markNotificationAsRead(n.id)} className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                                  Leer
+                                <button onClick={() => markNotificationAsRead(n.id)} className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                  Marcar leída
                                 </button>
                               )}
                             </div>
