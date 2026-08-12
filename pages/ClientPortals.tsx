@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useClients } from '../context/StoreContext';
-import { Search, Link as LinkIcon, RefreshCw, XCircle, ShieldCheck, Copy, ChevronLeft, CheckCircle, ExternalLink, Settings, AlertTriangle, Key } from 'lucide-react';
+import { Search, Link as LinkIcon, RefreshCw, XCircle, ShieldCheck, Copy, ChevronLeft, CheckCircle, ExternalLink, Settings, AlertTriangle, Key, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { Client } from '../types';
@@ -42,6 +42,33 @@ const ClientPortals: React.FC = () => {
             portalAlias: client.portalAlias || '',
             clientPin: client.clientPin || ''
         });
+    };
+
+    const handleGenerateAliasFromName = () => {
+        if (!selectedClient) return;
+        const fullName = selectedClient.name || '';
+        const baseSlug = fullName
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .trim()
+            .replace(/\s+/g, '-');
+
+        if (!baseSlug) {
+            addToast('El nombre del cliente no es válido para generar un enlace', 'error');
+            return;
+        }
+
+        let finalAlias = baseSlug;
+        const aliasTaken = clients.find(c => c.portalAlias === finalAlias && c.id !== selectedClient.id);
+        if (aliasTaken) {
+            const randDigits = Math.floor(10 + Math.random() * 90);
+            finalAlias = `${baseSlug}-${randDigits}`;
+        }
+
+        setFormData(prev => ({ ...prev, portalAlias: finalAlias }));
+        addToast(`Enlace generado automáticamente: ${finalAlias}`, 'info');
     };
 
     const handleSaveCredentials = () => {
@@ -229,25 +256,38 @@ const ClientPortals: React.FC = () => {
                             {/* Alias config */}
                             <div className={`space-y-3 transition-opacity ${!formData.portalActive ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                        Alias del Enlace (Opcional)
-                                    </label>
-                                    <p className="text-xs text-slate-500 mb-2">Crea un enlace corto y personalizado en lugar del ID largo.</p>
-                                    <div className="flex rounded-lg shadow-sm">
-                                        <span className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-r-0 border-slate-200 dark:border-slate-700 rounded-l-lg text-slate-500 text-sm flex items-center">
-                                            ultramoney.app/portal/
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            Enlace Personalizado del Cliente
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={handleGenerateAliasFromName}
+                                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-indigo-200 dark:border-indigo-800"
+                                        >
+                                            <Wand2 className="w-3 h-3" /> Generar con Nombre
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-2">Solo letras y números (sin caracteres especiales ni espacios).</p>
+                                    <div className="flex rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-900">
+                                        <span className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold font-mono flex items-center shrink-0">
+                                            {window.location.origin}/portal/
                                         </span>
                                         <input
                                             type="text"
                                             value={formData.portalAlias}
                                             onChange={(e) => setFormData({...formData, portalAlias: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
-                                            placeholder="ejemplo-cliente"
-                                            className="flex-1 block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-r-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-slate-900 dark:text-white"
+                                            placeholder="juan-perez"
+                                            className="flex-1 block w-full px-3 py-2 font-mono font-bold text-xs bg-white dark:bg-slate-900 dark:text-white focus:outline-none"
                                         />
                                     </div>
-                                    {!formData.portalAlias && (
-                                        <p className="text-xs text-slate-400 mt-2 truncate">
-                                            Enlace actual: .../portal/{selectedClient.id}
+                                    {!formData.portalAlias ? (
+                                        <p className="text-xs text-slate-400 mt-2 truncate font-mono">
+                                            Enlace predeterminado: {window.location.origin}/portal/{selectedClient.id}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold mt-2 truncate font-mono">
+                                            ✓ Enlace personalizado activo: {window.location.origin}/portal/{formData.portalAlias}
                                         </p>
                                     )}
                                 </div>

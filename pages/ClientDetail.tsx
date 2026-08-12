@@ -317,7 +317,7 @@ const ClientDetail: React.FC = () => {
                  </DetailGroup>
                  
                  <DetailGroup icon={Globe} title="Portal Web de Cliente">
-                     <DetailRow label="Enlace Corto" value={client.portalAlias ? `https://ultramoney.app/portal/${client.portalAlias}` : `https://ultramoney.app/portal/${client.id}`} highlight />
+                     <DetailRow label="Enlace Corto" value={`${window.location.origin}/portal/${client.portalAlias || client.id}`} highlight />
                      <DetailRow label="Alias" value={client.portalAlias || 'No configurado'} />
                      <DetailRow label="PIN" value={client.clientPin || 'Sin PIN'} />
                      <DetailRow label="Estado" value={client.portalActive !== false ? 'Activo' : 'Desactivado'} />

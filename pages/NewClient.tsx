@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   User, Phone, MapPin, Plus, Crosshair, Save, ArrowLeft,
   Building, Briefcase, Mail, ChevronRight, CheckCircle,
-  AlertTriangle, Hash, FileText, Camera
+  AlertTriangle, Hash, FileText, Camera, Wand2, Globe
 } from 'lucide-react';
 import { useClients } from '../context/StoreContext';
 import { Client } from '../types';
@@ -84,6 +84,33 @@ const NewClient: React.FC = () => {
     } else {
       addToast('Geolocalización no disponible en este navegador', 'error');
     }
+  };
+
+  const handleGenerateAliasFromName = () => {
+    const fullName = `${currentClient.name || ''} ${currentClient.lastName || ''}`.trim();
+    if (!fullName) {
+      addToast('Ingresa el nombre del cliente primero para generar el enlace', 'warning');
+      return;
+    }
+    const baseSlug = fullName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+
+    if (!baseSlug) return;
+
+    let finalAlias = baseSlug;
+    const exists = clients.find(c => c.portalAlias === finalAlias && c.id !== currentClient.id);
+    if (exists) {
+      const randDigits = Math.floor(10 + Math.random() * 90);
+      finalAlias = `${baseSlug}-${randDigits}`;
+    }
+
+    set('portalAlias', finalAlias);
+    addToast(`Enlace generado automáticamente: ${finalAlias}`, 'info');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -367,6 +394,38 @@ const NewClient: React.FC = () => {
                   onChange={e => set('phoneHome', maskPhone(e.target.value))}
                   placeholder="(809) 000-0000"
                 />
+              </div>
+
+              {/* Enlace Personalizado del Portal (Opcional) */}
+              <div className="md:col-span-3 bg-indigo-50/60 dark:bg-indigo-900/10 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="block text-xs font-bold text-indigo-950 dark:text-indigo-300 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-indigo-600" />
+                    Enlace Personalizado del Portal (Opcional)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateAliasFromName}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> Generar con Nombre
+                  </button>
+                </div>
+                <div className="flex rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-900">
+                  <span className="px-3 py-2 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-bold font-mono flex items-center shrink-0">
+                    {window.location.origin}/portal/
+                  </span>
+                  <input
+                    type="text"
+                    value={currentClient.portalAlias || ''}
+                    onChange={e => set('portalAlias', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    placeholder="juan-perez"
+                    className="flex-1 block w-full px-3 py-2 font-mono font-bold text-xs bg-white dark:bg-slate-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-indigo-700 dark:text-indigo-400 font-medium">
+                  Solo letras y números (sin caracteres especiales ni espacios). Puedes generarlo automáticamente con el botón o escribirlo manualmente.
+                </p>
               </div>
 
               <div className="md:col-span-3">
