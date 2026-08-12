@@ -244,8 +244,26 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           file_type: 'application/pdf',
           upload_date: loanData.startDate || new Date().toISOString().split('T')[0]
         }]);
+
+        // Register collateral if present
+        if (loanData.collateral && loanData.collateral.type && loanData.collateral.type !== 'Sin Garantía') {
+          const colTitle = `Garantía (${loanData.collateral.type}): ${loanData.collateral.description || ''} ${loanData.collateral.refNumber ? `[${loanData.collateral.refNumber}]` : ''}`.trim();
+          const colUrl = `${window.location.origin}/prestamos/${data.id}?tab=collateral`;
+          const colDocType = loanData.collateral.type === 'Vehículo' ? 'Matricula' : loanData.collateral.type === 'Propiedad' ? 'Titulo' : 'Garantia';
+          await insforge.database.from('client_documents').insert([{
+            lender_id: currentUser.id,
+            client_id: loanData.clientId,
+            title: colTitle,
+            name: colTitle,
+            type: colDocType,
+            file_url: colUrl,
+            url: colUrl,
+            file_type: 'application/pdf',
+            upload_date: loanData.startDate || new Date().toISOString().split('T')[0]
+          }]);
+        }
       } catch (e) {
-        logger.error("Error saving contract to client_documents:", e);
+        logger.error("Error saving contract or collateral to client_documents:", e);
       }
 
       const newLoan: Loan = {
