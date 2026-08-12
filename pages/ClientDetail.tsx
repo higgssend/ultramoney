@@ -687,14 +687,6 @@ const ClientDetail: React.FC = () => {
 
                  {/* SECCIÓN 2: DOCUMENTOS LEGALES & PRÉSTAMOS */}
                  <div className="bg-slate-50/70 dark:bg-slate-800/40 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-700/60 space-y-4">
-                     <div className="flex items-center gap-3">
-                         <div className="p-2.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-2xl font-bold">
-                             <FileText className="w-5 h-5" />
-                         </div>
-                         <div>
-                             <h4 className="font-extrabold text-slate-800 dark:text-white text-base">Documentos Legales & Préstamos</h4>
-                 {/* 2. Documentos Legales & Préstamos (Agrupados por Préstamo) */}
-                 <div className="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-3xl border border-slate-200 dark:border-slate-700/60 space-y-4">
                       <div className="flex justify-between items-center flex-wrap gap-3">
                           <div>
                             <h4 className="font-bold text-slate-800 dark:text-white text-base flex items-center gap-2">
