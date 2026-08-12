@@ -98,7 +98,8 @@ const Payments: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // History State
+  // History & Search State
+  const [searchTerm, setSearchTerm] = useState('');
   const [historySearch, setHistorySearch] = useState('');
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
@@ -388,8 +389,8 @@ const Payments: React.FC = () => {
         proofUrl || undefined
     );
 
-    if (selectedBankAccountId && effectiveTotal > 0) {
-        processBankDeposit(selectedBankAccountId, effectiveTotal);
+    if (effectiveTotal > 0) {
+        processBankDeposit(selectedBankAccountId || undefined, effectiveTotal);
     }
     
     const insertedTx = Array.isArray(insertedTxs) ? insertedTxs[0] : insertedTxs;

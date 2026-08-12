@@ -367,8 +367,8 @@ const LoanRequest: React.FC = () => {
         if (createdLoanObj?.id) {
             setLastCreatedLoanId(createdLoanObj.id);
             setCreatedLoanForSharing(createdLoanObj);
-            if (disbursementBankAccountId && amount > 0) {
-                processBankDisbursement(disbursementBankAccountId, amount);
+            if (amount > 0) {
+                processBankDisbursement(disbursementBankAccountId || undefined, amount);
             }
         }
 

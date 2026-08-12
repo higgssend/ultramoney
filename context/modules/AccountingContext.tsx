@@ -22,8 +22,8 @@ interface AccountingContextType {
   addBankAccount: (account: BankAccount) => void;
   updateBankAccount: (id: string, updates: Partial<BankAccount>) => void;
   removeBankAccount: (id: string) => void;
-  processBankDeposit: (bankAccountId: string, amount: number) => void;
-  processBankDisbursement: (bankAccountId: string, amount: number) => void;
+  processBankDeposit: (bankAccountId: string | undefined, amount: number) => void;
+  processBankDisbursement: (bankAccountId: string | undefined, amount: number) => void;
   
   // Custom Payment Methods Management
   addPaymentMethod: (pm: CustomPaymentMethod) => void;
@@ -289,30 +289,31 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     addToast("Cuenta removida", "info");
   };
 
-  const processBankDeposit = async (bankAccountId: string, amount: number) => {
-    if (!bankAccountId || amount <= 0) return;
-    const target = bankAccounts.find(a => a.id === bankAccountId);
-    const newBal = (target ? target.balance : 0) + amount;
-    setBankAccounts(prev => prev.map(acc => acc.id === bankAccountId ? { ...acc, balance: newBal } : acc));
+  const processBankDeposit = async (bankAccountId: string | undefined, amount: number) => {
+    if (amount <= 0) return;
+    const target = (bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null) 
+      || bankAccounts.find(a => a.accountType === 'Caja Chica / Efectivo' || a.isDefault) 
+      || bankAccounts[0];
+    if (!target) return;
+
+    const newBal = (target.balance || 0) + amount;
+    setBankAccounts(prev => prev.map(acc => acc.id === target.id ? { ...acc, balance: newBal } : acc));
     if (currentUser) {
-      await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', bankAccountId).eq('lender_id', currentUser.id);
+      await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', target.id).eq('lender_id', currentUser.id);
     }
   };
 
-  const processBankDisbursement = async (bankAccountId: string, amount: number) => {
-    if (!bankAccountId || amount <= 0) return;
-    const target = bankAccounts.find(a => a.id === bankAccountId);
+  const processBankDisbursement = async (bankAccountId: string | undefined, amount: number) => {
+    if (amount <= 0) return;
+    const target = (bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null) 
+      || bankAccounts.find(a => a.accountType === 'Caja Chica / Efectivo' || a.isDefault) 
+      || bankAccounts[0];
     if (!target) return;
-    let current = target.balance || 0;
-    if (current < amount) {
-      const needed = amount - current;
-      addToast(`Inyección automática de capital en ${target.bankName}: +RD$ ${needed.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`, 'info');
-      current = amount + 50000;
-    }
-    const finalBal = current - amount;
-    setBankAccounts(prev => prev.map(acc => acc.id === bankAccountId ? { ...acc, balance: finalBal } : acc));
+
+    const finalBal = (target.balance || 0) - amount;
+    setBankAccounts(prev => prev.map(acc => acc.id === target.id ? { ...acc, balance: finalBal } : acc));
     if (currentUser) {
-      await insforge.database.from('bank_accounts').update({ initial_balance: finalBal }).eq('id', bankAccountId).eq('lender_id', currentUser.id);
+      await insforge.database.from('bank_accounts').update({ initial_balance: finalBal }).eq('id', target.id).eq('lender_id', currentUser.id);
     }
   };
 
