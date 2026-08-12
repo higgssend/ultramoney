@@ -164,6 +164,10 @@ const ClientDetail: React.FC = () => {
     loanCategory: l.loanCategory,
     loanType: l.loanType,
     loanStatus: l.status,
+    itemPrice: l.itemPrice,
+    downPayment: l.downPayment,
+    downPaymentMode: l.downPaymentMode,
+    financedAmount: l.financedAmount,
     collateral: l.collateral!
   }));
 
@@ -772,16 +776,26 @@ const ClientDetail: React.FC = () => {
                      </div>
                  ) : (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                         {clientCollaterals.map(({ loanId, loanCategory, loanType, loanStatus, collateral }, idx) => (
+                         {clientCollaterals.map(({ loanId, loanCategory, loanType, loanStatus, itemPrice, downPayment, downPaymentMode, collateral }, idx) => {
+                             const isFinancing = loanCategory === 'Financiamiento' || (loanType && loanType.includes('Financiamiento'));
+                             return (
                              <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all">
                                  <div className="flex justify-between items-start mb-4">
                                      <div className="flex items-center gap-3">
-                                         <div className="p-3 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200 dark:border-amber-800 font-bold">
-                                             <Shield className="w-6 h-6" />
+                                         <div className={`p-3 rounded-2xl border font-bold ${
+                                             isFinancing 
+                                                 ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                                                 : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                                         }`}>
+                                             {isFinancing ? <Package className="w-6 h-6" /> : <Shield className="w-6 h-6" />}
                                          </div>
                                          <div>
-                                             <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
-                                                 {collateral.type}
+                                             <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
+                                                 isFinancing 
+                                                     ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                                                     : 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
+                                             }`}>
+                                                 {isFinancing ? 'Bien Financiado (Reserva Dominio)' : `Garantía (${collateral.type})`}
                                              </span>
                                              <h4 className="font-extrabold text-slate-800 dark:text-white text-base mt-1">
                                                  {collateral.description || collateral.type}
@@ -824,12 +838,25 @@ const ClientDetail: React.FC = () => {
                                              <span className="font-bold text-slate-800 dark:text-slate-200">{collateral.bankName || ''} {collateral.cardType} (**** {collateral.last4})</span>
                                          </div>
                                      )}
-                                     {collateral.estimatedValue && (
+                                     {isFinancing && itemPrice ? (
+                                         <>
+                                             <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-600/60 pb-1.5">
+                                                 <span className="text-slate-400 font-bold">Precio Total de Venta:</span>
+                                                 <span className="font-extrabold text-slate-800 dark:text-slate-200">RD$ {itemPrice.toLocaleString('es-DO')}</span>
+                                             </div>
+                                             {downPayment !== undefined && (
+                                                 <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-600/60 pb-1.5">
+                                                     <span className="text-slate-400 font-bold">Inicial Pagado:</span>
+                                                     <span className="font-extrabold text-emerald-600 dark:text-emerald-400">RD$ {downPayment.toLocaleString('es-DO')} ({downPaymentMode || 'Efectivo'})</span>
+                                                 </div>
+                                             )}
+                                         </>
+                                     ) : collateral.estimatedValue ? (
                                          <div className="flex justify-between">
                                              <span className="text-slate-400 font-bold">Valor Estimado:</span>
                                              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">RD$ {collateral.estimatedValue.toLocaleString()}</span>
                                          </div>
-                                     )}
+                                     ) : null}
                                      
                                      {/* Attached Photos / Documents Gallery */}
                                      {collateral.photoUrls && collateral.photoUrls.length > 0 && (
@@ -872,7 +899,8 @@ const ClientDetail: React.FC = () => {
                                      </button>
                                  </div>
                              </div>
-                         ))}
+                             );
+                         })}
                      </div>
                  )}
             </div>

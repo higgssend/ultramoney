@@ -840,7 +840,11 @@ const LoanRequest: React.FC = () => {
                     </div>
 
                     {/* Collateral Form */}
-                    <CollateralForm collateral={collateral} onChange={setCollateral} />
+                    <CollateralForm 
+                        collateral={collateral} 
+                        onChange={setCollateral} 
+                        isFinancing={loanType.includes('Financiamiento') || loanCategory === 'Financiamiento'}
+                    />
 
                     {/* Arrears Config (Moras) */}
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">

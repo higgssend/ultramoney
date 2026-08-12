@@ -305,12 +305,24 @@ export const LoanDetail: React.FC = () => {
     collateralType = loan.loanCategory === 'Vehicular' ? 'Vehículo' : (loan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
   }
 
-  if (collateralType === 'Vehículo') {
+  const isFinancingLoan = Boolean(
+    loan.loanCategory === 'Financiamiento' || 
+    (loan.loanType && loan.loanType.includes('Financiamiento')) ||
+    loan.itemPrice
+  );
+
+  if (isFinancingLoan) {
+    collateralHeading = 'RESERVA DE DOMINIO Y FINANCIAMIENTO DE BIEN / PRODUCTO';
+    collateralLegalClause = `VENTA CON RESERVA DE DOMINIO Y PROPIEDAD sobre el bien financiado: ${collateralDescription || 'Bien / Producto Financiado'}${collateralRefNumber ? `, Serial/IMEI/Matrícula No.: ${collateralRefNumber}` : ''}${loan.itemPrice ? `, Precio Total de Venta: RD$ ${loan.itemPrice.toLocaleString('es-DO')}` : ''}${loan.downPayment ? `, Inicial Pagado: RD$ ${loan.downPayment.toLocaleString('es-DO')} (${loan.downPaymentMode || 'Efectivo'})` : ''}. EL ACREEDOR conserva la titularidad y reserva de dominio del bien hasta el pago total de las cuotas acordadas.`;
+  } else if (collateralType === 'Vehículo') {
     collateralHeading = 'GARANTÍA MOBILIARIA VEHICULAR (PRENDA SIN DESPOSESIÓN)';
     collateralLegalClause = `PRENDA SIN DESPOSESIÓN sobre el vehículo motorizado descrito a continuación: Marca/Modelo/Año: ${collateralDescription || 'Declarado en expediente'}, Matrícula / Placa / Chasis No.: ${collateralRefNumber || 'N/A'}${collateralEstimatedValue > 0 ? `, por un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL DEUDOR autoriza expresamente la inscripción del gravamen en la DGII.`;
   } else if (collateralType === 'Propiedad') {
     collateralHeading = 'GARANTÍA INMOBILIARIA HIPOTECARIA EN PRIMER RANGO';
     collateralLegalClause = `HIPOTECA EN PRIMER RANGO sobre el inmueble ubicado en: ${collateralDescription || 'Dirección registrada'}, Matrícula de Título de Propiedad / Parcela / Solar No.: ${collateralRefNumber || 'N/A'}${collateralEstimatedValue > 0 ? `, asignado con un valor comercial de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}, registrado conforme a la Ley 108-05.`;
+  } else if (collateralType !== 'Sin Garantía') {
+    collateralHeading = `GARANTÍA MOBILIARIA EN CUSTODIA (${collateralType.toUpperCase()})`;
+    collateralLegalClause = `PRENDA CON CUSTODIA sobre el bien entregado en garantía: ${collateralType} - ${collateralDescription || 'Bien registrado'}${collateralRefNumber ? `, Serial/Ref No.: ${collateralRefNumber}` : ''}${collateralEstimatedValue > 0 ? `, con un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL ACREEDOR mantendrá la custodia del bien en sus bóvedas de seguridad hasta la cancelación total del préstamo.`;
   }
 
   const collateralText = collateralDescription 

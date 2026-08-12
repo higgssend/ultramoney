@@ -7,9 +7,10 @@ import { useInventory } from '../../context/StoreContext';
 interface CollateralFormProps {
     collateral: Collateral | undefined;
     onChange: (collateral: Collateral | undefined) => void;
+    isFinancing?: boolean;
 }
 
-export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onChange }) => {
+export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onChange, isFinancing }) => {
     const { inventory } = useInventory();
     const availableItems = inventory.filter(i => i.status === 'Disponible');
     const [selectedStockId, setSelectedStockId] = useState('');
@@ -71,10 +72,26 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
 
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Shield className="w-5 h-5" /></div>
-                Garantía del Préstamo
-            </h3>
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <div className={`p-2 rounded-lg ${isFinancing ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                            {isFinancing ? <Package className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+                        </div>
+                        {isFinancing ? 'Bien / Producto Financiado (Reserva de Dominio)' : 'Garantía del Préstamo'}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                        {isFinancing 
+                            ? 'Selecciona un producto del stock de tu tienda o especifica el equipo / vehículo a financiar.'
+                            : 'Especifica la garantía entregada por el cliente como respaldo en custodia.'}
+                    </p>
+                </div>
+                {isFinancing && (
+                    <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Financiamiento
+                    </span>
+                )}
+            </div>
 
             <div className="space-y-4">
                 {/* Optional Stock Item Quick-Selector */}
