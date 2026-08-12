@@ -267,7 +267,7 @@ const Loans: React.FC = () => {
                   return (
                     <div 
                         key={loan.id} 
-                        onClick={() => { setSelectedLoan(loan); setActiveTab('summary'); }}
+                        onClick={() => navigate(`/prestamos/${loan.id}`)}
                         className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer group flex flex-col"
                     >
                         <div className="p-5 flex-1">
@@ -346,7 +346,7 @@ const Loans: React.FC = () => {
                               const installment = isRedito ? (loan.amount * (loan.interestRate / 100)) : (loan.totalToPay / loan.durationWeeks);
 
                               return (
-                                  <tr key={loan.id} onClick={() => { setSelectedLoan(loan); setActiveTab('summary'); }} className="hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group">
+                                  <tr key={loan.id} onClick={() => navigate(`/prestamos/${loan.id}`)} className="hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group">
                                       <td className="px-6 py-4">
                                           <span className="font-mono text-xs font-bold text-slate-500 dark:text-slate-400">#{loan.id.substring(0, 8)}</span>
                                       </td>
@@ -382,7 +382,7 @@ const Loans: React.FC = () => {
                                       </td>
                                       <td className="px-6 py-4 text-center">
                                           <button 
-                                              onClick={(e) => { e.stopPropagation(); setSelectedLoan(loan); setActiveTab('summary'); }}
+                                              onClick={(e) => { e.stopPropagation(); navigate(`/prestamos/${loan.id}`); }}
                                               className="p-2 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:border-indigo-200 dark:hover:border-indigo-500 transition-all"
                                           >
                                               <Eye className="w-4 h-4" />

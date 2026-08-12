@@ -22,6 +22,7 @@ import Bitacora from './pages/Bitacora';
 import Profit from './pages/Profit';
 import ClientDetail from './pages/ClientDetail';
 import { DocumentPage } from './pages/DocumentPage';
+import { LoanDetail } from './pages/LoanDetail';
 import NewClient from './pages/NewClient';
 import Invoices from './pages/Invoices';
 import Login from './pages/Login';
@@ -175,6 +176,7 @@ const AppContent: React.FC = () => {
             <Route path="/clientes/nuevo" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
             <Route path="/clientes/editar/:id" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
             <Route path="/prestamos" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
+            <Route path="/prestamos/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
             <Route path="/facturas" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/pagos" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
             <Route path="/atrasos" element={<ProtectedRoute><Overdue /></ProtectedRoute>} />
