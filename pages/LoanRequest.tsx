@@ -1033,7 +1033,9 @@ const LoanRequest: React.FC = () => {
 
                             <div className="flex justify-between border-b border-white/10 pb-2">
                                 <span className="text-indigo-200 text-xs">Plazo de Pago</span>
-                                <span className="font-bold text-xs">{weeks > 0 ? `${weeks} cuotas (${frequency})` : frequency}</span>
+                                <span className="font-bold text-xs">
+                                    {(loanType.includes('Rédito') || loanType.includes('Abierto')) ? 'Indefinido (Pagaré Abierto)' : (weeks > 0 ? `${weeks} cuotas (${frequency})` : frequency)}
+                                </span>
                             </div>
 
                             <div className="flex justify-between border-b border-white/10 pb-2">

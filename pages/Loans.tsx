@@ -114,7 +114,10 @@ const Loans: React.FC = () => {
       
       doc.text("DECLARACION LEGAL", 105, 100, { align: "center" });
       doc.setFontSize(10);
-      const legalText = `Por medio del presente PAGARE NOTARIAL, yo, ${loan.clientName || ''}, me comprometo a pagar incondicionalmente la suma de $${(loan.totalToPay || 0).toLocaleString()} en pagos de $${(loan.installmentAmount || 0).toLocaleString()} de manera ${loan.frequency || 'Semanal'}. En caso de incumplimiento, acepto los cargos por mora estipulados.`;
+      const isRedito = (loan.loanType || '').includes('Rédito') || (loan.loanType || '').includes('Abierto');
+      const legalText = isRedito
+        ? `Por medio del presente PAGARÉ NOTARIAL (PAGARÉ ABIERTO A RÉDITO), yo, ${loan.clientName || ''}, me comprometo a pagar incondicionalmente la suma capital de $${(loan.amount || 0).toLocaleString()} con el pago periódico de intereses por $${(loan.installmentAmount || 0).toLocaleString()} de manera ${loan.frequency || 'Mensual'}. La presente obligación se mantendrá bajo la modalidad de Pagaré Abierto Indefinido sin plazo fijo de cuotas hasta el saldo total del capital.`
+        : `Por medio del presente PAGARÉ NOTARIAL, yo, ${loan.clientName || ''}, me comprometo a pagar incondicionalmente la suma de $${(loan.totalToPay || 0).toLocaleString()} en pagos de $${(loan.installmentAmount || 0).toLocaleString()} de manera ${loan.frequency || 'Semanal'}. En caso de incumplimiento, acepto los cargos por mora estipulados.`;
       doc.text(legalText, 20, 110, { maxWidth: 170 });
       
       // AutoTable

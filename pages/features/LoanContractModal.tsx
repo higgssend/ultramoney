@@ -349,7 +349,9 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Plazo de Cuotas</span>
-                    <span className="font-bold text-slate-900">{weeks} cuotas ({frequency})</span>
+                    <span className="font-bold text-slate-900">
+                      {isRedito ? 'Indefinido (Pagaré Abierto)' : `${weeks} cuotas (${frequency})`}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Primer Pago</span>
