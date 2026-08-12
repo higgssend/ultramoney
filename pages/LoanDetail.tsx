@@ -66,6 +66,18 @@ export const LoanDetail: React.FC = () => {
   const [editCollateralDesc, setEditCollateralDesc] = useState<string>('');
   const [editCollateralRef, setEditCollateralRef] = useState<string>('');
 
+  // Delete Loan Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Historical Payment Modal State
+  const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
+  const [histAmount, setHistAmount] = useState<number>(0);
+  const [histDate, setHistDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [histRef, setHistRef] = useState<string>('');
+  const [histNotes, setHistNotes] = useState<string>('Pago Histórico / Migrado');
+  const [histMethod, setHistMethod] = useState<PaymentMethod>('Efectivo');
+  const [histType, setHistType] = useState<'Interes' | 'Capital' | 'Mixto'>('Mixto');
+
   const openEditModal = () => {
     if (!loan) return;
     setEditAmount(loan.amount);
