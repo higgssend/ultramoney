@@ -179,23 +179,39 @@ export interface LoanRequest {
 
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
-export function formatLoanId(id?: string | null, category?: string, type?: string): string {
-  if (!id) return 'PRES-000000';
-  if (id.startsWith('PRES-') || id.startsWith('PER-') || id.startsWith('AMO-') || id.startsWith('RED-')) return id;
-  
-  let prefix = 'PRES';
-  if (category) {
-    prefix = category.substring(0, 3).toUpperCase();
-  } else if (type) {
-    if (type.includes('Rédito') || type.includes('Redito')) prefix = 'RED';
-    else if (type.includes('Amortizado')) prefix = 'AMO';
-    else prefix = type.substring(0, 3).toUpperCase();
+export function formatLoanId(id?: string | null): string {
+  if (!id) return 'No. 000000';
+  if (id.startsWith('No. ')) return id;
+  const digits = id.replace(/\D/g, '');
+  if (digits.length >= 1) {
+    const num = parseInt(digits.slice(-6), 10) || 1;
+    return `No. ${String(num).padStart(6, '0')}`;
   }
-  
-  const clean = id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  const shortHash = clean.slice(0, 8);
-  
-  return `${prefix}-${shortHash}`;
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  const num = (Math.abs(hash) % 999999) + 1;
+  return `No. ${String(num).padStart(6, '0')}`;
+}
+
+export function formatReceiptId(id?: string | null): string {
+  if (!id) return 'No. 000000';
+  if (id.startsWith('No. ')) return id;
+  const clean = id.replace(/^REC-/i, '');
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length >= 1) {
+    const num = parseInt(digits.slice(-6), 10) || 1;
+    return `No. ${String(num).padStart(6, '0')}`;
+  }
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  const num = (Math.abs(hash) % 999999) + 1;
+  return `No. ${String(num).padStart(6, '0')}`;
 }
 
 export interface Transaction {

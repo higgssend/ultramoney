@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { LoanEngine } from '../utils/LoanEngine';
-import { Loan, CompanySettings, PaymentMethod, formatLoanId } from '../types';
+import { Loan, CompanySettings, PaymentMethod, formatLoanId, formatReceiptId } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 
@@ -43,13 +43,7 @@ interface Installment {
     paidAmount: number;
 }
 
-export const formatReceiptId = (id?: string | null): string => {
-  if (!id) return 'REC-001001';
-  if (id.startsWith('REC-')) return id;
-  if (id.startsWith('TRX-NEW-')) return `REC-${id.replace('TRX-NEW-', '').slice(-6)}`;
-  const clean = id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  return `REC-${clean.slice(0, 8)}`;
-};
+
 
 interface FullReceiptData {
     loanId: string;
