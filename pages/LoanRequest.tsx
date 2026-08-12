@@ -275,11 +275,13 @@ const LoanRequest: React.FC = () => {
         if (selectedClient) {
             updateClient({
                 ...selectedClient,
-                clientPin: enablePortal ? portalPin : undefined // If enablePortal is true but portalPin is empty, they log in without PIN
+                clientPin: enablePortal ? portalPin : undefined
             });
         }
 
-        navigate('/prestamos');
+        // Open contract receipt modal post-creation!
+        setIsContractModalOpen(true);
+        toast.success(creationMode === 'direct' ? "¡Préstamo desembolsado exitosamente!" : "¡Solicitud registrada con éxito!");
     } else {
         // Update client portal access
         if (selectedClient) {
@@ -310,6 +312,10 @@ const LoanRequest: React.FC = () => {
             lateFeePercentage,
             graceDays
         });
+
+        toast.success("Solicitud de préstamo enviada exitosamente");
+        navigate('/solicitudes');
+    }
         toast.success("Solicitud guardada con éxito.");
         setViewMode('queue');
     }
