@@ -385,6 +385,18 @@ export const ReceiptView: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Attached Proof Voucher */}
+                    {(transaction as any)?.proofUrl && (
+                        <div className="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 mb-4 space-y-2">
+                            <span className="font-extrabold text-indigo-900 text-xs flex items-center gap-1.5">
+                                <FileText className="w-4 h-4 text-indigo-600" /> Comprobante de Transferencia / Voucher Adjunto
+                            </span>
+                            <div className="rounded-xl overflow-hidden border border-indigo-200 bg-white max-h-48 flex justify-center items-center">
+                                <img src={(transaction as any).proofUrl} alt="Comprobante de Pago" className="max-h-48 object-contain" />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Collateral / Guarantee Section */}
                     <div className="bg-amber-50/60 rounded-2xl border border-amber-200 p-3.5 space-y-1 text-xs mb-4">
                         <div className="flex items-center gap-1.5 text-amber-800 font-bold mb-1">

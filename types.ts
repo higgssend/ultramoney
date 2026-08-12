@@ -269,6 +269,20 @@ export function formatReceiptId(id?: string | null): string {
   return `No. ${String(num).padStart(6, '0')}`;
 }
 
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountType: 'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo';
+  accountNumber: string;
+  accountName: string;
+  currency?: 'DOP' | 'USD';
+  balance: number;
+  isDefault?: boolean;
+  isActive: boolean;
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface Transaction {
   id: string;
   type: 'Ingreso' | 'Gasto';
@@ -280,6 +294,8 @@ export interface Transaction {
   referenceId?: string; // ID of loan or client related
   paymentType?: 'Interes' | 'Capital' | 'Mixto';
   paymentMethod?: PaymentMethod;
+  bankAccountId?: string;
+  proofUrl?: string;
 }
 
 export interface CashShift {

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
+import { LoanEngine } from '../utils/LoanEngine';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

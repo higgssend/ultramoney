@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
-import { useClients, useLoans, useSettings } from '../context/StoreContext';
+import { useClients, useLoans, useSettings, useAccounting } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
@@ -14,7 +14,10 @@ const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
   const { updateClient, clients } = useClients();
   const { globalCurrency, companySettings } = useSettings();
+  const { bankAccounts, processBankDisbursement } = useAccounting();
   const navigate = useNavigate();
+
+  const [disbursementBankAccountId, setDisbursementBankAccountId] = useState<string>('');
   
   // Refinancing State
   const [isRefinanceEnabled, setIsRefinanceEnabled] = useState(false);
@@ -71,6 +74,7 @@ const LoanRequest: React.FC = () => {
   const [portalPin, setPortalPin] = useState('');
   const [schedulePreview, setSchedulePreview] = useState<InstallmentPreview[]>([]);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [lastCreatedLoanId, setLastCreatedLoanId] = useState<string | null>(null);
   const [activeProduct, setActiveProduct] = useState<LoanProduct | null>(null);
 
   // Dates State
@@ -309,6 +313,7 @@ const LoanRequest: React.FC = () => {
     }
 
     if (creationMode === 'direct') {
+        let createdLoanObj = null;
         if (isRefinanceEnabled && selectedLoanToRefinance) {
             refinanceLoan(selectedLoanToRefinance, {
                 clientId: selectedClient.id,
@@ -330,7 +335,7 @@ const LoanRequest: React.FC = () => {
                 graceDays
             });
         } else {
-            createLoan({
+            createdLoanObj = await createLoan({
                 clientId: selectedClient.id,
                 clientName: selectedClient.name,
                 amount,
@@ -355,6 +360,13 @@ const LoanRequest: React.FC = () => {
             });
         }
         
+        if (createdLoanObj?.id) {
+            setLastCreatedLoanId(createdLoanObj.id);
+            if (disbursementBankAccountId && amount > 0) {
+                processBankDisbursement(disbursementBankAccountId, amount);
+            }
+        }
+
         // If this came from a request, delete the request now that it is a loan
         if (processingRequestId) {
             deleteLoanRequest(processingRequestId);
@@ -948,8 +960,29 @@ const LoanRequest: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
-                            </div>
-                        )}
+                    </div>
+
+                    {/* Bank Account Disbursement Config */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+                        <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Banknote className="w-5 h-5" /></div>
+                            Cuenta / Caja de Desembolso (Opcional)
+                        </h3>
+                        <p className="text-xs text-slate-500 mb-4">
+                            Selecciona la cuenta bancaria o caja chica desde la cual se desembolsa este préstamo.
+                        </p>
+                        <CustomSelect 
+                            value={disbursementBankAccountId}
+                            onChange={(val) => setDisbursementBankAccountId(val)}
+                            className="w-full text-sm"
+                            options={[
+                                { value: '', label: '-- No especificar cuenta (Desembolso Manual) --' },
+                                ...bankAccounts.map(b => ({
+                                    value: b.id,
+                                    label: `${b.bankName} - ${b.accountName} (Balance: RD$ ${(b.balance || 0).toLocaleString('es-DO', {minimumFractionDigits: 2})})`
+                                }))
+                            ]}
+                        />
                     </div>
                 </div>
 
@@ -1111,7 +1144,14 @@ const LoanRequest: React.FC = () => {
                 {/* Contract Modal */}
                 <LoanContractModal
                     isOpen={isContractModalOpen}
-                    onClose={() => setIsContractModalOpen(false)}
+                    onClose={() => {
+                        setIsContractModalOpen(false);
+                        if (lastCreatedLoanId) {
+                            navigate(`/prestamos/${lastCreatedLoanId}`);
+                        } else {
+                            navigate('/prestamos');
+                        }
+                    }}
                     client={selectedClient}
                     amount={amount}
                     interest={interest}

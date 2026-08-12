@@ -72,24 +72,24 @@ interface FullReceiptData {
 const Payments: React.FC = () => {
   const { loans, registerPayment } = useLoans();
   const { clients } = useClients();
-  const { transactions } = useAccounting();
+  const { transactions, bankAccounts, processBankDeposit } = useAccounting();
   const { companySettings } = useSettings();
   const { currentUser, users, roles } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   
-  // State - Default to 'historial' as requested
-  const [activeTab, setActiveTab] = useState<'registrar' | 'monitor' | 'historial'>('historial');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'registrar' | 'historial' | 'rutas'>('registrar');
   
-  // Payment Form State
-  const [paymentMode, setPaymentMode] = useState<'manual' | 'cuotas'>('manual');
-  const [payAmount, setPayAmount] = useState('');
-  const [payNote, setPayNote] = useState('Cuota Regular');
+  // Form State
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
+  const [payAmount, setPayAmount] = useState<string>('');
+  const [payNote, setPayNote] = useState<string>('Cuota Regular');
+  const [paymentMode, setPaymentMode] = useState<'cuotas' | 'manual'>('cuotas');
   const [selectedInstallments, setSelectedInstallments] = useState<number[]>([]); 
   const [paymentType, setPaymentType] = useState<'Interes' | 'Capital' | 'Mixto'>('Interes');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Efectivo');
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('');
+  const [proofUrl, setProofUrl] = useState<string>('');
   const [selectedCashierId, setSelectedCashierId] = useState<string>('');
   const [sidebarFilter, setSidebarFilter] = useState<'hoy' | 'recientes'>('hoy');
   const [capitalAmount, setCapitalAmount] = useState<string>('');
@@ -374,7 +374,7 @@ const Payments: React.FC = () => {
     const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
 
     // Register the payment
-    const insertedTx = await registerPayment(
+    const insertedTxs = await registerPayment(
         selectedLoanId, 
         effectiveTotal, 
         payNote, 
@@ -383,9 +383,16 @@ const Payments: React.FC = () => {
         paymentType, 
         capitalAmountVal, 
         paymentMethod, 
-        selectedCashierId || undefined
+        selectedCashierId || undefined,
+        selectedBankAccountId || undefined,
+        proofUrl || undefined
     );
+
+    if (selectedBankAccountId && effectiveTotal > 0) {
+        processBankDeposit(selectedBankAccountId, effectiveTotal);
+    }
     
+    const insertedTx = Array.isArray(insertedTxs) ? insertedTxs[0] : insertedTxs;
     const actualTxId = insertedTx?.id || `REC-${String(Date.now()).slice(-6)}`;
     const formattedRecNo = formatReceiptId(actualTxId);
 
@@ -679,6 +686,48 @@ const Payments: React.FC = () => {
                                             {method}
                                         </button>
                                     ))}
+                                </div>
+                            </div>
+
+                            {/* Cuenta Bancaria o Caja (Opcional) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Cuenta Bancaria / Caja (Opcional)</label>
+                                    <CustomSelect 
+                                        value={selectedBankAccountId}
+                                        onChange={(val) => setSelectedBankAccountId(val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '', label: '-- Seleccionar Cuenta o Caja --' },
+                                            ...bankAccounts.map(b => ({
+                                                value: b.id,
+                                                label: `${b.bankName} - ${b.accountName} (RD$ ${(b.balance || 0).toLocaleString('es-DO')})`
+                                            }))
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Adjuntar Comprobante / Voucher (Opcional)</label>
+                                    <input 
+                                        type="file"
+                                        accept="image/*,application/pdf"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onload = (ev) => {
+                                                    setProofUrl(ev.target?.result as string);
+                                                    toast.success('Comprobante adjuntado correctamente');
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                        className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                    />
+                                    {proofUrl && (
+                                        <p className="text-[11px] text-emerald-600 font-bold mt-1">Comprobante adjuntado listo para guardar</p>
+                                    )}
                                 </div>
                             </div>
                             {(selectedLoan?.loanType && (selectedLoan.loanType.includes('Rédito') || selectedLoan.loanType.includes('Redito') || selectedLoan.loanType.includes('Solo Interé') || selectedLoan.loanType.includes('Pagaré Abierto'))) && (

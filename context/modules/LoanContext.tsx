@@ -13,7 +13,7 @@ interface LoanContextType {
   loanProducts: LoanProduct[];
   loanRequests: LoanRequest[];
   
-  createLoan: (loanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => void;
+  createLoan: (loanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => Promise<Loan | null>;
   updateLoan: (loan: Loan) => Promise<void>;
   deleteLoan: (id: string) => Promise<void>;
   addHistoricalPayment: (
@@ -32,8 +32,9 @@ interface LoanContextType {
   registerPayment: (
     loanId: string, amount: number, note: string, paymentDate?: string, 
     invoiceDate?: string, paymentType?: 'Interes' | 'Capital' | 'Mixto',
-    capitalAmount?: number, paymentMethod?: PaymentMethod, cashierId?: string
-  ) => Promise<Transaction | null>;
+    capitalAmount?: number, paymentMethod?: PaymentMethod, cashierId?: string,
+    bankAccountId?: string, proofUrl?: string
+  ) => Promise<Transaction[] | null>;
   addLoanRequest: (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => void;
   deleteLoanRequest: (requestId: string) => void;
   addLoanProduct: (product: Omit<LoanProduct, 'id' | 'createdAt'>) => Promise<void>;
@@ -247,9 +248,11 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoans(prev => [newLoan, ...prev]);
       addAuditLog('loan_created', `Creó un préstamo por RD$ ${loanData.amount}`);
       addToast("Préstamo creado exitosamente", "success");
+      return newLoan;
     } else {
       logger.error("Error al crear préstamo:", error);
       addToast(`Error al crear préstamo: ${error?.message || 'Error desconocido'}`, "error");
+      return null;
     }
   };
 
@@ -464,18 +467,18 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!error) {
       await insforge.database.from('transactions').insert([{
         lender_id: currentUser.id, date: new Date().toISOString().split('T')[0],
-        type: 'Perdón de Deuda', amount, description: note, referenceid: loanId
+        type: 'Gasto', amount, description: `Condonación de deuda: ${note}`, referenceid: loanId
       }]);
       setLoans(prev => prev.map(l => l.id === loanId ? { ...l, remainingBalance: newBalance, status: newStatus } : l));
       addAuditLog('loan_forgiven', `Perdonó RD$ ${amount} al préstamo ${loanId}`);
       addToast("Deuda perdonada", "success");
     }
   };
-
   const registerPayment = async (
     loanId: string, amount: number, note: string, paymentDate?: string, 
     _invoiceDate?: string, paymentType?: 'Interes' | 'Capital' | 'Mixto',
-    capitalAmount?: number, paymentMethod: PaymentMethod = 'Efectivo', cashierId?: string
+    capitalAmount?: number, paymentMethod: PaymentMethod = 'Efectivo', cashierId?: string,
+    bankAccountId?: string, proofUrl?: string
   ) => {
     if (!currentUser) return;
     const loan = loans.find(l => l.id === loanId);
@@ -493,7 +496,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       date: txDate,
       type: 'Ingreso', 
       description: note, 
-      referenceid: loanId
+      referenceid: loanId,
+      payment_method: paymentMethod,
+      bank_account_id: bankAccountId || null,
+      proof_url: proofUrl || null
     };
 
     let transactionsToInsert: any[] = [];
