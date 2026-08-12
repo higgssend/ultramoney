@@ -3,10 +3,11 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, FileText, Banknote, Shield, AlertTriangle, RefreshCw, 
   DollarSign, Printer, Download, FileCode, FileImage, CloudUpload, 
-  MessageCircle, CreditCard, CheckCircle, Clock, Calendar, ChevronRight, User, Eye, Receipt
+  MessageCircle, CreditCard, CheckCircle, Clock, Calendar, ChevronRight, User, Eye, Receipt,
+  Edit3, Trash2, Save, X, AlertCircle
 } from 'lucide-react';
 import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
-import { Loan, Client, formatLoanId, formatReceiptId, Transaction } from '../types';
+import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod } from '../types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -18,7 +19,7 @@ export const LoanDetail: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as any) || 'summary';
 
-  const { loans, refinanceLoan, forgiveDebt } = useLoans();
+  const { loans, updateLoan, deleteLoan, addHistoricalPayment, refinanceLoan, forgiveDebt } = useLoans();
   const { clients } = useClients();
   const { companySettings } = useSettings();
   const { transactions } = useAccounting();
@@ -43,8 +44,96 @@ export const LoanDetail: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
 
+  // Edit Loan Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editAmount, setEditAmount] = useState<number>(0);
+  const [editInterestRate, setEditInterestRate] = useState<number>(0);
+  const [editFrequency, setEditFrequency] = useState<string>('Semanal');
+  const [editStartDate, setEditStartDate] = useState<string>('');
+  const [editNote, setEditNote] = useState<string>('');
+  const [editStatus, setEditStatus] = useState<string>('Activo');
+
+  // Delete Loan Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Historical Payment Modal State
+  const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
+  const [histAmount, setHistAmount] = useState<number>(0);
+  const [histDate, setHistDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [histRef, setHistRef] = useState<string>('');
+  const [histNotes, setHistNotes] = useState<string>('Pago Histórico / Migrado');
+  const [histMethod, setHistMethod] = useState<PaymentMethod>('Efectivo');
+  const [histType, setHistType] = useState<'Interes' | 'Capital' | 'Mixto'>('Mixto');
+
+  const openEditModal = () => {
+    if (!loan) return;
+    setEditAmount(loan.amount);
+    setEditInterestRate(loan.interestRate);
+    setEditFrequency(loan.frequency || loan.paymentFrequency || 'Semanal');
+    setEditStartDate(loan.startDate || new Date().toISOString().split('T')[0]);
+    setEditNote(loan.note || '');
+    setEditStatus(loan.status || 'Activo');
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!loan) return;
+    const isRedito = Boolean(loan.loanType && (loan.loanType.includes('Rédito') || loan.loanType.includes('Pagaré Abierto')));
+    let ttp = editAmount;
+    if (!isRedito) {
+      ttp = Math.round((editAmount + (editAmount * (editInterestRate / 100))) * 100) / 100;
+    }
+    const updatedLoan: Loan = {
+      ...loan,
+      amount: editAmount,
+      interestRate: editInterestRate,
+      frequency: editFrequency as any,
+      paymentFrequency: editFrequency as any,
+      startDate: editStartDate,
+      note: editNote,
+      status: editStatus as any,
+      totalToPay: ttp,
+    };
+    await updateLoan(updatedLoan);
+    setIsEditModalOpen(false);
+  };
+
+  const handleDeleteLoan = async () => {
+    if (!loan) return;
+    await deleteLoan(loan.id);
+    setIsDeleteModalOpen(false);
+    navigate('/prestamos');
+  };
+
+  const handleAddHistoricalPayment = async () => {
+    if (!loan || histAmount <= 0) {
+      toast.error('Por favor ingrese un monto válido para el pago histórico');
+      return;
+    }
+    const res = await addHistoricalPayment(loan.id, {
+      amount: histAmount,
+      date: histDate,
+      reference: histRef,
+      notes: histNotes,
+      paymentMethod: histMethod,
+      paymentType: histType,
+    });
+    if (res) {
+      setDbTransactions(prev => [res, ...prev]);
+      setHistAmount(0);
+      setHistRef('');
+      setIsHistoricalModalOpen(false);
+    }
+  };
+
   useEffect(() => {
     if (loan) {
+      if (searchParams.get('edit') === 'true') {
+        openEditModal();
+      }
+      if (searchParams.get('delete') === 'true') {
+        setIsDeleteModalOpen(true);
+      }
       setRefinanceAmount(loan.amount);
       const fetchTransactions = async () => {
         try {
@@ -406,6 +495,27 @@ export const LoanDetail: React.FC = () => {
             className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all"
           >
             <DollarSign className="w-4 h-4" /> Registrar Pago
+          </button>
+          <button
+            onClick={() => setIsHistoricalModalOpen(true)}
+            className="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border border-indigo-200 dark:border-indigo-800"
+            title="Añadir cobro con fecha personalizada del pasado"
+          >
+            <Calendar className="w-4 h-4" /> + Pago Histórico
+          </button>
+          <button
+            onClick={openEditModal}
+            className="px-4 py-2.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border border-amber-200 dark:border-amber-800"
+            title="Editar préstamo"
+          >
+            <Edit3 className="w-4 h-4" /> Editar
+          </button>
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="px-4 py-2.5 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border border-rose-200 dark:border-rose-800"
+            title="Eliminar préstamo"
+          >
+            <Trash2 className="w-4 h-4" /> Eliminar
           </button>
           {client && (
             <button
@@ -1108,6 +1218,263 @@ export const LoanDetail: React.FC = () => {
             <button onClick={handleForgive} className="w-full py-3.5 bg-amber-600 text-white rounded-xl font-bold text-sm hover:bg-amber-700 shadow-lg shadow-amber-500/20">
               Aplicar Condonación
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: EDIT LOAN */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+              <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-amber-500" /> Editar Préstamo #{formatLoanId(loan.id)}
+              </h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Monto Prestado / Financiado (RD$)</label>
+                <input 
+                  type="number" 
+                  value={editAmount === 0 ? '' : editAmount} 
+                  onFocus={e => e.target.select()}
+                  onChange={e => setEditAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
+                  className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tasa de Interés (%)</label>
+                  <input 
+                    type="number" 
+                    value={editInterestRate === 0 ? '' : editInterestRate} 
+                    onFocus={e => e.target.select()}
+                    onChange={e => setEditInterestRate(e.target.value === '' ? 0 : Number(e.target.value))} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Frecuencia</label>
+                  <select 
+                    value={editFrequency} 
+                    onChange={e => setEditFrequency(e.target.value)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  >
+                    <option value="Semanal">Semanal</option>
+                    <option value="Quincenal">Quincenal</option>
+                    <option value="Mensual">Mensual</option>
+                    <option value="Diario">Diario</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Inicio</label>
+                  <input 
+                    type="date" 
+                    value={editStartDate} 
+                    onChange={e => setEditStartDate(e.target.value)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado</label>
+                  <select 
+                    value={editStatus} 
+                    onChange={e => setEditStatus(e.target.value)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  >
+                    <option value="Activo">Activo</option>
+                    <option value="Al Día">Al Día</option>
+                    <option value="Atrasado">Atrasado</option>
+                    <option value="Vencido">Vencido</option>
+                    <option value="Pagado">Pagado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Notas / Observaciones</label>
+                <textarea 
+                  value={editNote} 
+                  onChange={e => setEditNote(e.target.value)} 
+                  rows={2} 
+                  className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-xs" 
+                  placeholder="Detalles sobre las modificaciones..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setIsEditModalOpen(false)} 
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveEdit} 
+                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" /> Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: HISTORICAL / PAST MANUAL PAYMENT */}
+      {isHistoricalModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
+              <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-500" /> Registrar Pago Histórico (Manual)
+              </h3>
+              <button onClick={() => setIsHistoricalModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-4">
+              Permite ingresar pagos o cobros recibidos en fechas pasadas para sincronizar historiales en Excel o libretas físicas.
+            </p>
+
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Monto Cobrado (RD$)</label>
+                  <input 
+                    type="number" 
+                    value={histAmount === 0 ? '' : histAmount} 
+                    onFocus={e => e.target.select()}
+                    onChange={e => setHistAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
+                    placeholder="Monto pagado"
+                    className="w-full p-3 border border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-xl font-bold text-base text-indigo-900 dark:text-indigo-200"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha del Pago Pasado</label>
+                  <input 
+                    type="date" 
+                    value={histDate} 
+                    onChange={e => setHistDate(e.target.value)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Método de Pago</label>
+                  <select 
+                    value={histMethod} 
+                    onChange={e => setHistMethod(e.target.value as any)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  >
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Depósito">Depósito</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Pago</label>
+                  <select 
+                    value={histType} 
+                    onChange={e => setHistType(e.target.value as any)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  >
+                    <option value="Mixto">Cuota Completa / Mixto</option>
+                    <option value="Interes">Solo Interés</option>
+                    <option value="Capital">Abono Directo a Capital</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">No. Recibo / Comprobante / Referencia (Opcional)</label>
+                <input 
+                  type="text" 
+                  value={histRef} 
+                  onChange={e => setHistRef(e.target.value)} 
+                  placeholder="Ej: REC-2024-0042 o Transf. 98124"
+                  className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Notas u Observaciones</label>
+                <input 
+                  type="text" 
+                  value={histNotes} 
+                  onChange={e => setHistNotes(e.target.value)} 
+                  placeholder="Ej: Migrado de historial de Excel"
+                  className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setIsHistoricalModalOpen(false)} 
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleAddHistoricalPayment} 
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Receipt className="w-4 h-4" /> Guardar Pago Histórico
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: DELETE LOAN CONFIRMATION */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800 text-center space-y-4">
+            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">¿Eliminar este préstamo?</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Está a punto de borrar el préstamo <strong>#{formatLoanId(loan.id)}</strong> de <strong>{loan.clientName}</strong>. Esta acción eliminará también las transacciones asociadas.
+              </p>
+            </div>
+
+            <div className="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-xl border border-rose-200 dark:border-rose-900/50 text-left text-xs text-rose-800 dark:text-rose-300">
+              <span className="font-bold block">Resumen del registro:</span>
+              <span>• Capital: RD$ {loan.amount.toLocaleString()}</span><br />
+              <span>• Balance Restante: RD$ {(loan.remainingBalance || 0).toLocaleString()}</span>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)} 
+                className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleDeleteLoan} 
+                className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Sí, Eliminar
+              </button>
+            </div>
           </div>
         </div>
       )}

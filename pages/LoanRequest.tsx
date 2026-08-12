@@ -945,31 +945,25 @@ const LoanRequest: React.FC = () => {
                             {/* Separator */}
                             <div className="my-2"></div>
 
-                            {loanType.includes('Amortizado') ? (
-                                <div className="flex justify-between border-b border-white/10 pb-3">
-                                    <span className="text-indigo-100">Total Deuda (Capital + Int)</span>
-                                    <span className="font-bold text-lg text-white">${calculateTotal().toLocaleString()}</span>
-                                </div>
-                            ) : (
-                                <div className="flex justify-between border-b border-white/10 pb-3">
-                                    <span className="text-indigo-100">Capital a Saldar</span>
-                                    <span className="font-bold text-lg text-white">${getPrincipalForCalculation().toLocaleString()}</span>
-                                </div>
-                            )}
-                            
-                            {loanType.includes('Amortizado') && calcMode === 'installment' && (
-                                <div className="bg-white/10 p-3 rounded-lg text-center backdrop-blur-sm">
-                                    <span className="block text-indigo-200 text-xs mb-1">Duración Calculada</span>
-                                    <span className="text-xl font-bold text-white">{weeks} {frequency}(s)</span>
-                                </div>
-                            )}
+                            {/* HIGHLIGHTED GRAND TOTAL NET DEBT BADGE */}
+                            <div className="bg-gradient-to-br from-emerald-500/20 to-teal-600/30 p-4 rounded-2xl border border-emerald-400/40 text-center shadow-lg my-4">
+                                <span className="block text-[11px] font-black text-emerald-200 uppercase tracking-wider mb-1">
+                                    MONTO TOTAL NETO A PAGAR POR EL CLIENTE
+                                </span>
+                                <span className="text-3xl sm:text-4xl font-black text-emerald-300 drop-shadow-md block">
+                                    RD$ {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                                <span className="block text-[10px] text-emerald-200/80 mt-1 font-semibold">
+                                    (Capital RD$ {amount.toLocaleString()} + Intereses calculados)
+                                </span>
+                            </div>
 
-                            <div className="mt-8 pt-4">
+                            <div className="mt-4 pt-2">
                                 <p className="text-xs text-indigo-200 text-center uppercase font-bold tracking-wider mb-2">
-                                    {loanType.includes('Amortizado') ? 'Cuota Fija' : 'Interés Periódico'}
+                                    {loanType.includes('Amortizado') ? 'Cuota Fija a Pagar' : 'Interés Periódico a Pagar'} ({frequency})
                                 </p>
                                 <div className="text-center text-4xl font-bold bg-white/10 py-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                                ${calculateInstallment().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                    RD$ {calculateInstallment().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                 </div>
                                 {(loanType === 'Rédito' || loanType.includes('Rédito')) && (
                                     <p className="text-center text-[10px] text-indigo-200 mt-2 bg-black/20 rounded py-1 px-2">

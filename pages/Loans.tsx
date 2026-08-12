@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Filter, Clock, X, Banknote, Calendar, CreditCard, DollarSign, FileText, Printer, RefreshCw, Calculator, ChevronRight, CheckCircle, Tag, Infinity, ChevronLeft, Shield, LayoutGrid, List, AlertTriangle, Eye } from 'lucide-react';
+import { Search, Plus, Filter, Clock, X, Banknote, Calendar, CreditCard, DollarSign, FileText, Printer, RefreshCw, Calculator, ChevronRight, CheckCircle, Tag, Infinity, ChevronLeft, Shield, LayoutGrid, List, AlertTriangle, Eye, Edit3, Trash2 } from 'lucide-react';
 import { useLoans, useSettings } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { LoanStatus, Loan, formatLoanId } from '../types';
@@ -381,12 +381,29 @@ const Loans: React.FC = () => {
                                           </span>
                                       </td>
                                       <td className="px-6 py-4 text-center">
-                                          <button 
-                                              onClick={(e) => { e.stopPropagation(); navigate(`/prestamos/${loan.id}`); }}
-                                              className="p-2 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:border-indigo-200 dark:hover:border-indigo-500 transition-all"
-                                          >
-                                              <Eye className="w-4 h-4" />
-                                          </button>
+                                          <div className="flex items-center justify-center gap-1">
+                                              <button 
+                                                  onClick={(e) => { e.stopPropagation(); navigate(`/prestamos/${loan.id}`); }}
+                                                  className="p-2 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:border-indigo-200 dark:hover:border-indigo-500 transition-all"
+                                                  title="Ver Detalle"
+                                              >
+                                                  <Eye className="w-4 h-4" />
+                                              </button>
+                                              <button 
+                                                  onClick={(e) => { e.stopPropagation(); navigate(`/prestamos/${loan.id}?edit=true`); }}
+                                                  className="p-2 text-slate-400 hover:text-amber-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:border-amber-200 dark:hover:border-amber-500 transition-all"
+                                                  title="Editar Préstamo"
+                                              >
+                                                  <Edit3 className="w-4 h-4" />
+                                              </button>
+                                              <button 
+                                                  onClick={(e) => { e.stopPropagation(); navigate(`/prestamos/${loan.id}?delete=true`); }}
+                                                  className="p-2 text-slate-400 hover:text-rose-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:border-rose-200 dark:hover:border-rose-500 transition-all"
+                                                  title="Eliminar Préstamo"
+                                              >
+                                                  <Trash2 className="w-4 h-4" />
+                                              </button>
+                                          </div>
                                       </td>
                                   </tr>
                               );

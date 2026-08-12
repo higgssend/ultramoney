@@ -14,6 +14,19 @@ interface LoanContextType {
   loanRequests: LoanRequest[];
   
   createLoan: (loanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => void;
+  updateLoan: (loan: Loan) => Promise<void>;
+  deleteLoan: (id: string) => Promise<void>;
+  addHistoricalPayment: (
+    loanId: string,
+    paymentData: {
+      amount: number;
+      date: string;
+      reference?: string;
+      notes?: string;
+      paymentMethod?: PaymentMethod;
+      paymentType?: 'Interes' | 'Capital' | 'Mixto';
+    }
+  ) => Promise<Transaction | null>;
   refinanceLoan: (oldLoanId: string, newLoanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => void;
   forgiveDebt: (loanId: string, amount: number, note: string) => Promise<void>;
   registerPayment: (
@@ -189,7 +202,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       down_payment_mode: loanData.downPaymentMode || 'Efectivo',
       financed_amount: loanData.financedAmount || loanData.amount,
       collateralref: loanData.guarantorId || null,
-      note: loanData.note || null
+      note: loanData.note || null,
+      currency: loanData.currency || 'DOP'
     }]).select().single();
 
     if (data && !error) {
@@ -223,7 +237,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         downPayment: data.down_payment || loanData.downPayment,
         downPaymentMode: data.down_payment_mode || loanData.downPaymentMode,
         financedAmount: data.financed_amount || loanData.financedAmount,
-        guarantorId: data.collateralref, note: data.note || loanData.note
+        guarantorId: data.collateralref, note: data.note || loanData.note,
+        currency: data.currency || loanData.currency || 'DOP'
       };
       setLoans(prev => [newLoan, ...prev]);
       addAuditLog('loan_created', `Creó un préstamo por RD$ ${loanData.amount}`);
@@ -232,6 +247,142 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logger.error("Error al crear préstamo:", error);
       addToast(`Error al crear préstamo: ${error?.message || 'Error desconocido'}`, "error");
     }
+  };
+
+  const updateLoan = async (updatedLoan: Loan) => {
+    if (!currentUser) return;
+    try {
+      const { error } = await insforge.database
+        .from('loans')
+        .update({
+          amount: updatedLoan.amount,
+          interestrate: updatedLoan.interestRate,
+          installments: updatedLoan.installments || updatedLoan.durationWeeks,
+          durationweeks: updatedLoan.durationWeeks || updatedLoan.installments,
+          frequency: updatedLoan.paymentFrequency || updatedLoan.frequency,
+          startdate: updatedLoan.startDate,
+          next_payment_date: updatedLoan.nextPaymentDate || null,
+          status: updatedLoan.status,
+          remainingbalance: updatedLoan.remainingBalance,
+          totaltopay: updatedLoan.totalToPay,
+          loantype: updatedLoan.loanType,
+          collateral: updatedLoan.collateral || null,
+          item_price: updatedLoan.itemPrice || null,
+          down_payment: updatedLoan.downPayment || 0,
+          down_payment_mode: updatedLoan.downPaymentMode || 'Efectivo',
+          financed_amount: updatedLoan.financedAmount || updatedLoan.amount,
+          collateralref: updatedLoan.guarantorId || null,
+          note: updatedLoan.note || null,
+          currency: updatedLoan.currency || 'DOP'
+        })
+        .eq('id', updatedLoan.id)
+        .eq('lender_id', currentUser.id);
+
+      if (!error) {
+        setLoans(prev => prev.map(l => l.id === updatedLoan.id ? updatedLoan : l));
+        addToast('Préstamo actualizado exitosamente', 'success');
+        addAuditLog('loan_updated', `Actualizó el préstamo #${updatedLoan.id}`);
+      } else {
+        logger.error('Error updating loan:', error);
+        addToast(`Error al actualizar préstamo: ${error.message}`, 'error');
+      }
+    } catch (e: any) {
+      logger.error('Error in updateLoan:', e);
+    }
+  };
+
+  const deleteLoan = async (id: string) => {
+    if (!currentUser) return;
+    try {
+      await insforge.database.from('transactions').delete().eq('reference_id', id).eq('lender_id', currentUser.id);
+      const { error } = await insforge.database.from('loans').delete().eq('id', id).eq('lender_id', currentUser.id);
+
+      if (!error) {
+        setLoans(prev => prev.filter(l => l.id !== id));
+        addToast('Préstamo eliminado correctamente', 'success');
+        addAuditLog('loan_deleted', `Eliminó el préstamo #${id}`);
+      } else {
+        logger.error('Error deleting loan:', error);
+        addToast(`Error al eliminar préstamo: ${error.message}`, 'error');
+      }
+    } catch (e: any) {
+      logger.error('Error in deleteLoan:', e);
+    }
+  };
+
+  const addHistoricalPayment = async (
+    loanId: string,
+    paymentData: {
+      amount: number;
+      date: string;
+      reference?: string;
+      notes?: string;
+      paymentMethod?: PaymentMethod;
+      paymentType?: 'Interes' | 'Capital' | 'Mixto';
+    }
+  ): Promise<Transaction | null> => {
+    if (!currentUser) return null;
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) return null;
+
+    try {
+      const isInterestOnly = loan.loanType?.includes('Rédito') || loan.loanType?.includes('Pagaré Abierto');
+      const pType = paymentData.paymentType || (isInterestOnly ? 'Interes' : 'Mixto');
+      const pMethod = paymentData.paymentMethod || 'Efectivo';
+      const payDate = paymentData.date || new Date().toISOString().split('T')[0];
+
+      const { data: txData, error: txError } = await insforge.database
+        .from('transactions')
+        .insert([
+          {
+            lender_id: currentUser.id,
+            type: 'Ingreso',
+            category: 'Pago Préstamo',
+            amount: paymentData.amount,
+            date: payDate,
+            description: `Pago Histórico / Manual - Préstamo #${loan.id} (${paymentData.notes || paymentData.reference || 'Sin nota'})`,
+            payment_method: pMethod,
+            paymenttype: pType,
+            reference_id: loan.id,
+            currency: loan.currency || 'DOP'
+          },
+        ])
+        .select()
+        .single();
+
+      if (txData && !txError) {
+        let newBalance = loan.remainingBalance;
+        if (!isInterestOnly || pType === 'Capital' || pType === 'Mixto') {
+          newBalance = Math.max(0, loan.remainingBalance - paymentData.amount);
+        }
+
+        const newStatus = newBalance === 0 ? LoanStatus.PAID : loan.status;
+
+        await insforge.database
+          .from('loans')
+          .update({
+            remainingbalance: newBalance,
+            status: newStatus,
+          })
+          .eq('id', loan.id)
+          .eq('lender_id', currentUser.id);
+
+        setLoans(prev =>
+          prev.map(l =>
+            l.id === loan.id ? { ...l, remainingBalance: newBalance, status: newStatus } : l
+          )
+        );
+
+        addToast(`Pago histórico de RD$ ${paymentData.amount.toLocaleString()} registrado con fecha ${payDate}`, 'success');
+        addAuditLog('historical_payment_added', `Añadió pago histórico de RD$ ${paymentData.amount} al préstamo #${loan.id}`);
+
+        return mapTransaction(txData as any);
+      }
+    } catch (e: any) {
+      logger.error('Error adding historical payment:', e);
+      addToast('Error al registrar pago histórico', 'error');
+    }
+    return null;
   };
 
   const refinanceLoan = async (oldLoanId: string, newLoanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => {
@@ -558,7 +709,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <LoanContext.Provider value={{
       loans, loanProducts, loanRequests,
-      createLoan, refinanceLoan, forgiveDebt, registerPayment, addLoanRequest, deleteLoanRequest,
+      createLoan, updateLoan, deleteLoan, addHistoricalPayment, refinanceLoan, forgiveDebt, registerPayment, addLoanRequest, deleteLoanRequest,
       addLoanProduct, updateLoanProduct, deleteLoanProduct
     }}>
       {children}
