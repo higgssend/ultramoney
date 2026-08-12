@@ -1689,6 +1689,7 @@ export const LoanDetail: React.FC = () => {
                 <Trash2 className="w-4 h-4" /> Sí, Eliminar
               </button>
             </div>
+          </div>
         </div>
       )}
 
