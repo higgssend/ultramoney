@@ -184,6 +184,7 @@ const AppContent: React.FC = () => {
                 <Route path="/simulador" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
                 <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
                 <Route path="/clientes/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                <Route path="/clientes/editar/:id" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
                 <Route path="/documentos/:clientId" element={<ProtectedRoute><DocumentPage /></ProtectedRoute>} />
                 <Route path="/inventario" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
                 <Route path="/solicitudes" element={<ProtectedRoute><LoanRequest /></ProtectedRoute>} />

@@ -8,7 +8,8 @@ import {
   Calendar, PieChart, UserPlus, CreditCard, Award, ChevronDown,
   HelpCircle, Sparkles, Clock, RefreshCw, MessageSquare, Sliders,
   MapPin, CheckSquare, XCircle, ShieldCheck, Calculator, ThumbsUp,
-  Briefcase, Landmark, Navigation, Database, Cpu, Layers
+  Briefcase, Landmark, Navigation, Database, Cpu, Layers, AlertCircle,
+  Banknote, FilePlus, Package, TrendingDown
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -383,130 +384,375 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── SECTION: NUEVAS FUNCIONALIDADES 2.0 ─── */}
-      <section id="novedades" className="py-16 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
+      {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA ─── */}
+      <section id="caracteristicas" className="py-20 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))] pointer-events-none" />
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-black uppercase tracking-widest">
-              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> NOVEDADES Y ACTUALIZACIONES 2.0
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-black uppercase tracking-widest shadow-inner">
+              <Layers className="w-4 h-4 text-amber-400 animate-pulse" /> ECOSISTEMA INTEGRAL ULTRANET 2.0
             </span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-              Potencia tus préstamos con las nuevas herramientas avanzadas
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+              Todos los Módulos del Sistema en una Sola Plataforma
             </h2>
             <p className="text-sm sm:text-base text-slate-300">
-              Hemos integrado tecnología de vanguardia para controlar bancos, terminales Verifone/POS, contratos oficiales y sincronización contable automática.
+              Descubre las 22 herramientas especializadas diseñadas para automatizar el ciclo completo de tus préstamos, cobros, cartera y contabilidad.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grid of 22 Sidebar Modules */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             
-            {/* Feature 1: Cuentas Bancarias & Verifones POS */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-7 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-5 text-white shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
-                <Landmark className="w-7 h-7" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">
-                Garantías & Bancos
-              </span>
-              <h3 className="text-xl font-bold text-white mt-3 mb-2">Bancos & Terminales POS / Verifone</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                Administra cuentas bancarias (USD / DOP), terminales de cobro Verifone y tu Caja Principal en efectivo con balances en vivo y conciliación instantánea.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
-                <span>Cobro digital + Tarjetas</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {/* 1. Dashboard */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                  Panel Principal
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">1. Dashboard Central</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Panel de control en tiempo real con indicadores KPIs de capital colocado, cobros del día, morosidad acumulada y ganancias netas.
+                </p>
               </div>
             </div>
 
-            {/* Feature 2: Documento Oficial de Préstamo */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-7 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-5 text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                <FileText className="w-7 h-7" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
-                Documentos Legales
-              </span>
-              <h3 className="text-xl font-bold text-white mt-3 mb-2">Contrato Oficial & Desglose Financiero</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                Genera contratos transparentes con desglose de intereses, neto a entregar, cuotas y firmas. Previsualiza borradores y exporta a PDF, PNG y WhatsApp.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                <span>PDF • PNG • Impresión • WhatsApp</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {/* 2. Facturas */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-blue-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                  Facturación
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">2. Facturas & Comprobantes</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Emisión, descarga e impresión en PDF/Ticket de facturas comerciales, comprobantes de ingreso y comprobantes fiscales (NCF).
+                </p>
               </div>
             </div>
 
-            {/* Feature 3: Sincronización Automática de Saldos */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-7 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-5 text-white shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
-                <RefreshCw className="w-7 h-7" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
-                Contabilidad en Vivo
-              </span>
-              <h3 className="text-xl font-bold text-white mt-3 mb-2">Desembolsos & Cobros Sincronizados</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                Cada desembolso deduce automáticamente el neto de tu caja o cuenta bancaria, y cada cobro recibido suma al balance al instante sin descuadre.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
-                <span>Cero descuadres de caja</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {/* 3. Consultar */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Search className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                  Evaluación
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">3. Consulta Crediticia</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Evaluación instantánea de historial crediticio, score de morosidad y validación de antecedentes de clientes en 1 clic.
+                </p>
               </div>
             </div>
 
-            {/* Feature 4: Venta de Artículos & Financiamiento */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-7 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-5 text-white shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
-                <Briefcase className="w-7 h-7" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-md border border-purple-500/20">
-                Ventas a Crédito
-              </span>
-              <h3 className="text-xl font-bold text-white mt-3 mb-2">Financiamiento de Productos e Inventario</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                Financia vehículos, celulares y electrodomésticos. Registra inicial pagado en efectivo o tarjeta y realiza seguimiento de prendas en garantía.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-purple-400">
-                <span>Inicial + Control de prendas</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {/* 4. Solicitud */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <FilePlus className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  Originación
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">4. Solicitud & Créditos</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Originación de préstamos, financiamiento de vehículos o electrodomésticos (con/sin inicial) y aprobación estructurada.
+                </p>
               </div>
             </div>
 
-            {/* Feature 5: Auditoría con 20 Agentes de IA */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-7 border border-slate-700/80 hover:border-sky-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center mb-5 text-white shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
-                <Cpu className="w-7 h-7" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-md border border-sky-500/20">
-                Seguridad & Salud
-              </span>
-              <h3 className="text-xl font-bold text-white mt-3 mb-2">20 Agentes de Auditoría por IA</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                Módulos automatizados para auditar la seguridad (OWASP, NIST, RLS), optimizar el rendimiento y garantizar cero errores en producción.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
-                <span>Inspección continua 24/7</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {/* 5. Simulador */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-600/30 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Calculator className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                  Cálculo
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">5. Simulador Financiero</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Calculadora interactiva para proyectar amortizaciones, cuotas semanales/quincenales/mensuales y tasas de interés.
+                </p>
               </div>
             </div>
 
-            {/* Feature 6: Expediente Digital Completo */}
-            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-7 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center mb-5 text-white shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
-                <Users className="w-7 h-7" />
+            {/* 6. Clientes */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Users className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                  Expedientes
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">6. Gestión de Clientes 360°</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Expediente digital completo, foto de perfil con recortador, cédula, garantes principales, garantes solidarios y ubicación.
+                </p>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-md border border-rose-500/20">
-                Clientes 360°
-              </span>
-              <h3 className="text-xl font-bold text-white mt-3 mb-2">Expedientes Digitales e Historial 360°</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                Consulta el historial de créditos, garante principal, garante solidario, fotografías con recortador cuadrado y documentos firmados en 1 pantalla.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-rose-400">
-                <span>Información centralizada</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+
+            {/* 7. Portales de Cliente */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-cyan-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-cyan-600/30 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">
+                  Auto-Servicio
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">7. Portales de Cliente</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Acceso web privado para que los clientes consulten sus préstamos activos, fechas de pago y recibos por WhatsApp.
+                </p>
+              </div>
+            </div>
+
+            {/* 8. Préstamos */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Banknote className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  Cartera Activa
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">8. Administración de Préstamos</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Control centralizado de cartera activa, contrato legal oficial, desglose financiero, refinanciamiento y liquidación.
+                </p>
+              </div>
+            </div>
+
+            {/* 9. Inventario */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-teal-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-teal-600/30 text-teal-400 border border-teal-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Package className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded-full border border-teal-500/20">
+                  Stock
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">9. Inventario / Stock</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Control de inventario de equipos, vehículos, celulares y artículos dados en crédito con prendas en garantía.
+                </p>
+              </div>
+            </div>
+
+            {/* 10. Pagos */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  Cobros
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">10. Gestión de Pagos</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Registro rápido de cobros, abonos a capital, impresión térmica de tickets y recibos digitales QR por WhatsApp.
+                </p>
+              </div>
+            </div>
+
+            {/* 11. Atrasos */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                  Morosidad
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">11. Atrasos & Cobranzas</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Monitoreo de morosos, cálculo automático de recargos por mora pactada y alertas de seguimiento inmediato.
+                </p>
+              </div>
+            </div>
+
+            {/* 12. Caja */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-600/30 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Wallet className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                  Efectivo
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">12. Caja Chica</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Apertura, cierre y arqueo diario de caja chica, control de flujos de efectivo en tiempo real y cuadre de ingresos/egresos.
+                </p>
+              </div>
+            </div>
+
+            {/* 13. Bancos */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Landmark className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                  Bancos & POS
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">13. Cuentas & Bancos</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Conciliación de cuentas bancarias (USD/DOP), tarjetas de crédito y terminales Verifone/POS para cobros digitales.
+                </p>
+              </div>
+            </div>
+
+            {/* 14. Cartera */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Briefcase className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                  Riesgo
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">14. Cartera & Rutas</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Análisis de salud de cartera, distribución por cobrador, rutas de cobro en terreno y mapa de riesgo crediticio.
+                </p>
+              </div>
+            </div>
+
+            {/* 15. Gastos */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-rose-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-600/30 text-rose-400 border border-rose-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <TrendingDown className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                  Egresos
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">15. Control de Gastos</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Registro categorizado de gastos operativos, comisiones de cobradores, nómina y costos fijos de la financiera.
+                </p>
+              </div>
+            </div>
+
+            {/* 16. Ganancia */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-emerald-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  P&L
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">16. Ganancias & Utilidades</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Estado de pérdidas y ganancias, proyección de intereses devengados vs cobrados y análisis de rentabilidad.
+                </p>
+              </div>
+            </div>
+
+            {/* 17. Empleados */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-blue-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <UserPlus className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                  Nómina
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">17. Empleados & Permisos</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Control de personal, cobradores, administradores, asignación de permisos RLS y auditoría de rendimiento.
+                </p>
+              </div>
+            </div>
+
+            {/* 18. Clasificación */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-amber-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-amber-600/30 text-amber-400 border border-amber-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Tag className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                  Scoring
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">18. Clasificación A/B/C/D</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Segmentación automática de clientes por nivel de riesgo (Categorías A, B, C, D) y comportamiento de pago.
+                </p>
+              </div>
+            </div>
+
+            {/* 19. Cont. Profunda */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-purple-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-purple-600/30 text-purple-400 border border-purple-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                  Contabilidad
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">19. Contabilidad Profunda</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Asientos contables automáticos, catálogo de cuentas, libro diario y balance general sin intervención manual.
+                </p>
+              </div>
+            </div>
+
+            {/* 20. Bitácora */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-sky-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-sky-600/30 text-sky-400 border border-sky-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                  Auditoría
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">20. Bitácora de Auditoría</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Registro inalterable de auditoría que registra cada creación, edición o eliminación realizada en la plataforma.
+                </p>
+              </div>
+            </div>
+
+            {/* 21. Migración */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-indigo-500/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Database className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                  Importación
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">21. Centro de Migración</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Importación masiva de datos desde Excel/CSV mediante inteligencia artificial y herramientas de reversión (rollback).
+                </p>
+              </div>
+            </div>
+
+            {/* 22. Configuración */}
+            <div className="bg-slate-800/80 backdrop-blur-md rounded-3xl p-6 border border-slate-700/80 hover:border-slate-400/80 transition-all duration-300 group hover:-translate-y-1 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-slate-600/30 text-slate-300 border border-slate-500/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Sliders className="w-6 h-6" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-300 bg-slate-500/10 px-2.5 py-0.5 rounded-full border border-slate-500/20">
+                  Ajustes
+                </span>
+                <h3 className="text-lg font-extrabold text-white mt-2 mb-1.5">22. Configuración General</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Configuración de nombre comercial, sello notarial, tasas predeterminadas, WhatsApp API y seguridad.
+                </p>
               </div>
             </div>
 
