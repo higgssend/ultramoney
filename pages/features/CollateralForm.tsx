@@ -505,8 +505,8 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                         multiple 
                                         className="hidden" 
                                         onChange={(e) => {
-                                            const files = Array.from(e.target.files || []);
-                                            files.forEach(file => {
+                                            const files = (e.target.files ? Array.from(e.target.files) : []) as File[];
+                                            files.forEach((file: File) => {
                                                 const reader = new FileReader();
                                                 reader.onloadend = () => {
                                                     const res = reader.result as string;
