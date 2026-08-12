@@ -81,7 +81,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           clientPin: c.clientpin,
           portalAlias: (c as any).portal_alias || (c as any).portalalias || (c as any).portalAlias || '',
           portalActive: (c as any).portal_active ?? (c as any).portalactive ?? true,
-          avatarUrl: c.avatarurl || c.avatar_url || c.photo_url || '',
+          avatarUrl: (c as any).avatarurl || (c as any).avatar_url || (c as any).photo_url || '',
           guarantors: [],
           currency: (c.currency || 'DOP') as 'DOP' | 'USD',
         })));
