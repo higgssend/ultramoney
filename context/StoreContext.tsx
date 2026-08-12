@@ -6,7 +6,7 @@ import { LoanProvider, useLoans } from './modules/LoanContext';
 import { AccountingProvider, useAccounting } from './modules/AccountingContext';
 import { InventoryProvider, useInventory } from './modules/InventoryContext';
 
-export { useInventory };
+export { useAuth, useSettings, useClients, useLoans, useAccounting, useInventory };
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
