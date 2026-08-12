@@ -71,29 +71,32 @@ const ClientPortals: React.FC = () => {
         addToast(`Enlace generado automáticamente: ${finalAlias}`, 'info');
     };
 
-    const handleSaveCredentials = () => {
+    const handleSaveCredentials = async () => {
         if (!selectedClient) return;
+
+        // Clean alias: strip leading @ and whitespace
+        const cleanAlias = (formData.portalAlias || '').trim().replace(/^@+/, '');
 
         // Alias validation: only alphanumeric and dashes
         const aliasPattern = /^[a-zA-Z0-9-]*$/;
-        if (formData.portalAlias && !aliasPattern.test(formData.portalAlias)) {
+        if (cleanAlias && !aliasPattern.test(cleanAlias)) {
             addToast('El alias solo puede contener letras, números y guiones', 'error');
             return;
         }
 
         // Check if alias is taken by someone else
-        if (formData.portalAlias) {
-            const aliasTaken = clients.find(c => c.portalAlias === formData.portalAlias && c.id !== selectedClient.id);
+        if (cleanAlias) {
+            const aliasTaken = clients.find(c => c.portalAlias === cleanAlias && c.id !== selectedClient.id);
             if (aliasTaken) {
                 addToast('Este alias ya está en uso por otro cliente', 'error');
                 return;
             }
         }
 
-        updateClient({
+        await updateClient({
             ...selectedClient,
             portalActive: formData.portalActive,
-            portalAlias: formData.portalAlias || undefined,
+            portalAlias: cleanAlias || undefined,
             clientPin: formData.clientPin || undefined
         });
 

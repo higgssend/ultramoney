@@ -42,31 +42,53 @@ export const ClientPortal: React.FC = () => {
         return new Date();
     };
 
+    // Lender Company Settings State (for portal branding)
+    const [lenderBranding, setLenderBranding] = useState<CompanySettings | null>(null);
+
     // Initial Client Lookup
     useEffect(() => {
         if (!clientId) return;
         
         async function fetchClientData() {
             try {
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientId as string);
+                const term = clientId.trim();
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(term);
                 let cData: any = null;
 
                 // 1. Try ID if valid UUID
                 if (isUuid) {
-                    const { data } = await insforge.database.from('clients').select('*').eq('id', clientId).maybeSingle();
+                    const { data } = await insforge.database.from('clients').select('*').eq('id', term).maybeSingle();
                     cData = data;
                 }
                 
-                // 2. Try portal_alias
+                // 2. Try portal_alias as passed
                 if (!cData) {
-                    const { data: aliasData } = await insforge.database.from('clients').select('*').eq('portal_alias', clientId).maybeSingle();
+                    const { data: aliasData } = await insforge.database.from('clients').select('*').eq('portal_alias', term).maybeSingle();
                     cData = aliasData;
                 }
 
-                // 3. Try cedula
+                // 3. Try portal_alias variation (with @ or stripped of @)
                 if (!cData) {
-                    const { data: cedulaData } = await insforge.database.from('clients').select('*').eq('cedula', clientId).maybeSingle();
+                    const altAlias = term.startsWith('@') ? term.substring(1) : `@${term}`;
+                    const { data: aliasData2 } = await insforge.database.from('clients').select('*').eq('portal_alias', altAlias).maybeSingle();
+                    cData = aliasData2;
+                }
+
+                // 4. Try cedula as passed
+                if (!cData) {
+                    const { data: cedulaData } = await insforge.database.from('clients').select('*').eq('cedula', term).maybeSingle();
                     cData = cedulaData;
+                }
+
+                // 5. Try cedula stripped of non-digits
+                if (!cData) {
+                    const cleanDigits = term.replace(/\D/g, '');
+                    if (cleanDigits.length >= 7) {
+                        const { data: allClients } = await insforge.database.from('clients').select('*');
+                        if (allClients) {
+                            cData = allClients.find((c: any) => (c.cedula || '').replace(/\D/g, '') === cleanDigits);
+                        }
+                    }
                 }
                 
                 if (!cData) {
@@ -95,6 +117,28 @@ export const ClientPortal: React.FC = () => {
                 };
                 
                 setClient(mappedClient);
+
+                // Fetch Lender Company Settings if lender_id exists
+                if (foundClient.lender_id) {
+                    try {
+                        const { data: sData } = await insforge.database.from('company_settings').select('*').eq('lender_id', foundClient.lender_id).maybeSingle();
+                        if (sData) {
+                            setLenderBranding({
+                                name: sData.name || 'Ultramoney',
+                                slogan: sData.slogan || '',
+                                rnc: sData.rnc || '',
+                                address: sData.address || '',
+                                phone: sData.phone || '',
+                                email: sData.email || '',
+                                currency: sData.currency || 'DOP',
+                                termsAndConditions: sData.terms_and_conditions || '',
+                                logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                            });
+                        }
+                    } catch (e) {
+                        console.warn("No se cargó configuración del prestamista:", e);
+                    }
+                }
 
                 // If no pin is set or portal is open, fetch details & authenticate immediately
                 if (!mappedClient.clientPin) {
