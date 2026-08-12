@@ -10,8 +10,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
 import { useToast } from '../context/ToastContext';
-import { useStore, useSettings } from '../context/StoreContext';
-import { useAccounting } from '../context/AccountingContext';
+import { useStore, useSettings, useAccounting } from '../context/StoreContext';
 
 export type DocumentType = 'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo';
 
