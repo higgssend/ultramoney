@@ -57,7 +57,11 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
   const isRedito = loanType.includes('Rédito') || loanType.includes('Pagaré');
   const isFinancing = loanType.includes('Financiamiento');
 
-  const totalInterestAmount = Math.max(0, totalToPay - amount);
+  const effectivePrincipal = (isFinancing && itemPrice && itemPrice > 0) ? ((downPayment && downPayment > 0) ? Math.max(0, itemPrice - downPayment) : itemPrice) : (amount || 0);
+  const effectiveTotalInterest = interest > 0 ? effectivePrincipal * (interest / 100) : 0;
+  const effectiveTotalToPay = (totalToPay && totalToPay > 0) ? totalToPay : (effectivePrincipal + effectiveTotalInterest);
+  const effectiveInstallment = (installmentAmount && installmentAmount > 0) ? installmentAmount : (effectiveTotalToPay / (weeks || 1));
+  const totalInterestAmount = Math.max(0, effectiveTotalToPay - effectivePrincipal);
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -307,10 +311,12 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                         <span className="text-xs text-slate-500 font-medium">Precio de Venta</span>
                         <span className="font-bold text-slate-800">{fmt(itemPrice || 0, currency)}</span>
                       </div>
-                      <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
-                        <span className="text-xs text-slate-500 font-medium">Inicial Pagado</span>
-                        <span className="font-bold text-emerald-600">{fmt(downPayment || 0, currency)} ({downPaymentMode || 'Efectivo'})</span>
-                      </div>
+                      {downPayment && downPayment > 0 ? (
+                        <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
+                          <span className="text-xs text-slate-500 font-medium">Inicial Pagado</span>
+                          <span className="font-bold text-emerald-600">{fmt(downPayment, currency)} ({downPaymentMode || 'Efectivo'})</span>
+                        </div>
+                      ) : null}
                     </>
                   )}
 
@@ -325,7 +331,7 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
 
                   <div className="flex justify-between items-center py-2 bg-emerald-50 px-3 rounded-xl border border-emerald-200">
                     <span className="text-xs text-emerald-800 font-black uppercase">Monto Neto a Entregar</span>
-                    <span className="font-black text-emerald-700 text-base">{fmt(netDisbursement, currency)}</span>
+                    <span className="font-black text-emerald-700 text-base">{fmt(netDisbursement || effectivePrincipal, currency)}</span>
                   </div>
                 </div>
 
@@ -345,12 +351,12 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
                     <span className="text-xs text-slate-500 font-medium">Primer Pago</span>
-                    <span className="font-bold text-slate-900">{fmtDate(firstPaymentDate)}</span>
+                    <span className="font-bold text-slate-900">{fmtDate(firstPaymentDate)} ({fmt(effectiveInstallment, currency)} / {frequency})</span>
                   </div>
 
                   <div className="flex justify-between items-center py-2 bg-indigo-50 px-3 rounded-xl border border-indigo-200">
                     <span className="text-xs text-indigo-800 font-black uppercase">{isAmortized ? 'Cuota Fija' : 'Interés Periódico'}</span>
-                    <span className="font-black text-indigo-700 text-base">{fmt(installmentAmount, currency)}</span>
+                    <span className="font-black text-indigo-700 text-base">{fmt(effectiveInstallment, currency)}</span>
                   </div>
                 </div>
 
@@ -362,9 +368,9 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
               <p className="text-xs font-black uppercase tracking-widest text-indigo-200 mb-1">
                 {isRedito ? 'Monto Principal a Mantener en Pagaré' : 'MONTO TOTAL NETO A PAGAR POR EL CLIENTE'}
               </p>
-              <p className="text-4xl font-black">{fmt(totalToPay, currency)}</p>
+              <p className="text-4xl font-black">{fmt(effectiveTotalToPay, currency)}</p>
               <p className="text-xs text-indigo-200/90 mt-1 font-medium">
-                (Capital {fmt(amount, currency)} + Intereses {fmt(totalInterestAmount, currency)})
+                (Capital {fmt(effectivePrincipal, currency)} + Intereses {fmt(totalInterestAmount, currency)})
               </p>
             </div>
 

@@ -557,6 +557,7 @@ const LoanRequest: React.FC = () => {
                                             type="button"
                                             onClick={() => {
                                                 setHasInitialPayment(false);
+                                                setDownPayment(0);
                                                 setAmount(itemPrice);
                                             }}
                                             className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${!hasInitialPayment ? 'bg-white text-emerald-700 shadow-xs' : 'text-emerald-700 opacity-70'}`}
@@ -1026,7 +1027,9 @@ const LoanRequest: React.FC = () => {
 
                             <div className="flex justify-between border-b border-white/10 pb-2">
                                 <span className="text-indigo-200 text-xs">Primer Pago</span>
-                                <span className="font-semibold text-xs">{firstPaymentDate || '—'}</span>
+                                <span className="font-bold text-xs text-white">
+                                    {firstPaymentDate || '—'} {calculateInstallment() > 0 ? `(RD$ ${calculateInstallment().toLocaleString('es-DO', {minimumFractionDigits: 2, maximumFractionDigits: 2})} / ${frequency})` : ''}
+                                </span>
                             </div>
                         </div>
 
@@ -1113,9 +1116,9 @@ const LoanRequest: React.FC = () => {
                     currency={globalCurrency}
                     companySettings={companySettings}
                     itemPrice={itemPrice}
-                    downPayment={downPayment}
+                    downPayment={hasInitialPayment ? downPayment : 0}
                     downPaymentMode={downPaymentMode}
-                    financedAmount={loanType.includes('Financiamiento') ? amount - (downPayment || 0) : undefined}
+                    financedAmount={loanType.includes('Financiamiento') ? amount - (hasInitialPayment ? (downPayment || 0) : 0) : undefined}
                 />
             </div>
         </div>
