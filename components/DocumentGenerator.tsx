@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Printer, Download, CheckCircle, X, Shield, FileCheck, AlertCircle, CloudUpload, MessageCircle, CreditCard, ChevronDown } from 'lucide-react';
+import { FileText, Printer, Download, CheckCircle, X, Shield, FileCheck, AlertCircle, CloudUpload, MessageCircle, CreditCard, ChevronDown, Car, Home, Package } from 'lucide-react';
 import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -84,18 +84,36 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
   const activeTransaction = transaction || (loanTransactions.length > 0 ? loanTransactions[0] : undefined);
 
-  // Collateral description text
-  let collateralText = 'Garantía Personal / Sin Garantía Específica Declarada';
+  // Advanced Collateral Analysis & Structured Legal Wording
+  let collateralType = 'Sin Garantía';
+  let collateralDescription = '';
+  let collateralRefNumber = '';
+  let collateralEstimatedValue = 0;
+  let collateralLegalClause = 'EL DEUDOR responde con la totalidad de su patrimonio personal presente y futuro (Fianza Personal e Indivisible).';
+  let collateralHeading = 'GARANTÍA PERSONAL Y PATRIMONIAL';
+
   if (currentLoan) {
-    if (currentLoan.collateralref || currentLoan.collateralRef) {
-      collateralText = String(currentLoan.collateralref || currentLoan.collateralRef);
-    } else if (currentLoan.collateral) {
-      if (typeof currentLoan.collateral === 'object') {
-        const col = currentLoan.collateral;
-        collateralText = `${col.type || 'Garantía'}: ${col.description || ''} ${col.refNumber ? `(Matrícula/Ref/Chasis #${col.refNumber})` : ''}`.trim();
-      } else {
-        collateralText = String(currentLoan.collateral);
-      }
+    if (currentLoan.collateral && typeof currentLoan.collateral === 'object') {
+      const col = currentLoan.collateral;
+      collateralType = col.type || 'Sin Garantía';
+      collateralDescription = col.description || '';
+      collateralRefNumber = col.refNumber || '';
+      collateralEstimatedValue = col.estimatedValue || 0;
+    } else if (currentLoan.collateralref || currentLoan.collateralRef) {
+      collateralRefNumber = String(currentLoan.collateralref || currentLoan.collateralRef);
+      collateralDescription = String(currentLoan.collateral || '');
+      collateralType = currentLoan.loanCategory === 'Vehicular' ? 'Vehículo' : (currentLoan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
+    }
+
+    if (collateralType === 'Vehículo') {
+      collateralHeading = 'GARANTÍA MOBILIARIA VEHICULAR (PRENDA SIN DESPOSESIÓN)';
+      collateralLegalClause = `PRENDA SIN DESPOSESIÓN sobre el vehículo motorizado descrito a continuación: Marca/Modelo/Año: ${collateralDescription || 'Declarado en expediente'}, Matrícula / Placa / Chasis No.: ${collateralRefNumber || 'N/A'}${collateralEstimatedValue > 0 ? `, por un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL DEUDOR autoriza expresamente la inscripción del gravamen en la Dirección General de Impuestos Internos (DGII).`;
+    } else if (collateralType === 'Propiedad') {
+      collateralHeading = 'GARANTÍA INMOBILIARIA HIPOTECARIA EN PRIMER RANGO';
+      collateralLegalClause = `HIPOTECA EN PRIMER RANGO sobre el inmueble ubicado en: ${collateralDescription || 'Dirección registrada'}, Matrícula de Título de Propiedad / Parcela / Solar No.: ${collateralRefNumber || 'N/A'}${collateralEstimatedValue > 0 ? `, asignado con un valor comercial de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}, registrado conforme a la Ley 108-05 de Registro Inmobiliario.`;
+    } else if (collateralType !== 'Sin Garantía' && collateralType) {
+      collateralHeading = `GARANTÍA MOBILIARIA ESPECIAL (${collateralType.toUpperCase()})`;
+      collateralLegalClause = `PRENDA MOBILIARIA SOBRE ARTÍCULO DE VALOR (${collateralType}): ${collateralDescription || ''} (Serie / Certificado No.: ${collateralRefNumber || 'N/A'})${collateralEstimatedValue > 0 ? `, de valor estimado RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}.`;
     }
   }
 
@@ -256,6 +274,21 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           </div>
         )}
 
+        {/* Dynamic Collateral Banner */}
+        {currentLoan && (
+          <div className="bg-amber-50/80 dark:bg-amber-950/40 px-4 py-2.5 border-b border-amber-200 dark:border-amber-900/50 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-2 font-bold">
+              {collateralType === 'Vehículo' && <Car className="w-4 h-4 text-amber-600" />}
+              {collateralType === 'Propiedad' && <Home className="w-4 h-4 text-amber-600" />}
+              {collateralType !== 'Vehículo' && collateralType !== 'Propiedad' && <Shield className="w-4 h-4 text-amber-600" />}
+              <span>Garantía Legal Vinculada: <strong className="uppercase">{collateralType}</strong></span>
+            </div>
+            <span className="font-mono font-medium text-[11px] truncate max-w-md">
+              {collateralDescription ? `${collateralDescription} ` : ''} {collateralRefNumber ? `(Matrícula/Ref #${collateralRefNumber})` : ''}
+            </span>
+          </div>
+        )}
+
         {/* Document Selector Tabs */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-2 gap-2 overflow-x-auto">
           <button
@@ -308,11 +341,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <p className="text-xs text-slate-600 font-sans">{company.address} • Teléfono: {company.phone}</p>
             </div>
 
-            {/* 1. PAGARÉ NOTARIAL A LA ORDEN COMPLETO CON LEGALIZACIÓN */}
+            {/* 1. PAGARÉ NOTARIAL A LA ORDEN COMPLETO CON LEGALIZACIÓN NOTARIAL Y GARANTÍA DETALLADA */}
             {docType === 'pagare' && (
               <div>
                 <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
-                  PAGARÉ NOTARIAL A LA ORDEN Y CONSTITUCIÓN DE GARANTÍA
+                  PAGARÉ NOTARIAL A LA ORDEN Y CONSTITUCIÓN DE {collateralHeading}
                 </h2>
                 <div className="text-right text-xs font-sans font-bold text-indigo-950 mb-4">
                   Préstamo Ref. No.: <span className="font-mono">{formatLoanId(currentLoan?.id)}</span>
@@ -328,19 +361,19 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </p>
                   
                   <p>
-                    <strong>SEGUNDO (INTERESES Y MODALIDAD):</strong> La presente suma adeudada generará una tasa de interés acordada del <strong>{currentLoan?.interestRate || 0}%</strong> bajo la modalidad de pago <strong>{currentLoan?.frequency || 'Mensual'}</strong> ({currentLoan?.loanType || 'Préstamo Amortizado'}). Los pagos se efectuarán puntualmente en el domicilio del Acreedor o vía depósito bancario autorizado.
+                    <strong>SEGUNDO (INTERESES Y MODALIDAD DE PAGO):</strong> La presente suma adeudada generará una tasa de interés acordada del <strong>{currentLoan?.interestRate || 0}%</strong> bajo la modalidad de pago <strong>{currentLoan?.frequency || 'Mensual'}</strong> ({currentLoan?.loanType || 'Préstamo Amortizado'}). Los pagos se efectuarán puntualmente en las fechas pactadas a partir de la fecha de desembolso.
                   </p>
                   
                   <p>
-                    <strong>TERCERO (GARANTÍA ESPECIAL):</strong> Como garantía del fiel, puntual e íntegro cumplimiento de la obligación asumida en este Pagaré Notarial relativo al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong>, EL DEUDOR afecta en garantía especial el bien de su propiedad consistente en: <strong>{collateralText}</strong>.
+                    <strong>TERCERO (DETALLE ESPECÍFICO DE LA GARANTÍA OTORGADA):</strong> Como garantía real y especial del fiel, puntual e íntegro cumplimiento de la obligación asumida en este Pagaré Notarial relativo al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong>, {collateralLegalClause}
                   </p>
                   
                   <p>
-                    <strong>CUARTO (MORA Y VENCIMIENTO ANTICIPADO):</strong> Queda expresamente pactado que la falta de pago de una sola de las cuotas acordadas a su vencimiento producirá la caducidad del término y el vencimiento anticipado de la totalidad del saldo adeudado de pleno derecho, sin necesidad de puesta en mora ni requerimiento judicial previo, autorizando al Acreedor a ejecutar la garantía otorgada.
+                    <strong>CUARTO (MORA Y VENCIMIENTO ANTICIPADO):</strong> Queda expresamente pactado que la falta de pago de una sola de las cuotas acordadas a su vencimiento producirá la caducidad del término y el vencimiento anticipado de la totalidad del saldo adeudado de pleno derecho, sin necesidad de puesta en mora ni requerimiento judicial previo, autorizando al Acreedor a ejecutar la garantía otorgada. Se aplicará un recargo por mora moratoria pactada del 5% mensual sobre el saldo en atraso.
                   </p>
                   
                   <p>
-                    <strong>QUINTO (ELECCIÓN DE DOMICILIO):</strong> Para la ejecución del presente Pagaré Notarial y sus consecuencias legales, las partes eligen domicilio formal en las oficinas del Acreedor y atribuyen competencia a los Tribunales de la República Dominicana.
+                    <strong>QUINTO (ELECCIÓN DE DOMICILIO Y JURISDICCIÓN):</strong> Para la ejecución del presente Pagaré Notarial y sus consecuencias legales, las partes eligen domicilio formal en las oficinas del Acreedor y atribuyen competencia a los Tribunales de la República Dominicana.
                   </p>
                   
                   <p className="pt-2">
@@ -380,11 +413,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             )}
 
-            {/* 2. CONTRATO DE FINANCIAMIENTO Y PRÉSTAMO CON GARANTÍA */}
+            {/* 2. CONTRATO DE FINANCIAMIENTO Y PRÉSTAMO CON GARANTÍA COMPLETO */}
             {docType === 'contrato' && (
               <div>
                 <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
-                  CONTRATO DE PRÉSTAMO Y FINANCIAMIENTO CON GARANTÍA
+                  CONTRATO DE PRÉSTAMO Y FINANCIAMIENTO CON {collateralHeading}
                 </h2>
                 <div className="text-right text-xs font-sans font-bold text-indigo-950 mb-4">
                   Préstamo Ref. No.: <span className="font-mono">{formatLoanId(currentLoan?.id)}</span>
@@ -411,7 +444,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </p>
                   
                   <p>
-                    <strong>ARTÍCULO 3 (RÉGIMEN DE GARANTÍA):</strong> Para garantizar la restitución del capital prestado, intereses y gastos de cobranza, EL DEUDOR afectará formalmente en garantía especial: <strong>{collateralText}</strong>.
+                    <strong>ARTÍCULO 3 (RÉGIMEN Y ESPECIFICACIÓN DE LA GARANTÍA):</strong> {collateralLegalClause}
                   </p>
                   
                   <p>
@@ -419,7 +452,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </p>
                   
                   <p>
-                    <strong>ARTÍCULO 5 (FUERZA EJECUTORIA):</strong> Las partes atribuyen al presente contrato la fuerza ejecutoria que otorga el Artículo 545 del Código de Procedimiento Civil de la República Dominicana.
+                    <strong>ARTÍCULO 5 (FUERZA EJECUTORIA Y JURISDICCIÓN):</strong> Las partes atribuyen al presente contrato la fuerza ejecutoria que otorga el Artículo 545 del Código de Procedimiento Civil de la República Dominicana y someten cualquier litigio a los tribunales del Distrito Nacional.
                   </p>
                   
                   <p className="pt-2">
@@ -452,6 +485,9 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   <div><strong>Cédula:</strong> {client.cedula || 'N/A'}</div>
                   <div><strong>Teléfono:</strong> {client.phone || 'N/A'}</div>
                   <div><strong>Fecha Emisión:</strong> {todayStr}</div>
+                  <div className="col-span-2 pt-1 border-t border-slate-200">
+                    <strong>Garantía Registrada:</strong> {collateralDescription ? `${collateralType} - ${collateralDescription} (${collateralRefNumber})` : 'Garantía Personal'}
+                  </div>
                 </div>
 
                 {currentLoan ? (
@@ -550,7 +586,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </p>
                   {currentLoan && (
                     <p>
-                      <strong>Préstamo Asociado:</strong> {currentLoan.loanType} (Ref. #{formatLoanId(currentLoan.id)}) — Monto Inicial: RD$ {(currentLoan.amount || 0).toLocaleString('es-DO')}
+                      <strong>Préstamo Asociado:</strong> {currentLoan.loanType} (Ref. #{formatLoanId(currentLoan.id)}) — Garantía: {collateralType} ({collateralRefNumber || collateralDescription || 'Personal'})
                     </p>
                   )}
                   {currentLoan && (
@@ -570,11 +606,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             )}
 
-            {/* 5. CARTA DE SALDO */}
+            {/* 5. CARTA DE SALDO Y CANCELACIÓN DE PRENDA */}
             {docType === 'carta_saldo' && (
               <div>
                 <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
-                  CARTA DE SALDO Y CANCELACIÓN DEFINITIVA
+                  CARTA DE SALDO Y CANCELACIÓN DEFINITIVA DE GRAVAMEN
                 </h2>
                 <div className="content space-y-4 text-justify">
                   <p>A QUIEN PUEDA INTERESAR:</p>
@@ -582,7 +618,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     Por medio de la presente, certificamos formalmente que el Sr.(a) <strong>{client.name} {client.lastName || ''}</strong>, portador(a) de la Cédula de Identidad No. <strong>{client.cedula || 'N/A'}</strong>, ha saldado en su totalidad la obligación financiera relativa al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> otorgado por nuestra institución por un monto inicial de RD$ {(currentLoan?.amount || 0).toLocaleString()}.
                   </p>
                   <p>
-                    En tal sentido, declaramos libre de toda responsabilidad o gravamen crediticio sobre el mencionado Préstamo #{formatLoanId(currentLoan?.id)} a la fecha de hoy <strong>{todayStr}</strong>.
+                    En tal sentido, declaramos libre de toda responsabilidad, oposición o gravamen crediticio a la garantía otorgada relativa a este préstamo, consistente en: <strong>{collateralText}</strong> a la fecha de hoy <strong>{todayStr}</strong>.
                   </p>
                 </div>
 
@@ -599,7 +635,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             {docType === 'carta_cobro' && (
               <div>
                 <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-rose-700">
-                  NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y MORA
+                  NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y EJECUCIÓN DE GARANTÍA
                 </h2>
                 <div className="content space-y-3.5 text-justify">
                   <p><strong>FECHA:</strong> {todayStr}</p>
@@ -611,7 +647,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     Le informamos por este medio formal que la cuota correspondiente a su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO Y MORA</strong> por un saldo pendiente de <strong>RD$ {(currentLoan?.remainingBalance || 0).toLocaleString()}</strong>.
                   </p>
                   <p>
-                    Le requerimos ponerse en contacto con nuestra gerencia de cobros en un plazo no mayor a 48 horas a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones judiciales de cobro extrajudicial y ejecución de garantía notarial.
+                    Garantía en riesgo de ejecución: <strong>{collateralText}</strong>.
+                  </p>
+                  <p>
+                    Le requerimos ponerse en contacto con nuestra gerencia de cobros en un plazo no mayor a 48 horas a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones judiciales de cobro extrajudicial y ejecución de la garantía notarial.
                   </p>
                 </div>
 
