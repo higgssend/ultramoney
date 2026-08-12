@@ -29,6 +29,7 @@ const ClientDetail: React.FC = () => {
   const [showCropperModal, setShowCropperModal] = useState(false);
 
   const [selectedContractLoan, setSelectedContractLoan] = useState<Loan | null>(null);
+  const [selectedDocLoan, setSelectedDocLoan] = useState<Loan | null>(null);
   const [isDocGeneratorOpen, setIsDocGeneratorOpen] = useState(false);
   const [selectedDocType, setSelectedDocType] = useState<DocumentType>('pagare');
   
@@ -379,10 +380,13 @@ const ClientDetail: React.FC = () => {
                                  <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-2">
                                      <div className="flex gap-2">
                                          <button 
-                                             onClick={() => setSelectedContractLoan(loan)}
+                                             onClick={() => {
+                                                 setSelectedDocLoan(loan);
+                                                 setIsDocGeneratorOpen(true);
+                                             }}
                                              className="flex-1 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
                                          >
-                                             <FileText className="w-4 h-4" /> Ver Contrato
+                                             <FileText className="w-4 h-4" /> Generar Documentos
                                          </button>
                                          <button 
                                              onClick={() => navigate('/pagos', { state: { loanId: loan.id } })}
@@ -475,11 +479,22 @@ const ClientDetail: React.FC = () => {
 
         {activeTab === 'documents' && (
             <div>
-                 <div className="flex justify-between items-center mb-6">
-                     <h3 className="font-bold text-slate-800 dark:text-white text-lg">Documentos Digitales</h3>
-                     <button onClick={() => setIsUploadModalOpen(true)} className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/20">
-                         <Upload className="w-4 h-4" /> Subir Documento
-                     </button>
+                 <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                      <h3 className="font-bold text-slate-800 dark:text-white text-lg">Documentos Digitales & Legales</h3>
+                      <div className="flex items-center gap-2">
+                          <button 
+                              onClick={() => {
+                                  setSelectedDocLoan(clientLoans[0] || null);
+                                  setIsDocGeneratorOpen(true);
+                              }}
+                              className="text-sm bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-4 py-2 rounded-xl font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2"
+                          >
+                              <FileText className="w-4 h-4" /> Generar Documento Legal
+                          </button>
+                          <button onClick={() => setIsUploadModalOpen(true)} className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/20">
+                              <Upload className="w-4 h-4" /> Subir Documento
+                          </button>
+                      </div>
                  </div>
                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
                      {myDocuments.map(doc => (
@@ -605,10 +620,14 @@ const ClientDetail: React.FC = () => {
       {isDocGeneratorOpen && (
         <DocumentGenerator
           client={client}
-          loan={clientLoans[0]}
+          loan={selectedDocLoan || clientLoans[0]}
+          clientLoans={clientLoans}
           company={companySettings}
           isOpen={isDocGeneratorOpen}
-          onClose={() => setIsDocGeneratorOpen(false)}
+          onClose={() => {
+            setIsDocGeneratorOpen(false);
+            setSelectedDocLoan(null);
+          }}
           defaultDocType={selectedDocType}
         />
       )}
