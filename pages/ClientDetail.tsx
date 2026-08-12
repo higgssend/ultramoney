@@ -830,6 +830,36 @@ const ClientDetail: React.FC = () => {
                                              <span className="font-extrabold text-emerald-600 dark:text-emerald-400">RD$ {collateral.estimatedValue.toLocaleString()}</span>
                                          </div>
                                      )}
+                                     
+                                     {/* Attached Photos / Documents Gallery */}
+                                     {collateral.photoUrls && collateral.photoUrls.length > 0 && (
+                                         <div className="mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-600/60">
+                                             <span className="text-[10px] font-extrabold uppercase text-slate-400 block mb-1.5">Fotos & Documentos de la Garantía:</span>
+                                             <div className="flex flex-wrap gap-2">
+                                                 {collateral.photoUrls.map((photo, pIdx) => (
+                                                     <div 
+                                                         key={pIdx} 
+                                                         onClick={() => setPreviewDoc({
+                                                             id: `col-photo-${pIdx}`,
+                                                             clientId: client.id,
+                                                             title: `Foto de Garantía - ${collateral.type}`,
+                                                             type: 'Garantia',
+                                                             fileUrl: photo,
+                                                             uploadDate: new Date().toISOString().split('T')[0],
+                                                             fileType: 'image/png'
+                                                         })}
+                                                         className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                                                     >
+                                                         {photo.startsWith('data:image') || photo.match(/\.(jpg|jpeg|png|webp)/i) || !photo.includes('.pdf') ? (
+                                                             <img src={photo} alt="Garantía" className="w-full h-full object-cover" />
+                                                         ) : (
+                                                             <div className="w-full h-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">PDF</div>
+                                                         )}
+                                                     </div>
+                                                 ))}
+                                             </div>
+                                         </div>
+                                     )}
                                  </div>
 
                                  <div className="flex items-center justify-between pt-2">

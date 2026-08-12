@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Collateral } from '../../types';
-import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package } from 'lucide-react';
+import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package, Upload, X } from 'lucide-react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useInventory } from '../../context/StoreContext';
 
@@ -464,7 +464,61 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                     placeholder="Dejar en blanco si es el mismo cliente"
                                     className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                 />
+                        </div>
+
+                        {/* FOTOS Y DOCUMENTACIÓN ADJUNTA DE LA GARANTÍA */}
+                        <div className="md:col-span-2 space-y-2 border-t border-slate-100 pt-4 mt-2">
+                            <label className="block text-xs font-extrabold uppercase text-slate-700 flex items-center gap-1.5">
+                                <ImageIcon className="w-4 h-4 text-indigo-600" />
+                                Fotos y Documentación de la Garantía
+                            </label>
+                            
+                            <div className="flex flex-wrap gap-3 items-center pt-1">
+                                {(collateral.photoUrls || []).map((url, i) => (
+                                    <div key={i} className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shadow-sm group">
+                                        {url.startsWith('data:image') || url.match(/\.(jpg|jpeg|png|webp)/i) || !url.includes('.pdf') ? (
+                                            <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-500">PDF</div>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const next = (collateral.photoUrls || []).filter((_, idx) => idx !== i);
+                                                handleChange('photoUrls', next);
+                                            }}
+                                            className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                                            title="Eliminar foto"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <label className="w-20 h-20 border-2 border-dashed border-indigo-200 hover:border-indigo-500 bg-indigo-50/50 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105">
+                                    <Upload className="w-5 h-5 text-indigo-600 mb-1" />
+                                    <span className="text-[10px] font-bold text-indigo-700">+ Adjuntar</span>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*,.pdf" 
+                                        multiple 
+                                        className="hidden" 
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            files.forEach(file => {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    const res = reader.result as string;
+                                                    const existing = collateral.photoUrls || [];
+                                                    handleChange('photoUrls', [...existing, res]);
+                                                };
+                                                reader.readAsDataURL(file);
+                                            });
+                                        }}
+                                    />
+                                </label>
                             </div>
+                            <p className="text-[11px] text-slate-400">Toma o adjunta fotos del artículo, matrícula, serial, estado del equipo, tarjeta o documentos legales de la garantía.</p>
                         </div>
                     </div>
                 )}

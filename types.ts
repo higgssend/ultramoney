@@ -31,6 +31,7 @@ export interface Collateral {
   defects?: string;         // Defectos o detalles cosméticos
   estimatedValue?: number;  // Valor estimado
   documentIds?: string[];   // IDs de ClientDocument adjuntos
+  photoUrls?: string[];     // URLs / fotos / documentos adjuntos a la garantía
   ownerName?: string;       // Nombre del dueño (si es un tercero)
 
   // Specific for Credit/Debit Card Collateral
