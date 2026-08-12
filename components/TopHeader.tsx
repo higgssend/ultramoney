@@ -159,15 +159,6 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           )}
         </div>
 
-        {/* Bank Accounts & Cajas Button */}
-        <button
-          onClick={() => setIsBankModalOpen(true)}
-          className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors relative"
-          title="Cuentas Bancarias y Cajas"
-        >
-          <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        </button>
-
         {/* Notifications Button & Dropdown */}
         <div className="relative" ref={notifRef}>
           <button 

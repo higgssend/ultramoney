@@ -10,7 +10,9 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"DM Sans"', 'sans-serif'],
-        secondary: ['"Macan"', 'sans-serif'],
+        secondary: ['"DM Sans"', 'sans-serif'],
+        mono: ['"DM Sans"', 'sans-serif'],
+        serif: ['"DM Sans"', 'sans-serif'],
       },
       colors: {
         slate: {

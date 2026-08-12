@@ -26,12 +26,8 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
-    font-family: 'DM Sans', sans-serif;
-  }
-  
-  select, input, textarea, button {
-    font-family: 'DM Sans', sans-serif;
+  *, html, body, select, input, textarea, button, p, span, div, td, th {
+    font-family: 'DM Sans', sans-serif !important;
   }
   
   /* Modern Global Custom Select Styling */
