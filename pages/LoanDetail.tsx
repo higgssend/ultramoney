@@ -3,9 +3,9 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, FileText, Banknote, Shield, AlertTriangle, RefreshCw, 
   DollarSign, Printer, Download, FileCode, FileImage, CloudUpload, 
-  MessageCircle, CreditCard, CheckCircle, Clock, Calendar, ChevronRight, User, Eye
+  MessageCircle, CreditCard, CheckCircle, Clock, Calendar, ChevronRight, User, Eye, Receipt
 } from 'lucide-react';
-import { useLoans, useClients, useSettings } from '../context/StoreContext';
+import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
 import { Loan, Client, formatLoanId, formatReceiptId, Transaction } from '../types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -21,11 +21,12 @@ export const LoanDetail: React.FC = () => {
   const { loans, refinanceLoan, forgiveDebt } = useLoans();
   const { clients } = useClients();
   const { companySettings } = useSettings();
+  const { transactions } = useAccounting();
 
   const loan = loans.find(l => l.id === id);
   const client = clients.find(c => c?.id === loan?.clientId);
 
-  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'collateral' | 'documents' | 'refinance' | 'forgiveness'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'payments' | 'documents' | 'collateral' | 'refinance' | 'forgiveness'>(initialTab);
   const [docType, setDocType] = useState<'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo'>('pagare');
 
   // Refinance state
@@ -37,8 +38,8 @@ export const LoanDetail: React.FC = () => {
   const [forgiveAmount, setForgiveAmount] = useState<number>(0);
   const [forgiveNote, setForgiveNote] = useState<string>('');
 
-  // Loan Transactions
-  const [loanTransactions, setLoanTransactions] = useState<Transaction[]>([]);
+  // Loan Transactions from Database
+  const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
 
@@ -53,13 +54,13 @@ export const LoanDetail: React.FC = () => {
             .eq('referenceid', loan.id);
           
           if (data && data.length > 0) {
-            setLoanTransactions(data as any);
+            setDbTransactions(data as any);
           } else {
             const { data: data2 } = await insforge.database
               .from('transactions')
               .select('*')
               .eq('reference_id', loan.id);
-            if (data2) setLoanTransactions(data2 as any);
+            if (data2) setDbTransactions(data2 as any);
           }
         } catch (e) {
           console.error("Error fetching transactions for loan detail:", e);
@@ -79,6 +80,23 @@ export const LoanDetail: React.FC = () => {
       </div>
     );
   }
+
+  // Combine store transactions and database transactions avoiding duplicates
+  const storeLoanTx = transactions.filter(t => 
+    t.referenceId === loan.id || 
+    (t as any).referenceid === loan.id || 
+    (t.description && t.description.includes(loan.id))
+  );
+
+  const combinedTransactionsMap = new Map<string, Transaction>();
+  storeLoanTx.forEach(t => combinedTransactionsMap.set(t.id, t));
+  dbTransactions.forEach(t => combinedTransactionsMap.set(t.id, t));
+
+  const allLoanTransactions = Array.from(combinedTransactionsMap.values()).sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  const totalCollectedOnLoan = allLoanTransactions.reduce((acc, t) => acc + (t.amount || 0), 0);
 
   const company = companySettings || { name: 'UltraMoney Financial', address: 'Santo Domingo, R.D.', phone: '809-000-0000', rnc: '101-00000-1' };
   const todayStr = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -415,10 +433,16 @@ export const LoanDetail: React.FC = () => {
           <Banknote className="w-4 h-4" /> Tabla de Amortización
         </button>
         <button
+          onClick={() => setActiveTab('payments')}
+          className={`px-5 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center gap-2 ${activeTab === 'payments' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+        >
+          <Receipt className="w-4 h-4 text-emerald-400" /> Historial de Pagos ({allLoanTransactions.length})
+        </button>
+        <button
           onClick={() => setActiveTab('documents')}
           className={`px-5 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center gap-2 ${activeTab === 'documents' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
         >
-          <FileText className="w-4 h-4 text-emerald-400" /> Documentos & Pagaré Legal
+          <FileText className="w-4 h-4 text-blue-400" /> Documentos & Pagaré Legal
         </button>
         <button
           onClick={() => setActiveTab('collateral')}
@@ -508,6 +532,45 @@ export const LoanDetail: React.FC = () => {
             </span>
           </div>
 
+          {/* Recent Payments Preview Card */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-emerald-600" /> Últimos Pagos Registrados en este Préstamo
+              </h4>
+              <button 
+                onClick={() => setActiveTab('payments')}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 hover:underline flex items-center gap-1"
+              >
+                Ver todo el historial ({allLoanTransactions.length}) <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {allLoanTransactions.length > 0 ? (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {allLoanTransactions.slice(0, 3).map(tx => (
+                  <div key={tx.id} className="py-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold font-mono">
+                        <Receipt className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800 dark:text-white">{tx.description || 'Abono a Préstamo'}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">Recibo #{formatReceiptId(tx.id)} • {new Date(tx.date).toLocaleDateString('es-DO')}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-emerald-600 dark:text-emerald-400 text-sm">RD$ {(tx.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">{tx.paymentMethod || 'Efectivo'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic py-4 text-center">No hay pagos registrados aún para este préstamo.</p>
+            )}
+          </div>
+
         </div>
       )}
 
@@ -550,7 +613,115 @@ export const LoanDetail: React.FC = () => {
         </div>
       )}
 
-      {/* TAB CONTENT 3: DOCUMENTS */}
+      {/* TAB CONTENT 3: HISTORIAL DE PAGOS (TRANSACTIONS) */}
+      {activeTab === 'payments' && (
+        <div className="space-y-6 animate-fade-in">
+          
+          {/* Metrics Summary Header */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-emerald-50 dark:bg-emerald-950/40 p-6 rounded-3xl border border-emerald-200 dark:border-emerald-900/60 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Total Cobrado en Préstamo</p>
+                <p className="text-3xl font-black text-emerald-700 dark:text-emerald-400 mt-1">RD$ {totalCollectedOnLoan.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="p-3 bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 rounded-2xl">
+                <Receipt className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-indigo-50 dark:bg-indigo-950/40 p-6 rounded-3xl border border-indigo-200 dark:border-indigo-900/60 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">Pagos Realizados</p>
+                <p className="text-3xl font-black text-indigo-700 dark:text-indigo-400 mt-1">{allLoanTransactions.length} Transacciones</p>
+              </div>
+              <div className="p-3 bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 rounded-2xl">
+                <Banknote className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="bg-rose-50 dark:bg-rose-950/40 p-6 rounded-3xl border border-rose-200 dark:border-rose-900/60 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold text-rose-800 dark:text-rose-300 uppercase tracking-wider">Balance Restante</p>
+                <p className="text-3xl font-black text-rose-700 dark:text-rose-400 mt-1">RD$ {(loan.remainingBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+              </div>
+              <div className="p-3 bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 rounded-2xl">
+                <DollarSign className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          {/* Transactions List */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-emerald-600" /> Registro Completo de Cobros y Recibos
+              </h3>
+              <button 
+                onClick={() => navigate('/pagos', { state: { loanId: loan.id } })}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md flex items-center gap-2"
+              >
+                <DollarSign className="w-4 h-4" /> Registrar Nuevo Pago
+              </button>
+            </div>
+
+            {allLoanTransactions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4">No. Recibo</th>
+                      <th className="px-6 py-4">Fecha y Hora</th>
+                      <th className="px-6 py-4">Concepto / Descripción</th>
+                      <th className="px-6 py-4 text-center">Método de Pago</th>
+                      <th className="px-6 py-4 text-right">Monto Pagado</th>
+                      <th className="px-6 py-4 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {allLoanTransactions.map(tx => (
+                      <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                          {formatReceiptId(tx.id)}
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">
+                          {new Date(tx.date).toLocaleString('es-DO')}
+                        </td>
+                        <td className="px-6 py-4 text-slate-800 dark:text-slate-200 font-bold">
+                          {tx.description || 'Abono a Préstamo'}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[10px] uppercase">
+                            {tx.paymentMethod || 'Efectivo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                          RD$ {(tx.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => navigate(`/recibo/${tx.id}`)}
+                            className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg font-bold hover:bg-indigo-100 text-[11px] inline-flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Ver Recibo
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-12 text-center text-slate-400">
+                <Receipt className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                <p className="font-bold text-slate-700 dark:text-slate-300 text-base">No hay pagos registrados aún</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Cuando registres cobros o abonos a este préstamo, aparecerán detallados en esta lista con su número de recibo oficial.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT 4: DOCUMENTS */}
       {activeTab === 'documents' && (
         <div className="space-y-6 animate-fade-in">
           
@@ -798,7 +969,7 @@ export const LoanDetail: React.FC = () => {
         </div>
       )}
 
-      {/* TAB CONTENT 4: COLLATERAL */}
+      {/* TAB CONTENT 5: COLLATERAL */}
       {activeTab === 'collateral' && (
         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 animate-fade-in">
           <div className="flex items-center gap-4">
@@ -822,7 +993,7 @@ export const LoanDetail: React.FC = () => {
         </div>
       )}
 
-      {/* TAB CONTENT 5: REFINANCE */}
+      {/* TAB CONTENT 6: REFINANCE */}
       {activeTab === 'refinance' && (
         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 max-w-2xl mx-auto animate-fade-in">
           <div className="text-center">
@@ -851,7 +1022,7 @@ export const LoanDetail: React.FC = () => {
         </div>
       )}
 
-      {/* TAB CONTENT 6: FORGIVENESS */}
+      {/* TAB CONTENT 7: FORGIVENESS */}
       {activeTab === 'forgiveness' && (
         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 max-w-2xl mx-auto animate-fade-in">
           <div className="text-center">
