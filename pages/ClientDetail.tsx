@@ -612,6 +612,8 @@ const ClientDetail: React.FC = () => {
           onClose={() => setIsDocGeneratorOpen(false)}
           defaultDocType={selectedDocType}
         />
+      )}
+
       {/* Modal de Recorte Cuadrado de Foto */}
       {showCropperModal && rawAvatarSrc && (
         <ImageCropperModal
