@@ -9,7 +9,7 @@ import {
   HelpCircle, Sparkles, Clock, RefreshCw, MessageSquare, Sliders,
   MapPin, CheckSquare, XCircle, ShieldCheck, Calculator, ThumbsUp,
   Briefcase, Landmark, Navigation, Database, Cpu, Layers, AlertCircle,
-  Banknote, FilePlus, Package, TrendingDown
+  Banknote, FilePlus, Package, TrendingDown, Wallet
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
