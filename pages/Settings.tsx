@@ -80,15 +80,29 @@ const Settings: React.FC = () => {
     toast.success("Datos de la empresa actualizados correctamente.");
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCompanyForm(prev => ({ ...prev, logoUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const fileName = `logos/logo_${Date.now()}.${ext}`;
+      const { error } = await insforge.storage.from('client-documents').upload(fileName, file);
+      if (!error) {
+        const { data } = insforge.storage.from('client-documents').getPublicUrl(fileName);
+        if (data?.publicUrl) {
+          setCompanyForm(prev => ({ ...prev, logoUrl: data.publicUrl }));
+          toast.success("Logo subido al bucket exitosamente");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Storage logo upload fallback:", err);
     }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCompanyForm(prev => ({ ...prev, logoUrl: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveSecurity = (e: React.FormEvent) => {

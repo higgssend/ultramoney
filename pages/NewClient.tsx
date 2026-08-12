@@ -11,6 +11,7 @@ import { maskPhone, maskCedula } from '../utils/masks';
 import { useToast } from '../context/ToastContext';
 import { CustomSelect } from '../components/CustomSelect';
 import { ImageCropperModal } from '../components/ImageCropperModal';
+import { insforge } from '../lib/insforge';
 
 const STEPS = [
   { id: 1, label: 'Datos Personales', icon: User },
@@ -654,11 +655,27 @@ const NewClient: React.FC = () => {
       {showCropperModal && rawAvatarSrc && (
         <ImageCropperModal
           imageSrc={rawAvatarSrc}
-          onCropComplete={(croppedDataUrl) => {
+          onCropComplete={async (croppedDataUrl) => {
             set('avatarUrl', croppedDataUrl);
             setShowCropperModal(false);
             setRawAvatarSrc(null);
-            addToast('Foto de perfil recortada correctamente', 'success');
+            addToast('Foto de perfil lista', 'success');
+
+            // Upload cropped image to InsForge Storage bucket
+            try {
+              const res = await fetch(croppedDataUrl);
+              const blob = await res.blob();
+              const filename = `avatars/avatar_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+              const { error } = await insforge.storage.from('client-documents').upload(filename, blob);
+              if (!error) {
+                const { data } = insforge.storage.from('client-documents').getPublicUrl(filename);
+                if (data?.publicUrl) {
+                  set('avatarUrl', data.publicUrl);
+                }
+              }
+            } catch (err) {
+              console.warn("Storage avatar upload fallback:", err);
+            }
           }}
           onClose={() => {
             setShowCropperModal(false);
