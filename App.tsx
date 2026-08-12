@@ -20,6 +20,7 @@ import Classification from './pages/Classification';
 import DeepAccounting from './pages/DeepAccounting';
 import Bitacora from './pages/Bitacora';
 import Profit from './pages/Profit';
+import BankAccountsPage from './pages/BankAccountsPage';
 import ClientDetail from './pages/ClientDetail';
 import { DocumentPage } from './pages/DocumentPage';
 import { InventoryPage } from './pages/Inventory';
@@ -186,6 +187,7 @@ const AppContent: React.FC = () => {
             <Route path="/pagos" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
             <Route path="/atrasos" element={<ProtectedRoute><Overdue /></ProtectedRoute>} />
             <Route path="/caja" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+            <Route path="/bancos" element={<ProtectedRoute><BankAccountsPage /></ProtectedRoute>} />
             <Route path="/cartera" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
             <Route path="/gastos" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
             <Route path="/ganancia" element={<ProtectedRoute><Profit /></ProtectedRoute>} />

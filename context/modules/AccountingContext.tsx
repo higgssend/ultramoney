@@ -32,50 +32,14 @@ const AccountingContext = createContext<AccountingContextType | undefined>(undef
 const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
   {
     id: 'bank-efectivo-1',
-    bankName: 'Caja Chica / Efectivo Principal',
+    bankName: 'Caja Principal / Efectivo',
     accountType: 'Caja Chica / Efectivo',
     accountNumber: 'CAJA-001',
-    accountName: 'Caja Chica de Cobros',
+    accountName: 'Caja Principal (Efectivo)',
     currency: 'DOP',
-    balance: 150000,
+    balance: 0,
     isActive: true,
     isDefault: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bank-banreservas-1',
-    bankName: 'Banco de Reservas (Banreservas)',
-    accountType: 'Corriente',
-    accountNumber: '960-123456-7',
-    accountName: 'UltraMoney SRL - Banreservas',
-    currency: 'DOP',
-    balance: 500000,
-    isActive: true,
-    isDefault: false,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bank-popular-1',
-    bankName: 'Banco Popular Dominicano',
-    accountType: 'Corriente',
-    accountNumber: '792-884920-1',
-    accountName: 'UltraMoney SRL - Popular',
-    currency: 'DOP',
-    balance: 350000,
-    isActive: true,
-    isDefault: false,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'bank-bhd-1',
-    bankName: 'Banco BHD',
-    accountType: 'Ahorros',
-    accountNumber: '104-582910-3',
-    accountName: 'UltraMoney SRL - BHD',
-    currency: 'DOP',
-    balance: 200000,
-    isActive: true,
-    isDefault: false,
     createdAt: new Date().toISOString()
   }
 ];

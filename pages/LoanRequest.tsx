@@ -10,6 +10,7 @@ import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 import { LoanContractModal } from './features/LoanContractModal';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
+import { BankAccountsModal } from '../components/BankAccountsModal';
 
 const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
@@ -20,6 +21,7 @@ const LoanRequest: React.FC = () => {
 
   const [disbursementBankAccountId, setDisbursementBankAccountId] = useState<string>('');
   const [createdLoanForSharing, setCreatedLoanForSharing] = useState<Loan | null>(null);
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   
   // Refinancing State
   const [isRefinanceEnabled, setIsRefinanceEnabled] = useState(false);
@@ -973,12 +975,21 @@ const LoanRequest: React.FC = () => {
 
                     {/* Bank Account Disbursement Config */}
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
-                        <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Banknote className="w-5 h-5" /></div>
-                            Cuenta / Caja de Desembolso (Opcional)
-                        </h3>
+                        <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><Banknote className="w-5 h-5" /></div>
+                                Cuenta / Caja de Desembolso (Opcional)
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsBankModalOpen(true)}
+                                className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> + Crear Cuenta / Caja
+                            </button>
+                        </div>
                         <p className="text-xs text-slate-500 mb-4">
-                            Selecciona la cuenta bancaria o caja chica desde la cual se desembolsa este préstamo.
+                            Selecciona la cuenta bancaria o caja chica desde la cual se desembolsa este préstamo. No es obligatorio.
                         </p>
                         <CustomSelect 
                             value={disbursementBankAccountId}
@@ -1287,6 +1298,11 @@ const LoanRequest: React.FC = () => {
             navigate(`/prestamos/${loanId}`); 
           }} 
           onNavigateToDetail={() => navigate(`/prestamos/${createdLoanForSharing.id}`)} 
+        />
+      {isBankModalOpen && (
+        <BankAccountsModal 
+          isOpen={isBankModalOpen} 
+          onClose={() => setIsBankModalOpen(false)} 
         />
       )}
     </div>
