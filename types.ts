@@ -275,6 +275,12 @@ export function formatReceiptId(id?: string | null): string {
   return `No. ${String(num).padStart(6, '0')}`;
 }
 
+export function formatContractId(id?: string | null): string {
+  if (!id) return 'CTR-00000000';
+  if (id.startsWith('CTR-')) return id;
+  return `CTR-${formatLoanId(id)}`;
+}
+
 
 
 export interface CustomPaymentMethod {
