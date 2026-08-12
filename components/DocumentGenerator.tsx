@@ -84,6 +84,21 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
   const activeTransaction = transaction || (loanTransactions.length > 0 ? loanTransactions[0] : undefined);
 
+  // Collateral description text
+  let collateralText = 'Garantía Personal / Sin Garantía Específica Declarada';
+  if (currentLoan) {
+    if (currentLoan.collateralref || currentLoan.collateralRef) {
+      collateralText = String(currentLoan.collateralref || currentLoan.collateralRef);
+    } else if (currentLoan.collateral) {
+      if (typeof currentLoan.collateral === 'object') {
+        const col = currentLoan.collateral;
+        collateralText = `${col.type || 'Garantía'}: ${col.description || ''} ${col.refNumber ? `(Matrícula/Ref/Chasis #${col.refNumber})` : ''}`.trim();
+      } else {
+        collateralText = String(currentLoan.collateral);
+      }
+    }
+  }
+
   const handleCloudSave = async () => {
     const printElement = document.getElementById('printable-legal-document');
     if (!printElement) return;
@@ -137,14 +152,14 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     let message = `Hola ${client.name.split(' ')[0]},\n\n`;
     
     if (docType === 'recibo' && activeTransaction) {
-      message += `Te enviamos el comprobante de tu pago por ${amountStr} relativo al Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
+      message += `Te enviamos el recibo oficial de tu pago por ${amountStr} del Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
     } else if (docType === 'pagare' || docType === 'contrato') {
-      message += `Adjunto encontrarás el ${docType} oficial de tu Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
+      message += `Adjunto encontrarás el ${docType} oficial firmado relativo a tu Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
     } else {
       message += `Te enviamos el documento ${docType} de tu Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}.\n`;
     }
 
-    message += `\nPuedes ver o descargar tu documento PDF aquí: ${documentUrl}\n\nGracias por confiar en ${company.name || 'nosotros'}.`;
+    message += `\nPuedes ver o descargar tu documento PDF oficial aquí:\n${documentUrl}\n\nGracias por confiar en ${company.name || 'nosotros'}.`;
     
     const cleanPhone = client.phone ? client.phone.replace(/\D/g, '') : '';
     const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -155,25 +170,25 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     const printElement = document.getElementById('printable-legal-document');
     if (!printElement) return;
 
-    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    const printWindow = window.open('', '_blank', 'width=850,height=1000');
     if (printWindow) {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Documento - ${client.name} - Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}</title>
+            <title>Documento Legal - ${client.name} - Préstamo ${currentLoan ? formatLoanId(currentLoan.id) : ''}</title>
             <style>
-              body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.6; padding: 40px; color: #111; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-              .header h1 { font-size: 18pt; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-              .header p { margin: 3px 0; font-size: 10pt; font-family: sans-serif; color: #555; }
-              .title { text-align: center; font-size: 16pt; font-weight: bold; margin: 25px 0; text-transform: uppercase; text-decoration: underline; }
-              .content p { margin-bottom: 15px; text-align: justify; text-indent: 30px; }
-              .signatures { margin-top: 60px; display: flex; justify-content: space-between; }
+              body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.6; padding: 40px; color: #111; }
+              .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #222; padding-bottom: 15px; }
+              .header h1 { font-size: 16pt; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+              .header p { margin: 2px 0; font-size: 9pt; font-family: sans-serif; color: #444; }
+              .title { text-align: center; font-size: 14pt; font-weight: bold; margin: 20px 0; text-transform: uppercase; text-decoration: underline; }
+              .content p { margin-bottom: 14px; text-align: justify; text-indent: 25px; }
+              .signatures { margin-top: 50px; display: flex; justify-content: space-between; }
               .sig-block { text-align: center; width: 45%; }
-              .sig-line { border-top: 1px solid #000; margin-bottom: 5px; margin-top: 60px; }
-              table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 11pt; }
-              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-              th { background-color: #f2f2f2; font-weight: bold; }
+              .sig-line { border-top: 1px solid #000; margin-bottom: 5px; margin-top: 55px; font-weight: bold; }
+              table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10pt; }
+              th, td { border: 1px solid #999; padding: 6px 10px; text-align: left; }
+              th { background-color: #f2f2f2; font-weight: bold; text-transform: uppercase; font-size: 9pt; }
             </style>
           </head>
           <body>
@@ -196,7 +211,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <div className="flex items-center gap-3">
             <FileText className="w-6 h-6 text-indigo-400" />
             <div>
-              <h3 className="font-bold text-lg">Generador de Documentos Oficiales</h3>
+              <h3 className="font-bold text-lg">Generador de Contratos y Documentos Legales Dominicanos</h3>
               <p className="text-xs text-slate-400">Cliente: {client.name} | Cédula: {client.cedula || 'N/A'}</p>
             </div>
           </div>
@@ -210,7 +225,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <div className="bg-indigo-50/90 dark:bg-indigo-950/50 p-3.5 border-b border-indigo-100 dark:border-indigo-900/60 flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5 shrink-0">
               <CreditCard className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> 
-              Documentos para el Préstamo:
+              Seleccionar Préstamo Específico:
             </span>
             
             <div className="flex gap-2 flex-wrap items-center">
@@ -227,7 +242,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-300 hover:text-indigo-600'
                     }`}
                   >
-                    <span className="font-mono">{formatLoanId(l.id)}</span>
+                    <span className="font-mono">Préstamo {formatLoanId(l.id)}</span>
                     <span>• RD$ {(l.amount || 0).toLocaleString()}</span>
                     <span className={`text-[10px] px-1.5 py-0.2 rounded font-black ${
                       l.status === 'Activo' ? (isSelected ? 'bg-indigo-800 text-white' : 'bg-emerald-100 text-emerald-700') : 'bg-slate-200 text-slate-700'
@@ -244,28 +259,28 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         {/* Document Selector Tabs */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-2 gap-2 overflow-x-auto">
           <button
-            onClick={() => setDocType('recibo')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${docType === 'recibo' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-          >
-            Recibo de Pago
-          </button>
-          <button
             onClick={() => setDocType('pagare')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${docType === 'pagare' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
           >
-            Pagaré Notarial
+            Pagaré Notarial a la Orden
           </button>
           <button
             onClick={() => setDocType('contrato')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${docType === 'contrato' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
           >
-            Contrato de Préstamo
+            Contrato de Préstamo con Garantía
           </button>
           <button
             onClick={() => setDocType('estado_cuenta')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${docType === 'estado_cuenta' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
           >
             Estado de Cuenta
+          </button>
+          <button
+            onClick={() => setDocType('recibo')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${docType === 'recibo' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+          >
+            Recibo de Pago
           </button>
           <button
             onClick={() => setDocType('carta_saldo')}
@@ -286,24 +301,243 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <div id="printable-legal-document" className="bg-white text-slate-900 p-10 rounded-xl shadow-md border border-slate-200 max-w-3xl mx-auto font-serif text-sm leading-relaxed">
             
             {/* Document Header */}
-            <div className="header text-center border-b border-slate-300 pb-4 mb-6">
-              <h1 className="text-xl font-bold uppercase tracking-wider font-sans text-slate-800">{company.name}</h1>
-              {company.rnc && <p className="text-xs text-slate-500 font-sans">RNC: {company.rnc}</p>}
-              <p className="text-xs text-slate-500 font-sans">{company.address} • Tel: {company.phone}</p>
+            <div className="header text-center border-b-2 border-slate-800 pb-4 mb-6">
+              {company.logoUrl && <img src={company.logoUrl} alt="Logo" className="h-14 mx-auto mb-2 object-contain font-sans" />}
+              <h1 className="text-xl font-black uppercase tracking-wider font-sans text-slate-900">{company.name}</h1>
+              {company.rnc && <p className="text-xs text-slate-600 font-sans font-bold">RNC No.: {company.rnc}</p>}
+              <p className="text-xs text-slate-600 font-sans">{company.address} • Teléfono: {company.phone}</p>
             </div>
 
-            {/* 1. RECIBO DE PAGO */}
+            {/* 1. PAGARÉ NOTARIAL A LA ORDEN COMPLETO CON LEGALIZACIÓN */}
+            {docType === 'pagare' && (
+              <div>
+                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
+                  PAGARÉ NOTARIAL A LA ORDEN Y CONSTITUCIÓN DE GARANTÍA
+                </h2>
+                <div className="text-right text-xs font-sans font-bold text-indigo-950 mb-4">
+                  Préstamo Ref. No.: <span className="font-mono">{formatLoanId(currentLoan?.id)}</span>
+                </div>
+                
+                <div className="content space-y-3.5 text-justify leading-relaxed">
+                  <p>
+                    POR ANTE MÍ, Notario Público de los del Número para el Distrito Nacional, República Dominicana, matrícula del Colegio Dominicano de Notarios No. ____________, COMPARECE libre y voluntariamente el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, mayor de edad, estado civil {client.civilStatus || 'Soltero/a'}, profesión u ocupación {client.occupation || 'Comerciante'}, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'República Dominicana'}</strong>, quien en lo adelante del presente acto se denominará <strong>EL DEUDOR</strong>.
+                  </p>
+                  
+                  <p>
+                    <strong>PRIMERO (DECLARACIÓN DE DEUDA):</strong> EL DEUDOR reconoce mediante el presente acto formal e irrevocable que DEBE y PAGARÁ de manera incondicional a la orden de <strong>{company.name}</strong>, sociedad legalmente constituida bajo RNC No. <strong>{company.rnc || 'N/A'}</strong>, o a su cesionario o legítimo tenedor, la suma total de <strong>RD$ {currentLoan ? (currentLoan.totalToPay || currentLoan.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 }) : '0.00'}</strong> pesos dominicanos, moneda de curso legal en la República Dominicana.
+                  </p>
+                  
+                  <p>
+                    <strong>SEGUNDO (INTERESES Y MODALIDAD):</strong> La presente suma adeudada generará una tasa de interés acordada del <strong>{currentLoan?.interestRate || 0}%</strong> bajo la modalidad de pago <strong>{currentLoan?.frequency || 'Mensual'}</strong> ({currentLoan?.loanType || 'Préstamo Amortizado'}). Los pagos se efectuarán puntualmente en el domicilio del Acreedor o vía depósito bancario autorizado.
+                  </p>
+                  
+                  <p>
+                    <strong>TERCERO (GARANTÍA ESPECIAL):</strong> Como garantía del fiel, puntual e íntegro cumplimiento de la obligación asumida en este Pagaré Notarial relativo al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong>, EL DEUDOR afecta en garantía especial el bien de su propiedad consistente en: <strong>{collateralText}</strong>.
+                  </p>
+                  
+                  <p>
+                    <strong>CUARTO (MORA Y VENCIMIENTO ANTICIPADO):</strong> Queda expresamente pactado que la falta de pago de una sola de las cuotas acordadas a su vencimiento producirá la caducidad del término y el vencimiento anticipado de la totalidad del saldo adeudado de pleno derecho, sin necesidad de puesta en mora ni requerimiento judicial previo, autorizando al Acreedor a ejecutar la garantía otorgada.
+                  </p>
+                  
+                  <p>
+                    <strong>QUINTO (ELECCIÓN DE DOMICILIO):</strong> Para la ejecución del presente Pagaré Notarial y sus consecuencias legales, las partes eligen domicilio formal en las oficinas del Acreedor y atribuyen competencia a los Tribunales de la República Dominicana.
+                  </p>
+                  
+                  <p className="pt-2">
+                    Hecho y firmado de buena fe en la ciudad de Santo Domingo, República Dominicana, a los <strong>{todayStr}</strong>.
+                  </p>
+                </div>
+
+                {/* Firmas de las Partes */}
+                <div className="signatures flex justify-between mt-12 pt-6 font-sans">
+                  <div className="sig-block text-center w-5/12">
+                    <div className="sig-line border-t border-slate-900 pt-2 font-bold">{client.name} {client.lastName || ''}</div>
+                    <div className="text-xs text-slate-600">EL DEUDOR (FIRMA Y HUELLA)</div>
+                  </div>
+                  <div className="sig-block text-center w-5/12">
+                    <div className="sig-line border-t border-slate-900 pt-2 font-bold">{company.name}</div>
+                    <div className="text-xs text-slate-600">POR EL ACREEDOR</div>
+                  </div>
+                </div>
+
+                {/* Acto de Legalización Notarial */}
+                <div className="mt-10 pt-6 border-t-2 border-dashed border-slate-400 font-serif text-xs leading-relaxed">
+                  <h3 className="font-bold uppercase text-center font-sans text-xs mb-3 text-slate-900">ACTO DE LEGALIZACIÓN DE FIRMAS NOTARIAL</h3>
+                  <p className="text-justify">
+                    YO, _____________________________________, Notario Público de los del Número para el Distrito Nacional, Matrícula del Colegio Dominicano de Notarios No. ________, CERTIFICO Y DOY FE: Que las firmas que anteceden fueron puestas en mi presencia de manera libre y voluntaria por los señores <strong>{client.name} {client.lastName || ''}</strong> y el representante legal de <strong>{company.name}</strong>, cuyas generales constan en el presente acto, quienes me declararon bajo la fe del juramento que esas son las firmas que acostumbran a usar en todos los actos de sus vidas públicas y privadas.
+                  </p>
+                  <p className="mt-2 text-justify">
+                    Dada y firmada en mi estudio notarial en la ciudad de Santo Domingo, República Dominicana, a los <strong>{todayStr}</strong>.
+                  </p>
+                  
+                  <div className="mt-12 text-center font-sans">
+                    <div className="w-64 mx-auto border-t border-slate-900 pt-1 font-bold">
+                      NOTARIO PÚBLICO
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">(SELLO NOTARIAL OFICIAL)</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 2. CONTRATO DE FINANCIAMIENTO Y PRÉSTAMO CON GARANTÍA */}
+            {docType === 'contrato' && (
+              <div>
+                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
+                  CONTRATO DE PRÉSTAMO Y FINANCIAMIENTO CON GARANTÍA
+                </h2>
+                <div className="text-right text-xs font-sans font-bold text-indigo-950 mb-4">
+                  Préstamo Ref. No.: <span className="font-mono">{formatLoanId(currentLoan?.id)}</span>
+                </div>
+
+                <div className="content space-y-3.5 text-justify leading-relaxed">
+                  <p>
+                    ENTRE: De una parte, <strong>{company.name}</strong>, entidad mercantil organizada conforme a las leyes de la República Dominicana, RNC No. <strong>{company.rnc || 'N/A'}</strong>, con domicilio en {company.address}, denominada en lo adelante <strong>EL ACREEDOR</strong>;
+                  </p>
+                  <p>
+                    Y de la otra parte, el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, dominicano/a, mayor de edad, Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) en <strong>{client.address || 'República Dominicana'}</strong>, denominado(a) en lo adelante <strong>EL DEUDOR</strong>.
+                  </p>
+                  
+                  <p className="text-center font-bold uppercase my-3 font-sans text-xs">
+                    SE HA CONVENIDO Y PACTADO LO SIGUIENTE:
+                  </p>
+                  
+                  <p>
+                    <strong>ARTÍCULO 1 (DEL OBJETO Y ENTREGA):</strong> EL ACREEDOR entrega en calidad de préstamo de dinero en efectivo a EL DEUDOR la suma de <strong>RD$ {(currentLoan?.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong> pesos dominicanos, suma que EL DEUDOR declara haber recibido en su totalidad a su entera satisfacción.
+                  </p>
+                  
+                  <p>
+                    <strong>ARTÍCULO 2 (PLAZO, INTERÉS Y CONDICIONES):</strong> El presente financiamiento relativo al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> devengará una tasa de interés acordada de <strong>{currentLoan?.interestRate}%</strong> bajo la modalidad <strong>{currentLoan?.loanType || 'Amortizado'}</strong> con frecuencia de pago <strong>{currentLoan?.frequency}</strong>. El monto total de la deuda a reembolsar asciende a <strong>RD$ {(currentLoan?.totalToPay || currentLoan?.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</strong>.
+                  </p>
+                  
+                  <p>
+                    <strong>ARTÍCULO 3 (RÉGIMEN DE GARANTÍA):</strong> Para garantizar la restitución del capital prestado, intereses y gastos de cobranza, EL DEUDOR afectará formalmente en garantía especial: <strong>{collateralText}</strong>.
+                  </p>
+                  
+                  <p>
+                    <strong>ARTÍCULO 4 (CLÁUSULA DE MORA Y GASTOS DE COBRANZA):</strong> El retraso en el cumplimiento de las fechas fijadas para el pago de las cuotas generará un recargo por mora del 5% mensual. Asimismo, en caso de cobro judicial o extrajudicial, EL DEUDOR se compromete a cubrir los honorarios profesionales de abogacía equivalente al 20% del valor adeudado.
+                  </p>
+                  
+                  <p>
+                    <strong>ARTÍCULO 5 (FUERZA EJECUTORIA):</strong> Las partes atribuyen al presente contrato la fuerza ejecutoria que otorga el Artículo 545 del Código de Procedimiento Civil de la República Dominicana.
+                  </p>
+                  
+                  <p className="pt-2">
+                    Hecho y firmado en dos (2) ejemplares de un mismo tenor y efecto en Santo Domingo, República Dominicana, a los <strong>{todayStr}</strong>.
+                  </p>
+                </div>
+
+                <div className="signatures flex justify-between mt-16 pt-8 font-sans border-t border-slate-300">
+                  <div className="sig-block text-center w-5/12">
+                    <div className="sig-line border-t border-slate-900 pt-2 font-bold">{client.name} {client.lastName || ''}</div>
+                    <div className="text-xs text-slate-600">EL DEUDOR</div>
+                  </div>
+                  <div className="sig-block text-center w-5/12">
+                    <div className="sig-line border-t border-slate-900 pt-2 font-bold">{company.name}</div>
+                    <div className="text-xs text-slate-600">EL ACREEDOR</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. ESTADO DE CUENTA DETALLADO */}
+            {docType === 'estado_cuenta' && (
+              <div>
+                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
+                  ESTADO DE CUENTA FINANCIERO OFICIAL
+                </h2>
+                
+                <div className="mb-5 font-sans text-xs bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 gap-2">
+                  <div><strong>Cliente:</strong> {client.name} {client.lastName || ''}</div>
+                  <div><strong>Cédula:</strong> {client.cedula || 'N/A'}</div>
+                  <div><strong>Teléfono:</strong> {client.phone || 'N/A'}</div>
+                  <div><strong>Fecha Emisión:</strong> {todayStr}</div>
+                </div>
+
+                {currentLoan ? (
+                  <div className="space-y-5 font-sans text-xs">
+                    <div className="bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100 flex justify-between items-center">
+                      <div>
+                        <span className="text-slate-500 font-bold uppercase text-[10px] block">Préstamo Consultado</span>
+                        <span className="font-mono font-black text-indigo-700 text-sm">Ref. #{formatLoanId(currentLoan.id)}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-slate-500 font-bold uppercase text-[10px] block">Estado</span>
+                        <span className="font-extrabold text-emerald-700 uppercase">{currentLoan.status}</span>
+                      </div>
+                    </div>
+
+                    <table className="w-full border-collapse border border-slate-300">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-800">
+                          <th className="border p-2">Monto Desembolsado</th>
+                          <th className="border p-2">Frecuencia</th>
+                          <th className="border p-2">Tasa Interés</th>
+                          <th className="border p-2">Total Deuda</th>
+                          <th className="border p-2">Saldo Pendiente</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="text-center font-medium">
+                          <td className="border p-2">RD$ {(currentLoan.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</td>
+                          <td className="border p-2">{currentLoan.frequency}</td>
+                          <td className="border p-2">{currentLoan.interestRate}%</td>
+                          <td className="border p-2 font-bold">RD$ {(currentLoan.totalToPay || currentLoan.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</td>
+                          <td className="border p-2 font-black text-indigo-700">RD$ {(currentLoan.remainingBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <div className="mt-6">
+                      <h4 className="font-bold text-xs uppercase text-slate-800 mb-2 tracking-wider">Historial Detallado de Transacciones de este Préstamo</h4>
+                      {loanTransactions.length > 0 ? (
+                        <table className="w-full border-collapse border border-slate-300">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="border p-2">Fecha</th>
+                              <th className="border p-2">No. Recibo</th>
+                              <th className="border p-2">Concepto</th>
+                              <th className="border p-2 text-right">Monto Pagado</th>
+                              <th className="border p-2 text-center">Método</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {loanTransactions.map(t => (
+                              <tr key={t.id}>
+                                <td className="border p-2">{new Date(t.date).toLocaleDateString('es-DO')}</td>
+                                <td className="border p-2 font-mono font-bold text-indigo-700">{formatReceiptId(t.id)}</td>
+                                <td className="border p-2">{t.description || 'Abono a Préstamo'}</td>
+                                <td className="border p-2 text-right font-black text-emerald-600">RD$ {(t.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</td>
+                                <td className="border p-2 text-center font-bold">{t.paymentMethod || 'Efectivo'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 italic text-center">No se registran pagos en este préstamo.</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center py-6 text-slate-500 font-sans">No hay préstamo seleccionado.</p>
+                )}
+              </div>
+            )}
+
+            {/* 4. RECIBO DE PAGO */}
             {docType === 'recibo' && (
               <div>
-                <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline">RECIBO DE PAGO DE PRÉSTAMO</h2>
-                <div className="flex justify-between items-center mb-6 border-b border-slate-200 pb-4 font-sans">
-                  <div className="text-sm">
-                    <p><strong>Recibo No:</strong> {formatReceiptId(activeTransaction?.id)}</p>
+                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
+                  COMPROBANTE OFICIAL DE RECIBO DE PAGO
+                </h2>
+                <div className="flex justify-between items-center mb-6 border-b border-slate-200 pb-4 font-sans text-xs">
+                  <div>
+                    <p><strong>No. Recibo:</strong> <span className="font-mono font-bold text-indigo-700">{formatReceiptId(activeTransaction?.id)}</span></p>
                     <p><strong>Préstamo Ref:</strong> <span className="font-mono font-bold">{formatLoanId(currentLoan?.id)}</span></p>
-                    <p><strong>Fecha:</strong> {activeTransaction?.date ? new Date(activeTransaction.date).toLocaleDateString('es-DO') : todayStr}</p>
+                    <p><strong>Fecha y Hora:</strong> {activeTransaction?.date ? new Date(activeTransaction.date).toLocaleString('es-DO') : todayStr}</p>
                   </div>
-                  <div className="text-xl font-bold bg-slate-100 px-4 py-2 rounded-lg border border-slate-300">
-                    Monto: RD$ {activeTransaction?.amount?.toLocaleString('es-DO', { minimumFractionDigits: 2 }) || '0.00'}
+                  <div className="text-lg font-black bg-slate-100 px-4 py-2 rounded-lg border border-slate-300 text-emerald-700">
+                    RD$ {activeTransaction?.amount?.toLocaleString('es-DO', { minimumFractionDigits: 2 }) || '0.00'}
                   </div>
                 </div>
                 
@@ -316,169 +550,32 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   </p>
                   {currentLoan && (
                     <p>
-                      <strong>Préstamo Asociado:</strong> {currentLoan.loanType} (Ref. #{formatLoanId(currentLoan.id)}) — Monto Original: RD$ {(currentLoan.amount || 0).toLocaleString('es-DO')}
+                      <strong>Préstamo Asociado:</strong> {currentLoan.loanType} (Ref. #{formatLoanId(currentLoan.id)}) — Monto Inicial: RD$ {(currentLoan.amount || 0).toLocaleString('es-DO')}
                     </p>
                   )}
                   {currentLoan && (
-                    <div className="mt-6 border border-slate-200 rounded p-4 bg-slate-50 font-sans text-sm">
+                    <div className="mt-6 border border-slate-200 rounded-xl p-4 bg-slate-50 font-sans text-xs space-y-1">
                       <p><strong>Saldo Anterior:</strong> RD$ {((currentLoan.remainingBalance || 0) + (activeTransaction?.amount || 0)).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
-                      <p className="font-bold text-lg mt-2 text-indigo-700"><strong>Nuevo Saldo Pendiente:</strong> RD$ {(currentLoan.remainingBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                      <p className="font-black text-sm text-indigo-700 pt-1"><strong>(=) Nuevo Saldo Pendiente:</strong> RD$ {(currentLoan.remainingBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
                     </div>
                   )}
                 </div>
 
-                <div className="signatures flex-col sm:flex-row gap-8 items-center justify-center mt-12">
-                  <div className="sig-block mx-auto sm:mx-0 w-64">
-                    <div className="sig-line border-t-2 border-slate-400"></div>
-                    <p className="font-bold text-sm">Cajero / Recibidor</p>
-                    <p className="text-xs text-slate-500">{company.name}</p>
+                <div className="signatures flex justify-center mt-12 font-sans">
+                  <div className="sig-block text-center w-64">
+                    <div className="sig-line border-t border-slate-900 pt-1 font-bold">{company.name}</div>
+                    <p className="text-xs text-slate-500">DEPARTAMENTO DE CAJA</p>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* 2. PAGARÉ NOTARIAL */}
-            {docType === 'pagare' && (
-              <div>
-                <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline">PAGARÉ NOTARIAL A LA ORDEN</h2>
-                <div className="content space-y-4 text-justify">
-                  <p>
-                    POR MEDIO DEL PRESENTE DOCUMENTO, yo, <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'la República Dominicana'}</strong>, reconozco deber y me obligo a pagar incondicionalmente a la orden de <strong>{company.name}</strong>, o a su cesionario, la suma de <strong>RD$ {currentLoan ? (currentLoan.totalToPay || currentLoan.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 }) : '0.00'}</strong> pesos dominicanos, correspondiente al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong>.
-                  </p>
-                  <p>
-                    El presente capital generará un interés del <strong>{currentLoan?.interestRate || 0}%</strong> acordado bajo la modalidad de pago <strong>{currentLoan?.frequency || 'Mensual'}</strong>, el cual será pagado según las cuotas pactadas a partir de la fecha de desembolso.
-                  </p>
-                  {currentLoan?.collateral && (
-                    <p>
-                      <strong>GARANTÍA:</strong> Como respaldo del fiel cumplimiento de este compromiso relativo al Préstamo #{formatLoanId(currentLoan.id)}, el DEUDOR otorga en garantía el bien consistente en: <strong>{typeof currentLoan.collateral === 'object' ? `${currentLoan.collateral.type || 'Garantía'} - ${currentLoan.collateral.description || ''} ${currentLoan.collateral.refNumber ? `(Matrícula/Ref: ${currentLoan.collateral.refNumber})` : ''}` : String(currentLoan.collateral)}</strong>.
-                    </p>
-                  )}
-                  <p>
-                    En caso de mora o incumplimiento de cualquiera de las cuotas pactadas, la totalidad del saldo adeudado se considerará vencido y exigible de pleno derecho, autorizando al acreedor a ejecutar la garantía correspondiente.
-                  </p>
-                  <p className="pt-4">
-                    Hecho y firmado de buena fe en Santo Domingo, República Dominicana, a los <strong>{todayStr}</strong>.
-                  </p>
-                </div>
-
-                <div className="signatures flex justify-between mt-16 pt-8 border-t border-slate-300 font-sans">
-                  <div className="sig-block text-center w-5/12">
-                    <div className="sig-line border-t border-slate-800 pt-2 font-bold">{client.name}</div>
-                    <div className="text-xs text-slate-500">DEUDOR (FIRMA)</div>
-                  </div>
-                  <div className="sig-block text-center w-5/12">
-                    <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
-                    <div className="text-xs text-slate-500">POR LA EMPRESA (FIRMA)</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 3. CONTRATO DE PRÉSTAMO */}
-            {docType === 'contrato' && (
-              <div>
-                <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline">CONTRATO DE FINANCIAMIENTO</h2>
-                <div className="content space-y-4 text-justify">
-                  <p>
-                    Entre la entidad <strong>{company.name}</strong>, de una parte; y de la otra parte <strong>{client.name} {client.lastName || ''}</strong>, Cédula No. <strong>{client.cedula || 'N/A'}</strong>, se convenió el siguiente contrato relativo al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong>:
-                  </p>
-                  <p>
-                    <strong>PRIMERO:</strong> EL ACREEDOR entrega en calidad de préstamo la suma de <strong>RD$ {currentLoan?.amount?.toLocaleString('es-DO') || '0.00'}</strong> al DEUDOR, quien declara haber recibido dicha suma a su entera satisfacción.
-                  </p>
-                  <p>
-                    <strong>SEGUNDO:</strong> El préstamo devengará una tasa de interés de <strong>{currentLoan?.interestRate}%</strong> bajo la modalidad <strong>{currentLoan?.loanType}</strong> con frecuencia de pago <strong>{currentLoan?.frequency}</strong>.
-                  </p>
-                  <p>
-                    <strong>TERCERO (MORA):</strong> En caso de retraso en el pago de las cuotas pactadas, se aplicará el recargo por mora correspondiente sobre el saldo adeudado.
-                  </p>
-                  <p className="pt-4">
-                    Firmado de conformidad a los <strong>{todayStr}</strong>.
-                  </p>
-                </div>
-
-                <div className="signatures flex justify-between mt-16 pt-8 font-sans">
-                  <div className="sig-block text-center w-5/12">
-                    <div className="sig-line border-t border-slate-800 pt-2 font-bold">{client.name}</div>
-                    <div className="text-xs text-slate-500">DEUDOR</div>
-                  </div>
-                  <div className="sig-block text-center w-5/12">
-                    <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
-                    <div className="text-xs text-slate-500">ACREEDOR</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 4. ESTADO DE CUENTA */}
-            {docType === 'estado_cuenta' && (
-              <div>
-                <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline">ESTADO DE CUENTA OFICIAL</h2>
-                <div className="mb-4 font-sans text-xs space-y-1">
-                  <p><strong>Fecha de Emisión:</strong> {todayStr}</p>
-                  <p><strong>Cliente:</strong> {client.name} {client.lastName || ''}</p>
-                  <p><strong>Cédula:</strong> {client.cedula || 'N/A'}</p>
-                  <p><strong>Teléfono:</strong> {client.phone || 'N/A'}</p>
-                </div>
-
-                {currentLoan ? (
-                  <div className="space-y-4 font-sans text-xs">
-                    <table className="w-full border-collapse border border-slate-300">
-                      <thead>
-                        <tr className="bg-slate-100">
-                          <th className="border p-2">Préstamo #</th>
-                          <th className="border p-2">Monto Inicial</th>
-                          <th className="border p-2">Frecuencia</th>
-                          <th className="border p-2">Balance Pendiente</th>
-                          <th className="border p-2">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="border p-2 font-mono font-bold">{formatLoanId(currentLoan.id)}</td>
-                          <td className="border p-2">RD$ {(currentLoan.amount || 0).toLocaleString()}</td>
-                          <td className="border p-2">{currentLoan.frequency}</td>
-                          <td className="border p-2 font-bold text-indigo-700">RD$ {(currentLoan.remainingBalance || 0).toLocaleString()}</td>
-                          <td className="border p-2 font-bold">{currentLoan.status}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    {loanTransactions.length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="font-bold text-sm text-slate-800 mb-2 uppercase">Historial de Pagos de este Préstamo</h4>
-                        <table className="w-full border-collapse border border-slate-300">
-                          <thead>
-                            <tr className="bg-slate-100">
-                              <th className="border p-2">Fecha</th>
-                              <th className="border p-2">Recibo</th>
-                              <th className="border p-2">Monto Pagado</th>
-                              <th className="border p-2">Método</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {loanTransactions.map(t => (
-                              <tr key={t.id}>
-                                <td className="border p-2">{new Date(t.date).toLocaleDateString('es-DO')}</td>
-                                <td className="border p-2 font-mono">{formatReceiptId(t.id)}</td>
-                                <td className="border p-2 font-bold text-emerald-700">RD$ {t.amount.toLocaleString()}</td>
-                                <td className="border p-2">{t.paymentMethod || 'Efectivo'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-center py-6 text-slate-500 font-sans">No hay préstamo seleccionado.</p>
-                )}
               </div>
             )}
 
             {/* 5. CARTA DE SALDO */}
             {docType === 'carta_saldo' && (
               <div>
-                <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline">CARTA DE SALDO Y CANCELACIÓN DE DEUDA</h2>
+                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-slate-900">
+                  CARTA DE SALDO Y CANCELACIÓN DEFINITIVA
+                </h2>
                 <div className="content space-y-4 text-justify">
                   <p>A QUIEN PUEDA INTERESAR:</p>
                   <p>
@@ -501,33 +598,37 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             {/* 6. CARTA DE COBRO (MORA) */}
             {docType === 'carta_cobro' && (
               <div>
-                <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline text-rose-700">NOTIFICACIÓN DE COBRO Y MORA</h2>
-                <div className="content space-y-4 text-justify">
+                <h2 className="title text-center text-base font-bold uppercase my-5 tracking-wide underline font-sans text-rose-700">
+                  NOTIFICACIÓN FORMAL DE INTIMACIÓN DE PAGO Y MORA
+                </h2>
+                <div className="content space-y-3.5 text-justify">
                   <p><strong>FECHA:</strong> {todayStr}</p>
                   <p><strong>SEÑOR(A):</strong> {client.name} {client.lastName || ''}</p>
+                  <p><strong>CÉDULA:</strong> {client.cedula || 'N/A'}</p>
                   <p><strong>DIRECCIÓN:</strong> {client.address || 'Domicilio Registrado'}</p>
                   <p className="pt-2">Estimado(a) cliente:</p>
                   <p>
-                    Le informamos por este medio que la cuota correspondiente al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO DE PAGO</strong> por un saldo pendiente de <strong>RD$ {(currentLoan?.remainingBalance || 0).toLocaleString()}</strong>.
+                    Le informamos por este medio formal que la cuota correspondiente a su Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong> se encuentra en estado de <strong>ATRASO Y MORA</strong> por un saldo pendiente de <strong>RD$ {(currentLoan?.remainingBalance || 0).toLocaleString()}</strong>.
                   </p>
                   <p>
-                    Le solicitamos ponerse en contacto con nuestra oficina de cobros a la brevedad posible a fin de regularizar su situación y evitar recargos adicionales o ejecuciones legales sobre la garantía.
+                    Le requerimos ponerse en contacto con nuestra gerencia de cobros en un plazo no mayor a 48 horas a partir de la recepción del presente documento, a fin de regularizar su situación financiera y evitar el inicio de acciones judiciales de cobro extrajudicial y ejecución de garantía notarial.
                   </p>
                 </div>
 
                 <div className="signatures flex justify-center mt-16 pt-8 font-sans">
                   <div className="sig-block text-center w-6/12">
                     <div className="sig-line border-t border-slate-800 pt-2 font-bold">{company.name}</div>
-                    <div className="text-xs text-slate-500">GERENCIA DE COBRANZAS</div>
+                    <div className="text-xs text-slate-500">GERENCIA DE COBRANZAS Y LEGAL</div>
                   </div>
                 </div>
               </div>
             )}
+
           </div>
         </div>
 
         {/* Modal Actions */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-end gap-3">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-end gap-3 flex-wrap">
           <button
             onClick={onClose}
             className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
