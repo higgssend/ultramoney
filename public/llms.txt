@@ -1,0 +1,18 @@
+# UltraMoney — Sistema de Administración de Préstamos y Cartera
+
+> UltraMoney es un Software de Gestión de Préstamos, Cobranza, Cuentas Bancarias y Finanzas pensado para prestamistas independientes, agencias de microcrédito y financieras.
+
+## Capacidades Principales
+
+- **Gestión de Préstamos**: Amortización con cuotas fijas, pagaré abierto a rédito, financiamiento de productos (vehículos, electrodomésticos, equipos), cálculo de gastos de cierre y tasas personalizadas.
+- **Cobranza & Pagos**: Registro de cuotas, capital e interés, cargos por mora, pagos parciales, recibos en tiempo real e integración con canales de pago.
+- **Cuentas Bancarias & Cajas**: Control de caja principal (efectivo), cuentas de banco (USD/DOP), terminales POS/Verifone, depósitos y desembolsos automáticos.
+- **Expedientes de Clientes**: Datos personales, cédula, teléfono, garante, historial crediticio, documentos firmados y fotos con recorte cuadrado.
+- **Documentación Oficial**: Generación instantánea de contratos de préstamo, pagaré notarial, cartas de saldo, estados de cuenta y recibos en PDF, PNG y formato imprimible.
+- **Seguridad & Multitenancy**: Aislamiento estricto por empresa e inquilino mediante políticas PostgreSQL Row Level Security (RLS) e integración backend InsForge.
+
+## Enlaces e Integraciones
+
+- Documentación completa: https://ultramoney.app/docs
+- Iniciar Sesión / Portal: https://ultramoney.app/login
+- Especificación OpenAPI / REST API: https://sxwv82iw.us-east.insforge.app

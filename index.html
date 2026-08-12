@@ -55,22 +55,34 @@
     <meta name="msapplication-TileImage" content="/pwa-icon.svg">
     <meta name="msapplication-config" content="/browserconfig.xml">
 
-    <!-- Schema.org -->
+    <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
-    {
-      "@context":"https://schema.org",
-      "@type":"SoftwareApplication",
-      "name":"UltraMoney",
-      "applicationCategory":"FinanceApplication",
-      "operatingSystem":"Web",
-      "url":"https://ultramoney.app",
-      "description":"Sistema de administración de préstamos.",
-      "offers":{
-        "@type":"Offer",
-        "price":"0",
-        "priceCurrency":"USD"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "UltraMoney",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web, All",
+        "url": "https://ultramoney.app",
+        "image": "https://ultramoney.app/og-image.png",
+        "description": "Plataforma integral de gestión de préstamos, cobros, cajas, cuentas bancarias y cartera para prestamistas y financieras.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FinancialService",
+        "name": "UltraMoney Loan Platform",
+        "url": "https://ultramoney.app",
+        "logo": "https://ultramoney.app/logoultramoney.svg",
+        "image": "https://ultramoney.app/og-image.png",
+        "description": "Sistema de administración de préstamos, cartera y cobranzas en línea."
       }
-    }
+    ]
     </script>
 
     <style>
@@ -179,7 +191,6 @@
   <body>
     <div class="bg-noise"></div>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://ultramoney.app/sitemap.xml
+LLMs-txt: https://ultramoney.app/llms.txt
