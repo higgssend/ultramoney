@@ -125,14 +125,85 @@ const LoanRequest: React.FC = () => {
   // --- Core Calculation Logic ---
 
   const getPrincipalForCalculation = () => {
-      // If "Financiado", the principal increases by the closing cost
-      if (closingCostMode === 'Financiado') {
-          return amount + closingCost;
+      let baseAmount = amount;
+      if (loanType.includes('Financiamiento') && itemPrice > 0) {
+          baseAmount = hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice;
       }
-      return amount;
+      if (closingCostMode === 'Financiado') {
+          return baseAmount + closingCost;
+      }
+      return baseAmount;
   };
 
-  // Efecto para recalcular cuando cambian los inputs
+  const getNetDisbursement = () => {
+      let baseAmount = amount;
+      if (loanType.includes('Financiamiento') && itemPrice > 0) {
+          baseAmount = hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice;
+      }
+      if (closingCostMode === 'Descontado') {
+          return Math.max(0, baseAmount - closingCost);
+      }
+      return baseAmount;
+  };
+
+  // Recalculate schedulePreview live
+  useEffect(() => {
+      const principal = getPrincipalForCalculation();
+      if (principal <= 0) {
+          setSchedulePreview([]);
+          return;
+      }
+
+      const isRedito = loanType.includes('Rédito') || loanType.includes('Pagaré');
+
+      if (isRedito) {
+          const interestPart = Math.round((principal * (interest / 100)) * 100) / 100;
+          setSchedulePreview([{
+              installmentNumber: 1,
+              dueDate: firstPaymentDate || new Date().toISOString().split('T')[0],
+              principal: 0,
+              interest: interestPart,
+              total: interestPart,
+              balance: principal
+          }]);
+          return;
+      }
+
+      // Amortized or Financing
+      const count = weeks > 0 ? weeks : 1;
+      const totalInterest = Math.round((principal * (interest / 100)) * 100) / 100;
+      const totalToPay = principal + totalInterest;
+      const instAmt = Math.round((totalToPay / count) * 100) / 100;
+
+      const instPrincipal = Math.round((principal / count) * 100) / 100;
+      const instInterest = Math.round((totalInterest / count) * 100) / 100;
+
+      const newSchedule: InstallmentPreview[] = [];
+      let currentBal = totalToPay;
+      const start = firstPaymentDate ? new Date(firstPaymentDate + 'T12:00:00') : new Date();
+
+      for (let i = 1; i <= count; i++) {
+          currentBal = Math.max(0, currentBal - instAmt);
+          const d = new Date(start);
+          if (frequency === 'Semanal') d.setDate(d.getDate() + (i - 1) * 7);
+          else if (frequency === 'Quincenal') d.setDate(d.getDate() + (i - 1) * 15);
+          else if (frequency === 'Mensual') d.setMonth(d.getMonth() + (i - 1));
+          else if (frequency === 'Diario') d.setDate(d.getDate() + (i - 1));
+
+          newSchedule.push({
+              installmentNumber: i,
+              dueDate: d.toISOString().split('T')[0],
+              principal: instPrincipal,
+              interest: instInterest,
+              total: instAmt,
+              balance: Math.round(currentBal * 100) / 100
+          });
+      }
+
+      setSchedulePreview(newSchedule);
+  }, [amount, interest, weeks, frequency, loanType, closingCost, closingCostMode, itemPrice, downPayment, hasInitialPayment, firstPaymentDate]);
+
+  // Efecto para recalcular semanas por cuota deseada
   useEffect(() => {
     if ((loanType.includes('Amortizado') || loanType.includes('Financiamiento')) && calcMode === 'installment') {
         const principal = getPrincipalForCalculation();
@@ -142,7 +213,7 @@ const LoanRequest: React.FC = () => {
             setWeeks(calculatedWeeks > 0 ? calculatedWeeks : 1);
         }
     }
-  }, [amount, interest, targetInstallment, calcMode, loanType, closingCost, closingCostMode]);
+  }, [amount, interest, targetInstallment, calcMode, loanType, closingCost, closingCostMode, itemPrice, downPayment, hasInitialPayment]);
 
   useEffect(() => {
       if (chargeClosingCost) {
@@ -154,23 +225,31 @@ const LoanRequest: React.FC = () => {
       }
   }, [chargeClosingCost, closingCostType, closingCostPercentage, amount]);
 
-  
   const calculateTotal = () => {
-      if (schedulePreview.length === 0) return 0;
-      return schedulePreview.reduce((sum, item) => sum + item.total, 0);
+      const principal = getPrincipalForCalculation();
+      if (principal <= 0) return 0;
+      const isRedito = loanType.includes('Rédito') || loanType.includes('Pagaré');
+      if (isRedito) {
+          return principal + (principal * (interest / 100));
+      }
+      if (schedulePreview.length > 0) {
+          return schedulePreview.reduce((sum, item) => sum + item.total, 0);
+      }
+      return principal + (principal * (interest / 100));
   };
 
   const calculateInstallment = () => {
-      if (schedulePreview.length === 0) return 0;
-      return schedulePreview[0].total; // Simplified
-  };
-
-
-  const getNetDisbursement = () => {
-      if (closingCostMode === 'Descontado') {
-          return amount - closingCost;
+      const principal = getPrincipalForCalculation();
+      if (principal <= 0) return 0;
+      const isRedito = loanType.includes('Rédito') || loanType.includes('Pagaré');
+      if (isRedito) {
+          return principal * (interest / 100);
       }
-      return amount;
+      if (schedulePreview.length > 0) {
+          return schedulePreview[0].total;
+      }
+      const count = weeks > 0 ? weeks : 1;
+      return (principal * (1 + (interest / 100))) / count;
   };
 
   const handleProcessRequest = (req: ILoanRequest) => {
@@ -886,7 +965,7 @@ const LoanRequest: React.FC = () => {
                                 {selectedClient.income && selectedClient.income > 0 && (() => {
                                     const ratio = (calculateInstallment() / selectedClient.income) * 100;
                                     const color = ratio <= 30 ? 'text-emerald-300' : ratio <= 50 ? 'text-amber-300' : 'text-rose-300';
-                                    const label = ratio <= 30 ? '🟢 Bajo' : ratio <= 50 ? '🟡 Medio' : '🔴 Alto';
+                                    const label = ratio <= 30 ? 'Bajo' : ratio <= 50 ? 'Medio' : 'Alto';
                                     return (
                                         <div className="text-right">
                                             <p className={`text-xs font-black ${color}`}>{label}</p>
@@ -898,27 +977,53 @@ const LoanRequest: React.FC = () => {
                         )}
 
                         {/* Key Figures */}
-                        <div className="space-y-2 text-sm">
+                        <div className="space-y-2.5 text-sm">
                             <div className="flex justify-between border-b border-white/10 pb-2">
                                 <span className="text-indigo-200">Capital Solicitado</span>
-                                <span className="font-semibold">RD$ {amount.toLocaleString()}</span>
+                                <span className="font-semibold">RD$ {amount.toLocaleString('es-DO', {minimumFractionDigits: 2})}</span>
                             </div>
+
+                            {loanType.includes('Financiamiento') && itemPrice > 0 && (
+                                <>
+                                    <div className="flex justify-between border-b border-white/10 pb-2">
+                                        <span className="text-indigo-200">Precio del Artículo</span>
+                                        <span className="font-bold">RD$ {itemPrice.toLocaleString('es-DO', {minimumFractionDigits: 2})}</span>
+                                    </div>
+                                    {hasInitialPayment && (
+                                        <div className="flex justify-between border-b border-white/10 pb-2">
+                                            <span className="text-emerald-300">Inicial Pagado</span>
+                                            <span className="font-bold text-emerald-300">- RD$ {downPayment.toLocaleString('es-DO', {minimumFractionDigits: 2})}</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
                             {closingCost > 0 && (
                                 <div className="flex justify-between border-b border-white/10 pb-2">
                                     <span className="text-amber-200 flex items-center gap-1 text-xs"><Scissors className="w-3 h-3"/> Gastos Cierre ({closingCostMode})</span>
                                     <span className="font-semibold text-amber-200 text-xs">
-                                        {closingCostMode === 'Descontado' ? '−' : '+'} RD$ {closingCost.toLocaleString()}
+                                        {closingCostMode === 'Descontado' ? '-' : '+'} RD$ {closingCost.toLocaleString('es-DO', {minimumFractionDigits: 2})}
                                     </span>
                                 </div>
                             )}
+
                             <div className="flex justify-between border-b border-white/10 pb-2">
-                                <span className="text-emerald-200 font-bold text-xs uppercase">Neto a Recibir</span>
-                                <span className="font-bold text-emerald-300 text-base">RD$ {getNetDisbursement().toLocaleString()}</span>
+                                <span className="text-emerald-200 font-bold text-xs uppercase">Neto a Entregar</span>
+                                <span className="font-bold text-emerald-300 text-base">RD$ {getNetDisbursement().toLocaleString('es-DO', {minimumFractionDigits: 2})}</span>
                             </div>
+
                             <div className="flex justify-between border-b border-white/10 pb-2">
-                                <span className="text-indigo-200">Interés Total</span>
-                                <span className="font-semibold text-rose-300">RD$ {(calculateTotal() - amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span className="text-rose-200 font-medium">Interés Total Generado ({interest}%)</span>
+                                <span className="font-bold text-rose-300">
+                                    RD$ {Math.max(0, calculateTotal() - getPrincipalForCalculation()).toLocaleString('es-DO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </span>
                             </div>
+
+                            <div className="flex justify-between border-b border-white/10 pb-2">
+                                <span className="text-indigo-200 text-xs">Plazo de Pago</span>
+                                <span className="font-bold text-xs">{weeks > 0 ? `${weeks} cuotas (${frequency})` : frequency}</span>
+                            </div>
+
                             <div className="flex justify-between border-b border-white/10 pb-2">
                                 <span className="text-indigo-200 text-xs">Primer Pago</span>
                                 <span className="font-semibold text-xs">{firstPaymentDate || '—'}</span>
@@ -929,9 +1034,9 @@ const LoanRequest: React.FC = () => {
                         <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-center">
                             <p className="text-[10px] font-black uppercase tracking-wider text-indigo-200 mb-1">TOTAL A PAGAR POR EL CLIENTE</p>
                             <p className="text-4xl font-black text-white">
-                                RD$ {calculateTotal().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                RD$ {calculateTotal().toLocaleString('es-DO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </p>
-                            <p className="text-[10px] text-indigo-200/80 mt-1">Capital + Intereses</p>
+                            <p className="text-[10px] text-indigo-200/80 mt-1">Capital + Intereses Generados</p>
                         </div>
 
                         {/* Installment Amount */}
