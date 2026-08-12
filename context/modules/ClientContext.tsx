@@ -78,6 +78,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           status: (c.status || 'Activo') as Client['status'],
           joinedDate: c.joineddate || c.created_at,
           clientPin: c.clientpin,
+          avatarUrl: c.avatarurl || c.avatar_url || c.photo_url || '',
           guarantors: [],
           currency: (c.currency || 'DOP') as 'DOP' | 'USD',
         })));
@@ -102,8 +103,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             collectorId: r.collector_id, status: (r.status || 'Activa') as Route['status'], createdAt: r.created_at || ''
           })));
         }
-      } catch {
-        logger.warn('Routes table not found, skipping.');
+      } catch (err) {
+        logger.error("Error loading routes:", err);
       }
     } catch (error) {
       logger.error("Error fetching clients:", error);
@@ -143,6 +144,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       sex: client.sex || 'Otro',
       income: client.income || 0,
       creditscore: client.creditScore || 100,
+      avatarurl: client.avatarUrl || null,
       status: 'Al Día',
       joineddate: new Date().toISOString().split('T')[0],
       clientpin: Math.floor(1000 + Math.random() * 9000).toString()
@@ -173,6 +175,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         sex: data.sex || 'Otro',
         income: data.income || 0,
         creditScore: data.creditscore || 100,
+        avatarUrl: data.avatarurl || data.avatar_url || data.photo_url || client.avatarUrl || '',
         status: data.status || 'Al Día',
         joinedDate: data.joineddate || data.created_at,
         clientPin: data.clientpin || '',
@@ -230,6 +233,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       income: updatedClient.income || 0,
       status: updatedClient.status,
       clientpin: updatedClient.clientPin,
+      avatarurl: updatedClient.avatarUrl || null,
       creditscore: updatedClient.creditScore
     }).eq('id', updatedClient.id).eq('lender_id', currentUser.id);
     

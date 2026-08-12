@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   FileText, Printer, Download, ArrowLeft, Shield, CheckCircle, X, 
   CloudUpload, MessageCircle, CreditCard, Car, Home, FileCode, FileImage, 
-  Eye, Sparkles, RefreshCw, AlertTriangle
+  Eye, Sparkles, RefreshCw, AlertTriangle, Smartphone
 } from 'lucide-react';
 import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId } from '../types';
 import jsPDF from 'jspdf';
@@ -122,7 +122,11 @@ export const DocumentPage: React.FC = () => {
       collateralType = currentLoan.loanCategory === 'Vehicular' ? 'Vehículo' : (currentLoan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
     }
 
-    if (collateralType === 'Vehículo') {
+    if (collateralType === 'Teléfono / Celular') {
+      const colObj = typeof currentLoan.collateral === 'object' ? currentLoan.collateral as any : {};
+      collateralHeading = 'GARANTÍA MOBILIARIA DE DISPOSITIVO MÓVIL (PRENDA SOBRE CELULAR)';
+      collateralLegalClause = `PRENDA MOBILIARIA EN CUSTODIA SOBRE EQUIPO CELULAR / DISPOSITIVO MÓVIL: Marca y Modelo: ${collateralDescription || 'Celular'}, IMEI / Serie No.: ${collateralRefNumber || 'N/A'}${colObj.imei2 ? ` (IMEI 2: ${colObj.imei2})` : ''}${colObj.storage ? `, Capacidad: ${colObj.storage}` : ''}${colObj.condition ? `, Condición: ${colObj.condition}` : ''}${collateralEstimatedValue > 0 ? `, por un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL DEUDOR declara bajo fe de juramento que dicho bien es de su exclusiva propiedad y se encuentra libre de todo gravamen.`;
+    } else if (collateralType === 'Vehículo') {
       collateralHeading = 'GARANTÍA MOBILIARIA VEHICULAR (PRENDA SIN DESPOSESIÓN)';
       collateralLegalClause = `PRENDA SIN DESPOSESIÓN sobre el vehículo motorizado descrito a continuación: Marca/Modelo/Año: ${collateralDescription || 'Declarado en expediente'}, Matrícula / Placa / Chasis No.: ${collateralRefNumber || 'N/A'}${collateralEstimatedValue > 0 ? `, por un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL DEUDOR autoriza expresamente la inscripción del gravamen en la Dirección General de Impuestos Internos (DGII).`;
     } else if (collateralType === 'Propiedad') {
@@ -448,9 +452,10 @@ export const DocumentPage: React.FC = () => {
           {/* Collateral Banner */}
           <div className="bg-amber-50/90 dark:bg-amber-950/50 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/60 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
             <div className="flex items-center gap-2.5 font-bold">
+              {collateralType === 'Teléfono / Celular' && <Smartphone className="w-5 h-5 text-indigo-600" />}
               {collateralType === 'Vehículo' && <Car className="w-5 h-5 text-amber-600" />}
               {collateralType === 'Propiedad' && <Home className="w-5 h-5 text-amber-600" />}
-              {collateralType !== 'Vehículo' && collateralType !== 'Propiedad' && <Shield className="w-5 h-5 text-amber-600" />}
+              {collateralType !== 'Teléfono / Celular' && collateralType !== 'Vehículo' && collateralType !== 'Propiedad' && <Shield className="w-5 h-5 text-amber-600" />}
               <span>Garantía Legal Vinculada: <strong className="uppercase">{collateralType}</strong></span>
             </div>
             <span className="font-mono font-bold text-xs truncate max-w-xs bg-amber-100 dark:bg-amber-900/50 px-3 py-1 rounded-xl">

@@ -22,7 +22,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   const imageRef = useRef<HTMLImageElement>(null);
 
   const handleZoomChange = (newZoom: number) => {
-    const clampedZoom = Math.min(Math.max(newZoom, 1), 4);
+    const clampedZoom = Math.min(Math.max(newZoom, 0.5), 4);
     setZoom(clampedZoom);
   };
 
@@ -48,45 +48,48 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     setIsDragging(false);
   };
 
-  // Circular Canvas Crop
+  // High-Resolution Circular Canvas Crop
   const handleApplyCrop = () => {
     const img = imageRef.current;
     if (!img) return;
 
     const canvas = document.createElement('canvas');
-    const targetSize = 400; // 400x400 output circular avatar
+    const targetSize = 400; // Output 400x400 PNG
     canvas.width = targetSize;
     canvas.height = targetSize;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Create circular clipping path
     ctx.save();
     ctx.beginPath();
     ctx.arc(targetSize / 2, targetSize / 2, targetSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
 
-    // Move to center for scale and rotation
     ctx.translate(targetSize / 2, targetSize / 2);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(zoom, zoom);
 
-    const boxSize = 260; // 260px preview circle box
-    const scaleFactor = targetSize / boxSize;
+    const cropBoxSize = 240; // 240px circle overlay
+    const scaleFactor = targetSize / cropBoxSize;
 
     const drawX = position.x * scaleFactor;
     const drawY = position.y * scaleFactor;
-    const drawWidth = (img.naturalWidth || img.width) * (boxSize / (img.naturalWidth || img.width)) * scaleFactor;
-    const drawHeight = (img.naturalHeight || img.height) * (boxSize / (img.naturalWidth || img.width)) * scaleFactor;
+
+    const natW = img.naturalWidth || 300;
+    const natH = img.naturalHeight || 300;
+    const baseScale = Math.max(cropBoxSize / natW, cropBoxSize / natH);
+
+    const renderW = natW * baseScale * scaleFactor;
+    const renderH = natH * baseScale * scaleFactor;
 
     ctx.drawImage(
       img,
-      -drawWidth / 2 + drawX,
-      -drawHeight / 2 + drawY,
-      drawWidth,
-      drawHeight
+      -renderW / 2 + drawX,
+      -renderH / 2 + drawY,
+      renderW,
+      renderH
     );
 
     ctx.restore();
@@ -106,8 +109,8 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               <Crop className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-white text-base">Recortar Foto (Circular)</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Ajusta la foto dentro del círculo (Opcional)</p>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">Recortar Foto Perfil</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ajusta la posición y zoom de la foto</p>
             </div>
           </div>
           <button
@@ -118,37 +121,42 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           </button>
         </div>
 
-        {/* Circular Crop Viewport */}
-        <div className="p-8 flex flex-col items-center justify-center bg-slate-950 relative select-none overflow-hidden min-h-[340px]">
-          
-          {/* Circular Frame Overlay */}
+        {/* Viewport Area */}
+        <div
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
+          className="relative w-full h-[360px] bg-slate-950 flex items-center justify-center select-none overflow-hidden cursor-grab active:cursor-grabbing"
+        >
+          {/* Image behind the mask overlay */}
           <div
-            ref={containerRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onTouchStart={handleMouseDown}
-            onTouchMove={handleMouseMove}
-            onTouchEnd={handleMouseUp}
-            className="w-[260px] h-[260px] relative rounded-full overflow-hidden border-4 border-indigo-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] cursor-grab active:cursor-grabbing z-10 flex items-center justify-center"
+            className="absolute transition-transform duration-75 flex items-center justify-center"
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+            }}
           >
-            {/* Target Image being transformed */}
             <img
               ref={imageRef}
               src={imageSrc}
-              alt="Avatar Crop Preview"
+              alt="Crop target"
               draggable={false}
-              className="max-w-none transition-transform duration-75"
-              style={{
-                transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
-                width: '100%',
-                objectFit: 'contain',
-              }}
+              className="max-w-[320px] max-h-[320px] object-contain pointer-events-none"
             />
           </div>
 
-          <p className="text-[11px] text-slate-400 mt-4 flex items-center gap-1">
-            <Move className="w-3.5 h-3.5" /> Arrastra y centra la imagen dentro del círculo
+          {/* Mask Overlay ON TOP with 240px circular cutout */}
+          <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-[240px] h-[240px] rounded-full border-4 border-indigo-500 shadow-[0_0_0_9999px_rgba(15,23,42,0.75)] flex items-center justify-center">
+              <div className="w-full h-full rounded-full border border-white/40 border-dashed" />
+            </div>
+          </div>
+
+          <p className="absolute bottom-3 text-[11px] text-slate-300 bg-black/60 px-3 py-1 rounded-full z-30 flex items-center gap-1.5 pointer-events-none">
+            <Move className="w-3.5 h-3.5 text-indigo-400" /> Arrastra para encuadrar la cara en el círculo
           </p>
         </div>
 
@@ -160,7 +168,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             <ZoomOut className="w-4 h-4 text-slate-400" />
             <input
               type="range"
-              min="1"
+              min="0.5"
               max="3"
               step="0.05"
               value={zoom}
@@ -174,7 +182,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between gap-3 pt-2">
+          <div className="flex items-center justify-between gap-3 pt-1">
             <button
               type="button"
               onClick={() => setRotation(r => (r + 90) % 360)}
@@ -196,7 +204,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                 onClick={handleApplyCrop}
                 className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all"
               >
-                <Check className="w-4 h-4" /> Aplicar Foto Circular
+                <Check className="w-4 h-4" /> Guardar Foto
               </button>
             </div>
           </div>

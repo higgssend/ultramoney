@@ -54,6 +54,26 @@ const ClientDetail: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<Client | null>(null);
 
+  const handleAvatarFileSelectInDetail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRawAvatarSrc(reader.result as string);
+        setShowCropperModal(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropCompleteInDetail = async (croppedBase64: string) => {
+    setShowCropperModal(false);
+    if (client) {
+      await updateClient({ ...client, avatarUrl: croppedBase64 });
+      addToast('Foto de perfil actualizada correctamente', 'success');
+    }
+  };
+
   if (!client) {
     return <div className="p-8 text-center text-slate-500">Cliente no encontrado.</div>;
   }
@@ -245,7 +265,7 @@ const ClientDetail: React.FC = () => {
                   </div>
                   <label className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full shadow-lg cursor-pointer transition-transform hover:scale-110 z-10" title="Cambiar y recortar foto">
                     <Camera className="w-4 h-4" />
-                    <input type="file" accept="image/*" onChange={handleAvatarChangeInDetail} className="hidden" />
+                    <input type="file" accept="image/*" onChange={handleAvatarFileSelectInDetail} className="hidden" />
                   </label>
                 </div>
                 

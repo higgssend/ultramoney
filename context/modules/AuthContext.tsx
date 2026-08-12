@@ -59,21 +59,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return;
         }
 
+        const cachedUserSession = localStorage.getItem('um_user_session');
+        if (cachedUserSession) {
+          try {
+            const cachedUser = JSON.parse(cachedUserSession);
+            if (cachedUser && cachedUser.id && !unmounted) {
+              setCurrentUser(cachedUser);
+            }
+          } catch (e) {
+            logger.error("Failed to parse cached user session", e);
+          }
+        }
+
         const { data: userData } = await insforge.auth.getCurrentUser();
         const user: any = userData?.user;
         
         if (!unmounted) {
           if (user) {
             const meta = user.user_metadata || user.metadata || {};
-            setCurrentUser({
+            const activeUser = {
               id: user.id,
               email: user.email,
               name: user.profile?.name || meta.name || user.email,
               roleId: meta.roleId || user.profile?.roleId || 'Admin',
               username: meta.username || user.email?.split('@')[0],
               roleIds: meta.roleIds || []
-            });
-          } else {
+            };
+            setCurrentUser(activeUser);
+            localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+          } else if (!cachedUserSession) {
             setCurrentUser(null);
           }
           setIsLoadingAuth(false);
@@ -82,19 +96,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const unsubscribe = (insforge.auth.onAuthStateChange as any)(async (event: string, session: any) => {
           if (unmounted) return;
           const u: any = session?.user;
-          if (event === 'SIGNED_IN' && u) {
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && u) {
             const meta = u.user_metadata || u.metadata || {};
-            setCurrentUser({
+            const activeUser = {
               id: u.id,
               email: u.email,
               name: u.profile?.name || meta.name || u.email,
               roleId: meta.roleId || u.profile?.roleId || 'Admin',
               username: meta.username || u.email?.split('@')[0],
               roleIds: meta.roleIds || []
-            });
+            };
+            setCurrentUser(activeUser);
+            localStorage.setItem('um_user_session', JSON.stringify(activeUser));
           } else if (event === 'SIGNED_OUT') {
             setCurrentUser(null);
             localStorage.removeItem('employee_session');
+            localStorage.removeItem('um_user_session');
           }
         });
         authSub = unsubscribe;
@@ -161,6 +178,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     await insforge.auth.signOut();
     localStorage.removeItem('employee_session');
+    localStorage.removeItem('um_user_session');
     setCurrentUser(null);
     window.location.href = '/login';
   };
@@ -168,6 +186,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logoutSystem = async () => {
     await insforge.auth.signOut();
     localStorage.removeItem('employee_session');
+    localStorage.removeItem('um_user_session');
     setCurrentUser(null);
     window.location.href = '/login';
   };
