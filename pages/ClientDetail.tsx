@@ -461,39 +461,51 @@ const ClientDetail: React.FC = () => {
                          {clientLoans.map(loan => (
                              <div key={loan.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                                  {loan.status === 'Completado' && <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500 text-white font-bold text-[10px] transform rotate-45 flex items-end justify-center pb-2 translate-x-8 -translate-y-8 shadow-sm">PAGADO</div>}
-                                 <div className="flex justify-between items-start mb-4">
-                                     <div>
-                                         <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                                             {loan.id}
-                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                                 loan.status === 'Activo' ? 'bg-emerald-100 text-emerald-600' : 
-                                                 loan.status === 'Atrasado' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'
-                                             }`}>{loan.status}</span>
-                                         </h4>
-                                         <p className="text-xs text-slate-500">{loan.loanType}</p>
-                                     </div>
-                                 </div>
-                                 <div className="space-y-3 mb-5">
-                                     <div className="flex justify-between">
-                                         <span className="text-sm text-slate-500">Monto Inicial</span>
-                                         <span className="text-sm font-bold text-slate-700 dark:text-white">${loan.amount.toLocaleString()}</span>
-                                     </div>
-                                     <div className="flex justify-between">
-                                         <span className="text-sm text-slate-500">Balance</span>
-                                         <span className="text-sm font-bold text-emerald-600">${loan.remainingBalance.toLocaleString()}</span>
-                                     </div>
-                                     <div className="flex justify-between">
-                                         <span className="text-sm text-slate-500">Cuota</span>
-                                         <span className="text-sm font-bold text-slate-700 dark:text-white">${loan.installmentAmount.toLocaleString()} / {loan.frequency}</span>
-                                     </div>
-                                 </div>
-                                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
-                                     <button 
-                                         onClick={() => setSelectedContractLoan(loan)}
-                                         className="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-extrabold transition-all flex justify-center items-center gap-1.5 shadow-md"
-                                     >
-                                         <FileText className="w-4 h-4" /> Ver Contrato Oficial & Desglose
-                                     </button>
+                                 <div 
+                                      onClick={() => navigate(`/prestamos/${loan.id}`)}
+                                      className="flex justify-between items-start mb-4 cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-700/50 p-2 -mx-2 -mt-2 rounded-xl transition-all"
+                                      title="Haz clic para ver el préstamo completo"
+                                  >
+                                      <div>
+                                          <h4 className="font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                              Préstamo #{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}
+                                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                  loan.status === 'Activo' ? 'bg-emerald-100 text-emerald-600' : 
+                                                  loan.status === 'Atrasado' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'
+                                              }`}>{loan.status}</span>
+                                          </h4>
+                                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                            {loan.loanType} • Frecuencia: {loan.frequency} <Eye className="w-3.5 h-3.5 text-indigo-500 inline ml-1 opacity-80 group-hover:opacity-100" />
+                                          </p>
+                                      </div>
+                                  </div>
+                                  <div className="space-y-3 mb-5">
+                                      <div className="flex justify-between">
+                                          <span className="text-sm text-slate-500">Monto Inicial</span>
+                                          <span className="text-sm font-bold text-slate-700 dark:text-white">RD${loan.amount.toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                          <span className="text-sm text-slate-500">Balance</span>
+                                          <span className="text-sm font-bold text-emerald-600">RD${loan.remainingBalance.toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                          <span className="text-sm text-slate-500">Cuota</span>
+                                          <span className="text-sm font-bold text-slate-700 dark:text-white">RD${loan.installmentAmount.toLocaleString()} / {loan.frequency}</span>
+                                      </div>
+                                  </div>
+                                  <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
+                                      <button 
+                                          onClick={() => navigate(`/prestamos/${loan.id}`)}
+                                          className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-1.5 shadow-md shadow-indigo-500/20"
+                                      >
+                                          <Eye className="w-4 h-4" /> Ver Todo del Préstamo
+                                      </button>
+                                      <button 
+                                          onClick={() => setSelectedContractLoan(loan)}
+                                          className="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-extrabold transition-all flex justify-center items-center gap-1.5 shadow-md"
+                                      >
+                                          <FileText className="w-4 h-4" /> Ver Contrato Oficial & Desglose
+                                      </button>
                                      <div className="flex gap-2">
                                          <button 
                                              onClick={() => navigate(`/documentos/${client.id}?loanId=${loan.id}`)}
