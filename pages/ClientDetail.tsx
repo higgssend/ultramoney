@@ -861,6 +861,7 @@ const ClientDetail: React.FC = () => {
                           </div>
                       )}
                  </div>
+            </div>
         )}
 
         {activeTab === 'collateral' && (
