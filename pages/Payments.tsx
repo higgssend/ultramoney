@@ -72,7 +72,7 @@ interface FullReceiptData {
 const Payments: React.FC = () => {
   const { loans, registerPayment } = useLoans();
   const { clients } = useClients();
-  const { transactions, bankAccounts, processBankDeposit } = useAccounting();
+  const { transactions, bankAccounts, processBankDeposit, paymentMethods } = useAccounting();
   const { companySettings } = useSettings();
   const { currentUser, users, roles } = useAuth();
   const location = useLocation();
@@ -676,14 +676,20 @@ const Payments: React.FC = () => {
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-slate-600 mb-1">Método de Pago</label>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    {(['Efectivo', 'Transferencia', 'Tarjeta', 'Cheque'] as const).map(method => (
+                                    {(paymentMethods && paymentMethods.length > 0 ? paymentMethods.filter(p => p.isActive) : [
+                                        { id: 'pm-1', name: 'Efectivo' },
+                                        { id: 'pm-2', name: 'Transferencia' },
+                                        { id: 'pm-3', name: 'Verifone / POS' },
+                                        { id: 'pm-4', name: 'Tarjeta' },
+                                        { id: 'pm-5', name: 'Cheque' }
+                                    ]).map(pm => (
                                         <button
-                                            key={method}
+                                            key={pm.id}
                                             type="button"
-                                            onClick={() => setPaymentMethod(method)}
-                                            className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${paymentMethod === method ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                            onClick={() => setPaymentMethod(pm.name as any)}
+                                            className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${paymentMethod === pm.name ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                                         >
-                                            {method}
+                                            {pm.name}
                                         </button>
                                     ))}
                                 </div>

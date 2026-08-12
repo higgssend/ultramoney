@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, CashShift, BankAccount, CollectorVisit } from '../../types';
+import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod } from '../../types';
 import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
@@ -10,6 +10,7 @@ import { logger } from '../../utils/logger';
 interface AccountingContextType {
   transactions: Transaction[];
   bankAccounts: BankAccount[];
+  paymentMethods: CustomPaymentMethod[];
   cashShifts: CashShift[];
   activeCashShift: CashShift | null;
   collectorVisits: CollectorVisit[];
@@ -23,6 +24,13 @@ interface AccountingContextType {
   removeBankAccount: (id: string) => void;
   processBankDeposit: (bankAccountId: string, amount: number) => void;
   processBankDisbursement: (bankAccountId: string, amount: number) => void;
+  
+  // Custom Payment Methods Management
+  addPaymentMethod: (pm: CustomPaymentMethod) => void;
+  updatePaymentMethod: (id: string, updates: Partial<CustomPaymentMethod>) => void;
+  removePaymentMethod: (id: string) => void;
+  togglePaymentMethodStatus: (id: string) => void;
+
   addCollectorVisit: (visit: Omit<CollectorVisit, 'id'>) => void;
   getFinancialStats: () => { balance: number; incomeToday: number; expenseToday: number };
 }
@@ -41,6 +49,54 @@ const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
     isActive: true,
     isDefault: true,
     createdAt: new Date().toISOString()
+  }
+];
+
+const DEFAULT_PAYMENT_METHODS: CustomPaymentMethod[] = [
+  {
+    id: 'pm-efectivo',
+    name: 'Efectivo',
+    category: 'Efectivo',
+    description: 'Caja chica y cobro presencial en mano',
+    requiresReference: false,
+    isActive: true,
+    isDefault: true
+  },
+  {
+    id: 'pm-transferencia',
+    name: 'Transferencia Bancaria',
+    category: 'Transferencia',
+    description: 'Banreservas, Popular, BHD, Scotiabank, Qik, APAP',
+    requiresReference: true,
+    isActive: true,
+    isDefault: true
+  },
+  {
+    id: 'pm-verifone',
+    name: 'Verifone / POS',
+    category: 'POS / Verifone',
+    description: 'Terminal POS (CardNet, Azul, etc.) para cobro con tarjeta',
+    requiresReference: true,
+    isActive: true,
+    isDefault: false
+  },
+  {
+    id: 'pm-tarjeta',
+    name: 'Tarjeta de Crédito / Débito',
+    category: 'Pasarela Digital',
+    description: 'Voucher o pasarela digital de tarjetas',
+    requiresReference: true,
+    isActive: true,
+    isDefault: true
+  },
+  {
+    id: 'pm-cheque',
+    name: 'Cheque',
+    category: 'Cheque',
+    description: 'Cheques de gerencia o comerciales',
+    requiresReference: true,
+    isActive: true,
+    isDefault: true
   }
 ];
 
@@ -279,11 +335,45 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     return { balance, incomeToday, expenseToday };
   };
 
+  const [paymentMethods, setPaymentMethods] = useState<CustomPaymentMethod[]>(() => {
+    try {
+      const saved = localStorage.getItem('ultramoney_payment_methods');
+      return saved ? JSON.parse(saved) : DEFAULT_PAYMENT_METHODS;
+    } catch (e) {
+      return DEFAULT_PAYMENT_METHODS;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('ultramoney_payment_methods', JSON.stringify(paymentMethods));
+  }, [paymentMethods]);
+
+  const addPaymentMethod = (pm: CustomPaymentMethod) => {
+    setPaymentMethods(prev => [pm, ...prev]);
+    addToast(`Método de pago "${pm.name}" agregado`, 'success');
+  };
+
+  const updatePaymentMethod = (id: string, updates: Partial<CustomPaymentMethod>) => {
+    setPaymentMethods(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    addToast('Método de pago actualizado', 'success');
+  };
+
+  const removePaymentMethod = (id: string) => {
+    setPaymentMethods(prev => prev.filter(p => p.id !== id));
+    addToast('Método de pago eliminado', 'info');
+  };
+
+  const togglePaymentMethodStatus = (id: string) => {
+    setPaymentMethods(prev => prev.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p));
+    addToast('Estado del método de pago modificado', 'success');
+  };
+
   return (
     <AccountingContext.Provider value={{
-      transactions, bankAccounts, cashShifts, activeCashShift, collectorVisits,
+      transactions, bankAccounts, paymentMethods, cashShifts, activeCashShift, collectorVisits,
       openCashShift, closeCashShift, getCashShiftSummary, addTransaction, addBankAccount,
       updateBankAccount, removeBankAccount, processBankDeposit, processBankDisbursement,
+      addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus,
       addCollectorVisit, getFinancialStats
     }}>
       {children}

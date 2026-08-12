@@ -277,6 +277,17 @@ export function formatReceiptId(id?: string | null): string {
 
 
 
+export interface CustomPaymentMethod {
+  id: string;
+  name: string;
+  category: 'Efectivo' | 'Transferencia' | 'POS / Verifone' | 'Pasarela Digital' | 'Cheque' | 'Cripto' | 'Otro';
+  description?: string;
+  requiresReference?: boolean;
+  isActive: boolean;
+  isDefault?: boolean;
+  createdAt?: string;
+}
+
 export interface Transaction {
   id: string;
   type: 'Ingreso' | 'Gasto';
