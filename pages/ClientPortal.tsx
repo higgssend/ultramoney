@@ -48,18 +48,20 @@ export const ClientPortal: React.FC = () => {
         
         async function fetchClientData() {
             try {
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientId as string);
-                let query = insforge.database.from('clients').select('*');
+                // Multi-fallback lookup: try ID first, then portal_alias, then cedula
+                let { data: cData } = await insforge.database.from('clients').select('*').eq('id', clientId).maybeSingle();
                 
-                if (isUuid) {
-                    query = query.eq('id', clientId);
-                } else {
-                    query = query.eq('portal_alias', clientId);
+                if (!cData) {
+                    const { data: aliasData } = await insforge.database.from('clients').select('*').eq('portal_alias', clientId).maybeSingle();
+                    cData = aliasData;
+                }
+
+                if (!cData) {
+                    const { data: cedulaData } = await insforge.database.from('clients').select('*').eq('cedula', clientId).maybeSingle();
+                    cData = cedulaData;
                 }
                 
-                const { data: cData, error: clientErr } = await query.maybeSingle();
-                
-                if (clientErr || !cData) {
+                if (!cData) {
                     setNotFound(true);
                     return;
                 }

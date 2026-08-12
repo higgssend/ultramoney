@@ -77,7 +77,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             name: settingsRes.data.name, slogan: settingsRes.data.slogan, rnc: settingsRes.data.rnc,
             address: settingsRes.data.address, phone: settingsRes.data.phone, email: settingsRes.data.email,
             currency: settingsRes.data.currency || 'DOP', termsAndConditions: settingsRes.data.terms_and_conditions,
-            logoUrl: settingsRes.data.logourl
+            logoUrl: settingsRes.data.logourl, customLink: settingsRes.data.custom_link
           });
           if (settingsRes.data.currency === 'USD') setGlobalCurrencyState('USD');
         } else {
@@ -105,7 +105,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     const payload = {
       lender_id: currentUser.id, name: settings.name, slogan: settings.slogan, rnc: settings.rnc,
       address: settings.address, phone: settings.phone, email: settings.email, currency: settings.currency,
-      terms_and_conditions: settings.termsAndConditions, logourl: settings.logoUrl
+      terms_and_conditions: settings.termsAndConditions, logourl: settings.logoUrl, custom_link: settings.customLink
     };
     
     // Check if exists for this lender
