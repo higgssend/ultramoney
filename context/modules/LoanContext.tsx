@@ -230,6 +230,24 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
 
+      // Automatically register initial contract in client_documents
+      try {
+        const contractUrl = `${window.location.origin}/documento/contrato/${data.id}`;
+        await insforge.database.from('client_documents').insert([{
+          lender_id: currentUser.id,
+          client_id: loanData.clientId,
+          title: `Contrato de Préstamo Inicial #${data.id.slice(0, 8)}`,
+          name: `Contrato de Préstamo Inicial #${data.id.slice(0, 8)}`,
+          type: 'Contrato',
+          file_url: contractUrl,
+          url: contractUrl,
+          file_type: 'application/pdf',
+          upload_date: loanData.startDate || new Date().toISOString().split('T')[0]
+        }]);
+      } catch (e) {
+        logger.error("Error saving contract to client_documents:", e);
+      }
+
       const newLoan: Loan = {
         id: data.id, clientId: data.clientid || data.client_id, clientName: data.clientname || data.client_name || clientName,
         amount: data.amount, interestRate: data.interestrate || data.interest_rate,
