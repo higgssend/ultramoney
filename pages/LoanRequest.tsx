@@ -13,7 +13,7 @@ import { LoanContractModal } from './features/LoanContractModal';
 const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
   const { updateClient, clients } = useClients();
-  const { globalCurrency } = useSettings();
+  const { globalCurrency, companySettings } = useSettings();
   const navigate = useNavigate();
   
   // Refinancing State
