@@ -126,13 +126,18 @@ export interface BankAccount {
   id: string;
   clientId?: string;
   bankName: string;
+  accountType: 'Ahorro' | 'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo' | 'Inversión' | 'Otro';
   accountNumber: string;
   accountName?: string;
-  accountType: 'Ahorro' | 'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo' | 'Inversión' | 'Otro';
   holderName?: string;
   currency?: 'DOP' | 'USD';
-  status?: 'Activa' | 'Inactiva';
+  balance?: number;
   initialBalance?: number;
+  isDefault?: boolean;
+  isActive?: boolean;
+  status?: 'Activa' | 'Inactiva';
+  notes?: string;
+  createdAt?: string;
 }
 
 export interface ClientNote {
@@ -270,19 +275,7 @@ export function formatReceiptId(id?: string | null): string {
   return `No. ${String(num).padStart(6, '0')}`;
 }
 
-export interface BankAccount {
-  id: string;
-  bankName: string;
-  accountType: 'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo';
-  accountNumber: string;
-  accountName: string;
-  currency?: 'DOP' | 'USD';
-  balance: number;
-  isDefault?: boolean;
-  isActive: boolean;
-  notes?: string;
-  createdAt?: string;
-}
+
 
 export interface Transaction {
   id: string;
