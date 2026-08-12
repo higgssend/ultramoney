@@ -1130,6 +1130,7 @@ const LoanRequest: React.FC = () => {
                     downPayment={hasInitialPayment ? downPayment : 0}
                     downPaymentMode={downPaymentMode}
                     financedAmount={loanType.includes('Financiamiento') ? amount - (hasInitialPayment ? (downPayment || 0) : 0) : undefined}
+                    collateral={collateral}
                 />
             </div>
         </div>

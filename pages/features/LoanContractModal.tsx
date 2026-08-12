@@ -1,7 +1,7 @@
 import React, { useRef, useCallback } from 'react';
 import { X, Printer, Download, Share2, Image as ImageIcon, Building2, Phone, Mail, MapPin } from 'lucide-react';
 import { InstallmentPreview } from '../../utils/LoanEngine';
-import { LoanType, ClosingCostMode, CompanySettings, Client } from '../../types';
+import { LoanType, ClosingCostMode, CompanySettings, Client, Collateral } from '../../types';
 
 interface LoanContractModalProps {
   isOpen: boolean;
@@ -31,6 +31,7 @@ interface LoanContractModalProps {
   downPaymentMode?: string;
   financedAmount?: number;
   customContractId?: string;
+  collateral?: Collateral;
 }
 
 const fmt = (n: number, cur = 'DOP') =>
@@ -48,7 +49,8 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
   isOpen, onClose, client, amount, interest, weeks, frequency, loanType,
   closingCost, closingCostMode, startDate, firstPaymentDate, schedulePreview,
   netDisbursement, totalToPay, installmentAmount, currency, companySettings,
-  itemPrice, downPayment, downPaymentMode, financedAmount, customContractId
+  itemPrice, downPayment, downPaymentMode, financedAmount, customContractId,
+  collateral
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const contractId = customContractId || useRef(RECEIPT_ID()).current;
@@ -362,6 +364,27 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
 
               </div>
             </div>
+
+            {/* Collateral / Guarantee Section if present */}
+            {collateral && collateral.type && collateral.type !== 'Sin Garantía' && (
+              <div className="bg-amber-50 rounded-2xl p-5 mb-6 border border-amber-200">
+                <h3 className="text-xs font-black uppercase tracking-wider text-amber-800 mb-3">Garantía / Prenda Registrada</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <span className="text-slate-500 block font-medium">Tipo de Garantía</span>
+                    <span className="font-extrabold text-slate-900 text-sm">{collateral.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block font-medium">Descripción del Bien</span>
+                    <span className="font-bold text-slate-800">{collateral.description || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block font-medium">Matrícula / Serie / Referencia</span>
+                    <span className="font-bold text-slate-900 font-mono">{collateral.refNumber || '—'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Highlighted Total Banner */}
             <div className="bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-800 rounded-2xl p-6 mb-8 text-center text-white shadow-lg">
