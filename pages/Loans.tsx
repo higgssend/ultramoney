@@ -663,6 +663,7 @@ const Loans: React.FC = () => {
                  </div>
              </div>
           </div>
+      )}
       {contractLoan && (
         <LoanContractModal
           isOpen={Boolean(contractLoan)}
