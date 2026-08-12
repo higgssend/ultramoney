@@ -733,6 +733,90 @@ export const LoanDetail: React.FC = () => {
             )}
           </div>
 
+          {/* Cliente Asociado Card */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/40 shadow-sm relative overflow-hidden space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-4">
+                {client?.avatarUrl ? (
+                  <img src={client.avatarUrl} alt={loan.clientName} className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-200 shadow-md" />
+                ) : (
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-indigo-500/20">
+                    {(loan.clientName || '?').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-0.5 rounded-full">
+                      Cliente Titular
+                    </span>
+                    {client?.creditScore && (
+                      <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-0.5 rounded-full">
+                        Score: {client.creditScore} pts
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1">{loan.clientName}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Cédula: <strong>{loan.clientCedula || client?.cedula || 'N/A'}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {(loan.clientPhone || client?.phone) && (
+                  <a 
+                    href={`https://wa.me/${(loan.clientPhone || client?.phone || '').replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                  >
+                    <MessageCircle className="w-4 h-4" /> WhatsApp
+                  </a>
+                )}
+                <button
+                  onClick={() => navigate(`/clientes/${loan.clientId}`)}
+                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-500/20"
+                >
+                  <User className="w-4 h-4" /> Ver Perfil Completo
+                </button>
+              </div>
+            </div>
+
+            {/* Client Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Teléfono de Contacto</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{loan.clientPhone || client?.phone || 'N/A'}</span>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Dirección de Residencia</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block" title={loan.clientAddress || client?.address || 'N/A'}>
+                  {loan.clientAddress || client?.address || 'N/A'}
+                </span>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Lugar de Trabajo / Ocupación</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{client?.workplace || 'Independiente'}</span>
+              </div>
+            </div>
+
+            {/* Garantes Info if present */}
+            {(client?.guarantorName || client?.coGuarantorName) && (
+              <div className="pt-2 flex flex-wrap gap-4 text-xs text-slate-600 dark:text-slate-400">
+                {client?.guarantorName && (
+                  <span className="bg-indigo-50/60 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 font-medium">
+                    Garante Principal: <strong className="text-slate-900 dark:text-white">{client.guarantorName}</strong> ({client.guarantorPhone || 'Sin tel.'})
+                  </span>
+                )}
+                {client?.coGuarantorName && (
+                  <span className="bg-indigo-50/60 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 font-medium">
+                    Garante Solidario: <strong className="text-slate-900 dark:text-white">{client.coGuarantorName}</strong> ({client.coGuarantorPhone || 'Sin tel.'})
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Secondary Details Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
