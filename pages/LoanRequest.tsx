@@ -1136,12 +1136,17 @@ const LoanRequest: React.FC = () => {
 
                         {/* Contract Preview Button */}
                         <button
-                            onClick={() => setIsContractModalOpen(true)}
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsContractModalOpen(true);
+                            }}
                             className="w-full py-3 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center gap-2 transition-all"
-                            title="Ver recibo completo del préstamo"
+                            title="Previsualizar borrador del contrato sin desembolsar"
                         >
                             <FileText className="w-4 h-4" />
-                            Ver / Imprimir Contrato
+                            Previsualizar Contrato (Borrador)
                         </button>
 
                         {/* Disburse / Save Button */}
@@ -1168,8 +1173,6 @@ const LoanRequest: React.FC = () => {
                         setIsContractModalOpen(false);
                         if (lastCreatedLoanId) {
                             navigate(`/prestamos/${lastCreatedLoanId}`);
-                        } else {
-                            navigate('/prestamos');
                         }
                     }}
                     client={selectedClient}
