@@ -411,7 +411,7 @@ const LoanRequest: React.FC = () => {
 
   if (viewMode === 'create') {
     return (
-        <div className="max-w-5xl mx-auto animate-fade-in space-y-6 pb-10">
+        <div className="w-full max-w-7xl mx-auto animate-fade-in space-y-6 pb-10">
             <div className="flex items-center gap-4">
                 <button onClick={() => { setViewMode('queue'); setProcessingRequestId(null); }} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
                     <ChevronLeft className="w-6 h-6 text-slate-600" />

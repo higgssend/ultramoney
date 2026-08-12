@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Solicitud', path: '/solicitud', icon: FilePlus },
     { name: 'Simulador', path: '/simulador', icon: Calculator }, 
     { name: 'Clientes', path: '/clientes', icon: Users },
-    { name: 'Portales de Cliente', path: '/portales', icon: Users, highlight: true },
+    { name: 'Portales de Cliente', path: '/portales-clientes', icon: Smartphone },
     { name: 'Préstamos', path: '/prestamos', icon: Banknote },
     { name: 'Inventario / Stock', path: '/inventario', icon: Package },
     { name: 'Pagos', path: '/pagos', icon: CalendarClock },
