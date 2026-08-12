@@ -120,10 +120,10 @@ const NewClient: React.FC = () => {
 
     const finalClient = {
       ...currentClient,
-      name: currentClient.name?.trim() || '',
-      phone: currentClient.phone?.trim() || 'N/A',
-      address: currentClient.address?.trim() || 'N/A',
-      cedula: currentClient.cedula?.trim() || 'N/A',
+      name: currentClient.name?.trim() || 'Cliente Nuevo',
+      phone: currentClient.phone?.trim() || '',
+      address: currentClient.address?.trim() || '',
+      cedula: currentClient.cedula?.trim() || '',
       documentType: currentClient.documentType || 'Cedula',
     };
 
@@ -257,9 +257,9 @@ const NewClient: React.FC = () => {
               </div>
 
               <div>
-                <label className={labelClass}>Nombre(s) <span className="text-rose-500">*</span></label>
+                <label className={labelClass}>Nombre(s)</label>
                 <input
-                  required type="text" className={inputClass}
+                  type="text" className={inputClass}
                   value={currentClient.name || ''}
                   onChange={e => set('name', e.target.value)}
                   placeholder="Ej. Juan Carlos"
@@ -276,7 +276,7 @@ const NewClient: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className={labelClass}>Documento de Identidad <span className="text-rose-500">*</span></label>
+                <label className={labelClass}>Documento de Identidad (Opcional)</label>
                 <div className="flex gap-2">
                   <div className="w-36">
                     <CustomSelect
@@ -293,7 +293,7 @@ const NewClient: React.FC = () => {
                     />
                   </div>
                   <input
-                    required type="text"
+                    type="text"
                     className={`${inputClass} flex-1`}
                     value={currentClient.cedula || ''}
                     onChange={e => set('cedula', maskCedula(e.target.value))}

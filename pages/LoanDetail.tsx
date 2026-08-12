@@ -44,55 +44,81 @@ export const LoanDetail: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
 
-  // Edit Loan Modal State
+  // Edit Loan Modal State - Complete Edition
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editInterestRate, setEditInterestRate] = useState<number>(0);
   const [editFrequency, setEditFrequency] = useState<string>('Semanal');
+  const [editLoanType, setEditLoanType] = useState<string>('Amortizado (Cuota Fija)');
+  const [editInstallments, setEditInstallments] = useState<number>(12);
+  const [editRemainingBalance, setEditRemainingBalance] = useState<number>(0);
+  const [editTotalToPay, setEditTotalToPay] = useState<number>(0);
   const [editStartDate, setEditStartDate] = useState<string>('');
+  const [editNextPaymentDate, setEditNextPaymentDate] = useState<string>('');
   const [editNote, setEditNote] = useState<string>('');
   const [editStatus, setEditStatus] = useState<string>('Activo');
 
-  // Delete Loan Modal State
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  // Historical Payment Modal State
-  const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
-  const [histAmount, setHistAmount] = useState<number>(0);
-  const [histDate, setHistDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [histRef, setHistRef] = useState<string>('');
-  const [histNotes, setHistNotes] = useState<string>('Pago Histórico / Migrado');
-  const [histMethod, setHistMethod] = useState<PaymentMethod>('Efectivo');
-  const [histType, setHistType] = useState<'Interes' | 'Capital' | 'Mixto'>('Mixto');
+  // Financiamiento / Garantías state for edit
+  const [editItemPrice, setEditItemPrice] = useState<number>(0);
+  const [editDownPayment, setEditDownPayment] = useState<number>(0);
+  const [editDownPaymentMode, setEditDownPaymentMode] = useState<string>('Efectivo');
+  const [editCollateralType, setEditCollateralType] = useState<string>('Sin Garantía');
+  const [editCollateralDesc, setEditCollateralDesc] = useState<string>('');
+  const [editCollateralRef, setEditCollateralRef] = useState<string>('');
 
   const openEditModal = () => {
     if (!loan) return;
     setEditAmount(loan.amount);
     setEditInterestRate(loan.interestRate);
     setEditFrequency(loan.frequency || loan.paymentFrequency || 'Semanal');
+    setEditLoanType(loan.loanType || 'Amortizado (Cuota Fija)');
+    setEditInstallments(loan.installments || loan.durationWeeks || 12);
+    setEditRemainingBalance(loan.remainingBalance ?? loan.amount);
+    setEditTotalToPay(loan.totalToPay ?? loan.amount);
     setEditStartDate(loan.startDate || new Date().toISOString().split('T')[0]);
+    setEditNextPaymentDate(loan.nextPaymentDate || '');
     setEditNote(loan.note || '');
     setEditStatus(loan.status || 'Activo');
+
+    setEditItemPrice(loan.itemPrice || 0);
+    setEditDownPayment(loan.downPayment || 0);
+    setEditDownPaymentMode(loan.downPaymentMode || 'Efectivo');
+    setEditCollateralType(loan.collateral?.type || 'Sin Garantía');
+    setEditCollateralDesc(loan.collateral?.description || '');
+    setEditCollateralRef(loan.collateral?.refNumber || '');
+
     setIsEditModalOpen(true);
   };
 
   const handleSaveEdit = async () => {
     if (!loan) return;
-    const isRedito = Boolean(loan.loanType && (loan.loanType.includes('Rédito') || loan.loanType.includes('Pagaré Abierto')));
-    let ttp = editAmount;
-    if (!isRedito) {
-      ttp = Math.round((editAmount + (editAmount * (editInterestRate / 100))) * 100) / 100;
-    }
+
+    const collateralObj = editCollateralDesc || editCollateralRef ? {
+      type: editCollateralType as any,
+      description: editCollateralDesc,
+      refNumber: editCollateralRef,
+    } : loan.collateral;
+
     const updatedLoan: Loan = {
       ...loan,
       amount: editAmount,
       interestRate: editInterestRate,
       frequency: editFrequency as any,
       paymentFrequency: editFrequency as any,
+      loanType: editLoanType as any,
+      installments: editInstallments,
+      durationWeeks: editInstallments,
+      remainingBalance: editRemainingBalance,
+      totalToPay: editTotalToPay,
       startDate: editStartDate,
+      nextPaymentDate: editNextPaymentDate || loan.nextPaymentDate,
       note: editNote,
       status: editStatus as any,
-      totalToPay: ttp,
+      itemPrice: editItemPrice || undefined,
+      downPayment: editDownPayment || undefined,
+      downPaymentMode: editDownPaymentMode as any,
+      financedAmount: editItemPrice && editDownPayment ? (editItemPrice - editDownPayment) : loan.financedAmount,
+      collateral: collateralObj,
     };
     await updateLoan(updatedLoan);
     setIsEditModalOpen(false);
@@ -1222,32 +1248,51 @@ export const LoanDetail: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 1: EDIT LOAN */}
+      {/* MODAL 1: EDIT LOAN (EDICIÓN COMPLETA) */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
-              <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-500" /> Editar Préstamo #{formatLoanId(loan.id)}
-              </h3>
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-4 sticky top-0 bg-white dark:bg-slate-900 z-10">
+              <div>
+                <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
+                  <Edit3 className="w-5 h-5 text-amber-500" /> Edición Completa del Préstamo #{formatLoanId(loan.id)}
+                </h3>
+                <p className="text-xs text-slate-500">Puedes modificar cualquier condición o parámetro del préstamo.</p>
+              </div>
               <button onClick={() => setIsEditModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Monto Prestado / Financiado (RD$)</label>
-                <input 
-                  type="number" 
-                  value={editAmount === 0 ? '' : editAmount} 
-                  onFocus={e => e.target.select()}
-                  onChange={e => setEditAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
-                  className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold text-sm"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Monto Prestado / Capital (RD$)</label>
+                  <input 
+                    type="number" 
+                    value={editAmount === 0 ? '' : editAmount} 
+                    onFocus={e => e.target.select()}
+                    onChange={e => setEditAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Modalidad / Tipo de Préstamo</label>
+                  <select 
+                    value={editLoanType} 
+                    onChange={e => setEditLoanType(e.target.value)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  >
+                    <option value="Amortizado (Cuota Fija)">Amortizado (Cuota Fija)</option>
+                    <option value="Amortizado (Capital Fijo)">Amortizado (Capital Fijo)</option>
+                    <option value="Rédito (Solo Interés)">Rédito (Solo Interés / Pagaré Abierto)</option>
+                    <option value="Financiamiento de Equipo (Con/Sin Inicial)">Financiamiento de Equipo / Bienes</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tasa de Interés (%)</label>
                   <input 
@@ -1271,15 +1316,57 @@ export const LoanDetail: React.FC = () => {
                     <option value="Diario">Diario</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Plazo (No. Cuotas)</label>
+                  <input 
+                    type="number" 
+                    value={editInstallments === 0 ? '' : editInstallments} 
+                    onFocus={e => e.target.select()}
+                    onChange={e => setEditInstallments(e.target.value === '' ? 0 : Number(e.target.value))} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Inicio</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Balance Restante por Cobrar (RD$)</label>
+                  <input 
+                    type="number" 
+                    value={editRemainingBalance === 0 ? '' : editRemainingBalance} 
+                    onFocus={e => e.target.select()}
+                    onChange={e => setEditRemainingBalance(e.target.value === '' ? 0 : Number(e.target.value))} 
+                    className="w-full p-3 border border-rose-200 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-900/20 text-rose-900 dark:text-rose-200 rounded-xl font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Monto Total a Pagar (RD$)</label>
+                  <input 
+                    type="number" 
+                    value={editTotalToPay === 0 ? '' : editTotalToPay} 
+                    onFocus={e => e.target.select()}
+                    onChange={e => setEditTotalToPay(e.target.value === '' ? 0 : Number(e.target.value))} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Inicio / Desembolso</label>
                   <input 
                     type="date" 
                     value={editStartDate} 
                     onChange={e => setEditStartDate(e.target.value)} 
+                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha Próximo Cobro</label>
+                  <input 
+                    type="date" 
+                    value={editNextPaymentDate} 
+                    onChange={e => setEditNextPaymentDate(e.target.value)} 
                     className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium"
                   />
                 </div>
@@ -1299,14 +1386,97 @@ export const LoanDetail: React.FC = () => {
                 </div>
               </div>
 
+              {/* FINANCIAMIENTO / ARTÍCULO */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <h4 className="font-bold text-slate-800 dark:text-white text-xs uppercase tracking-wider">Datos de Financiamiento de Equipo (Opcional)</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Precio Artículo</label>
+                    <input 
+                      type="number" 
+                      value={editItemPrice === 0 ? '' : editItemPrice} 
+                      onFocus={e => e.target.select()}
+                      onChange={e => setEditItemPrice(e.target.value === '' ? 0 : Number(e.target.value))} 
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Inicial Recibida</label>
+                    <input 
+                      type="number" 
+                      value={editDownPayment === 0 ? '' : editDownPayment} 
+                      onFocus={e => e.target.select()}
+                      onChange={e => setEditDownPayment(e.target.value === '' ? 0 : Number(e.target.value))} 
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Vía de Inicial</label>
+                    <select 
+                      value={editDownPaymentMode} 
+                      onChange={e => setEditDownPaymentMode(e.target.value)} 
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900 font-medium"
+                    >
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* GARANTÍAS */}
+              <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 space-y-3">
+                <h4 className="font-bold text-amber-900 dark:text-amber-300 text-xs uppercase tracking-wider">Datos de Garantía Declarada</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo Garantía</label>
+                    <select 
+                      value={editCollateralType} 
+                      onChange={e => setEditCollateralType(e.target.value)} 
+                      className="w-full p-2.5 border border-amber-200 dark:border-amber-800 rounded-xl dark:bg-slate-900 font-medium"
+                    >
+                      <option value="Sin Garantía">Sin Garantía</option>
+                      <option value="Teléfono / Celular">Teléfono / Celular</option>
+                      <option value="Tarjeta de Crédito / Débito">Tarjeta de Crédito / Débito</option>
+                      <option value="Vehículo">Vehículo</option>
+                      <option value="Propiedad">Propiedad</option>
+                      <option value="Electrodoméstico">Electrodoméstico</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción / Marca / Modelo</label>
+                    <input 
+                      type="text" 
+                      value={editCollateralDesc} 
+                      onChange={e => setEditCollateralDesc(e.target.value)} 
+                      placeholder="Ej: iPhone 15 Pro Max 256GB"
+                      className="w-full p-2.5 border border-amber-200 dark:border-amber-800 rounded-xl dark:bg-slate-900 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">IMEI / Serial / Matrícula</label>
+                    <input 
+                      type="text" 
+                      value={editCollateralRef} 
+                      onChange={e => setEditCollateralRef(e.target.value)} 
+                      placeholder="Ej: IMEI 35489..."
+                      className="w-full p-2.5 border border-amber-200 dark:border-amber-800 rounded-xl dark:bg-slate-900 font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Notas / Observaciones</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Notas / Observaciones del Préstamo</label>
                 <textarea 
                   value={editNote} 
                   onChange={e => setEditNote(e.target.value)} 
                   rows={2} 
                   className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-xs" 
-                  placeholder="Detalles sobre las modificaciones..."
+                  placeholder="Observaciones generales sobre el crédito..."
                 />
               </div>
 
@@ -1321,7 +1491,7 @@ export const LoanDetail: React.FC = () => {
                   onClick={handleSaveEdit} 
                   className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"
                 >
-                  <Save className="w-4 h-4" /> Guardar Cambios
+                  <Save className="w-4 h-4" /> Guardar Cambios Completos
                 </button>
               </div>
             </div>
