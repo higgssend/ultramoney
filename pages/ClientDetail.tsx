@@ -508,6 +508,10 @@ const ClientDetail: React.FC = () => {
                                              <Receipt className="w-4 h-4" /> Pagos
                                          </button>
                                      </div>
+                                     {loan.status !== 'Completado' && (
+                                         <button 
+                                             onClick={() => handleSendReminder(loan)}
+                                             className="w-full py-2 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
                                          >
                                              <MessageCircle className="w-4 h-4" /> Recordatorio WhatsApp
                                          </button>
