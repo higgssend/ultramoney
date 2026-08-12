@@ -18,6 +18,7 @@ interface ClientContextType {
   deleteClient: (id: string) => Promise<void>;
   addClientNote: (note: ClientNote) => void;
   addClientDocument: (doc: ClientDocument, file?: File) => void;
+  updateClientDocument: (id: string, updates: Partial<ClientDocument>, file?: File) => Promise<void>;
   removeClientDocument: (id: string) => void;
   generateClientPin: (clientId: string) => string;
   addRoute: (route: Omit<Route, 'id' | 'createdAt'>) => Promise<void>;
@@ -298,6 +299,40 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (!error) {
       setClientDocuments(prev => prev.filter(d => d.id !== id));
       addToast("Documento eliminado", "success");
+    }
+  };
+
+  const updateClientDocument = async (id: string, updates: Partial<ClientDocument>, file?: File) => {
+    if (!currentUser) return;
+    let fileUrl = updates.fileUrl;
+
+    if (file) {
+      const ext = file.name.split('.').pop();
+      const filename = `${updates.clientId || 'docs'}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+      const { error: uploadError } = await insforge.storage.from('client-documents').upload(filename, file);
+      if (uploadError) {
+        addToast("Error al subir nuevo archivo", 'error');
+        return;
+      }
+      const { data } = insforge.storage.from('client-documents').getPublicUrl(filename);
+      fileUrl = data.publicUrl;
+    }
+
+    const payload: any = {};
+    if (updates.title !== undefined) payload.title = updates.title;
+    if (updates.title !== undefined) payload.name = updates.title;
+    if (updates.type !== undefined) payload.type = updates.type;
+    if (fileUrl !== undefined) {
+      payload.file_url = fileUrl;
+      payload.url = fileUrl;
+    }
+
+    const { error } = await insforge.database.from('client_documents').update(payload).eq('id', id);
+    if (!error) {
+      setClientDocuments(prev => prev.map(d => d.id === id ? { ...d, ...updates, ...(fileUrl ? { fileUrl } : {}) } : d));
+      addToast("Documento actualizado exitosamente", "success");
+    } else {
+      addToast("Error al actualizar documento", "error");
     }
   };
 

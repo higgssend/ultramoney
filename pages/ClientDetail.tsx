@@ -8,7 +8,7 @@ import {
   Briefcase, DollarSign, Lock, Mail, Clock, Camera, Shield, MessageCircle
 } from 'lucide-react';
 import { useSettings, useClients, useLoans, useAccounting } from '../context/StoreContext';
-import { LoanStatus, BankAccount, Client, Loan, Transaction, ClientDocument } from '../types';
+import { LoanStatus, BankAccount, Client, Loan, Transaction, ClientDocument, formatLoanId } from '../types';
 import { useToast } from '../context/ToastContext';
 import { ContractViewer } from './features/ContractViewer';
 import { DocumentGenerator, DocumentType } from '../components/DocumentGenerator';
@@ -20,7 +20,7 @@ const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { clients, clientNotes, clientDocuments, addClientNote, updateClient, addClientDocument, removeClientDocument } = useClients();
+  const { clients, clientNotes, clientDocuments, addClientNote, updateClient, addClientDocument, updateClientDocument, removeClientDocument } = useClients();
   const { loans } = useLoans();
   const { transactions, bankAccounts, addBankAccount, removeBankAccount } = useAccounting();
   const { companySettings } = useSettings();
@@ -53,6 +53,33 @@ const ClientDetail: React.FC = () => {
   // Edit State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<Client | null>(null);
+
+  // Document Edit State
+  const [editingDoc, setEditingDoc] = useState<ClientDocument | null>(null);
+  const [editDocTitle, setEditDocTitle] = useState('');
+  const [editDocType, setEditDocType] = useState<ClientDocument['type']>('Cedula');
+  const [editDocFile, setEditDocFile] = useState<File | null>(null);
+  const [isEditDocModalOpen, setIsEditDocModalOpen] = useState(false);
+
+  const handleOpenEditDoc = (doc: ClientDocument) => {
+    setEditingDoc(doc);
+    setEditDocTitle(doc.title);
+    setEditDocType(doc.type);
+    setEditDocFile(null);
+    setIsEditDocModalOpen(true);
+  };
+
+  const handleSaveEditDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDoc) return;
+    await updateClientDocument(editingDoc.id, {
+      title: editDocTitle,
+      type: editDocType,
+      clientId: editingDoc.clientId
+    }, editDocFile || undefined);
+    setIsEditDocModalOpen(false);
+    setEditingDoc(null);
+  };
 
   const handleAvatarFileSelectInDetail = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -560,24 +587,85 @@ const ClientDetail: React.FC = () => {
                           </button>
                       </div>
                  </div>
-                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                     {myDocuments.map(doc => (
-                         <div key={doc.id} className="bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center gap-3 hover:shadow-lg transition-all cursor-pointer group relative hover:-translate-y-1" onClick={() => setPreviewDoc(doc)}>
-                             <button 
-                                onClick={(e) => { e.stopPropagation(); removeClientDocument(doc.id); }}
-                                className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                     {myDocuments.map(doc => {
+                         const isAuto = doc.id.startsWith('auto-');
+                         return (
+                             <div 
+                                 key={doc.id} 
+                                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-all group"
                              >
-                                 <Trash2 className="w-4 h-4" />
-                             </button>
-                             <div className="w-16 h-16 bg-white dark:bg-slate-700 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
-                                 {doc.fileType.startsWith('image/') ? <img src={doc.fileUrl} className="w-full h-full object-cover" /> : getDocIcon(doc.type, doc.fileType)}
+                                 <div>
+                                     <div className="flex justify-between items-start mb-3">
+                                         <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center font-bold overflow-hidden border border-indigo-100 dark:border-indigo-800">
+                                             {doc.fileType?.startsWith('image/') ? (
+                                                 <img src={doc.fileUrl} alt={doc.title} className="w-full h-full object-cover" />
+                                             ) : (
+                                                 <FileText className="w-6 h-6" />
+                                             )}
+                                         </div>
+                                         <span className={`text-[10px] px-2.5 py-1 rounded-full font-extrabold uppercase ${
+                                             doc.type === 'Cedula' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                             doc.type === 'Contrato' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300' :
+                                             'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                                         }`}>
+                                             {doc.type}
+                                         </span>
+                                     </div>
+
+                                     <h4 className="font-bold text-slate-800 dark:text-white text-sm line-clamp-2 mb-1">{doc.title}</h4>
+                                     <p className="text-[11px] text-slate-400">Fecha: {doc.uploadDate}</p>
+                                 </div>
+
+                                 <div className="flex items-center gap-1.5 pt-4 mt-3 border-t border-slate-100 dark:border-slate-700/60">
+                                     <button
+                                         onClick={() => {
+                                             if (doc.fileUrl.startsWith('http') && doc.fileUrl.includes('/documento/')) {
+                                                 window.open(doc.fileUrl, '_blank');
+                                             } else {
+                                                 setPreviewDoc(doc);
+                                             }
+                                         }}
+                                         className="flex-1 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all"
+                                         title="Ver o imprimir documento"
+                                     >
+                                         <Eye className="w-3.5 h-3.5" /> Ver
+                                     </button>
+
+                                     {!isAuto && (
+                                         <button
+                                             onClick={() => handleOpenEditDoc(doc)}
+                                             className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all"
+                                             title="Editar título o categoría"
+                                         >
+                                             <Edit className="w-4 h-4" />
+                                         </button>
+                                     )}
+
+                                     <button
+                                         onClick={() => {
+                                             navigator.clipboard.writeText(doc.fileUrl);
+                                             addToast('Enlace del documento copiado', 'success');
+                                         }}
+                                         className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all"
+                                         title="Copiar enlace directo"
+                                     >
+                                         <Globe className="w-4 h-4" />
+                                     </button>
+
+                                     {!isAuto && (
+                                         <button
+                                             onClick={() => removeClientDocument(doc.id)}
+                                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/40 rounded-xl transition-all"
+                                             title="Eliminar documento"
+                                         >
+                                             <Trash2 className="w-4 h-4" />
+                                         </button>
+                                     )}
+                                 </div>
                              </div>
-                             <div className="text-center w-full">
-                                 <p className="font-bold text-slate-700 dark:text-slate-200 text-xs truncate w-full mb-1">{doc.title}</p>
-                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${doc.type === 'Cedula' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>{doc.type}</span>
-                             </div>
-                         </div>
-                     ))}
+                         );
+                     })}
                  </div>
             </div>
         )}
@@ -677,7 +765,72 @@ const ClientDetail: React.FC = () => {
                   )}
                   <p className="text-center text-white mt-4 font-bold">{previewDoc.title}</p>
               </div>
-          </div>
+        {/* Edit Document Modal */}
+      {isEditDocModalOpen && editingDoc && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+                 <div className="flex justify-between items-center mb-6">
+                     <h3 className="font-bold text-lg text-slate-800 dark:text-white">Editar Documento del Cliente</h3>
+                     <button onClick={() => setIsEditDocModalOpen(false)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600" /></button>
+                 </div>
+                 <form onSubmit={handleSaveEditDoc} className="space-y-4">
+                     <div>
+                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Título del Documento</label>
+                         <input 
+                             type="text" 
+                             required
+                             className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-700 dark:text-white text-sm font-bold"
+                             value={editDocTitle} 
+                             onChange={e => setEditDocTitle(e.target.value)} 
+                         />
+                     </div>
+                     <div>
+                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Categoría / Tipo</label>
+                         <CustomSelect 
+                             className="w-full"
+                             value={editDocType} 
+                             onChange={e => setEditDocType(e as any)}
+                             options={[
+                                 { value: 'Cedula', label: 'Cédula de Identidad' },
+                                 { value: 'Pasaporte', label: 'Pasaporte' },
+                                 { value: 'Matricula', label: 'Matrícula de Vehículo' },
+                                 { value: 'Titulo', label: 'Título de Propiedad' },
+                                 { value: 'Contrato', label: 'Contrato Firmado / Pagaré' },
+                                 { value: 'Licencia', label: 'Licencia de Conducir' },
+                                 { value: 'Ingresos', label: 'Comprobante de Ingresos / Trabajo' },
+                                 { value: 'Garantia', label: 'Garantía / Aval' },
+                                 { value: 'Otro', label: 'Otro' }
+                             ]}
+                         />
+                     </div>
+                     <div>
+                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Reemplazar Archivo / Foto (Opcional)</label>
+                         <input 
+                             type="file" 
+                             accept="image/*,.pdf"
+                             onChange={e => setEditDocFile(e.target.files?.[0] || null)}
+                             className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                         />
+                     </div>
+
+                     <div className="flex gap-3 pt-4">
+                         <button 
+                             type="button" 
+                             onClick={() => setIsEditDocModalOpen(false)} 
+                             className="flex-1 py-3 rounded-xl font-bold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+                         >
+                             Cancelar
+                         </button>
+                         <button 
+                             type="submit" 
+                             className="flex-1 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/20"
+                         >
+                             Guardar Cambios
+                         </button>
+                     </div>
+                 </form>
+             </div>
+        </div>
       )}
 
       {/* Official Legal Document Generator Modal */}
