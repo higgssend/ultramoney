@@ -716,7 +716,7 @@ const Payments: React.FC = () => {
                                                     className="text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
                                                     title="Cargar automáticamente el monto regular / interés sugerido"
                                                 >
-                                                    ⚡ Auto (${autoSuggestedAmount.toLocaleString()})
+                                                    Auto (${autoSuggestedAmount.toLocaleString()})
                                                 </button>
 
                                                 <button 
@@ -1328,7 +1328,7 @@ Gracias por su pago.`;
                         onClick={handleDownloadImage}
                         className="col-span-2 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-emerald-600/20"
                     >
-                        <Image className="w-5 h-5" /> 🖼️ Descargar Recibo como Imagen (PNG)
+                        <Image className="w-5 h-5" /> Descargar Recibo como Imagen (PNG)
                     </button>
                     <button 
                         onClick={handleCopyLink}

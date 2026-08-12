@@ -485,7 +485,7 @@ const LoanRequest: React.FC = () => {
                                                 />
                                                 {selectedLoanToRefinance && (
                                                     <div className="text-xs text-amber-900 font-medium bg-white p-3 rounded-xl border border-amber-200 mt-2 space-y-1">
-                                                        <p>🔄 <strong>Consolidación en 1 Clic:</strong></p>
+                                                        <p><strong>Consolidación en 1 Clic:</strong></p>
                                                         <p>• Saldo anterior a saldar: <strong>RD$ {(loans.find(l => l.id === selectedLoanToRefinance)?.remainingBalance || 0).toLocaleString()}</strong></p>
                                                         <p>• Desembolso neto al cliente: <strong className="text-emerald-700">RD$ {Math.max(0, amount - (loans.find(l => l.id === selectedLoanToRefinance)?.remainingBalance || 0) - closingCost).toLocaleString()}</strong></p>
                                                     </div>
@@ -637,10 +637,10 @@ const LoanRequest: React.FC = () => {
                                                     onChange={(v) => setDownPaymentMode(v as any)}
                                                     className="w-full text-xs font-medium"
                                                     options={[
-                                                        { value: 'Efectivo', label: '💵 Efectivo (Cobro Inmediato)' },
-                                                        { value: 'Transferencia', label: '🏦 Transferencia Bancaria' },
-                                                        { value: 'Tarjeta', label: '💳 Tarjeta de Crédito / Débito' },
-                                                        { value: 'Cheque', label: '📄 Cheque' }
+                                                        { value: 'Efectivo', label: 'Efectivo (Cobro Inmediato)' },
+                                                        { value: 'Transferencia', label: 'Transferencia Bancaria' },
+                                                        { value: 'Tarjeta', label: 'Tarjeta de Crédito / Débito' },
+                                                        { value: 'Cheque', label: 'Cheque' }
                                                     ]}
                                                 />
                                             </div>

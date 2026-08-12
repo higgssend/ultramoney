@@ -158,11 +158,11 @@ export const InventoryPage: React.FC = () => {
             onChange={(val) => setSelectedCategory(val)}
             className="w-48 text-xs font-medium"
             options={[
-              { value: 'Todas', label: '📦 Todas las Categorías' },
-              { value: 'Teléfono / Celular', label: '📱 Teléfonos / Celulares' },
-              { value: 'Electrodoméstico', label: '📺 Electrodomésticos' },
-              { value: 'Vehículo', label: '🚗 Vehículos / Pasolas' },
-              { value: 'Otro', label: '📦 Otros Artículos' }
+              { value: 'Todas', label: 'Todas las Categorías' },
+              { value: 'Teléfono / Celular', label: 'Teléfonos / Celulares' },
+              { value: 'Electrodoméstico', label: 'Electrodomésticos' },
+              { value: 'Vehículo', label: 'Vehículos / Pasolas' },
+              { value: 'Otro', label: 'Otros Artículos' }
             ]}
           />
         </div>
@@ -265,10 +265,10 @@ export const InventoryPage: React.FC = () => {
                     onChange={(v) => setFormData({ ...formData, category: v })}
                     className="w-full text-xs"
                     options={[
-                      { value: 'Teléfono / Celular', label: '📱 Teléfono / Celular' },
-                      { value: 'Electrodoméstico', label: '📺 Electrodoméstico / Equipo' },
-                      { value: 'Vehículo', label: '🚗 Vehículo / Pasola' },
-                      { value: 'Otro', label: '📦 Otro bien' }
+                      { value: 'Teléfono / Celular', label: 'Teléfono / Celular' },
+                      { value: 'Electrodoméstico', label: 'Electrodoméstico / Equipo' },
+                      { value: 'Vehículo', label: 'Vehículo / Pasola' },
+                      { value: 'Otro', label: 'Otro bien' }
                     ]}
                   />
                 </div>
@@ -324,9 +324,9 @@ export const InventoryPage: React.FC = () => {
                     onChange={(v) => setFormData({ ...formData, condition: v })}
                     className="w-full text-xs"
                     options={[
-                      { value: 'Excelente / Como Nuevo', label: '✨ Excelente / Como Nuevo' },
-                      { value: 'Bueno con uso normal', label: '👍 Bueno (Uso Normal)' },
-                      { value: 'Con detalles / Rayaduras', label: '⚠️ Con detalles' }
+                      { value: 'Excelente / Como Nuevo', label: 'Excelente / Como Nuevo' },
+                      { value: 'Bueno con uso normal', label: 'Bueno (Uso Normal)' },
+                      { value: 'Con detalles / Rayaduras', label: 'Con detalles' }
                     ]}
                   />
                 </div>
@@ -377,9 +377,9 @@ export const InventoryPage: React.FC = () => {
                     onChange={(v) => setFormData({ ...formData, status: v as any })}
                     className="w-full text-xs"
                     options={[
-                      { value: 'Disponible', label: '🟢 Disponible en Stock' },
-                      { value: 'Financiado', label: '🔵 Financiado' },
-                      { value: 'Vendido', label: '⚪ Vendido' }
+                      { value: 'Disponible', label: 'Disponible en Stock' },
+                      { value: 'Financiado', label: 'Financiado' },
+                      { value: 'Vendido', label: 'Vendido' }
                     ]}
                   />
                 </div>

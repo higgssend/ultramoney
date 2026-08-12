@@ -339,7 +339,7 @@ const NewClient: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">
-                        {docFile ? '✓ Imagen seleccionada' : 'Seleccionar imagen o PDF'}
+                        {docFile ? 'Imagen seleccionada' : 'Seleccionar imagen o PDF'}
                       </p>
                       <p className="text-xs text-slate-400">JPG, PNG, PDF hasta 5MB</p>
                     </div>
@@ -703,7 +703,7 @@ const NewClient: React.FC = () => {
             <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 p-4 rounded-2xl space-y-3">
               <label className="block text-xs font-bold text-indigo-950 dark:text-indigo-200 flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-indigo-600" /> Enlace del Portal del Cliente</span>
-                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">✓ Portal Activo</span>
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">Portal Activo</span>
               </label>
               
               <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 p-2.5 rounded-xl font-mono text-xs text-indigo-900 dark:text-indigo-300 font-bold overflow-x-auto">
