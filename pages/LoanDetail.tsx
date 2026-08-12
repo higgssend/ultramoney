@@ -246,46 +246,41 @@ export const LoanDetail: React.FC = () => {
 
   // Amortization Table Generator
   const getAmortizationTable = () => {
-    const totalPeriods = loan.loanType === 'Rédito' ? 12 : (loan.durationWeeks || 1);
-    const balance = loan.remainingBalance;
+    const isRedito = (loan.loanType || '').includes('Rédito') || (loan.loanType || '').includes('Pagaré');
+    const totalPeriods = isRedito ? 1 : Math.max(1, loan.durationWeeks || 1);
     const rate = (loan.interestRate || 0) / 100;
 
-    let rows = [];
-    let currentBalance = loan.amount;
-    const isRedito = loan.loanType === 'Rédito';
-
-    for (let i = 1; i <= totalPeriods; i++) {
-      let interestAmount = 0;
-      let principalAmount = 0;
-      let totalInstallment = 0;
-
-      if (isRedito) {
-        interestAmount = loan.amount * rate;
-        principalAmount = 0;
-        totalInstallment = interestAmount;
-      } else {
-        totalInstallment = loan.totalToPay / totalPeriods;
-        interestAmount = (loan.amount * rate) / totalPeriods;
-        principalAmount = totalInstallment - interestAmount;
-        currentBalance = Math.max(0, currentBalance - principalAmount);
-      }
-
-      const pDate = new Date(loan.startDate || Date.now());
-      if (loan.frequency === 'Semanal') pDate.setDate(pDate.getDate() + (i * 7));
-      else if (loan.frequency === 'Quincenal') pDate.setDate(pDate.getDate() + (i * 15));
-      else if (loan.frequency === 'Diario') pDate.setDate(pDate.getDate() + i);
-      else pDate.setMonth(pDate.getMonth() + i);
-
-      rows.push({
-        period: i,
-        date: pDate.toISOString().split('T')[0],
-        principal: principalAmount,
-        interest: interestAmount,
-        amount: totalInstallment,
-        balance: currentBalance
-      });
+    if (!isRedito) {
+      const engineSchedule = LoanEngine.generateAmortizationSchedule(
+        loan.amount || 0,
+        loan.interestRate || 0,
+        totalPeriods,
+        loan.frequency || 'Semanal',
+        loan.startDate || new Date().toISOString().split('T')[0],
+        { amortizationMethod: 'Amortizado' },
+        loan.loanType || 'Amortizado'
+      );
+      return (engineSchedule || []).map(s => ({
+        period: s.installmentNumber,
+        date: s.date,
+        principal: s.principal,
+        interest: s.interest,
+        amount: s.total,
+        balance: s.balance
+      }));
     }
-    return rows;
+
+    // For Redito (Pagaré Abierto)
+    const interestAmount = (loan.amount || 0) * rate;
+    const dateStr = LoanEngine.getNextDate(loan.startDate || new Date().toISOString().split('T')[0], loan.frequency || 'Semanal', 1, loan.startDate);
+    return [{
+      period: 1,
+      date: dateStr,
+      principal: 0,
+      interest: interestAmount,
+      amount: interestAmount,
+      balance: loan.amount || 0
+    }];
   };
 
   // Collateral Wording Analysis
