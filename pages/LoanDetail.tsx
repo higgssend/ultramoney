@@ -4,7 +4,7 @@ import {
   ArrowLeft, FileText, Banknote, Shield, AlertTriangle, RefreshCw, 
   DollarSign, Printer, Download, FileCode, FileImage, CloudUpload, 
   MessageCircle, CreditCard, CheckCircle, Clock, Calendar, ChevronRight, User, Eye, Receipt,
-  Edit3, Trash2, Save, X, AlertCircle
+  Edit3, Trash2, Save, X, AlertCircle, Copy, Link
 } from 'lucide-react';
 import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
 import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod } from '../types';
@@ -478,13 +478,37 @@ export const LoanDetail: React.FC = () => {
     }
   };
 
+  const handleCopyDocumentLink = () => {
+    const docPathMap: Record<string, string> = {
+      'pagare': 'pagare',
+      'contrato': 'contrato',
+      'estado_cuenta': 'estado',
+      'carta_saldo': 'saldo',
+      'recibo': 'recibo'
+    };
+    const path = docPathMap[docType] || 'contrato';
+    const link = `${window.location.origin}/documento/${path}/${loan.id}`;
+    navigator.clipboard.writeText(link);
+    toast.success(`Enlace del documento (${docType}) copiado al portapapeles`);
+  };
+
   const handleWhatsAppShare = () => {
-    let message = `Hola ${loan.clientName.split(' ')[0]},\n\n`;
-    message += `Te enviamos el documento ${docType} oficial de tu Préstamo #${formatLoanId(loan.id)}.\n`;
-    if (documentUrl) {
-      message += `Puedes ver tu PDF oficial aquí:\n${documentUrl}\n\n`;
-    }
-    message += `Gracias por confiar en ${company.name || 'nosotros'}.`;
+    const docPathMap: Record<string, string> = {
+      'pagare': 'pagare',
+      'contrato': 'contrato',
+      'estado_cuenta': 'estado',
+      'carta_saldo': 'saldo',
+      'recibo': 'recibo'
+    };
+    const path = docPathMap[docType] || 'contrato';
+    const publicDocUrl = `${window.location.origin}/documento/${path}/${loan.id}`;
+
+    let message = `Hola *${loan.clientName.split(' ')[0]}*,\n\n`;
+    message += `Te compartimos tu documento oficial (*${docType.toUpperCase()}*) del Préstamo #${formatLoanId(loan.id)}:\n\n`;
+    message += `*Monto:* RD$ ${loan.amount.toLocaleString()}\n`;
+    message += `*Estado:* ${loan.status}\n\n`;
+    message += `Puedes ver y descargar tu documento digital aquí:\n${publicDocUrl}\n\n`;
+    message += `Gracias por preferir a ${company.name || 'UltraMoney'}.`;
     
     const cleanPhone = client?.phone ? client.phone.replace(/\D/g, '') : '';
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -930,8 +954,11 @@ export const LoanDetail: React.FC = () => {
                 <button onClick={handleCloudSave} disabled={isUploading} className="px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md flex items-center gap-1.5 disabled:opacity-50">
                   <CloudUpload className="w-4 h-4" /> {isUploading ? 'Guardando...' : 'Nube'}
                 </button>
-                <button onClick={handleWhatsAppShare} className="px-3.5 py-2 bg-green-500 text-white rounded-xl text-xs font-bold hover:bg-green-600 shadow-md flex items-center gap-1.5">
+                <button onClick={handleWhatsAppShare} className="px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md flex items-center gap-1.5">
                   <MessageCircle className="w-4 h-4" /> WhatsApp
+                </button>
+                <button onClick={handleCopyDocumentLink} className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 shadow-md flex items-center gap-1.5" title="Copiar enlace web único de este documento">
+                  <Copy className="w-4 h-4" /> Copiar Link
                 </button>
               </div>
             </div>

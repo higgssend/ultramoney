@@ -32,6 +32,7 @@ import { CompanyLogin } from './pages/CompanyLogin';
 import ClientPortals from './pages/ClientPortals';
 import { ClientPortal } from './pages/ClientPortal';
 import { ReceiptView } from './pages/ReceiptView';
+import { PublicDocumentView } from './pages/PublicDocumentView';
 import { HiddenDocumentRenderer } from './components/HiddenDocumentRenderer';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
@@ -120,6 +121,7 @@ const AppContent: React.FC = () => {
     location.pathname.startsWith('/portal/') ||
     location.pathname.startsWith('/login/') ||
     location.pathname.startsWith('/recibo/') ||
+    location.pathname.startsWith('/documento/') ||
     location.pathname === '/ayuda' ||
     location.pathname.startsWith('/features/') || 
     location.pathname === '/';
@@ -152,6 +154,7 @@ const AppContent: React.FC = () => {
             <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
             <Route path="/portal/:clientId" element={<ClientPortal />} />
             <Route path="/recibo/:transactionId" element={<ReceiptView />} />
+            <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
             <Route path="/ayuda" element={<HelpPage />} />
 
             {/* Feature Routes (Public) */}
