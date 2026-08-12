@@ -152,11 +152,14 @@ export interface LoanRequestDB {
   duration_weeks?: number;
   frequency?: string;
   loan_type?: string;
+  loan_destination?: string;
   closing_cost?: number;
   closing_cost_mode?: string;
   payment_day?: number;
   purpose?: string;
   notes?: string;
+  observations?: string;
+  collateral?: any;
   status: string;
   created_at?: string;
   request_date?: string;

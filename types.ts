@@ -193,6 +193,7 @@ export interface Loan {
   collateral?: Collateral;
   guarantorId?: string;
   note?: string;
+  currency?: 'DOP' | 'USD';
 }
 
 export interface LoanRequest {
