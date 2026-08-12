@@ -11,9 +11,16 @@ export type LoanType = 'Amortizado (Cuota Fija)' | 'Amortizado (Capital Fijo)' |
 export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
 
 export interface Collateral {
-  type: 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Sin Garantía';
+  type: 'Teléfono / Celular' | 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Otro' | 'Sin Garantía';
   description: string;
-  refNumber: string;        // Matrícula, título, serial
+  refNumber: string;        // Matrícula, título, serial, IMEI
+  brand?: string;           // Marca
+  model?: string;           // Modelo
+  imei2?: string;           // IMEI 2 (Dual SIM)
+  condition?: string;       // Estado / Condición
+  storage?: string;         // Almacenamiento (128GB, etc.)
+  color?: string;           // Color
+  defects?: string;         // Defectos o detalles cosméticos
   estimatedValue?: number;  // Valor estimado
   documentIds?: string[];   // IDs de ClientDocument adjuntos
   ownerName?: string;       // Nombre del dueño (si es un tercero)
