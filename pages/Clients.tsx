@@ -226,8 +226,12 @@ const Clients: React.FC = () => {
                     >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(client.name)} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm`}>
-                            {getInitials(client.name, client.lastName)}
+                          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(client.name)} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700`}>
+                            {client.avatarUrl ? (
+                              <img src={client.avatarUrl} alt={client.name} className="w-full h-full object-cover" />
+                            ) : (
+                              getInitials(client.name, client.lastName)
+                            )}
                           </div>
                           <div>
                             <p className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
@@ -321,8 +325,12 @@ const Clients: React.FC = () => {
                   className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 cursor-pointer hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all group"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getAvatarColor(client.name)} flex items-center justify-center text-white font-bold text-base shadow-sm`}>
-                      {getInitials(client.name, client.lastName)}
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getAvatarColor(client.name)} flex items-center justify-center text-white font-bold text-base shrink-0 shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700`}>
+                      {client.avatarUrl ? (
+                        <img src={client.avatarUrl} alt={client.name} className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(client.name, client.lastName)
+                      )}
                     </div>
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-semibold ${statusBadge.cls}`}>
                       {statusBadge.icon} {client.status}

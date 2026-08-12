@@ -1,0 +1,223 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { ZoomIn, ZoomOut, RotateCw, Check, X, Move, Crop } from 'lucide-react';
+
+interface ImageCropperModalProps {
+  imageSrc: string;
+  onCropComplete: (croppedBase64: string) => void;
+  onClose: () => void;
+}
+
+export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
+  imageSrc,
+  onCropComplete,
+  onClose,
+}) => {
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  // Reset position when zoom changes
+  const handleZoomChange = (newZoom: number) => {
+    const clampedZoom = Math.min(Math.max(newZoom, 1), 4);
+    setZoom(clampedZoom);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragStart({ x: clientX - position.x, y: clientY - position.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setPosition({
+      x: clientX - dragStart.x,
+      y: clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Perform square crop on canvas
+  const handleApplyCrop = () => {
+    const img = imageRef.current;
+    if (!img) return;
+
+    const canvas = document.createElement('canvas');
+    const targetSize = 400; // 400x400 output square avatar
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fill white background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, targetSize, targetSize);
+
+    // Save context state
+    ctx.save();
+    // Move to center of canvas for rotation and zoom
+    ctx.translate(targetSize / 2, targetSize / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(zoom, zoom);
+
+    // Calculate crop ratio relative to preview window
+    const boxSize = 260; // 260px preview square box
+    const scaleFactor = targetSize / boxSize;
+
+    const drawX = position.x * scaleFactor;
+    const drawY = position.y * scaleFactor;
+    const drawWidth = (img.naturalWidth || img.width) * (boxSize / (img.naturalWidth || img.width)) * scaleFactor;
+    const drawHeight = (img.naturalHeight || img.height) * (boxSize / (img.naturalWidth || img.width)) * scaleFactor;
+
+    ctx.drawImage(
+      img,
+      -drawWidth / 2 + drawX,
+      -drawHeight / 2 + drawY,
+      drawWidth,
+      drawHeight
+    );
+
+    ctx.restore();
+
+    const croppedBase64 = canvas.toDataURL('image/jpeg', 0.92);
+    onCropComplete(croppedBase64);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col">
+        
+        {/* Modal Header */}
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+              <Crop className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800 dark:text-white text-base">Recortar Foto de Perfil</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Ajusta la foto dentro del recuadro cuadrado</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Crop Viewport & Canvas Area */}
+        <div className="p-6 flex flex-col items-center justify-center bg-slate-950 relative select-none overflow-hidden min-h-[320px]">
+          
+          {/* Square Crop Viewport overlay */}
+          <div
+            ref={containerRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onTouchStart={handleMouseDown}
+            onTouchMove={handleMouseMove}
+            onTouchEnd={handleMouseUp}
+            className="w-[260px] h-[260px] relative rounded-2xl overflow-hidden border-2 border-white shadow-2xl cursor-grab active:cursor-grabbing z-10 bg-black/40 flex items-center justify-center"
+          >
+            {/* Grid overlay lines */}
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none z-20 opacity-30 border border-white/40">
+              <div className="border-r border-b border-white"></div>
+              <div className="border-r border-b border-white"></div>
+              <div className="border-b border-white"></div>
+              <div className="border-r border-b border-white"></div>
+              <div className="border-r border-b border-white"></div>
+              <div className="border-b border-white"></div>
+              <div className="border-r border-white"></div>
+              <div className="border-r border-white"></div>
+              <div></div>
+            </div>
+
+            {/* Target Image being transformed */}
+            <img
+              ref={imageRef}
+              src={imageSrc}
+              alt="Avatar Crop Preview"
+              draggable={false}
+              className="max-w-none transition-transform duration-75"
+              style={{
+                transform: `translate(${position.x}px, ${position.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+                width: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </div>
+
+          <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1">
+            <Move className="w-3.5 h-3.5" /> Arrastra la foto para encuadrarla dentro del cuadro
+          </p>
+        </div>
+
+        {/* Controls Bar */}
+        <div className="p-5 space-y-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+          
+          {/* Zoom Slider */}
+          <div className="flex items-center gap-3">
+            <ZoomOut className="w-4 h-4 text-slate-400" />
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.05"
+              value={zoom}
+              onChange={e => handleZoomChange(parseFloat(e.target.value))}
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            />
+            <ZoomIn className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-bold font-mono text-slate-600 dark:text-slate-300 w-10 text-right">
+              {zoom.toFixed(1)}x
+            </span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setRotation(r => (r + 90) % 360)}
+              className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-all shadow-xs"
+            >
+              <RotateCw className="w-4 h-4" /> Rotar 90°
+            </button>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyCrop}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition-all"
+              >
+                <Check className="w-4 h-4" /> Aplicar Recorte
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+};

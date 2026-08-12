@@ -14,6 +14,7 @@ import { ContractViewer } from './features/ContractViewer';
 import { DocumentGenerator, DocumentType } from '../components/DocumentGenerator';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 import { CustomSelect } from '../components/CustomSelect';
+import { ImageCropperModal } from '../components/ImageCropperModal';
 
 const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,9 @@ const ClientDetail: React.FC = () => {
   const { loans } = useLoans();
   const { transactions, bankAccounts, addBankAccount, removeBankAccount } = useAccounting();
   const { companySettings } = useSettings();
+
+  const [rawAvatarSrc, setRawAvatarSrc] = useState<string | null>(null);
+  const [showCropperModal, setShowCropperModal] = useState(false);
 
   const [selectedContractLoan, setSelectedContractLoan] = useState<Loan | null>(null);
   const [isDocGeneratorOpen, setIsDocGeneratorOpen] = useState(false);
@@ -92,6 +96,18 @@ const ClientDetail: React.FC = () => {
   const handleEditClick = () => {
       setEditFormData({ ...client });
       setIsEditModalOpen(true);
+  };
+
+  const handleAvatarChangeInDetail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setRawAvatarSrc(reader.result as string);
+        setShowCropperModal(true);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleUpdateClient = (e: React.FormEvent) => {
@@ -217,10 +233,20 @@ const ClientDetail: React.FC = () => {
           <div className="h-24 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
           <div className="px-8 pb-8">
             <div className="flex flex-col md:flex-row gap-6 items-end -mt-12 mb-6">
-                <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-800 p-1 shadow-lg shadow-slate-200/50 dark:shadow-none rotate-3 transform">
-                    <div className="w-full h-full bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-3xl font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-600">
+                <div className="relative group shrink-0">
+                  <div className="w-24 h-24 rounded-2xl bg-white dark:bg-slate-800 p-1 shadow-lg shadow-slate-200/50 dark:shadow-none rotate-3 transform overflow-hidden">
+                    {client.avatarUrl ? (
+                      <img src={client.avatarUrl} alt={client.name} className="w-full h-full rounded-xl object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center text-3xl font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-600">
                         {client.name.charAt(0)}
-                    </div>
+                      </div>
+                    )}
+                  </div>
+                  <label className="absolute -bottom-2 -right-2 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-110 z-10" title="Cambiar y recortar foto">
+                    <Camera className="w-4 h-4" />
+                    <input type="file" accept="image/*" onChange={handleAvatarChangeInDetail} className="hidden" />
+                  </label>
                 </div>
                 
                 <div className="flex-1 w-full md:w-auto flex flex-col md:flex-row justify-between items-center md:items-end gap-4">
@@ -585,6 +611,21 @@ const ClientDetail: React.FC = () => {
           isOpen={isDocGeneratorOpen}
           onClose={() => setIsDocGeneratorOpen(false)}
           defaultDocType={selectedDocType}
+        />
+      {/* Modal de Recorte Cuadrado de Foto */}
+      {showCropperModal && rawAvatarSrc && (
+        <ImageCropperModal
+          imageSrc={rawAvatarSrc}
+          onCropComplete={(croppedDataUrl) => {
+            updateClient({ ...client, avatarUrl: croppedDataUrl });
+            setShowCropperModal(false);
+            setRawAvatarSrc(null);
+            addToast('Foto de perfil actualizada y recortada', 'success');
+          }}
+          onClose={() => {
+            setShowCropperModal(false);
+            setRawAvatarSrc(null);
+          }}
         />
       )}
     </div>
