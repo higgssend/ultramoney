@@ -1220,6 +1220,13 @@ const ClientDetail: React.FC = () => {
             setRawAvatarSrc(null);
             addToast('Foto de perfil actualizada y recortada', 'success');
           }}
+          onClose={() => {
+            setShowCropperModal(false);
+            setRawAvatarSrc(null);
+          }}
+        />
+      )}
+
       {/* Contract Modal */}
       <LoanContractModal
         isOpen={!!selectedContractLoan}
