@@ -9,6 +9,7 @@ import { CollateralForm } from './features/CollateralForm';
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 import { LoanContractModal } from './features/LoanContractModal';
+import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 
 const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
@@ -18,6 +19,7 @@ const LoanRequest: React.FC = () => {
   const navigate = useNavigate();
 
   const [disbursementBankAccountId, setDisbursementBankAccountId] = useState<string>('');
+  const [createdLoanForSharing, setCreatedLoanForSharing] = useState<Loan | null>(null);
   
   // Refinancing State
   const [isRefinanceEnabled, setIsRefinanceEnabled] = useState(false);
@@ -362,6 +364,7 @@ const LoanRequest: React.FC = () => {
         
         if (createdLoanObj?.id) {
             setLastCreatedLoanId(createdLoanObj.id);
+            setCreatedLoanForSharing(createdLoanObj);
             if (disbursementBankAccountId && amount > 0) {
                 processBankDisbursement(disbursementBankAccountId, amount);
             }
@@ -1268,6 +1271,20 @@ const LoanRequest: React.FC = () => {
               ))
           )}
       </div>
+
+      {createdLoanForSharing && (
+        <LoanCreatedSharingModal 
+          loan={createdLoanForSharing} 
+          client={selectedClient} 
+          companyName={companySettings?.companyName || companySettings?.name} 
+          onClose={() => { 
+            const loanId = createdLoanForSharing.id;
+            setCreatedLoanForSharing(null); 
+            navigate(`/prestamos/${loanId}`); 
+          }} 
+          onNavigateToDetail={() => navigate(`/prestamos/${createdLoanForSharing.id}`)} 
+        />
+      )}
     </div>
   );
 };

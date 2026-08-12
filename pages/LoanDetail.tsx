@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
 import { LoanEngine } from '../utils/LoanEngine';
+import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,7 @@ export const LoanDetail: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'payments' | 'documents' | 'collateral' | 'refinance' | 'forgiveness'>(initialTab);
   const [docType, setDocType] = useState<'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo'>('pagare');
+  const [showSharingModal, setShowSharingModal] = useState(false);
 
   // Refinance state
   const [refinanceAmount, setRefinanceAmount] = useState<number>(0);
@@ -553,6 +555,13 @@ export const LoanDetail: React.FC = () => {
             className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all"
           >
             <DollarSign className="w-4 h-4" /> Registrar Pago
+          </button>
+          <button
+            onClick={() => setShowSharingModal(true)}
+            className="px-4 py-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border border-purple-200 dark:border-purple-800 shadow-sm"
+            title="Compartir enlaces de contrato y portal de cliente por WhatsApp"
+          >
+            <MessageCircle className="w-4 h-4" /> Enviar Enlaces
           </button>
           <button
             onClick={() => setIsHistoricalModalOpen(true)}
@@ -1680,8 +1689,16 @@ export const LoanDetail: React.FC = () => {
                 <Trash2 className="w-4 h-4" /> Sí, Eliminar
               </button>
             </div>
-          </div>
         </div>
+      )}
+
+      {showSharingModal && loan && (
+        <LoanCreatedSharingModal
+          loan={loan}
+          client={client}
+          companyName={companySettings?.companyName || companySettings?.name}
+          onClose={() => setShowSharingModal(false)}
+        />
       )}
 
     </div>
