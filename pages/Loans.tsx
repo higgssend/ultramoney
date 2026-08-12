@@ -389,6 +389,13 @@ const Loans: React.FC = () => {
                                       <td className="px-6 py-4 text-center">
                                           <div className="flex items-center justify-center gap-1">
                                               <button 
+                                                  onClick={(e) => { e.stopPropagation(); setContractLoan(loan); }}
+                                                  className="p-2 text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg shadow-sm transition-all"
+                                                  title="Ver Contrato Oficial & Desglose"
+                                              >
+                                                  <FileText className="w-4 h-4" />
+                                              </button>
+                                              <button 
                                                   onClick={(e) => { e.stopPropagation(); navigate(`/prestamos/${loan.id}`); }}
                                                   className="p-2 text-slate-400 hover:text-indigo-600 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm hover:border-indigo-200 dark:hover:border-indigo-500 transition-all"
                                                   title="Ver Detalle"

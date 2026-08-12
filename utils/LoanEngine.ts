@@ -448,4 +448,89 @@ export class LoanEngine {
             unappliedBalance: remaining
         };
     }
+
+    /**
+     * Genera dinámicamente la tabla de cuotas y resumen para la vista previa y contrato oficial
+     */
+    static calculateSchedule(
+        amount: number,
+        interestRate: number,
+        durationWeeks: number,
+        frequency: string,
+        startDate: string,
+        firstPaymentDate?: string,
+        loanType?: string,
+        closingCost: number = 0,
+        closingCostMode: string = 'Descontado',
+        itemPrice?: number,
+        downPayment: number = 0,
+        downPaymentMode?: string
+    ) {
+        let principal = amount;
+        if (loanType?.includes('Financiamiento') && itemPrice && itemPrice > 0) {
+            principal = Math.max(0, itemPrice - downPayment);
+        }
+
+        const isRedito = loanType?.includes('Rédito') || loanType?.includes('Pagaré') || loanType?.includes('Solo Interés');
+
+        if (isRedito) {
+            const interestPart = Math.round((principal * (interestRate / 100)) * 100) / 100;
+            const pDate = firstPaymentDate || startDate || new Date().toISOString().split('T')[0];
+            return {
+                installments: [{
+                    installmentNumber: 1,
+                    date: pDate,
+                    dueDate: pDate,
+                    principal: 0,
+                    interest: interestPart,
+                    total: interestPart,
+                    balance: principal
+                }],
+                summary: {
+                    principal,
+                    totalInterest: interestPart,
+                    totalToPay: principal + interestPart,
+                    installmentAmount: interestPart,
+                    netDisbursement: closingCostMode === 'Descontado' ? Math.max(0, principal - closingCost) : principal
+                }
+            };
+        }
+
+        const count = durationWeeks > 0 ? durationWeeks : 1;
+        const totalInterest = Math.round((principal * (interestRate / 100)) * 100) / 100;
+        const totalToPay = principal + totalInterest;
+        const instAmt = Math.round((totalToPay / count) * 100) / 100;
+        const instPrincipal = Math.round((principal / count) * 100) / 100;
+        const instInterest = Math.round((totalInterest / count) * 100) / 100;
+
+        const installments: InstallmentPreview[] = [];
+        let currentBal = totalToPay;
+
+        for (let i = 1; i <= count; i++) {
+            currentBal = Math.max(0, currentBal - instAmt);
+            const dateStr = this.getNextDate(startDate, frequency, i, startDate);
+            installments.push({
+                installmentNumber: i,
+                date: dateStr,
+                dueDate: dateStr,
+                principal: instPrincipal,
+                interest: instInterest,
+                total: instAmt,
+                balance: Math.round(currentBal * 100) / 100
+            });
+        }
+
+        const netDisbursement = closingCostMode === 'Descontado' ? Math.max(0, principal - closingCost) : principal;
+
+        return {
+            installments,
+            summary: {
+                principal,
+                totalInterest,
+                totalToPay,
+                installmentAmount: instAmt,
+                netDisbursement
+            }
+        };
+    }
 }
