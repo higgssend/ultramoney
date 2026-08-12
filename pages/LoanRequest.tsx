@@ -129,6 +129,9 @@ const LoanRequest: React.FC = () => {
       if (loanType.includes('Financiamiento') && itemPrice > 0) {
           baseAmount = hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice;
       }
+      if (baseAmount <= 0 && amount > 0) {
+          baseAmount = amount;
+      }
       if (closingCostMode === 'Financiado') {
           return baseAmount + closingCost;
       }
@@ -139,6 +142,9 @@ const LoanRequest: React.FC = () => {
       let baseAmount = amount;
       if (loanType.includes('Financiamiento') && itemPrice > 0) {
           baseAmount = hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice;
+      }
+      if (baseAmount <= 0 && amount > 0) {
+          baseAmount = amount;
       }
       if (closingCostMode === 'Descontado') {
           return Math.max(0, baseAmount - closingCost);
@@ -237,7 +243,8 @@ const LoanRequest: React.FC = () => {
           return principal + (principal * (interest / 100));
       }
       if (schedulePreview.length > 0) {
-          return schedulePreview.reduce((sum, item) => sum + item.total, 0);
+          const sum = schedulePreview.reduce((acc, item) => acc + (item.total || 0), 0);
+          if (sum > 0) return sum;
       }
       return principal + (principal * (interest / 100));
   };
@@ -249,7 +256,7 @@ const LoanRequest: React.FC = () => {
       if (isRedito) {
           return principal * (interest / 100);
       }
-      if (schedulePreview.length > 0) {
+      if (schedulePreview.length > 0 && schedulePreview[0]?.total > 0) {
           return schedulePreview[0].total;
       }
       const count = weeks > 0 ? weeks : 1;
