@@ -313,11 +313,8 @@ const LoanRequest: React.FC = () => {
             graceDays
         });
 
-        toast.success("Solicitud de préstamo enviada exitosamente");
+        toast.success("Solicitud de préstamo registrada exitosamente");
         navigate('/solicitudes');
-    }
-        toast.success("Solicitud guardada con éxito.");
-        setViewMode('queue');
     }
   };
 
