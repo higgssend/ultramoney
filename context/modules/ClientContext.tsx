@@ -78,6 +78,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           status: (c.status || 'Activo') as Client['status'],
           joinedDate: c.joineddate || c.created_at,
           clientPin: c.clientpin,
+          portalAlias: (c as any).portal_alias || (c as any).portalalias || (c as any).portalAlias || '',
+          portalActive: (c as any).portal_active ?? (c as any).portalactive ?? true,
           avatarUrl: c.avatarurl || c.avatar_url || c.photo_url || '',
           guarantors: [],
           currency: (c.currency || 'DOP') as 'DOP' | 'USD',
@@ -147,7 +149,9 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       avatarurl: client.avatarUrl || null,
       status: 'Al Día',
       joineddate: new Date().toISOString().split('T')[0],
-      clientpin: Math.floor(1000 + Math.random() * 9000).toString()
+      clientpin: Math.floor(1000 + Math.random() * 9000).toString(),
+      portal_alias: client.portalAlias || null,
+      portal_active: client.portalActive !== false,
     }]).select().single();
     
     if (data && !error) {
@@ -179,6 +183,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         status: data.status || 'Al Día',
         joinedDate: data.joineddate || data.created_at,
         clientPin: data.clientpin || '',
+        portalAlias: data.portal_alias || data.portalalias || client.portalAlias || '',
+        portalActive: data.portal_active ?? true,
         guarantors: []
       };
       setClients(prev => [newClient, ...prev]);
@@ -233,6 +239,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       income: updatedClient.income || 0,
       status: updatedClient.status,
       clientpin: updatedClient.clientPin,
+      portal_alias: updatedClient.portalAlias || null,
+      portal_active: updatedClient.portalActive !== false,
       avatarurl: updatedClient.avatarUrl || null,
       creditscore: updatedClient.creditScore
     }).eq('id', updatedClient.id).eq('lender_id', currentUser.id);
