@@ -765,7 +765,10 @@ const ClientDetail: React.FC = () => {
                   )}
                   <p className="text-center text-white mt-4 font-bold">{previewDoc.title}</p>
               </div>
-        {/* Edit Document Modal */}
+          </div>
+      )}
+
+      {/* Edit Document Modal */}
       {isEditDocModalOpen && editingDoc && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
