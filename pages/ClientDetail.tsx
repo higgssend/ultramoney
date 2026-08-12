@@ -5,7 +5,7 @@ import {
   User, Phone, MapPin, ArrowLeft, Banknote, 
   Receipt, MoreHorizontal, FileText, 
   File as FileIcon, Image as ImageIcon, Upload, FileCheck, Edit, Plus, Trash2, X, Save, Globe,
-  Briefcase, DollarSign, Lock, Mail, Clock, Camera, Shield, MessageCircle, Eye
+  Briefcase, DollarSign, Lock, Mail, Clock, Camera, Shield, MessageCircle, Eye, Package
 } from 'lucide-react';
 import { useSettings, useClients, useLoans, useAccounting } from '../context/StoreContext';
 import { LoanStatus, BankAccount, Client, Loan, Transaction, ClientDocument, formatLoanId } from '../types';
