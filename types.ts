@@ -179,7 +179,7 @@ export interface LoanRequest {
 
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
-export function formatLoanId(id?: string | null): string {
+export function formatLoanId(id?: string | null, _category?: string, _type?: string): string {
   if (!id) return 'No. 000000';
   if (id.startsWith('No. ')) return id;
   const digits = id.replace(/\D/g, '');
