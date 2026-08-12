@@ -445,8 +445,10 @@ const LoanRequest: React.FC = () => {
                                 <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
                                 <input 
                                     type="number" 
-                                    value={amount}
-                                    onChange={(e) => setAmount(Number(e.target.value))}
+                                    value={amount === 0 ? '' : amount}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setAmount(e.target.value === '' ? 0 : Number(e.target.value))}
+                                    placeholder="0"
                                     className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 text-lg" 
                                 />
                                 </div>
@@ -459,8 +461,10 @@ const LoanRequest: React.FC = () => {
                                 </label>
                                 <input 
                                 type="number" 
-                                value={interest}
-                                onChange={(e) => setInterest(Number(e.target.value))}
+                                value={interest === 0 ? '' : interest}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => setInterest(e.target.value === '' ? 0 : Number(e.target.value))}
+                                placeholder="0"
                                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" 
                                 />
                             </div>
@@ -524,8 +528,10 @@ const LoanRequest: React.FC = () => {
                                             <label className="block text-sm font-bold text-slate-700 mb-2">Duración (Cantidad Cuotas)</label>
                                             <input 
                                                 type="number"
-                                                value={weeks}
-                                                onChange={(e) => setWeeks(Number(e.target.value))}
+                                                value={weeks === 0 ? '' : weeks}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => setWeeks(e.target.value === '' ? 0 : Number(e.target.value))}
+                                                placeholder="0"
                                                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
                                             />
                                         </div>
@@ -536,8 +542,10 @@ const LoanRequest: React.FC = () => {
                                                 <span className="absolute left-4 top-3 text-indigo-400 font-bold">$</span>
                                                 <input 
                                                     type="number"
-                                                    value={targetInstallment}
-                                                    onChange={(e) => setTargetInstallment(Number(e.target.value))}
+                                                    value={targetInstallment === 0 ? '' : targetInstallment}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onChange={(e) => setTargetInstallment(e.target.value === '' ? 0 : Number(e.target.value))}
+                                                    placeholder="0"
                                                     className="w-full pl-8 pr-4 py-3 border border-indigo-200 bg-indigo-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-900"
                                                 />
                                             </div>
@@ -602,8 +610,10 @@ const LoanRequest: React.FC = () => {
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Porcentaje de Mora (%)</label>
                                 <input 
                                     type="number" 
-                                    value={lateFeePercentage}
-                                    onChange={(e) => setLateFeePercentage(Number(e.target.value))}
+                                    value={lateFeePercentage === 0 ? '' : lateFeePercentage}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setLateFeePercentage(e.target.value === '' ? 0 : Number(e.target.value))}
+                                    placeholder="0"
                                     className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-bold text-slate-700" 
                                 />
                                 <p className="text-xs text-slate-500 mt-2">Cargo que se sumará al balance vencido automáticamente.</p>
@@ -612,8 +622,10 @@ const LoanRequest: React.FC = () => {
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Días de Gracia</label>
                                 <input 
                                     type="number" 
-                                    value={graceDays}
-                                    onChange={(e) => setGraceDays(Number(e.target.value))}
+                                    value={graceDays === 0 ? '' : graceDays}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => setGraceDays(e.target.value === '' ? 0 : Number(e.target.value))}
+                                    placeholder="0"
                                     className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-bold text-slate-700" 
                                 />
                                 <p className="text-xs text-slate-500 mt-2">Días extra antes de aplicar la mora (0 = mora inmediata).</p>
@@ -660,8 +672,10 @@ const LoanRequest: React.FC = () => {
                                             <span className="absolute right-4 top-3 text-slate-400 font-bold">%</span>
                                             <input 
                                                 type="number" 
-                                                value={closingCostPercentage}
-                                                onChange={(e) => setClosingCostPercentage(Number(e.target.value))}
+                                                value={closingCostPercentage === 0 ? '' : closingCostPercentage}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => setClosingCostPercentage(e.target.value === '' ? 0 : Number(e.target.value))}
+                                                placeholder="0"
                                                 className="w-full pl-4 pr-8 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-700" 
                                             />
                                         </div>
@@ -674,8 +688,10 @@ const LoanRequest: React.FC = () => {
                                             <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
                                             <input 
                                                 type="number" 
-                                                value={closingCost}
-                                                onChange={(e) => setClosingCost(Number(e.target.value))}
+                                                value={closingCost === 0 ? '' : closingCost}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => setClosingCost(e.target.value === '' ? 0 : Number(e.target.value))}
+                                                placeholder="0"
                                                 className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-700" 
                                             />
                                         </div>

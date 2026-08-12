@@ -1005,15 +1005,36 @@ export const LoanDetail: React.FC = () => {
           <div className="space-y-4 text-xs">
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Monto a Refinanciar (RD$)</label>
-              <input type="number" value={refinanceAmount} onChange={e => setRefinanceAmount(Number(e.target.value))} className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" />
+              <input 
+                type="number" 
+                value={refinanceAmount === 0 ? '' : refinanceAmount} 
+                onFocus={(e) => e.target.select()}
+                onChange={e => setRefinanceAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
+                placeholder="0"
+                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
+              />
             </div>
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Duración (Cuotas)</label>
-              <input type="number" value={refinanceWeeks} onChange={e => setRefinanceWeeks(Number(e.target.value))} className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" />
+              <input 
+                type="number" 
+                value={refinanceWeeks === 0 ? '' : refinanceWeeks} 
+                onFocus={(e) => e.target.select()}
+                onChange={e => setRefinanceWeeks(e.target.value === '' ? 0 : Number(e.target.value))} 
+                placeholder="0"
+                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
+              />
             </div>
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Tasa de Interés (%)</label>
-              <input type="number" value={refinanceInterest} onChange={e => setRefinanceInterest(Number(e.target.value))} className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" />
+              <input 
+                type="number" 
+                value={refinanceInterest === 0 ? '' : refinanceInterest} 
+                onFocus={(e) => e.target.select()}
+                onChange={e => setRefinanceInterest(e.target.value === '' ? 0 : Number(e.target.value))} 
+                placeholder="0"
+                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
+              />
             </div>
             <button onClick={handleRefinance} className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-500/20">
               Procesar Refinanciamiento
@@ -1034,7 +1055,14 @@ export const LoanDetail: React.FC = () => {
           <div className="space-y-4 text-xs">
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Monto a Condonar (RD$)</label>
-              <input type="number" value={forgiveAmount} onChange={e => setForgiveAmount(Number(e.target.value))} className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" placeholder="Monto a descontar" />
+              <input 
+                type="number" 
+                value={forgiveAmount === 0 ? '' : forgiveAmount} 
+                onFocus={(e) => e.target.select()}
+                onChange={e => setForgiveAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
+                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
+                placeholder="Monto a descontar" 
+              />
             </div>
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Motivo / Razón Legal de Condonación</label>

@@ -152,7 +152,8 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                 <input 
                                     type="number"
                                     value={collateral.estimatedValue || ''}
-                                    onChange={(e) => handleChange('estimatedValue', Number(e.target.value))}
+                                    onFocus={(e) => e.target.select()}
+                                    onChange={(e) => handleChange('estimatedValue', e.target.value === '' ? 0 : Number(e.target.value))}
                                     placeholder="0.00"
                                     className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                 />

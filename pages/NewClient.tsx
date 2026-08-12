@@ -492,7 +492,8 @@ const NewClient: React.FC = () => {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">$</span>
                   <input type="number" min="0" className={`${inputClass} pl-8 font-semibold text-amber-600 dark:text-amber-400`}
                     value={currentClient.income || ''}
-                    onChange={e => set('income', Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    onChange={e => set('income', e.target.value === '' ? 0 : Number(e.target.value))}
                     placeholder="0.00"
                   />
                 </div>
@@ -518,7 +519,8 @@ const NewClient: React.FC = () => {
                       <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input type="number" min="0" className={`${inputClass} pl-10`}
                         value={currentClient.routeSequence || ''}
-                        onChange={e => set('routeSequence', Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        onChange={e => set('routeSequence', e.target.value === '' ? 0 : Number(e.target.value))}
                         placeholder="Ej. 1"
                       />
                     </div>

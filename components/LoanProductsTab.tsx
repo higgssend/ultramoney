@@ -58,15 +58,15 @@ export const LoanProductsTab: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Monto Mínimo</label>
-                            <input type="number" required value={editingProduct.minAmount || 0} onChange={e => setEditingProduct({...editingProduct, minAmount: parseFloat(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" required value={editingProduct.minAmount || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, minAmount: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Monto Máximo</label>
-                            <input type="number" required value={editingProduct.maxAmount || 0} onChange={e => setEditingProduct({...editingProduct, maxAmount: parseFloat(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" required value={editingProduct.maxAmount || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, maxAmount: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Tasa de Interés (%)</label>
-                            <input type="number" step="0.1" required value={editingProduct.interestRate || 0} onChange={e => setEditingProduct({...editingProduct, interestRate: parseFloat(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" step="0.1" required value={editingProduct.interestRate || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, interestRate: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Tipo de Interés</label>
@@ -88,7 +88,7 @@ export const LoanProductsTab: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Número de Cuotas por Defecto</label>
-                            <input type="number" required value={editingProduct.defaultInstallments || 0} onChange={e => setEditingProduct({...editingProduct, defaultInstallments: parseInt(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" required value={editingProduct.defaultInstallments || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, defaultInstallments: e.target.value === '' ? 0 : parseInt(e.target.value, 10)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div className="flex items-center gap-3 mt-8">
                             <input type="checkbox" checked={editingProduct.requiresCollateral || false} onChange={e => setEditingProduct({...editingProduct, requiresCollateral: e.target.checked})} className="w-5 h-5 text-indigo-600 rounded" />
@@ -96,15 +96,15 @@ export const LoanProductsTab: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Penalidad por Mora (%)</label>
-                            <input type="number" step="0.1" value={editingProduct.lateFeePercentage || 0} onChange={e => setEditingProduct({...editingProduct, lateFeePercentage: parseFloat(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" step="0.1" value={editingProduct.lateFeePercentage || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, lateFeePercentage: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Comisión de Desembolso (Fijo/%)</label>
-                            <input type="number" step="0.1" value={editingProduct.disbursementFee || 0} onChange={e => setEditingProduct({...editingProduct, disbursementFee: parseFloat(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" step="0.1" value={editingProduct.disbursementFee || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, disbursementFee: e.target.value === '' ? 0 : parseFloat(e.target.value)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Días de Gracia</label>
-                            <input type="number" value={editingProduct.graceDays || 0} onChange={e => setEditingProduct({...editingProduct, graceDays: parseInt(e.target.value)})} className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
+                            <input type="number" value={editingProduct.graceDays || ''} onFocus={(e) => e.target.select()} onChange={e => setEditingProduct({...editingProduct, graceDays: e.target.value === '' ? 0 : parseInt(e.target.value, 10)})} placeholder="0" className="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3" />
                         </div>
                         <div className="flex items-center gap-3 mt-8">
                             <input type="checkbox" checked={editingProduct.prepaymentAllowed !== false} onChange={e => setEditingProduct({...editingProduct, prepaymentAllowed: e.target.checked})} className="w-5 h-5 text-indigo-600 rounded" />

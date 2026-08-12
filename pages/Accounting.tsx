@@ -343,7 +343,8 @@ const Accounting: React.FC = () => {
                   <input
                     type="number"
                     step="0.01"
-                    value={expenseAmount}
+                    value={expenseAmount === '0' || expenseAmount === '0.00' ? '' : expenseAmount}
+                    onFocus={(e) => e.target.select()}
                     onChange={e => setExpenseAmount(e.target.value)}
                     placeholder="0.00"
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 font-bold"

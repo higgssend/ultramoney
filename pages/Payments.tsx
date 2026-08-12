@@ -735,7 +735,8 @@ const Payments: React.FC = () => {
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                                         <input 
                                             type="number" 
-                                            value={payAmount}
+                                            value={payAmount === '0' || payAmount === '0.00' ? '' : payAmount}
+                                            onFocus={(e) => e.target.select()}
                                             onChange={e => { if(paymentMode === 'manual') setPayAmount(e.target.value); }}
                                             readOnly={paymentMode === 'cuotas'}
                                             className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-xl font-bold text-slate-800 ${paymentMode === 'cuotas' ? 'bg-slate-50 border-slate-200 text-indigo-600' : 'border-slate-300 focus:ring-indigo-500'}`}
@@ -763,7 +764,8 @@ const Payments: React.FC = () => {
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 font-bold">$</span>
                                         <input 
                                             type="number"
-                                            value={lateFeeAmount}
+                                            value={lateFeeAmount === '0' || lateFeeAmount === '0.00' ? '' : lateFeeAmount}
+                                            onFocus={(e) => e.target.select()}
                                             onChange={e => setLateFeeAmount(e.target.value)}
                                             placeholder="0.00"
                                             className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
@@ -776,7 +778,8 @@ const Payments: React.FC = () => {
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">-$</span>
                                         <input 
                                             type="number"
-                                            value={discountAmount}
+                                            value={discountAmount === '0' || discountAmount === '0.00' ? '' : discountAmount}
+                                            onFocus={(e) => e.target.select()}
                                             onChange={e => setDiscountAmount(e.target.value)}
                                             placeholder="0.00"
                                             className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
