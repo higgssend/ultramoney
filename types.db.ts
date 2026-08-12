@@ -43,6 +43,10 @@ export interface LoanDB {
   guarantor_id?: string;
   collateralref?: string;
   collateral?: Record<string, unknown>;
+  item_price?: number;
+  down_payment?: number;
+  down_payment_mode?: string;
+  financed_amount?: number;
   note?: string;
   currency?: string;
   created_at?: string;

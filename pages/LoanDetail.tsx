@@ -471,7 +471,9 @@ export const LoanDetail: React.FC = () => {
           {/* Main Financial Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
-              <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-2">Capital Original Prestado</p>
+              <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-2">
+                {loan.loanType?.includes('Financiamiento') ? 'Capital Financiado' : 'Capital Original Prestado'}
+              </p>
               <p className="text-4xl md:text-5xl font-black tracking-tight">RD$ {(loan.amount || 0).toLocaleString()}</p>
               <div className="mt-6 pt-6 border-t border-indigo-800/60 flex justify-between items-center text-xs text-indigo-200">
                 <span>Total a Pagar Pactado: <strong>RD$ {(loan.totalToPay || loan.amount).toLocaleString()}</strong></span>
@@ -480,22 +482,57 @@ export const LoanDetail: React.FC = () => {
               <div className="absolute top-0 right-0 w-36 h-36 bg-indigo-500/10 rounded-full -mr-16 -mt-16"></div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
-              <div className="flex justify-between items-end mb-2">
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Balance Restante por Cobrar</p>
-                <p className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/40 dark:text-emerald-400 px-3 py-1 rounded-full uppercase">
-                  {Math.round((((loan.totalToPay || loan.amount) - loan.remainingBalance) / (loan.totalToPay || loan.amount)) * 100)}% Amortizado
-                </p>
+            {/* If Equipment Financing (Con/Sin Inicial), render breakdown card */}
+            {(loan.itemPrice || loan.loanType?.includes('Financiamiento')) ? (
+              <div className="bg-gradient-to-br from-emerald-900 to-slate-900 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-xs text-emerald-300 font-bold uppercase tracking-wider">Desglose de Financiamiento de Equipo</p>
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                      {loan.downPayment && loan.downPayment > 0 ? 'Con Inicial' : 'Sin Inicial (0 Inicial)'}
+                    </span>
+                  </div>
+                  <p className="text-3xl font-black text-emerald-400">
+                    RD$ {(loan.itemPrice || loan.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-slate-300 mt-1">Precio Total de Contado del Artículo / Bien</p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-emerald-800/60 grid grid-cols-2 gap-4 text-xs">
+                  <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-800/50">
+                    <span className="block text-emerald-300 text-[10px] uppercase font-bold">Inicial Recibida</span>
+                    <strong className="text-sm font-extrabold text-white">
+                      RD$ {(loan.downPayment || 0).toLocaleString()}
+                    </strong>
+                    {loan.downPaymentMode && <span className="block text-[10px] text-emerald-400 mt-0.5">Vía {loan.downPaymentMode}</span>}
+                  </div>
+                  <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-800/50">
+                    <span className="block text-emerald-300 text-[10px] uppercase font-bold">Monto Neto Financiado</span>
+                    <strong className="text-sm font-extrabold text-emerald-400">
+                      RD$ {(loan.financedAmount || loan.amount).toLocaleString()}
+                    </strong>
+                    <span className="block text-[10px] text-slate-300 mt-0.5">En cuotas {loan.frequency?.toLowerCase()}s</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-4xl md:text-5xl font-black text-rose-600 dark:text-rose-400 tracking-tight">RD$ {(loan.remainingBalance || 0).toLocaleString()}</p>
-              
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full mt-6 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" 
-                  style={{ width: `${Math.min(100, Math.max(0, (((loan.totalToPay || loan.amount) - loan.remainingBalance) / (loan.totalToPay || loan.amount)) * 100))}%` }}
-                ></div>
+            ) : (
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-end mb-2">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Balance Restante por Cobrar</p>
+                  <p className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/40 dark:text-emerald-400 px-3 py-1 rounded-full uppercase">
+                    {Math.round((((loan.totalToPay || loan.amount) - loan.remainingBalance) / (loan.totalToPay || loan.amount)) * 100)}% Amortizado
+                  </p>
+                </div>
+                <p className="text-4xl md:text-5xl font-black text-rose-600 dark:text-rose-400 tracking-tight">RD$ {(loan.remainingBalance || 0).toLocaleString()}</p>
+                
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full mt-6 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" 
+                    style={{ width: `${Math.min(100, Math.max(0, (((loan.totalToPay || loan.amount) - loan.remainingBalance) / (loan.totalToPay || loan.amount)) * 100))}%` }}
+                  ></div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Secondary Details Grid */}

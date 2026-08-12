@@ -75,7 +75,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             frequency: ((l.frequency || l.payment_frequency || 'Mensual') as Loan['frequency']),
             paymentFrequency: ((l.frequency || l.payment_frequency || 'Mensual') as Loan['frequency']),
             startDate: l.startdate || l.start_date || '',
-            nextPaymentDate: l.next_payment_date || l.nextpaymentdate || '',
+            nextPaymentDate: l.next_payment_date || l.nextpaymentdate || '',            
             status: l.status as LoanStatus,
             loanType: (l.loantype || l.loan_type || 'Amortización') as LoanType,
             loanCategory: (l.loancategory || l.loan_category) as Loan['loanCategory'],
@@ -85,6 +85,11 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             durationWeeks: l.duration_weeks || l.durationweeks,
             lateFeePercentage: l.late_fee_percentage,
             graceDays: l.grace_days,
+            collateral: l.collateral as any,
+            itemPrice: l.item_price ? Number(l.item_price) : undefined,
+            downPayment: l.down_payment ? Number(l.down_payment) : undefined,
+            downPaymentMode: l.down_payment_mode as any,
+            financedAmount: l.financed_amount ? Number(l.financed_amount) : undefined,
             guarantorId: l.guarantor_id || l.collateralref,
             note: l.note,
             currency: (l.currency as 'DOP' | 'USD') || 'DOP',
@@ -94,47 +99,38 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setLoanProducts((productsRes.data as LoanProductDB[]).map((p) => ({
             id: p.id,
             name: p.name,
-            description: p.description || '',
-            interestRate: Number(p.interest_rate ?? p.interestrate) || 0,
-            minAmount: Number(p.min_amount) || 0,
-            maxAmount: Number(p.max_amount) || 0,
-            frequency: ((p.frequency || p.payment_frequency || 'Mensual') as LoanProduct['frequency']),
-            termMonths: p.term_months || 1,
-            defaultInstallments: p.default_installments ?? p.installments ?? 1,
-            requiresCollateral: p.requires_collateral ?? false,
+            minAmount: p.min_amount,
+            maxAmount: p.max_amount,
+            interestRate: p.interest_rate,
+            interestType: p.interest_type as LoanProduct['interestType'],
+            frequency: p.frequency as LoanProduct['frequency'],
+            defaultInstallments: p.default_installments,
+            requiresCollateral: p.requires_collateral,
             collateralType: p.collateral_type,
-            disbursementFee: Number(p.disbursement_fee) || 0,
-            lateFeePercentage: Number(p.late_fee_percentage) || 0,
-            graceDays: Number(p.grace_days) || 0,
-            prepaymentAllowed: p.prepayment_allowed ?? true,
-            autoCalculateInterest: p.auto_calculate_interest ?? true,
-            isActive: p.is_active !== false,
-            amortizationMethod: (p.amortization_method || 'Amortizado') as LoanProduct['amortizationMethod'],
-            paymentOrder: (p.payment_order || 'Interest_Capital_Mora_Expenses') as LoanProduct['paymentOrder'],
-            recalculateInterestOnEarlyPayoff: false,
-            capitalizationFrequency: 'Ninguno' as LoanProduct['capitalizationFrequency'],
-            interestType: (p.interest_type || 'Fijo') as LoanProduct['interestType'],
-            createdAt: p.created_at || '',
-            updatedAt: p.updated_at || '',
+            lateFeePercentage: p.late_fee_percentage,
+            disbursementFee: p.disbursement_fee,
+            graceDays: p.grace_days,
+            prepaymentAllowed: p.prepayment_allowed,
           })));
         }
         if (requestsRes.data) {
           setLoanRequests((requestsRes.data as LoanRequestDB[]).map((r) => ({
             id: r.id,
-            clientName: r.client_name || 'Sin Nombre',
+            clientName: r.client_name || 'Cliente',
             clientPhone: r.client_phone,
             clientEmail: r.client_email,
-            clientId: r.client_id,
-            requestedAmount: r.requested_amount ?? r.amount,
-            requestedTerm: r.requested_term,
+            requestedAmount: r.requested_amount || r.amount,
+            amount: r.amount || r.requested_amount,
             interestRate: r.interest_rate,
             durationWeeks: r.duration_weeks,
             frequency: r.frequency as LoanRequest['frequency'],
-            loanType: r.loan_type as LoanRequest['loanType'],
-            purpose: r.purpose,
-            notes: r.notes,
+            requestDate: r.created_at || r.request_date,
             status: r.status as LoanRequest['status'],
-            requestDate: r.created_at || r.request_date || new Date().toISOString(),
+            loanDestination: r.loan_destination || r.purpose,
+            purpose: r.purpose || r.loan_destination,
+            notes: r.notes || r.observations,
+            observations: r.observations || r.notes,
+            collateral: r.collateral as any,
           })));
         }
       } catch (error) {
@@ -187,11 +183,34 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       remainingbalance: ttp,
       totaltopay: ttp,
       loantype: loanData.loanType,
+      collateral: loanData.collateral || null,
+      item_price: loanData.itemPrice || null,
+      down_payment: loanData.downPayment || 0,
+      down_payment_mode: loanData.downPaymentMode || 'Efectivo',
+      financed_amount: loanData.financedAmount || loanData.amount,
       collateralref: loanData.guarantorId || null,
-      collateraldescription: loanData.note || null
+      note: loanData.note || null
     }]).select().single();
 
     if (data && !error) {
+      // Record transaction if Down Payment was paid
+      if (loanData.downPayment && loanData.downPayment > 0) {
+        try {
+          await insforge.database.from('transactions').insert([{
+            lender_id: currentUser.id,
+            type: 'Ingreso',
+            category: 'Inicial de Financiamiento',
+            amount: loanData.downPayment,
+            date: loanData.startDate || new Date().toISOString().split('T')[0],
+            description: `Pago Inicial (${loanData.downPaymentMode || 'Efectivo'}) para Financiamiento #${data.id} - ${clientName}`,
+            payment_method: loanData.downPaymentMode || 'Efectivo',
+            reference_id: data.id
+          }]);
+        } catch (e) {
+          logger.error("Error creating down payment transaction:", e);
+        }
+      }
+
       const newLoan: Loan = {
         id: data.id, clientId: data.clientid || data.client_id, clientName: data.clientname || data.client_name || clientName,
         amount: data.amount, interestRate: data.interestrate || data.interest_rate,
@@ -199,7 +218,12 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         paymentFrequency: data.frequency || data.payment_frequency, frequency: data.frequency || data.payment_frequency,
         startDate: data.startdate || data.start_date, nextPaymentDate: data.next_payment_date,
         status: data.status, remainingBalance: data.remainingbalance, totalToPay: data.totaltopay,
-        loanType: data.loantype, guarantorId: data.collateralref, note: data.collateraldescription || loanData.note
+        loanType: data.loantype, collateral: data.collateral || loanData.collateral,
+        itemPrice: data.item_price || loanData.itemPrice,
+        downPayment: data.down_payment || loanData.downPayment,
+        downPaymentMode: data.down_payment_mode || loanData.downPaymentMode,
+        financedAmount: data.financed_amount || loanData.financedAmount,
+        guarantorId: data.collateralref, note: data.note || loanData.note
       };
       setLoans(prev => [newLoan, ...prev]);
       addAuditLog('loan_created', `Creó un préstamo por RD$ ${loanData.amount}`);

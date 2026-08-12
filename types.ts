@@ -7,7 +7,15 @@ export enum LoanStatus {
   REFINANCED = 'Refinanciado'
 }
 
-export type LoanType = 'Amortizado (Cuota Fija)' | 'Amortizado (Capital Fijo)' | 'Rédito (Solo Interés)' | 'Interés Adelantado' | 'Amortización' | 'Rédito';
+export type LoanType = 
+  | 'Amortizado (Cuota Fija)' 
+  | 'Amortizado (Capital Fijo)' 
+  | 'Rédito (Solo Interés)' 
+  | 'Interés Adelantado' 
+  | 'Financiamiento de Equipo (Con/Sin Inicial)'
+  | 'Amortización' 
+  | 'Rédito';
+
 export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
 
 export interface Collateral {
@@ -140,6 +148,13 @@ export interface Loan {
   // Specific for Monthly loans
   paymentDay?: number; // 1-31
 
+  // Financiamiento de Equipos / Bienes (Con/Sin Inicial)
+  itemPrice?: number;
+  downPayment?: number;
+  downPaymentMode?: 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
+  downPaymentPercentage?: number;
+  financedAmount?: number;
+
   // Closing Costs
   closingCost?: number;
   closingCostMode?: ClosingCostMode;
@@ -170,6 +185,14 @@ export interface LoanRequest {
   durationWeeks?: number;
   frequency?: 'Semanal' | 'Quincenal' | 'Mensual' | 'Diario';
   loanType?: LoanType;
+
+  // Financiamiento de Equipos / Bienes (Con/Sin Inicial)
+  itemPrice?: number;
+  downPayment?: number;
+  downPaymentMode?: 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
+  downPaymentPercentage?: number;
+  financedAmount?: number;
+
   closingCost?: number;
   closingCostMode?: ClosingCostMode;
   paymentDay?: number;

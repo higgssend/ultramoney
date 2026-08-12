@@ -35,6 +35,12 @@ const LoanRequest: React.FC = () => {
   const [frequency, setFrequency] = useState('Semanal');
   const [paymentDay, setPaymentDay] = useState(1); // For Monthly Loans
   const [loanType, setLoanType] = useState<LoanType>('Amortizado (Cuota Fija)');
+
+  // Equipment / Item Financing State (Con/Sin Inicial)
+  const [itemPrice, setItemPrice] = useState(15000);
+  const [hasInitialPayment, setHasInitialPayment] = useState(true);
+  const [downPayment, setDownPayment] = useState(3000);
+  const [downPaymentMode, setDownPaymentMode] = useState<'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque'>('Efectivo');
   
   // Closing Costs State
   const [chargeClosingCost, setChargeClosingCost] = useState(false);
@@ -240,6 +246,10 @@ const LoanRequest: React.FC = () => {
                 durationWeeks: finalWeeks,
                 frequency: frequency as any,
                 loanType,
+                itemPrice: loanType.includes('Financiamiento') ? itemPrice : undefined,
+                downPayment: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPayment : 0,
+                downPaymentMode: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPaymentMode : undefined,
+                financedAmount: amount,
                 closingCost,
                 closingCostMode,
                 paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
@@ -285,6 +295,10 @@ const LoanRequest: React.FC = () => {
             durationWeeks: finalWeeks,
             frequency: frequency as any,
             loanType,
+            itemPrice: loanType.includes('Financiamiento') ? itemPrice : undefined,
+            downPayment: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPayment : 0,
+            downPaymentMode: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPaymentMode : undefined,
+            financedAmount: amount,
             closingCost,
             closingCostMode,
             paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
@@ -414,33 +428,167 @@ const LoanRequest: React.FC = () => {
                         </h3>
                         
                         {/* Loan Type Selector */}
-                        <div className="mb-6 grid grid-cols-2 gap-4">
+                        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div 
-                                onClick={() => { setLoanType('Amortizado'); setCalcMode('time'); }}
+                                onClick={() => { setLoanType('Amortizado (Cuota Fija)'); setCalcMode('time'); }}
                                 className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType.includes('Amortizado') ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
-                                <div className="flex justify-between">
-                                    <span className="font-bold text-sm">Cuotas Fijas (Amortizado)</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-sm">Cuotas Fijas</span>
                                     {loanType.includes('Amortizado') && <FileCheck className="w-5 h-5 text-indigo-600" />}
                                 </div>
                                 <span className="text-xs opacity-70">Capital + Interés dividido en pagos</span>
                             </div>
+                            
                             <div 
-                                onClick={() => { setLoanType('Rédito'); setCalcMode('time'); }}
+                                onClick={() => { setLoanType('Rédito (Solo Interés)'); setCalcMode('time'); }}
                                 className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${(loanType === 'Rédito' || loanType.includes('Rédito')) ? 'border-purple-500 bg-purple-50 text-purple-700 ring-1 ring-purple-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
-                                <div className="flex justify-between">
-                                    <span className="font-bold text-sm">Pagaré Abierto (Rédito)</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-sm">Pagaré Abierto</span>
                                     {(loanType === 'Rédito' || loanType.includes('Rédito')) && <FileCheck className="w-5 h-5 text-purple-600" />}
                                 </div>
                                 <span className="text-xs opacity-70">Solo paga interés. Capital al final.</span>
                             </div>
+
+                            <div 
+                                onClick={() => { setLoanType('Financiamiento de Equipo (Con/Sin Inicial)'); setCalcMode('time'); }}
+                                className={`cursor-pointer border rounded-2xl p-4 flex flex-col gap-2 transition-all ${loanType.includes('Financiamiento') ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-500' : 'border-slate-200 hover:border-slate-300'}`}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-sm flex items-center gap-1.5">
+                                        <Smartphone className="w-4 h-4 text-emerald-600" /> Financiamiento
+                                    </span>
+                                    {loanType.includes('Financiamiento') && <FileCheck className="w-5 h-5 text-emerald-600" />}
+                                </div>
+                                <span className="text-xs opacity-70">Con o Sin inicial (Celulares, Equipos, etc.)</span>
+                            </div>
                         </div>
+
+                        {/* Special Controls for Financiamiento de Equipos (Con/Sin Inicial) */}
+                        {loanType.includes('Financiamiento') && (
+                            <div className="mb-6 bg-emerald-50/70 border border-emerald-200 p-5 rounded-2xl space-y-4 animate-fade-in">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-emerald-900 text-sm flex items-center gap-2">
+                                        <Coins className="w-5 h-5 text-emerald-600" />
+                                        Detalles del Artículo y Pago Inicial (Enganche)
+                                    </h4>
+                                    <div className="flex bg-emerald-100 p-1 rounded-xl">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setHasInitialPayment(true);
+                                                const net = Math.max(0, itemPrice - downPayment);
+                                                setAmount(net);
+                                            }}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${hasInitialPayment ? 'bg-white text-emerald-700 shadow-xs' : 'text-emerald-700 opacity-70'}`}
+                                        >
+                                            Con Inicial
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setHasInitialPayment(false);
+                                                setAmount(itemPrice);
+                                            }}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${!hasInitialPayment ? 'bg-white text-emerald-700 shadow-xs' : 'text-emerald-700 opacity-70'}`}
+                                        >
+                                            Sin Inicial (0 Inicial)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                    <div>
+                                        <label className="block text-xs font-bold text-emerald-900 mb-1">Precio Total del Artículo / Equipo (RD$)</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2.5 text-emerald-600 font-bold">$</span>
+                                            <input
+                                                type="number"
+                                                value={itemPrice === 0 ? '' : itemPrice}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                                    setItemPrice(val);
+                                                    const net = hasInitialPayment ? Math.max(0, val - downPayment) : val;
+                                                    setAmount(net);
+                                                }}
+                                                placeholder="0.00"
+                                                className="w-full pl-8 pr-4 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {hasInitialPayment ? (
+                                        <div>
+                                            <label className="block text-xs font-bold text-emerald-900 mb-1">Monto de la Inicial / Enganche (RD$)</label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-2.5 text-emerald-600 font-bold">$</span>
+                                                <input
+                                                    type="number"
+                                                    value={downPayment === 0 ? '' : downPayment}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                                        setDownPayment(val);
+                                                        const net = Math.max(0, itemPrice - val);
+                                                        setAmount(net);
+                                                    }}
+                                                    placeholder="0.00"
+                                                    className="w-full pl-8 pr-4 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-center bg-emerald-100/50 rounded-xl p-3 border border-emerald-200/60">
+                                            <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                                                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                                                Llévatelo Hoy Sin Inicial (0% Inicial)
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {hasInitialPayment && (
+                                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                            <div>
+                                                <label className="block text-xs font-bold text-emerald-900 mb-1">Método de Pago de la Inicial</label>
+                                                <CustomSelect
+                                                    value={downPaymentMode}
+                                                    onChange={(v) => setDownPaymentMode(v as any)}
+                                                    className="w-full text-xs font-medium"
+                                                    options={[
+                                                        { value: 'Efectivo', label: '💵 Efectivo (Cobro Inmediato)' },
+                                                        { value: 'Transferencia', label: '🏦 Transferencia Bancaria' },
+                                                        { value: 'Tarjeta', label: '💳 Tarjeta de Crédito / Débito' },
+                                                        { value: 'Cheque', label: '📄 Cheque' }
+                                                    ]}
+                                                />
+                                            </div>
+                                            <div className="bg-white p-3 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
+                                                <span className="text-slate-600">Porcentaje de Inicial:</span>
+                                                <span className="font-bold text-emerald-700 font-mono text-sm">
+                                                    {itemPrice > 0 ? `${((downPayment / itemPrice) * 100).toFixed(1)}%` : '0%'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-white p-4 rounded-xl border border-emerald-200 flex items-center justify-between text-xs md:text-sm">
+                                    <span className="font-bold text-slate-700">Monto Neto a Financiar en Cuotas (Capital):</span>
+                                    <span className="font-extrabold text-emerald-700 text-lg">
+                                        RD$ {(hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Monto */}
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Monto a Prestar (Capital)</label>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">
+                                    {loanType.includes('Financiamiento') ? 'Monto a Financiar (Capital Calculado)' : 'Monto a Prestar (Capital)'}
+                                </label>
                                 <div className="relative">
                                 <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
                                 <input 
