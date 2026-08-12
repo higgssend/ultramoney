@@ -208,40 +208,56 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
-  const updateBankAccount = (id: string, updates: Partial<BankAccount>) => {
+  const updateBankAccount = async (id: string, updates: Partial<BankAccount>) => {
     setBankAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
+    if (currentUser) {
+      const updateData: Record<string, any> = {};
+      if (updates.balance !== undefined) updateData.initial_balance = updates.balance;
+      if (updates.isActive !== undefined) updateData.status = updates.isActive ? 'Activa' : 'Inactiva';
+      if (updates.accountName !== undefined) updateData.account_name = updates.accountName;
+      if (updates.accountNumber !== undefined) updateData.account_number = updates.accountNumber;
+      if (updates.bankName !== undefined) updateData.bank_name = updates.bankName;
+
+      if (Object.keys(updateData).length > 0) {
+        await insforge.database.from('bank_accounts').update(updateData).eq('id', id).eq('lender_id', currentUser.id);
+      }
+    }
     addToast("Cuenta bancaria actualizada", "success");
   };
 
   const removeBankAccount = async (id: string) => {
     setBankAccounts(prev => prev.filter(b => b.id !== id));
+    if (currentUser) {
+      await insforge.database.from('bank_accounts').delete().eq('id', id).eq('lender_id', currentUser.id);
+    }
     addToast("Cuenta removida", "info");
   };
 
-  const processBankDeposit = (bankAccountId: string, amount: number) => {
+  const processBankDeposit = async (bankAccountId: string, amount: number) => {
     if (!bankAccountId || amount <= 0) return;
-    setBankAccounts(prev => prev.map(acc => {
-      if (acc.id === bankAccountId) {
-        return { ...acc, balance: acc.balance + amount };
-      }
-      return acc;
-    }));
+    const target = bankAccounts.find(a => a.id === bankAccountId);
+    const newBal = (target ? target.balance : 0) + amount;
+    setBankAccounts(prev => prev.map(acc => acc.id === bankAccountId ? { ...acc, balance: newBal } : acc));
+    if (currentUser) {
+      await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', bankAccountId).eq('lender_id', currentUser.id);
+    }
   };
 
-  const processBankDisbursement = (bankAccountId: string, amount: number) => {
+  const processBankDisbursement = async (bankAccountId: string, amount: number) => {
     if (!bankAccountId || amount <= 0) return;
-    setBankAccounts(prev => prev.map(acc => {
-      if (acc.id === bankAccountId) {
-        let current = acc.balance;
-        if (current < amount) {
-          const needed = amount - current;
-          addToast(`Inyección automática de capital en ${acc.bankName}: +RD$ ${needed.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`, 'info');
-          current = amount + 50000;
-        }
-        return { ...acc, balance: current - amount };
-      }
-      return acc;
-    }));
+    const target = bankAccounts.find(a => a.id === bankAccountId);
+    if (!target) return;
+    let current = target.balance || 0;
+    if (current < amount) {
+      const needed = amount - current;
+      addToast(`Inyección automática de capital en ${target.bankName}: +RD$ ${needed.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`, 'info');
+      current = amount + 50000;
+    }
+    const finalBal = current - amount;
+    setBankAccounts(prev => prev.map(acc => acc.id === bankAccountId ? { ...acc, balance: finalBal } : acc));
+    if (currentUser) {
+      await insforge.database.from('bank_accounts').update({ initial_balance: finalBal }).eq('id', bankAccountId).eq('lender_id', currentUser.id);
+    }
   };
 
   const addCollectorVisit = async (visit: Omit<CollectorVisit, 'id'>) => {
