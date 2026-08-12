@@ -128,7 +128,7 @@ export interface BankAccount {
   bankName: string;
   accountNumber: string;
   accountName?: string;
-  accountType: 'Ahorro' | 'Corriente';
+  accountType: 'Ahorro' | 'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo' | 'Inversión' | 'Otro';
   holderName?: string;
   currency?: 'DOP' | 'USD';
   status?: 'Activa' | 'Inactiva';
