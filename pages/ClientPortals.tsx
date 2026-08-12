@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useClients } from '../context/StoreContext';
-import { Search, Link as LinkIcon, RefreshCw, XCircle, ShieldCheck, Copy, ChevronLeft, CheckCircle, ExternalLink, Settings, AlertTriangle, Key, Wand2 } from 'lucide-react';
+import { Search, Link as LinkIcon, RefreshCw, XCircle, ShieldCheck, Copy, ChevronLeft, CheckCircle, ExternalLink, Settings, AlertTriangle, Key, Wand2, Share2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { Client } from '../types';
@@ -33,6 +33,18 @@ const ClientPortals: React.FC = () => {
     const handleOpenPortal = (client: Client) => {
         const link = `${window.location.origin}/portal/${client.portalAlias || client.id}`;
         window.open(link, '_blank');
+    };
+
+    const handleShareWhatsApp = (client: Client) => {
+        const link = `${window.location.origin}/portal/${client.portalAlias || client.id}`;
+        const pinText = client.clientPin ? `\n🔑 Tu PIN de seguridad es: *${client.clientPin}*` : '\nAcceso directo sin clave.';
+        const text = encodeURIComponent(
+            `Hola ${client.name}, aquí puedes consultar tus préstamos y recibos de pago en línea:\n\n` +
+            `🌐 Portal Digital: ${link}` +
+            pinText
+        );
+        const phoneClean = client.phone ? client.phone.replace(/\D/g, '') : '';
+        window.open(`https://wa.me/${phoneClean}?text=${text}`, '_blank');
     };
 
     const openManageModal = (client: Client) => {
@@ -180,6 +192,9 @@ const ClientPortals: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center gap-2">
+                                            <button onClick={() => handleShareWhatsApp(client)} disabled={client.portalActive === false} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm transition-colors border border-emerald-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed" title="Enviar por WhatsApp">
+                                                <Share2 className="w-4 h-4" />
+                                            </button>
                                             <button onClick={() => handleCopyLink(client)} disabled={client.portalActive === false} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm transition-colors border border-indigo-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed" title="Copiar Enlace">
                                                 <Copy className="w-4 h-4" />
                                             </button>

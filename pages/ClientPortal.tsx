@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../context/StoreContext';
-import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar, ExternalLink, Printer } from 'lucide-react';
+import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar, ExternalLink, Printer, LogOut, CheckCircle2, Lock, ArrowUpRight, Percent, Award, Sparkles, Building2, PhoneCall } from 'lucide-react';
 import { Loan, Transaction, CompanySettings, Client, formatLoanId, formatReceiptId } from '../types';
 import { useParams, Link } from 'react-router-dom';
 import { insforge } from '../lib/insforge';
 
 export const ClientPortal: React.FC = () => {
-    const { companySettings } = useSettings();
-    const { clientId } = useParams<{ clientId: string }>(); // Can be UUID or portal_alias
+    const { companySettings: globalSettings } = useSettings();
+    const { clientId } = useParams<{ clientId: string }>();
     
     // Auth State
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,10 +25,15 @@ export const ClientPortal: React.FC = () => {
     const [clientTransactions, setClientTransactions] = useState<Transaction[]>([]);
     const [clientDocuments, setClientDocuments] = useState<any[]>([]);
 
-    // Helper for theoretical installment calculation
+    // Lender Company Settings State (for custom branding)
+    const [lenderBranding, setLenderBranding] = useState<CompanySettings | null>(null);
+
+    const activeCompany = lenderBranding || globalSettings;
+
+    // Helpers
     const getInstallmentAmount = (loan: Loan) => {
         const total = loan.totalToPay || loan.amount || 0;
-        const count = loan.durationWeeks || 1;
+        const count = loan.durationWeeks || loan.installments || 1;
         if (total > 0 && count > 0) return total / count;
         return loan.amount || 0;
     };
@@ -36,14 +41,11 @@ export const ClientPortal: React.FC = () => {
     const getNextDate = (loan: Loan) => {
         const nextStr = loan.nextPaymentDate || loan.startDate;
         if (nextStr) {
-            const parsed = new Date(nextStr);
+            const parsed = new Date(nextStr + 'T12:00:00');
             if (!isNaN(parsed.getTime())) return parsed;
         }
         return new Date();
     };
-
-    // Lender Company Settings State (for portal branding)
-    const [lenderBranding, setLenderBranding] = useState<CompanySettings | null>(null);
 
     // Initial Client Lookup
     useEffect(() => {
@@ -157,7 +159,7 @@ export const ClientPortal: React.FC = () => {
 
     const fetchClientDetails = async (id: string) => {
         try {
-            // 1. Fetch Loans for this client with column name fallback
+            // 1. Fetch Loans for this client
             let { data: lData } = await insforge.database
                 .from('loans')
                 .select('*')
@@ -171,16 +173,7 @@ export const ClientPortal: React.FC = () => {
                 if (lData2) lData = lData2;
             }
 
-            if (!lData || lData.length === 0) {
-                const { data: lData3 } = await insforge.database
-                    .from('loans')
-                    .select('*')
-                    .eq('clientId', id);
-                if (lData3) lData = lData3;
-            }
-
             if (lData && lData.length > 0) {
-                // Map Postgres raw fields to standard Loan interface
                 const mappedLoans: Loan[] = lData.map((l: any) => ({
                     ...l,
                     id: l.id,
@@ -201,7 +194,7 @@ export const ClientPortal: React.FC = () => {
 
                 const lIds = lData.map((l: any) => l.id);
                 if (lIds.length > 0) {
-                    // 2. Fetch Transactions for these loan IDs
+                    // 2. Fetch Transactions
                     let { data: tData } = await insforge.database
                         .from('transactions')
                         .select('*')
@@ -213,14 +206,6 @@ export const ClientPortal: React.FC = () => {
                             .select('*')
                             .in('reference_id', lIds);
                         if (tData2) tData = tData2;
-                    }
-
-                    if (!tData || tData.length === 0) {
-                        const { data: tData3 } = await insforge.database
-                            .from('transactions')
-                            .select('*')
-                            .in('referenceId', lIds);
-                        if (tData3) tData = tData3;
                     }
 
                     if (tData) {
@@ -263,7 +248,7 @@ export const ClientPortal: React.FC = () => {
         }
         
         if (client.clientPin && client.clientPin !== pin) {
-            setAuthError('PIN incorrecto.');
+            setAuthError('PIN incorrecto. Inténtalo de nuevo.');
             return;
         }
 
@@ -271,267 +256,402 @@ export const ClientPortal: React.FC = () => {
         setIsAuthenticated(true);
     };
 
+    // Calculate Global Totals
+    const totalRemaining = clientLoans.reduce((sum, l) => sum + (l.remainingBalance || 0), 0);
+    const totalInitial = clientLoans.reduce((sum, l) => sum + (l.totalToPay || l.amount || 0), 0);
+    const totalPaid = Math.max(0, totalInitial - totalRemaining);
+    const paidPercentage = totalInitial > 0 ? Math.round((totalPaid / totalInitial) * 100) : 100;
+
+    // Loading State
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-                <p className="text-slate-600 font-bold text-sm">Cargando portal de cliente...</p>
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="font-bold text-sm text-slate-300">Cargando Banca Digital...</p>
             </div>
         );
     }
 
+    // Not Found
     if (notFound) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-                <XCircle className="w-16 h-16 text-slate-300 mb-4" />
-                <h2 className="text-2xl font-bold text-slate-700">Cliente no encontrado</h2>
-                <p className="text-slate-500 mt-2 text-center">El enlace que ingresaste es inválido o no existe.</p>
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center">
+                <div className="p-4 bg-rose-500/10 text-rose-400 rounded-3xl mb-4 border border-rose-500/20">
+                    <XCircle className="w-14 h-14" />
+                </div>
+                <h2 className="text-2xl font-black mb-2">Cliente No Encontrado</h2>
+                <p className="text-slate-400 text-sm max-w-md mb-6">
+                    El enlace o alias que ingresaste no corresponde a ningún cliente registrado o fue modificado.
+                </p>
+                <div className="text-xs text-slate-500 font-mono bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">
+                    Verifica el alias o solicita un nuevo enlace a tu financiera.
+                </div>
             </div>
         );
     }
 
+    // Access Denied
     if (accessDenied) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-                <AlertCircle className="w-16 h-16 text-rose-500 mb-4" />
-                <h2 className="text-2xl font-bold text-slate-800">Acceso Desactivado</h2>
-                <p className="text-slate-500 mt-2 text-center">Tu acceso al portal ha sido desactivado temporalmente. Por favor, contacta a {companySettings.name}.</p>
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center">
+                <div className="p-4 bg-amber-500/10 text-amber-400 rounded-3xl mb-4 border border-amber-500/20">
+                    <AlertCircle className="w-14 h-14" />
+                </div>
+                <h2 className="text-2xl font-black mb-2">Acceso Temporalmente Bloqueado</h2>
+                <p className="text-slate-400 text-sm max-w-md mb-6">
+                    Tu portal de cliente se encuentra deshabilitado por razones de seguridad o actualización de datos.
+                </p>
+                <p className="text-xs text-indigo-400 font-bold">
+                    Contacta a {activeCompany.name} {activeCompany.phone && `al ${activeCompany.phone}`}
+                </p>
             </div>
         );
     }
 
+    // PIN Authentication Screen (Modern Banking Lock Screen)
     if (!isAuthenticated) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-                
-                <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-                    {companySettings.logoUrl ? (
-                        <img src={companySettings.logoUrl} alt="Logo" className="mx-auto h-16 w-auto mb-4 object-contain" />
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white flex flex-col justify-between py-10 px-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Top Branding */}
+                <div className="text-center relative z-10 pt-4">
+                    {activeCompany.logoUrl ? (
+                        <img src={activeCompany.logoUrl} alt="Logo" className="mx-auto h-16 w-auto mb-3 object-contain drop-shadow-lg" />
                     ) : (
-                        <div className="mx-auto h-16 w-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-4">
-                            <Smartphone className="w-8 h-8 text-white" />
+                        <div className="mx-auto h-16 w-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20 mb-3">
+                            <Building2 className="w-8 h-8 text-white" />
                         </div>
                     )}
-                    <h2 className="text-center text-3xl font-extrabold text-slate-900">
-                        Hola, {client?.name.split(' ')[0]}
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-slate-600">
-                        Bienvenido al portal de {companySettings.name}
-                    </p>
+                    <h1 className="text-xl font-black text-white tracking-wide">{activeCompany.name}</h1>
+                    <p className="text-xs text-indigo-300 font-medium">Banca Digital de Clientes</p>
                 </div>
 
-                <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-                    <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-slate-100">
-                        <form className="space-y-6" onSubmit={handleLogin}>
+                {/* Form Card */}
+                <div className="w-full max-w-sm mx-auto relative z-10 my-auto">
+                    <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-2xl text-center space-y-6">
+                        
+                        <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto border border-indigo-500/30">
+                            <Lock className="w-8 h-8" />
+                        </div>
+
+                        <div>
+                            <h2 className="text-lg font-bold text-white">Hola, {client?.name.split(' ')[0]}</h2>
+                            <p className="text-xs text-slate-400 mt-1">Ingresa tu PIN de 4 dígitos para acceder a tus préstamos</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-5">
                             <div>
-                                <label htmlFor="pin" className="block text-sm font-medium text-slate-700 text-center mb-4">
-                                    Ingresa tu PIN de Seguridad (4 dígitos)
-                                </label>
-                                <div className="mt-1 flex justify-center">
-                                    <input
-                                        id="pin"
-                                        name="pin"
-                                        type="password"
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        required
-                                        value={pin}
-                                        onChange={(e) => setPin(e.target.value)}
-                                        className="appearance-none block w-32 px-3 py-3 text-center text-2xl tracking-widest font-bold border-2 border-slate-300 rounded-xl shadow-sm placeholder-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                                        placeholder="••••"
-                                        maxLength={4}
-                                    />
-                                </div>
+                                <input
+                                    type="password"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    maxLength={4}
+                                    required
+                                    autoFocus
+                                    value={pin}
+                                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="••••"
+                                    className="w-40 mx-auto text-center text-3xl font-black tracking-[0.5em] py-3.5 bg-slate-950 border-2 border-indigo-500/40 rounded-2xl text-white placeholder-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/20 transition-all"
+                                />
                             </div>
 
                             {authError && (
-                                <div className="text-sm text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 text-center font-medium">
+                                <div className="text-xs text-rose-400 bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 font-semibold">
                                     {authError}
                                 </div>
                             )}
 
-                            <div>
-                                <button
-                                    type="submit"
-                                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
-                                >
-                                    Ingresar a mi cuenta <ArrowRight className="ml-2 w-4 h-4" />
-                                </button>
-                            </div>
+                            <button
+                                type="submit"
+                                className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                            >
+                                Entrar a mi Portal <ArrowRight className="w-4 h-4" />
+                            </button>
                         </form>
                     </div>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center text-[11px] text-slate-500 relative z-10">
+                    <p>Acceso seguro cifrado • {activeCompany.name}</p>
                 </div>
             </div>
         );
     }
 
+    // Authenticated Digital Banking Dashboard
     return (
-        <div className="min-h-screen bg-slate-50 pb-12">
-            {/* Navigation Header */}
-            <nav className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16 items-center">
-                        <div className="flex items-center gap-3">
-                            {companySettings.logoUrl ? (
-                                <img src={companySettings.logoUrl} alt="Logo" className="h-8 w-auto" />
-                            ) : (
-                                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                                    <ShieldCheck className="w-5 h-5 text-white" />
-                                </div>
-                            )}
-                            <span className="font-bold text-slate-800">{companySettings.name}</span>
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
+
+            {/* Banking Top Header */}
+            <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-8 py-3.5">
+                <div className="max-w-5xl mx-auto flex items-center justify-between">
+                    
+                    {/* Logo & Company Name */}
+                    <div className="flex items-center gap-3">
+                        {activeCompany.logoUrl ? (
+                            <img src={activeCompany.logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
+                        ) : (
+                            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                                <Building2 className="w-5 h-5 text-white" />
+                            </div>
+                        )}
+                        <div>
+                            <p className="font-black text-white text-sm leading-tight">{activeCompany.name}</p>
+                            <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Portal del Cliente</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-sm font-bold text-slate-800">{client?.name}</p>
-                                {client?.cedula && <p className="text-xs text-slate-500 font-mono">Cédula: {client.cedula}</p>}
+                    </div>
+
+                    {/* Client Badge + Lock Exit */}
+                    <div className="flex items-center gap-3">
+                        <div className="hidden sm:flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-full">
+                            <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white font-black text-xs">
+                                {client?.name.charAt(0)}{client?.lastName?.charAt(0) || ''}
                             </div>
-                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
-                                {client?.name.charAt(0)}{client?.lastName?.charAt(0)}
+                            <div className="text-left pr-1">
+                                <p className="text-xs font-bold text-white leading-tight">{client?.name}</p>
+                                <p className="text-[10px] text-slate-400 font-mono">{client?.cedula}</p>
                             </div>
+                        </div>
+
+                        {client?.clientPin && (
+                            <button
+                                onClick={() => { setIsAuthenticated(false); setPin(''); }}
+                                title="Cerrar sesión"
+                                className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-all border border-slate-700/60"
+                            >
+                                <LogOut className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content Area */}
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+                {/* Hero Financial Summary Banner (Bank Card Style) */}
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-950 to-purple-950 border border-indigo-500/30 p-6 sm:p-8 shadow-2xl">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        
+                        {/* Left: Total Balance */}
+                        <div className="md:col-span-2 space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-bold border border-indigo-500/30">
+                                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                                Balance Total de Deuda
+                            </div>
+                            <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                                RD$ {totalRemaining.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </h2>
+                            
+                            {/* Progress bar */}
+                            <div className="pt-2">
+                                <div className="flex justify-between text-xs text-indigo-200 font-medium mb-1.5">
+                                    <span>Progreso de Pago Global</span>
+                                    <span className="font-bold text-emerald-400">{paidPercentage}% Pagado</span>
+                                </div>
+                                <div className="w-full h-3 bg-slate-900/80 rounded-full overflow-hidden p-0.5 border border-indigo-500/20">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700" 
+                                        style={{ width: `${Math.min(100, Math.max(5, paidPercentage))}%` }} 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right: Quick Action & Status Pill */}
+                        <div className="bg-slate-900/80 border border-indigo-500/30 rounded-2xl p-4 text-center space-y-3">
+                            <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
+                                <span className="text-slate-400">Estado de Cuenta</span>
+                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                    ● AL DÍA
+                                </span>
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[11px] text-slate-400 font-medium">Préstamos Activos</p>
+                                <p className="text-2xl font-black text-white">{clientLoans.length} operaciones</p>
+                            </div>
+                            
+                            {/* Contact Lender Button */}
+                            {activeCompany.phone && (
+                                <a
+                                    href={`https://wa.me/${activeCompany.phone.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-full py-2 px-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md"
+                                >
+                                    <PhoneCall className="w-3.5 h-3.5" /> Contactar a Financiera
+                                </a>
+                            )}
                         </div>
                     </div>
                 </div>
-            </nav>
 
-            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-                
-                {/* Active Loans Section */}
-                <section>
-                    <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4">
-                        <CreditCard className="w-5 h-5 mr-2 text-indigo-500" /> Mis Préstamos ({clientLoans.length})
-                    </h2>
-                    
+                {/* Section 1: Active Loans */}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <CreditCard className="w-5 h-5 text-indigo-400" /> Mis Préstamos ({clientLoans.length})
+                        </h3>
+                    </div>
+
                     {clientLoans.length === 0 ? (
-                        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
-                            <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                            <h3 className="text-lg font-bold text-slate-800">No tienes préstamos activos</h3>
-                            <p className="text-slate-500 mt-1">Tu cuenta está completamente al día.</p>
+                        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 text-center space-y-2">
+                            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+                            <h4 className="font-bold text-white text-base">No tienes préstamos pendientes</h4>
+                            <p className="text-xs text-slate-400">Todas tus cuentas están completamente al día.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {clientLoans.map(loan => (
-                                <div key={loan.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
-                                    <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                                        {loan.status}
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <p className="text-sm text-slate-500 font-medium">{loan.loanType}</p>
-                                                <h3 className="text-2xl font-bold text-slate-900">
-                                                    RD$ {loan.remainingBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                                                </h3>
-                                                <p className="text-xs text-slate-400 mt-1">Saldo Restante Pendiente</p>
-                                            </div>
-                                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {clientLoans.map(loan => {
+                                const instAmt = getInstallmentAmount(loan);
+                                const nextDt = getNextDate(loan);
+                                const loanPaidPct = loan.totalToPay && loan.totalToPay > 0
+                                    ? Math.round(((loan.totalToPay - loan.remainingBalance) / loan.totalToPay) * 100)
+                                    : 0;
+
+                                return (
+                                    <div key={loan.id} className="bg-slate-900 border border-slate-800 hover:border-indigo-500/40 rounded-3xl p-6 transition-all shadow-lg relative flex flex-col justify-between space-y-4">
                                         
-                                        <div className="grid grid-cols-2 gap-4 mt-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        {/* Header */}
+                                        <div className="flex justify-between items-start">
                                             <div>
-                                                <div className="flex items-center text-slate-500 text-xs mb-1">
-                                                    <Calendar className="w-3 h-3 mr-1" /> Próximo Pago
-                                                </div>
-                                                <p className="font-semibold text-slate-800">
-                                                    {getNextDate(loan).toLocaleDateString('es-DO')}
-                                                </p>
+                                                <span className="inline-block px-2.5 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-[11px] font-bold mb-1">
+                                                    {loan.loanType}
+                                                </span>
+                                                <p className="text-xs text-slate-400 font-mono">Ref: {formatLoanId(loan.id)}</p>
+                                            </div>
+                                            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold rounded-full">
+                                                {loan.status}
+                                            </span>
+                                        </div>
+
+                                        {/* Main Balance */}
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1">Balance Pendiente</p>
+                                            <p className="text-3xl font-black text-white">
+                                                RD$ {loan.remainingBalance.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </p>
+                                        </div>
+
+                                        {/* Loan Progress */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between text-[11px] text-slate-400">
+                                                <span>Pagado: RD$ {(loan.totalToPay - loan.remainingBalance).toLocaleString()}</span>
+                                                <span className="font-bold text-indigo-300">{Math.max(0, loanPaidPct)}%</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                                                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.max(3, loanPaidPct)}%` }} />
+                                            </div>
+                                        </div>
+
+                                        {/* Details Grid */}
+                                        <div className="grid grid-cols-2 gap-3 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 text-xs">
+                                            <div>
+                                                <span className="text-slate-400 block text-[10px] uppercase font-bold">Cuota ({loan.frequency})</span>
+                                                <span className="font-bold text-emerald-400 text-sm">
+                                                    RD$ {instAmt.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </span>
                                             </div>
                                             <div>
-                                                <div className="flex items-center text-slate-500 text-xs mb-1">
-                                                    <CreditCard className="w-3 h-3 mr-1" /> Cuota {loan.frequency}
-                                                </div>
-                                                <p className="font-semibold text-slate-800">
-                                                    RD$ {getInstallmentAmount(loan).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                                                </p>
+                                                <span className="text-slate-400 block text-[10px] uppercase font-bold">Próximo Cobro</span>
+                                                <span className="font-bold text-white text-sm">
+                                                    {nextDt.toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                                        <span className="text-slate-500 font-bold">Préstamo Ref:</span>
-                                        <span className="text-indigo-600 font-mono font-black text-sm">{formatLoanId(loan.id)}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </section>
 
-                {/* Recent Documents & Receipts */}
-                <section>
-                    <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4">
-                        <FileText className="w-5 h-5 mr-2 text-indigo-500" /> Mis Recibos de Pago y Documentos
-                    </h2>
-                    
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        {clientDocuments.length === 0 && clientTransactions.length === 0 ? (
-                            <div className="p-8 text-center">
-                                <p className="text-slate-500">No hay documentos ni pagos registrados recientemente.</p>
+                {/* Section 2: Recent Payment History & Official Receipts */}
+                <section className="space-y-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-indigo-400" /> Historial de Pagos y Recibos Oficiales
+                    </h3>
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+                        {clientTransactions.length === 0 && clientDocuments.length === 0 ? (
+                            <div className="p-8 text-center text-slate-500 text-xs">
+                                No se han registrado pagos o documentos aún.
                             </div>
                         ) : (
-                            <ul className="divide-y divide-slate-100">
-                                {/* Uploaded PDF documents */}
-                                {clientDocuments.map(doc => (
-                                    <li key={doc.id} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-                                                <FileText className="w-5 h-5 text-indigo-600" />
+                            <div className="divide-y divide-slate-800">
+                                {clientTransactions.map(t => (
+                                    <div key={t.id} className="p-4 hover:bg-slate-800/50 transition-colors flex items-center justify-between flex-wrap gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center shrink-0 border border-emerald-500/30">
+                                                <CheckCircle className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-slate-800">{doc.title}</p>
-                                                <p className="text-xs text-slate-500">{new Date(doc.upload_date).toLocaleDateString('es-DO')} • {doc.type}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-white text-sm">Recibo {formatReceiptId(t.id)}</span>
+                                                    <span className="px-2 py-0.5 bg-slate-800 text-indigo-300 text-[10px] font-bold rounded-md font-mono">
+                                                        {t.paymentMethod}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-400">{new Date(t.date).toLocaleDateString('es-DO')} • {t.description}</p>
                                             </div>
                                         </div>
-                                        <a href={doc.file_url} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-200 rounded-lg transition-colors">
-                                            <Download className="w-5 h-5" />
-                                        </a>
-                                    </li>
+
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-black text-emerald-400 text-base">
+                                                + RD$ {t.amount.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                            <Link
+                                                to={`/recibo/${t.id}`}
+                                                target="_blank"
+                                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
+                                            >
+                                                <Printer className="w-3.5 h-3.5" /> Ver Recibo
+                                            </Link>
+                                        </div>
+                                    </div>
                                 ))}
-                                
-                                {/* Official Payment Receipts */}
-                                {clientTransactions.map(t => {
-                                    return (
-                                        <li key={t.id} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center flex-wrap gap-3">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-                                                    <CheckCircle className="w-5 h-5 text-emerald-600" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-800 flex items-center gap-2">
-                                                        <span>Recibo {formatReceiptId(t.id)}</span>
-                                                        <span className="text-xs font-mono bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold">
-                                                            {t.paymentMethod}
-                                                        </span>
-                                                    </p>
-                                                    <p className="text-xs text-slate-500">
-                                                        {new Date(t.date).toLocaleDateString('es-DO')} • {t.description}
-                                                    </p>
-                                                </div>
+
+                                {clientDocuments.map(doc => (
+                                    <div key={doc.id} className="p-4 hover:bg-slate-800/50 transition-colors flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center shrink-0 border border-indigo-500/30">
+                                                <FileText className="w-5 h-5" />
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-black text-emerald-600 text-base">
-                                                    RD$ {t.amount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                                                </span>
-                                                <Link 
-                                                    to={`/recibo/${t.id}`}
-                                                    target="_blank"
-                                                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-sm transition-colors"
-                                                >
-                                                    <Printer className="w-3.5 h-3.5" /> Ver Recibo
-                                                </Link>
+                                            <div>
+                                                <p className="font-bold text-white text-sm">{doc.title}</p>
+                                                <p className="text-xs text-slate-400">{new Date(doc.upload_date).toLocaleDateString('es-DO')} • {doc.type}</p>
                                             </div>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                                        </div>
+                                        <a
+                                            href={doc.file_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="p-2 bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-xl transition-all"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </section>
 
-                <footer className="text-center pt-8 pb-4">
-                    <p className="text-sm text-slate-400">&copy; {new Date().getFullYear()} {companySettings.name}. Todos los derechos reservados.</p>
+                {/* Footer */}
+                <footer className="text-center pt-6 pb-2 text-xs text-slate-500 space-y-1">
+                    <p>© {new Date().getFullYear()} {activeCompany.name}. Banca Digital Segura.</p>
+                    {activeCompany.termsAndConditions && (
+                        <p className="text-[10px] text-slate-600 max-w-lg mx-auto leading-relaxed">{activeCompany.termsAndConditions}</p>
+                    )}
                 </footer>
             </main>
         </div>
     );
 };
+
+export default ClientPortal;
