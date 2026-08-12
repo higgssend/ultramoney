@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone } from 'lucide-react';
+import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loa
 import { CollateralForm } from './features/CollateralForm';
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
+import { LoanContractModal } from './features/LoanContractModal';
 
 const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
@@ -69,6 +70,7 @@ const LoanRequest: React.FC = () => {
   const [enablePortal, setEnablePortal] = useState(true);
   const [portalPin, setPortalPin] = useState('');
   const [schedulePreview, setSchedulePreview] = useState<InstallmentPreview[]>([]);
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [activeProduct, setActiveProduct] = useState<LoanProduct | null>(null);
 
   // Dates State
@@ -915,79 +917,152 @@ const LoanRequest: React.FC = () => {
 
                 {/* Summary Sidebar */}
                 <div className="lg:col-span-1">
-                    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-3xl shadow-xl shadow-indigo-500/30 p-8 sticky top-6">
-                        <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-3xl shadow-xl shadow-indigo-500/30 p-6 sticky top-6 space-y-4">
+                        <div className="flex items-center gap-3">
                             <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm"><Banknote className="w-6 h-6"/></div>
-                            <h3 className="text-xl font-bold">Resumen</h3>
+                            <h3 className="text-xl font-bold">Resumen del Préstamo</h3>
                         </div>
-                        
-                        <div className="space-y-4 text-sm">
-                            <div className="flex justify-between border-b border-white/10 pb-3">
-                                <span className="text-indigo-100">Capital Solicitado</span>
-                                <span className="font-semibold text-white">${amount.toLocaleString()}</span>
+
+                        {/* Client Row */}
+                        {selectedClient && (
+                            <div className="flex items-center gap-3 bg-white/10 rounded-2xl px-4 py-3">
+                                <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center font-black text-sm">
+                                    {selectedClient.name.charAt(0)}{selectedClient.lastName?.charAt(0) || ''}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-white text-sm truncate">{selectedClient.name} {selectedClient.lastName || ''}</p>
+                                    <p className="text-xs text-indigo-200">{selectedClient.cedula || 'Sin cédula'}</p>
+                                </div>
+                                {/* Risk indicator */}
+                                {selectedClient.income && selectedClient.income > 0 && (() => {
+                                    const ratio = (calculateInstallment() / selectedClient.income) * 100;
+                                    const color = ratio <= 30 ? 'text-emerald-300' : ratio <= 50 ? 'text-amber-300' : 'text-rose-300';
+                                    const label = ratio <= 30 ? '🟢 Bajo' : ratio <= 50 ? '🟡 Medio' : '🔴 Alto';
+                                    return (
+                                        <div className="text-right">
+                                            <p className={`text-xs font-black ${color}`}>{label}</p>
+                                            <p className="text-[10px] text-indigo-200">Riesgo cuota</p>
+                                        </div>
+                                    );
+                                })()}
                             </div>
-                            
+                        )}
+
+                        {/* Key Figures */}
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between border-b border-white/10 pb-2">
+                                <span className="text-indigo-200">Capital Solicitado</span>
+                                <span className="font-semibold">RD$ {amount.toLocaleString()}</span>
+                            </div>
                             {closingCost > 0 && (
-                                <div className="flex justify-between border-b border-white/10 pb-3">
-                                    <span className="text-amber-200 flex items-center gap-1"><Scissors className="w-3 h-3"/> Gastos Cierre</span>
-                                    <span className="font-semibold text-amber-200">
-                                        {closingCostMode === 'Descontado' ? '-' : closingCostMode === 'Financiado' ? '+' : ''}${closingCost.toLocaleString()}
-                                        <span className="text-[9px] block text-right opacity-70 uppercase">{closingCostMode}</span>
+                                <div className="flex justify-between border-b border-white/10 pb-2">
+                                    <span className="text-amber-200 flex items-center gap-1 text-xs"><Scissors className="w-3 h-3"/> Gastos Cierre ({closingCostMode})</span>
+                                    <span className="font-semibold text-amber-200 text-xs">
+                                        {closingCostMode === 'Descontado' ? '−' : '+'} RD$ {closingCost.toLocaleString()}
                                     </span>
                                 </div>
                             )}
-
-                            <div className="flex justify-between border-b border-white/10 pb-3 bg-white/5 p-2 rounded-lg">
-                                <span className="text-emerald-200 font-bold uppercase text-xs">Monto a Entregar (Neto)</span>
-                                <span className="font-bold text-xl text-emerald-300">${getNetDisbursement().toLocaleString()}</span>
+                            <div className="flex justify-between border-b border-white/10 pb-2">
+                                <span className="text-emerald-200 font-bold text-xs uppercase">Neto a Recibir</span>
+                                <span className="font-bold text-emerald-300 text-base">RD$ {getNetDisbursement().toLocaleString()}</span>
                             </div>
-
-                            {/* Separator */}
-                            <div className="my-2"></div>
-
-                            {/* HIGHLIGHTED GRAND TOTAL NET DEBT BADGE */}
-                            <div className="bg-gradient-to-br from-emerald-500/20 to-teal-600/30 p-4 rounded-2xl border border-emerald-400/40 text-center shadow-lg my-4">
-                                <span className="block text-[11px] font-black text-emerald-200 uppercase tracking-wider mb-1">
-                                    MONTO TOTAL NETO A PAGAR POR EL CLIENTE
-                                </span>
-                                <span className="text-3xl sm:text-4xl font-black text-emerald-300 drop-shadow-md block">
-                                    RD$ {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </span>
-                                <span className="block text-[10px] text-emerald-200/80 mt-1 font-semibold">
-                                    (Capital RD$ {amount.toLocaleString()} + Intereses calculados)
-                                </span>
+                            <div className="flex justify-between border-b border-white/10 pb-2">
+                                <span className="text-indigo-200">Interés Total</span>
+                                <span className="font-semibold text-rose-300">RD$ {(calculateTotal() - amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             </div>
+                            <div className="flex justify-between border-b border-white/10 pb-2">
+                                <span className="text-indigo-200 text-xs">Primer Pago</span>
+                                <span className="font-semibold text-xs">{firstPaymentDate || '—'}</span>
+                            </div>
+                        </div>
 
-                            <div className="mt-4 pt-2">
-                                <p className="text-xs text-indigo-200 text-center uppercase font-bold tracking-wider mb-2">
-                                    {loanType.includes('Amortizado') ? 'Cuota Fija a Pagar' : 'Interés Periódico a Pagar'} ({frequency})
-                                </p>
-                                <div className="text-center text-4xl font-bold bg-white/10 py-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                                    RD$ {calculateInstallment().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                                </div>
-                                {(loanType === 'Rédito' || loanType.includes('Rédito')) && (
-                                    <p className="text-center text-[10px] text-indigo-200 mt-2 bg-black/20 rounded py-1 px-2">
-                                        * Cliente debe pagar esto cada {frequency} (Primer cobro: {firstPaymentDate})
-                                    </p>
+                        {/* TOTAL TO PAY — BIG */}
+                        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-indigo-200 mb-1">TOTAL A PAGAR POR EL CLIENTE</p>
+                            <p className="text-4xl font-black text-white">
+                                RD$ {calculateTotal().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </p>
+                            <p className="text-[10px] text-indigo-200/80 mt-1">Capital + Intereses</p>
+                        </div>
+
+                        {/* Installment Amount */}
+                        <div>
+                            <p className="text-xs text-indigo-200 text-center uppercase font-bold tracking-wider mb-2">
+                                {loanType.includes('Amortizado') || loanType.includes('Financiamiento') ? 'Cuota Fija' : 'Interés Periódico'} · {frequency}
+                            </p>
+                            <div className="text-center text-4xl font-black bg-emerald-500/20 border border-emerald-400/40 py-4 rounded-2xl">
+                                RD$ {calculateInstallment().toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            </div>
+                        </div>
+
+                        {/* Mini Schedule Preview (first 3 installments) */}
+                        {schedulePreview.length > 0 && (
+                            <div className="space-y-1.5">
+                                <p className="text-[10px] font-black uppercase text-indigo-200 tracking-wider">Próximas Cuotas</p>
+                                {schedulePreview.slice(0, 3).map((row, i) => (
+                                    <div key={i} className="flex justify-between items-center bg-white/5 rounded-lg px-3 py-1.5 text-xs">
+                                        <span className="text-indigo-200">#{row.installmentNumber} · {row.dueDate ? new Date(row.dueDate + 'T12:00:00').toLocaleDateString('es-DO', { day: '2-digit', month: 'short' }) : '—'}</span>
+                                        <span className="font-bold text-white">RD$ {row.total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    </div>
+                                ))}
+                                {schedulePreview.length > 3 && (
+                                    <p className="text-center text-[10px] text-indigo-300">+ {schedulePreview.length - 3} cuotas más</p>
                                 )}
                             </div>
+                        )}
 
-                            <button 
-                                onClick={handleSubmit}
-                                className={`w-full mt-6 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] ${creationMode === 'direct' ? 'bg-emerald-500 hover:bg-emerald-400 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
-                                disabled={!selectedClientId}
-                            >
-                                {creationMode === 'direct' ? <Banknote className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-                                {creationMode === 'direct' ? 'Desembolsar Ahora' : 'Guardar Solicitud'}
-                            </button>
-                            {creationMode === 'direct' && (
-                                <p className="text-center text-[10px] text-emerald-200 flex justify-center items-center gap-1 mt-2">
-                                    <FileCheck className="w-3 h-3" /> Se generará contrato automáticamente
-                                </p>
-                            )}
-                        </div>
+                        {/* Contract Preview Button */}
+                        <button
+                            onClick={() => setIsContractModalOpen(true)}
+                            className="w-full py-3 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center gap-2 transition-all"
+                            title="Ver recibo completo del préstamo"
+                        >
+                            <FileText className="w-4 h-4" />
+                            Ver / Imprimir Contrato
+                        </button>
+
+                        {/* Disburse / Save Button */}
+                        <button 
+                            onClick={handleSubmit}
+                            className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] ${creationMode === 'direct' ? 'bg-emerald-500 hover:bg-emerald-400 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
+                            disabled={!selectedClientId}
+                        >
+                            {creationMode === 'direct' ? <Banknote className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+                            {creationMode === 'direct' ? 'Desembolsar Ahora' : 'Guardar Solicitud'}
+                        </button>
+                        {creationMode === 'direct' && (
+                            <p className="text-center text-[10px] text-emerald-200 flex justify-center items-center gap-1">
+                                <FileCheck className="w-3 h-3" /> Se generará contrato automáticamente
+                            </p>
+                        )}
                     </div>
                 </div>
+
+                {/* Contract Modal */}
+                <LoanContractModal
+                    isOpen={isContractModalOpen}
+                    onClose={() => setIsContractModalOpen(false)}
+                    client={selectedClient}
+                    amount={amount}
+                    interest={interest}
+                    weeks={weeks}
+                    frequency={frequency}
+                    loanType={loanType}
+                    closingCost={closingCost}
+                    closingCostMode={closingCostMode}
+                    startDate={startDate}
+                    firstPaymentDate={firstPaymentDate}
+                    schedulePreview={schedulePreview}
+                    netDisbursement={getNetDisbursement()}
+                    totalToPay={calculateTotal()}
+                    installmentAmount={calculateInstallment()}
+                    currency={globalCurrency}
+                    companySettings={companySettings}
+                    itemPrice={itemPrice}
+                    downPayment={downPayment}
+                    downPaymentMode={downPaymentMode}
+                    financedAmount={loanType.includes('Financiamiento') ? amount - (downPayment || 0) : undefined}
+                />
             </div>
         </div>
     );
