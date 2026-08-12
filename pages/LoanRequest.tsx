@@ -292,7 +292,7 @@ const LoanRequest: React.FC = () => {
       setViewMode('create');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedClient) {
         toast.error("Por favor seleccione un cliente");
         return;
