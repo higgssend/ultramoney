@@ -377,16 +377,13 @@ const ClientDetail: React.FC = () => {
                                          <span className="text-sm font-bold text-slate-700 dark:text-white">${loan.installmentAmount.toLocaleString()} / {loan.frequency}</span>
                                      </div>
                                  </div>
-                                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-2">
+                                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                                      <div className="flex gap-2">
                                          <button 
-                                             onClick={() => {
-                                                 setSelectedDocLoan(loan);
-                                                 setIsDocGeneratorOpen(true);
-                                             }}
+                                             onClick={() => navigate(`/documentos/${client.id}?loanId=${loan.id}`)}
                                              className="flex-1 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
                                          >
-                                             <FileText className="w-4 h-4" /> Generar Documentos
+                                             <FileText className="w-4 h-4" /> Ver Documentos
                                          </button>
                                          <button 
                                              onClick={() => navigate('/pagos', { state: { loanId: loan.id } })}
@@ -398,7 +395,7 @@ const ClientDetail: React.FC = () => {
                                      {loan.status !== 'Completado' && (
                                          <button 
                                              onClick={() => handleSendReminder(loan)}
-                                             className="w-full py-2 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
+                                             className="w-full py-2 mt-2 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
                                          >
                                              <MessageCircle className="w-4 h-4" /> Recordatorio WhatsApp
                                          </button>
@@ -483,13 +480,10 @@ const ClientDetail: React.FC = () => {
                       <h3 className="font-bold text-slate-800 dark:text-white text-lg">Documentos Digitales & Legales</h3>
                       <div className="flex items-center gap-2">
                           <button 
-                              onClick={() => {
-                                  setSelectedDocLoan(clientLoans[0] || null);
-                                  setIsDocGeneratorOpen(true);
-                              }}
+                              onClick={() => navigate(`/documentos/${client.id}`)}
                               className="text-sm bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-4 py-2 rounded-xl font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2"
                           >
-                              <FileText className="w-4 h-4" /> Generar Documento Legal
+                              <FileText className="w-4 h-4" /> Ver Documentos Legales
                           </button>
                           <button onClick={() => setIsUploadModalOpen(true)} className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg shadow-indigo-500/20">
                               <Upload className="w-4 h-4" /> Subir Documento

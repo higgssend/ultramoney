@@ -21,6 +21,7 @@ import DeepAccounting from './pages/DeepAccounting';
 import Bitacora from './pages/Bitacora';
 import Profit from './pages/Profit';
 import ClientDetail from './pages/ClientDetail';
+import { DocumentPage } from './pages/DocumentPage';
 import NewClient from './pages/NewClient';
 import Invoices from './pages/Invoices';
 import Login from './pages/Login';
@@ -170,6 +171,7 @@ const AppContent: React.FC = () => {
             <Route path="/simulador" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/clientes/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+            <Route path="/documentos/:clientId" element={<ProtectedRoute><DocumentPage /></ProtectedRoute>} />
             <Route path="/clientes/nuevo" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
             <Route path="/clientes/editar/:id" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
             <Route path="/prestamos" element={<ProtectedRoute><Loans /></ProtectedRoute>} />

@@ -117,6 +117,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     }
   }
 
+  const collateralText = collateralDescription 
+    ? `${collateralType} - ${collateralDescription} ${collateralRefNumber ? `(${collateralRefNumber})` : ''}` 
+    : 'Garantía Personal / Sin Garantía Específica Declarada';
+
   const handleCloudSave = async () => {
     const printElement = document.getElementById('printable-legal-document');
     if (!printElement) return;
