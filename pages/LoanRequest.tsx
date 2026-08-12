@@ -134,7 +134,7 @@ const LoanRequest: React.FC = () => {
 
   // Efecto para recalcular cuando cambian los inputs
   useEffect(() => {
-    if (loanType.includes('Amortizado') && calcMode === 'installment') {
+    if ((loanType.includes('Amortizado') || loanType.includes('Financiamiento')) && calcMode === 'installment') {
         const principal = getPrincipalForCalculation();
         const totalDebt = principal * (1 + (interest / 100));
         if (targetInstallment > 0) {
@@ -271,26 +271,10 @@ const LoanRequest: React.FC = () => {
             setProcessingRequestId(null);
         }
 
-        // Update client portal access
-        if (selectedClient) {
-            updateClient({
-                ...selectedClient,
-                clientPin: enablePortal ? portalPin : undefined
-            });
-        }
-
         // Open contract receipt modal post-creation!
         setIsContractModalOpen(true);
         toast.success(creationMode === 'direct' ? "¡Préstamo desembolsado exitosamente!" : "¡Solicitud registrada con éxito!");
     } else {
-        // Update client portal access
-        if (selectedClient) {
-            updateClient({
-                ...selectedClient,
-                clientPin: enablePortal ? portalPin : undefined
-            });
-        }
-
         addLoanRequest({
             clientId: selectedClient.id,
             clientName: selectedClient.name,
@@ -610,7 +594,7 @@ const LoanRequest: React.FC = () => {
                             {/* Interés */}
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">
-                                    {loanType.includes('Amortizado') ? 'Tasa de Interés Total (%)' : 'Tasa por Periodo (%)'}
+                                    {(loanType.includes('Amortizado') || loanType.includes('Financiamiento')) ? 'Tasa de Interés Total (%)' : 'Tasa por Periodo (%)'}
                                 </label>
                                 <input 
                                 type="number" 
@@ -659,7 +643,7 @@ const LoanRequest: React.FC = () => {
                             )}
 
                             {/* Calculation Mode Tabs */}
-                            {loanType.includes('Amortizado') && (
+                            {(loanType.includes('Amortizado') || loanType.includes('Financiamiento')) && (
                                 <div className="md:col-span-2 border-t border-slate-100 pt-4 mt-2">
                                     <div className="flex bg-slate-100 p-1 rounded-xl mb-4 w-fit">
                                         <button 
@@ -878,45 +862,7 @@ const LoanRequest: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Portal Access Config */}
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 mt-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Smartphone className="w-5 h-5" /></div>
-                        Acceso a Portal de Cliente
-                    </h3>
-                    
-                    <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input 
-                                type="checkbox"
-                                checked={enablePortal}
-                                onChange={(e) => setEnablePortal(e.target.checked)}
-                                className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                            />
-                            <div>
-                                <span className="font-bold text-slate-800 block">Habilitar Link de Acceso</span>
-                                <span className="text-xs text-slate-500">Permite al cliente ver su balance en línea enviándole un Link.</span>
-                            </div>
-                        </label>
-                        
-                        {enablePortal && (
-                            <div className="pl-8 border-l-2 border-indigo-100 ml-2 mt-2">
-                                <label className="block text-sm font-bold text-slate-700 mb-2">PIN de Acceso (4 Dígitos)</label>
-                                <input 
-                                    type="text" 
-                                    maxLength={4}
-                                    value={portalPin}
-                                    onChange={(e) => setPortalPin(e.target.value.replace(/\D/g, ''))}
-                                    placeholder="Dejar en blanco para acceso directo sin PIN"
-                                    className="w-full max-w-[250px] px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold tracking-widest text-lg" 
-                                />
-                                <p className="text-xs text-slate-500 mt-2">
-                                    Si dejas el PIN vacío, el cliente podrá entrar a su portal directamente haciendo clic en el enlace, sin colocar contraseña.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+
 
                 {/* Summary Sidebar */}
                 <div className="lg:col-span-1">

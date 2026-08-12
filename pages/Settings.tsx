@@ -4,6 +4,7 @@ import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Pho
 import { useAuth, useSettings } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { Permission, User, ApiKey } from '../types';
+import { insforge } from '../lib/insforge';
 import { LoanProductsTab } from '../components/LoanProductsTab';
 import { CustomSelect } from '../components/CustomSelect';
 
