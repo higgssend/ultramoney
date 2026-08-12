@@ -51,10 +51,7 @@ const Dashboard: React.FC = () => {
   // Metrics Logic
   const currencyLoans = loans.filter(l => (l.currency || 'DOP') === globalCurrency);
   const totalPortfolio = currencyLoans.reduce((sum, loan) => sum + (Number(loan.remainingBalance) || 0), 0);
-  const activeClientsCount = clients.filter(c => c.status === 'Activo').length; 
-  const overdueAmount = currencyLoans
-    .filter(l => l.status === LoanStatus.OVERDUE)
-    .reduce((sum, l) => sum + l.remainingBalance, 0);
+  const activeClientsCount = clients.filter(c => c.status !== 'Inactivo' && c.status !== 'Bloqueado').length; 
   const balance = stats.balance;
 
   // Calculate PAR (Portfolio At Risk)
@@ -77,6 +74,7 @@ const Dashboard: React.FC = () => {
   });
 
   const parTotal = par30 + par60 + par90;
+  const overdueAmount = parTotal;
   const parTotalPercent = totalPortfolio > 0 ? ((parTotal / totalPortfolio) * 100).toFixed(1) : '0';
 
   const filteredTransactions = transactions.filter(t => (t.currency || 'DOP') === globalCurrency && isDateInRange(t.date));
