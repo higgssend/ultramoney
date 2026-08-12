@@ -48,6 +48,7 @@ export interface SimulationResult {
 export interface InstallmentPreview {
     installmentNumber: number;
     date: string;
+    dueDate?: string;
     principal: number;
     interest: number;
     total: number;

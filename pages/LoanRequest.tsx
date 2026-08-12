@@ -158,9 +158,11 @@ const LoanRequest: React.FC = () => {
 
       if (isRedito) {
           const interestPart = Math.round((principal * (interest / 100)) * 100) / 100;
+          const pDate = firstPaymentDate || new Date().toISOString().split('T')[0];
           setSchedulePreview([{
               installmentNumber: 1,
-              dueDate: firstPaymentDate || new Date().toISOString().split('T')[0],
+              date: pDate,
+              dueDate: pDate,
               principal: 0,
               interest: interestPart,
               total: interestPart,
@@ -190,9 +192,11 @@ const LoanRequest: React.FC = () => {
           else if (frequency === 'Mensual') d.setMonth(d.getMonth() + (i - 1));
           else if (frequency === 'Diario') d.setDate(d.getDate() + (i - 1));
 
+          const dateStr = d.toISOString().split('T')[0];
           newSchedule.push({
               installmentNumber: i,
-              dueDate: d.toISOString().split('T')[0],
+              date: dateStr,
+              dueDate: dateStr,
               principal: instPrincipal,
               interest: instInterest,
               total: instAmt,
