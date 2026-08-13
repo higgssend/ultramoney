@@ -82,8 +82,8 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
         
         {/* Top Mobile Row / Desktop Left Block */}
         <div className="flex items-center justify-between w-full lg:w-auto shrink-0 gap-2">
-          {/* Brand Logo & Name */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          {/* Brand Logo & Name (Mobile Only) */}
+          <div className="flex items-center gap-2 cursor-pointer lg:hidden" onClick={() => navigate('/')}>
             <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8 sm:w-9 sm:h-9 object-contain" />
             <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">Ultramoney</span>
           </div>
