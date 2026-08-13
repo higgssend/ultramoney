@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // InsForge SDK: onAuthStateChange type is not exported; cast to known callback shape
-        type AuthCallback = (event: string, session: { user?: { id: string; user_metadata?: Record<string, unknown>; metadata?: Record<string, unknown>; email?: string } } | null) => void;
+        type AuthCallback = (event: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown>; metadata?: Record<string, unknown>; profile?: { name?: string; roleId?: string } } } | null) => void;
         const unsubscribe = (insforge.auth.onAuthStateChange as (cb: AuthCallback) => () => void)(async (event, session) => {
           if (unmounted) return;
           const u = session?.user;
