@@ -179,47 +179,38 @@ const Simulator: React.FC = () => {
   }, [type]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-50 dark:bg-slate-950 overflow-y-auto p-4 md:p-8 animate-fade-in">
-      <div className="w-full max-w-7xl mx-auto pb-10">
-        {/* Top Bar */}
-        <div className="flex justify-between items-center flex-wrap gap-4 mb-8 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-colors">
-              <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-bold font-secondary text-slate-800 dark:text-white">Simulador Financiero Pro</h2>
-                <span className="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Todos los Métodos
-                </span>
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">Cálculo de amortizaciones, cargos, financiamiento de vehículos y proyecciones en tiempo real.</p>
+    <div className="w-full max-w-7xl mx-auto animate-fade-in pb-10">
+      {/* Top Bar */}
+      <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold font-secondary text-slate-800 dark:text-white">Simulador Financiero Pro</h2>
+              <span className="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Todos los Métodos
+              </span>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={exportPDF} 
-              disabled={!result}
-              className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all text-sm">
-              <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Exportar PDF
-            </button>
-            <button 
-              onClick={handleApproveSimulation}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none transition-all text-sm">
-              CREAR PRÉSTAMO <ArrowRight className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => navigate(-1)} 
-              className="p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/60 rounded-xl transition-all flex items-center justify-center border border-rose-200 dark:border-rose-900 shadow-sm shrink-0 active:scale-95 ml-2" 
-              title="Cerrar Simulador" 
-              aria-label="Cerrar Simulador"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">Cálculo de amortizaciones, cargos, financiamiento de vehículos y proyecciones en tiempo real.</p>
           </div>
         </div>
+        
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={exportPDF} 
+            disabled={!result}
+            className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all text-sm">
+            <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Exportar PDF
+          </button>
+          <button 
+            onClick={handleApproveSimulation}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none transition-all text-sm">
+            CREAR PRÉSTAMO <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Controls & Tabs */}
@@ -684,7 +675,6 @@ const Simulator: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
     </div>
   );
 };

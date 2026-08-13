@@ -218,7 +218,7 @@ const AppContent: React.FC = () => {
         </div>
         
         {/* Mobile Navigation Footer (Only if logged in and sidebar is closed) */}
-        {!isFullScreenPage && !isSidebarOpen && currentUser && <MobileNav />}
+        {!isFullScreenPage && !isSidebarOpen && currentUser && <MobileNav onMenuClick={() => setIsSidebarOpen(true)} />}
 
         {/* Global Renderers */}
         <HiddenDocumentRenderer />

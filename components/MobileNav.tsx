@@ -8,8 +8,7 @@ import {
   BsPlusLg, 
   BsCalendar4Event, 
   BsCalendarCheckFill, 
-  BsCalculator, 
-  BsCalculatorFill 
+  BsList
 } from 'react-icons/bs';
 
 interface MobileNavProps {
@@ -28,7 +27,7 @@ interface NavItem {
 
 const PlusIcon = BsPlusLg as IconComponent;
 
-export const MobileNav: React.FC<MobileNavProps> = () => {
+export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeRipple, setActiveRipple] = useState<string | null>(null);
@@ -45,6 +44,13 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
       } catch {
         // Safe fallback
       }
+    }
+
+    if (tabKey === 'menu') {
+      if (onMenuClick) {
+        onMenuClick();
+      }
+      return;
     }
 
     if (path) {
@@ -76,11 +82,11 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
       fillIcon: BsCalendarCheckFill as IconComponent 
     },
     { 
-      key: 'simulador', 
-      label: 'Simulador', 
-      path: '/simulador', 
-      outlineIcon: BsCalculator as IconComponent, 
-      fillIcon: BsCalculatorFill as IconComponent 
+      key: 'menu', 
+      label: 'Menú', 
+      path: '', 
+      outlineIcon: BsList as IconComponent, 
+      fillIcon: BsList as IconComponent 
     },
   ];
 
