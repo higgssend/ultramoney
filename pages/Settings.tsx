@@ -76,6 +76,141 @@ const Settings: React.FC = () => {
     toast.success('Copiado al portapapeles');
   };
 
+  // Cloud Backup & Restore States
+  const [cloudBackups, setCloudBackups] = useState<{ key: string; name: string; size: number; lastModified: string }[]>([]);
+  const [isLoadingCloudBackups, setIsLoadingCloudBackups] = useState(false);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
+  const [weeklyBackupEnabled, setWeeklyBackupEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('weekly_backup_enabled') !== 'false';
+  });
+
+  const fetchCloudBackups = async () => {
+    setIsLoadingCloudBackups(true);
+    try {
+      const { data, error } = await insforge.storage.from('backups').list();
+      if (!error && data) {
+        setCloudBackups(data.map((item: { name: string; size?: number; created_at?: string }) => ({
+          key: item.name,
+          name: item.name,
+          size: item.size || 0,
+          lastModified: item.created_at || new Date().toISOString()
+        })));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingCloudBackups(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'backup') {
+      fetchCloudBackups();
+    }
+  }, [activeTab]);
+
+  const toggleWeeklyBackup = (enabled: boolean) => {
+    setWeeklyBackupEnabled(enabled);
+    localStorage.setItem('weekly_backup_enabled', enabled ? 'true' : 'false');
+    toast.success(enabled ? 'Respaldo automático semanal ACTIVADO en el bucket backups' : 'Respaldo automático semanal DESACTIVADO');
+  };
+
+  const createFullBackup = async (uploadToBucket = false) => {
+    setIsCreatingBackup(true);
+    try {
+      const [clientsRes, loansRes, txRes, productsRes] = await Promise.all([
+        insforge.database.from('clients').select('*'),
+        insforge.database.from('loans').select('*'),
+        insforge.database.from('transactions').select('*'),
+        insforge.database.from('loan_products').select('*')
+      ]);
+
+      const backupData = {
+        version: '2.0.0',
+        platform: 'UltraMoney',
+        timestamp: new Date().toISOString(),
+        company: companySettings,
+        clients: clientsRes.data || [],
+        loans: loansRes.data || [],
+        transactions: txRes.data || [],
+        products: productsRes.data || []
+      };
+
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const fileName = `ultramoney_backup_${new Date().toISOString().split('T')[0]}_${Date.now().toString().slice(-4)}.json`;
+
+      if (uploadToBucket) {
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const { error } = await insforge.storage.from('backups').upload(fileName, blob);
+        if (!error) {
+          toast.success('¡Copia de seguridad guardada con éxito en el bucket InsForge!');
+          fetchCloudBackups();
+        } else {
+          toast.error(`Error al guardar en bucket: ${error.message}`);
+        }
+      } else {
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('Copia de seguridad descargada exitosamente en formato JSON');
+      }
+    } catch (err) {
+      toast.error('Error al generar la copia de seguridad');
+      console.error(err);
+    } finally {
+      setIsCreatingBackup(false);
+    }
+  };
+
+  const handleRestoreFromFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm('¿Estás seguro de restaurar esta copia de seguridad? Se sincronizarán los registros almacenados en el archivo con tu base de datos.')) {
+      if (event.target) event.target.value = '';
+      return;
+    }
+
+    setIsRestoringBackup(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+
+      if (!parsed.clients && !parsed.loans) {
+        toast.error('El archivo no contiene un formato de copia de seguridad válido de UltraMoney');
+        return;
+      }
+
+      let restoredClients = 0;
+      let restoredLoans = 0;
+
+      if (parsed.clients && parsed.clients.length > 0) {
+        const { error: cErr } = await insforge.database.from('clients').upsert(parsed.clients);
+        if (!cErr) restoredClients = parsed.clients.length;
+      }
+
+      if (parsed.loans && parsed.loans.length > 0) {
+        const { error: lErr } = await insforge.database.from('loans').upsert(parsed.loans);
+        if (!lErr) restoredLoans = parsed.loans.length;
+      }
+
+      toast.success(`¡Restauración exitosa! (${restoredClients} clientes y ${restoredLoans} préstamos importados/actualizados).`);
+    } catch (err) {
+      toast.error('Error al procesar o importar el archivo JSON');
+      console.error(err);
+    } finally {
+      setIsRestoringBackup(false);
+      if (event.target) event.target.value = '';
+    }
+  };
+
   const handleSaveCompany = (e: React.FormEvent) => {
     e.preventDefault();
     updateCompanySettings(companyForm);
@@ -824,6 +959,163 @@ const Settings: React.FC = () => {
                       </div>
                   </div>
               </div>
+          )}
+
+          {/* BACKUP & RESTORE TAB */}
+          {activeTab === 'backup' && (
+            <div className="space-y-6 animate-fade-in">
+              
+              {/* Header card */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                    <Database className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">Respaldos y Copias de Seguridad</h3>
+                    <p className="text-xs text-slate-500">Gestión de copias completas de la base de datos, descargas locales y almacenamiento automatizado en la nube (Bucket InsForge).</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button 
+                    onClick={() => createFullBackup(false)}
+                    disabled={isCreatingBackup}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all">
+                    <Download className="w-4 h-4" /> {isCreatingBackup ? 'Generando...' : 'Descargar Copia (JSON)'}
+                  </button>
+
+                  <button 
+                    onClick={() => createFullBackup(true)}
+                    disabled={isCreatingBackup}
+                    className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all">
+                    <Upload className="w-4 h-4" /> {isCreatingBackup ? 'Guardando...' : 'Guardar en Bucket Nube'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Automatic Weekly Backup Setting Card */}
+              <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-extrabold uppercase">
+                      PROCESO AUTOMÁTICO
+                    </span>
+                    <h4 className="font-bold text-base text-white">Respaldo Automático Semanal en Bucket</h4>
+                  </div>
+                  <p className="text-xs text-slate-300 max-w-xl">
+                    Sincronización semanal programada todos los domingos a las 00:00 UTC. Guarda la estructura completa de la cartera, transacciones y clientes directamente en el bucket de almacenamiento seguro <code className="text-indigo-300 font-mono">backups</code>.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                  <span className="text-xs font-bold text-indigo-200">
+                    {weeklyBackupEnabled ? 'Programación Activa' : 'Desactivada'}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={weeklyBackupEnabled}
+                      onChange={e => toggleWeeklyBackup(e.target.checked)}
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Restore Section */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+                <h4 className="font-bold text-slate-800 dark:text-white text-base flex items-center gap-2">
+                  <FileJson className="w-5 h-5 text-indigo-600" /> Restaurar Copia de Seguridad desde Archivo
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Selecciona un archivo de respaldo <code className="text-indigo-600 font-mono">.json</code> generado previamente por UltraMoney para importar clientes, préstamos y movimientos.
+                </p>
+
+                <div className="p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-center bg-slate-50 dark:bg-slate-800/40 relative">
+                  <input 
+                    type="file" 
+                    accept=".json"
+                    onChange={handleRestoreFromFile}
+                    disabled={isRestoringBackup}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  />
+                  <FileJson className="w-10 h-10 text-indigo-500 mx-auto mb-2" />
+                  <p className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                    {isRestoringBackup ? 'Restaurando registros en la base de datos...' : 'Haz clic o arrastra un archivo de respaldo .json aquí'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">Soporta backups estructurados de UltraMoney v2.0+</p>
+                </div>
+              </div>
+
+              {/* Stored Cloud Backups List (InsForge Bucket) */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-slate-800 dark:text-white text-base flex items-center gap-2">
+                      <Database className="w-5 h-5 text-purple-600" /> Historial de Respaldos Almacenados en el Bucket ("backups")
+                    </h4>
+                    <p className="text-xs text-slate-500">Archivos guardados en el almacenamiento en la nube de InsForge.</p>
+                  </div>
+                  <button 
+                    onClick={fetchCloudBackups}
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200">
+                    Actualizar Lista
+                  </button>
+                </div>
+
+                {isLoadingCloudBackups ? (
+                  <div className="py-8 text-center text-xs text-slate-400 font-bold">Cargando lista de respaldos desde el bucket InsForge...</div>
+                ) : cloudBackups.length === 0 ? (
+                  <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+                    No hay copias de seguridad guardadas aún en el bucket <code className="font-mono text-indigo-500 font-bold">backups</code>. Presiona "Guardar en Bucket Nube" para crear la primera.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold uppercase">
+                        <tr>
+                          <th className="px-4 py-3">Nombre del Archivo</th>
+                          <th className="px-4 py-3">Tamaño</th>
+                          <th className="px-4 py-3">Fecha de Modificación</th>
+                          <th className="px-4 py-3 text-right">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {cloudBackups.map(b => (
+                          <tr key={b.key} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <td className="px-4 py-3 font-mono font-bold text-slate-800 dark:text-slate-200">{b.name}</td>
+                            <td className="px-4 py-3 text-slate-500 font-mono">{(b.size / 1024).toFixed(1)} KB</td>
+                            <td className="px-4 py-3 text-slate-500">{new Date(b.lastModified).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-right">
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    const { data } = insforge.storage.from('backups').getPublicUrl(b.key);
+                                    if (data?.publicUrl) {
+                                      window.open(data.publicUrl, '_blank');
+                                    } else {
+                                      toast.error('No se pudo obtener el enlace de descarga');
+                                    }
+                                  } catch (e) {
+                                    console.error(e);
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg text-xs hover:bg-indigo-100">
+                                Descargar Archivo
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+            </div>
           )}
 
         </div>
