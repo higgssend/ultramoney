@@ -4,7 +4,7 @@ export interface DominicanBankInfo {
   shortName: string;
 }
 
-export const INSFORGE_STORAGE_BASE = 'https://sxwv82iw.us-east.insforge.app/storage/v1/object/public/bank-logos/logos';
+export const INSFORGE_STORAGE_BASE = 'https://sxwv82iw.us-east.insforge.app/api/storage/buckets/bank-logos/objects/logos';
 
 export const DOMINICAN_BANKS: DominicanBankInfo[] = [
   { name: 'Banco de Reservas (Banreservas)', logo: `${INSFORGE_STORAGE_BASE}/Bancos_Banreservas.jpg`, shortName: 'Banreservas' },

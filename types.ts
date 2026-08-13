@@ -128,7 +128,7 @@ export interface BankAccount {
   id: string;
   clientId?: string;
   bankName: string;
-  accountType: 'Ahorro' | 'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo' | 'Inversión' | 'Otro';
+  accountType: 'Ahorro' | 'Ahorros' | 'Corriente' | 'Empresarial' | 'Nómina' | 'Caja Chica / Efectivo' | 'Inversión' | 'Otro';
   accountNumber: string;
   accountName?: string;
   holderName?: string;

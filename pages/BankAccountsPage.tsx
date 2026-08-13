@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Landmark, Plus, CreditCard, Trash2, Edit3, Building2, X, Link, Copy, Check,
-  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ArrowRight, ShieldAlert, CheckCircle2
+  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ShieldAlert, Save, FileText
 } from 'lucide-react';
 import { useAccounting, useSettings } from '../context/StoreContext';
 import { BankAccount, CustomPaymentMethod, PaymentLinkConfig } from '../types';
@@ -16,7 +16,7 @@ export const BankAccountsPage: React.FC = () => {
     bankAccounts, addBankAccount, removeBankAccount, updateBankAccount,
     paymentMethods, addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus
   } = useAccounting();
-  const { companySettings } = useSettings();
+  const { companySettings, updateCompanySettings } = useSettings();
 
   // Tab State: 'accounts' | 'payment-link'
   const [activeTab, setActiveTab] = useState<'accounts' | 'payment-link'>('accounts');
@@ -34,8 +34,12 @@ export const BankAccountsPage: React.FC = () => {
   const [accountName, setAccountName] = useState('');
   const [holderName, setHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [accountType, setAccountType] = useState<'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo'>('Corriente');
+  const [accountType, setAccountType] = useState<BankAccount['accountType']>('Corriente');
+  
+  // Document Type & Number State
+  const [docType, setDocType] = useState<'Cédula' | 'RNC'>('Cédula');
   const [cedulaOrRnc, setCedulaOrRnc] = useState('');
+
   const [currency, setCurrency] = useState<'DOP' | 'USD'>('DOP');
   const [balance, setBalance] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
@@ -43,7 +47,6 @@ export const BankAccountsPage: React.FC = () => {
   // POS / Verifone Specific Fields
   const [posNetwork, setPosNetwork] = useState('CardNet POS');
   const [terminalCode, setTerminalCode] = useState('');
-  const [feePercentage, setFeePercentage] = useState<number>(2.5);
 
   // Confirm Delete Modal State
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -62,6 +65,37 @@ export const BankAccountsPage: React.FC = () => {
   });
 
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isSavingLink, setIsSavingLink] = useState(false);
+
+  // Format Document Number (Cédula: 11 digits XXX-XXXXXXX-X / RNC: 9 or 11 digits X-XX-XXXXX-X or XXX-XXXXX-X)
+  const formatDocumentNumber = (input: string, type: 'Cédula' | 'RNC'): string => {
+    const raw = input.replace(/\D/g, '');
+    if (type === 'Cédula') {
+      const clean = raw.slice(0, 11);
+      if (clean.length <= 3) return clean;
+      if (clean.length <= 10) return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+      return `${clean.slice(0, 3)}-${clean.slice(3, 10)}-${clean.slice(10)}`;
+    } else {
+      // RNC formatting
+      if (raw.length <= 9) {
+        const clean = raw.slice(0, 9);
+        if (clean.length <= 1) return clean;
+        if (clean.length <= 3) return `${clean.slice(0, 1)}-${clean.slice(1)}`;
+        if (clean.length <= 8) return `${clean.slice(0, 1)}-${clean.slice(1, 3)}-${clean.slice(3)}`;
+        return `${clean.slice(0, 1)}-${clean.slice(1, 3)}-${clean.slice(3, 8)}-${clean.slice(8)}`;
+      } else {
+        const clean = raw.slice(0, 11);
+        if (clean.length <= 3) return clean;
+        if (clean.length <= 10) return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+        return `${clean.slice(0, 3)}-${clean.slice(3, 10)}-${clean.slice(10)}`;
+      }
+    }
+  };
+
+  const handleDocNumberChange = (val: string) => {
+    const formatted = formatDocumentNumber(val, docType);
+    setCedulaOrRnc(formatted);
+  };
 
   // Format custom URL slug
   const formattedSlug = (linkConfig.customSlug && linkConfig.customSlug.trim() !== '')
@@ -80,13 +114,13 @@ export const BankAccountsPage: React.FC = () => {
     setHolderName(companySettings?.name || '');
     setAccountNumber('');
     setAccountType(category === 'bank_transfer' ? 'Corriente' : category === 'cash_box' ? 'Caja Chica / Efectivo' : 'Ahorros');
+    setDocType('Cédula');
     setCedulaOrRnc(companySettings?.rnc || '');
     setCurrency('DOP');
     setBalance(0);
     setIsActive(true);
     setPosNetwork('CardNet POS');
     setTerminalCode('');
-    setFeePercentage(2.5);
     setIsModalOpen(true);
   };
 
@@ -110,7 +144,11 @@ export const BankAccountsPage: React.FC = () => {
     setHolderName(acc.holderName || acc.accountName || '');
     setAccountNumber(acc.accountNumber || '');
     setAccountType(acc.accountType || 'Corriente');
-    setCedulaOrRnc(acc.cedulaOrRnc || '');
+    
+    const docVal = acc.cedulaOrRnc || '';
+    setDocType(docVal.replace(/\D/g, '').length <= 9 && docVal.startsWith('1') ? 'RNC' : 'Cédula');
+    setCedulaOrRnc(docVal);
+    
     setCurrency(acc.currency || 'DOP');
     setBalance(acc.balance || 0);
     setIsActive(acc.isActive !== false);
@@ -118,7 +156,7 @@ export const BankAccountsPage: React.FC = () => {
   };
 
   // Submit Form (Create or Edit)
-  const handleSubmitForm = (e: React.FormEvent) => {
+  const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let finalBankName = bankName;
@@ -131,10 +169,11 @@ export const BankAccountsPage: React.FC = () => {
     }
 
     const finalAccountName = accountName.trim() || (selectedCategory === 'cash_box' ? 'Caja General' : `${finalBankName}`);
+    const logoUrl = getBankLogoUrl(finalBankName);
 
     if (editingAccountId) {
       // Update existing account
-      updateBankAccount(editingAccountId, {
+      await updateBankAccount(editingAccountId, {
         bankName: finalBankName,
         accountName: finalAccountName,
         holderName: holderName.trim() || finalAccountName,
@@ -144,9 +183,9 @@ export const BankAccountsPage: React.FC = () => {
         currency,
         balance,
         isActive,
-        bankLogoUrl: getBankLogoUrl(finalBankName)
+        bankLogoUrl: logoUrl
       });
-      toast.success('Cuenta actualizada con éxito');
+      toast.success('Cuenta actualizada exitosamente');
     } else {
       // Create new account
       const newAccount: BankAccount = {
@@ -161,24 +200,43 @@ export const BankAccountsPage: React.FC = () => {
         balance,
         isActive,
         showInPaymentLink: true,
-        bankLogoUrl: getBankLogoUrl(finalBankName),
+        bankLogoUrl: logoUrl,
         createdAt: new Date().toISOString()
       };
-      addBankAccount(newAccount);
+      await addBankAccount(newAccount);
     }
 
     setIsModalOpen(false);
   };
 
   // Handle Delete Confirmation
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deletingId) return;
     if (deletingType === 'account') {
-      removeBankAccount(deletingId);
+      await removeBankAccount(deletingId);
     } else {
-      removePaymentMethod(deletingId);
+      await removePaymentMethod(deletingId);
     }
     setDeletingId(null);
+  };
+
+  // Save Link Configuration to Company Settings / Database
+  const handleSaveLinkConfig = async () => {
+    setIsSavingLink(true);
+    try {
+      if (companySettings) {
+        updateCompanySettings({
+          ...companySettings,
+          customLink: formattedSlug,
+          phone: linkConfig.whatsappPhone
+        });
+      }
+      toast.success('¡Configuración del link de cobro guardada exitosamente!');
+    } catch (e) {
+      toast.error('Error al guardar la configuración');
+    } finally {
+      setIsSavingLink(false);
+    }
   };
 
   const handleCopyLink = () => {
@@ -271,73 +329,6 @@ export const BankAccountsPage: React.FC = () => {
       {activeTab === 'accounts' && (
         <div className="space-y-8 animate-fade-in">
 
-          {/* Quick Action Selector Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button
-              onClick={() => handleOpenCreateModal('bank_transfer')}
-              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                <Landmark className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 dark:text-white text-base">Cuenta Bancaria</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Transferencia Banreservas, Popular, BHD, APAP, etc.</p>
-              </div>
-              <div className="flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                <span>+ Agregar Cuenta</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleOpenCreateModal('verifone_pos')}
-              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold group-hover:bg-cyan-600 group-hover:text-white transition-all">
-                <CreditCard className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 dark:text-white text-base">Verifone / POS</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Terminales CardNet, Visanet/Azul, PixelPay.</p>
-              </div>
-              <div className="flex items-center text-xs font-bold text-cyan-600 group-hover:translate-x-1 transition-transform">
-                <span>+ Registrar POS</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleOpenCreateModal('cash_box')}
-              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                <Wallet className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 dark:text-white text-base">Caja Chica / Efectivo</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Caja Principal, Mostrador o Cobrador en Ruta.</p>
-              </div>
-              <div className="flex items-center text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">
-                <span>+ Crear Caja</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleOpenCreateModal('digital_wallet')}
-              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold group-hover:bg-purple-600 group-hover:text-white transition-all">
-                <Smartphone className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 dark:text-white text-base">Pasarela Digital</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">PayPal, Zelle, Billet, Bitcoin wallet.</p>
-              </div>
-              <div className="flex items-center text-xs font-bold text-purple-600 group-hover:translate-x-1 transition-transform">
-                <span>+ Añadir Billetera</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </button>
-          </div>
-
           {/* Instrument Accounts List */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {bankAccounts.map((acc) => {
@@ -350,7 +341,8 @@ export const BankAccountsPage: React.FC = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                      {/* Logo Container with fallback error handling */}
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
                         <img 
                           src={logoPath} 
                           alt={acc.bankName} 
@@ -556,9 +548,21 @@ export const BankAccountsPage: React.FC = () => {
               
               {/* General Portal Settings Card */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
-                <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-600" /> Personaliza tu Portal
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-600" /> Personaliza tu Portal
+                  </h3>
+
+                  {/* Save Configuration Button */}
+                  <button
+                    onClick={handleSaveLinkConfig}
+                    disabled={isSavingLink}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-md flex items-center gap-1.5 transition-all"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSavingLink ? 'Guardando...' : 'Guardar'}</span>
+                  </button>
+                </div>
 
                 <div className="space-y-4 text-xs">
                   {/* Link Slug Customizer */}
@@ -601,6 +605,18 @@ export const BankAccountsPage: React.FC = () => {
                       className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-medium"
                     />
                   </div>
+
+                  {/* Save Configuration Button (Bottom of form as well) */}
+                  <div className="pt-2">
+                    <button
+                      onClick={handleSaveLinkConfig}
+                      disabled={isSavingLink}
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{isSavingLink ? 'Guardando en Base de Datos...' : 'Guardar Configuración del Link'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -637,7 +653,7 @@ export const BankAccountsPage: React.FC = () => {
                               onChange={() => handleToggleAccountForLink(acc.id)}
                               className="w-5 h-5 rounded text-indigo-600 shrink-0"
                             />
-                            <div className="w-10 h-10 rounded-xl bg-white p-1 border border-slate-100 shrink-0 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-white p-1 border border-slate-100 shrink-0 flex items-center justify-center overflow-hidden">
                               <img src={logoPath} alt={acc.bankName} className="max-w-full max-h-full object-contain rounded-lg" />
                             </div>
                             <div className="min-w-0">
@@ -731,7 +747,7 @@ export const BankAccountsPage: React.FC = () => {
             </div>
 
             {/* Modal Content Form */}
-            <form onSubmit={handleSubmitForm} className="p-6 overflow-y-auto space-y-6 text-xs">
+            <form onSubmit={handleSubmitForm} className="p-6 overflow-y-auto space-y-6 text-xs no-scrollbar">
               
               {/* Category Selector Tabs */}
               {!editingAccountId && (
@@ -853,22 +869,39 @@ export const BankAccountsPage: React.FC = () => {
                       type="text"
                       value={holderName}
                       onChange={(e) => setHolderName(e.target.value)}
-                      placeholder="Ej. Juan Pérez"
+                      placeholder="Ej. Juan Pérez / UltraMoney SRL"
                       className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
                     />
                   </div>
 
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cédula / RNC</label>
+                  {/* Document Type (Cédula vs RNC) Dropdown Selector & Input */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <label className="block font-bold text-slate-700 dark:text-slate-300">Tipo de Documento</label>
+                      <select
+                        value={docType}
+                        onChange={(e) => {
+                          const newType = e.target.value as 'Cédula' | 'RNC';
+                          setDocType(newType);
+                          setCedulaOrRnc(formatDocumentNumber(cedulaOrRnc, newType));
+                        }}
+                        className="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-lg border border-indigo-200/80 dark:border-indigo-800 outline-none"
+                      >
+                        <option value="Cédula">Cédula (11 dígitos)</option>
+                        <option value="RNC">RNC (9 u 11 dígitos)</option>
+                      </select>
+                    </div>
+
                     <input
                       type="text"
                       value={cedulaOrRnc}
-                      onChange={(e) => setCedulaOrRnc(e.target.value)}
-                      placeholder="Ej. 402-1234567-8"
+                      onChange={(e) => handleDocNumberChange(e.target.value)}
+                      placeholder={docType === 'Cédula' ? '402-1234567-8' : '1-31-00000-1'}
                       className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-mono font-bold"
                     />
                   </div>
 
+                  {/* Account Type Selector with Empresarial & Nómina */}
                   <div>
                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Cuenta</label>
                     <select
@@ -878,6 +911,8 @@ export const BankAccountsPage: React.FC = () => {
                     >
                       <option value="Corriente">Cuenta Corriente</option>
                       <option value="Ahorros">Cuenta de Ahorros</option>
+                      <option value="Empresarial">Cuenta Empresarial</option>
+                      <option value="Nómina">Cuenta de Nómina</option>
                     </select>
                   </div>
                 </div>
@@ -918,18 +953,6 @@ export const BankAccountsPage: React.FC = () => {
                       value={accountName}
                       onChange={(e) => setAccountName(e.target.value)}
                       placeholder="Ej. Verifone Caja Mostrador 01"
-                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Comisión Estimada (%)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={feePercentage}
-                      onChange={(e) => setFeePercentage(Number(e.target.value))}
-                      placeholder="2.5"
                       className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
                     />
                   </div>
