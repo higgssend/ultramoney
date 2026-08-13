@@ -90,11 +90,25 @@ const Login: React.FC = () => {
       if (error) throw error;
       
       // Auto login after verification
-      const { error: loginErr } = await insforge.auth.signInWithPassword({
+      const { data: loginData, error: loginErr } = await insforge.auth.signInWithPassword({
         email: unverifiedEmail,
         password,
       });
       if (loginErr) throw loginErr;
+
+      if (loginData?.user) {
+        const u = loginData.user;
+        const meta = u.metadata || (u as any).user_metadata || {};
+        const activeUser = {
+          id: u.id,
+          email: u.email,
+          name: (u as any).profile?.name || meta.name || u.email,
+          roleId: meta.roleId || (u as any).profile?.roleId || 'Admin',
+          username: meta.username || u.email?.split('@')[0],
+          roleIds: meta.roleIds || []
+        };
+        localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+      }
 
       window.location.href = '/dashboard';
     } catch (err: unknown) {
@@ -120,7 +134,7 @@ const Login: React.FC = () => {
     try {
       const cleanInput = email.trim().toLowerCase();
       const loginEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@app.ultramoney.com`;
-      const { error } = await insforge.auth.signInWithPassword({
+      const { data, error } = await insforge.auth.signInWithPassword({
         email: loginEmail,
         password,
       });
@@ -134,6 +148,20 @@ const Login: React.FC = () => {
           return;
         }
         throw error;
+      }
+
+      if (data?.user) {
+        const u = data.user;
+        const meta = u.metadata || (u as any).user_metadata || {};
+        const activeUser = {
+          id: u.id,
+          email: u.email,
+          name: (u as any).profile?.name || meta.name || u.email,
+          roleId: meta.roleId || (u as any).profile?.roleId || 'Admin',
+          username: meta.username || u.email?.split('@')[0],
+          roleIds: meta.roleIds || []
+        };
+        localStorage.setItem('um_user_session', JSON.stringify(activeUser));
       }
 
       // Handle remember me
