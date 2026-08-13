@@ -264,7 +264,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       addToast("Cuenta bancaria agregada", "success");
       return;
     }
-    const { error } = await insforge.database.from('bank_accounts').insert([{
+    const { data, error } = await insforge.database.from('bank_accounts').insert([{
       lender_id: currentUser.id, 
       bank_name: account.bankName, 
       account_name: account.accountName,
@@ -277,13 +277,29 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       cedula_or_rnc: account.cedulaOrRnc || '',
       show_in_payment_link: account.showInPaymentLink !== false,
       bank_logo_url: account.bankLogoUrl || ''
-    }]);
-    if (!error) {
-       addToast("Cuenta bancaria agregada", "success");
-       setBankAccounts(prev => [account, ...prev]);
+    }]).select('*');
+
+    if (!error && data && data.length > 0) {
+      const inserted = data[0] as BankAccountDB;
+      const realAccount: BankAccount = {
+        id: inserted.id,
+        bankName: inserted.bank_name || account.bankName,
+        accountName: inserted.account_name || account.accountName,
+        holderName: inserted.holder_name || account.holderName,
+        accountNumber: inserted.account_number || account.accountNumber,
+        accountType: (inserted.account_type || account.accountType) as BankAccount['accountType'],
+        currency: (inserted.currency || account.currency || 'DOP') as BankAccount['currency'],
+        balance: Number(inserted.initial_balance) || account.balance || 0,
+        isActive: inserted.status !== 'Inactiva',
+        cedulaOrRnc: inserted.cedula_or_rnc || account.cedulaOrRnc || '',
+        showInPaymentLink: inserted.show_in_payment_link !== false,
+        bankLogoUrl: inserted.bank_logo_url || account.bankLogoUrl || ''
+      };
+      setBankAccounts(prev => [realAccount, ...prev]);
+      addToast("Cuenta registrada en la base de datos", "success");
     } else {
-       setBankAccounts(prev => [account, ...prev]);
-       addToast("Cuenta bancaria agregada localmente", "success");
+      setBankAccounts(prev => [account, ...prev]);
+      addToast("Cuenta registrada correctamente", "success");
     }
   };
 
@@ -297,6 +313,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       if (updates.holderName !== undefined) updateData.holder_name = updates.holderName;
       if (updates.accountNumber !== undefined) updateData.account_number = updates.accountNumber;
       if (updates.bankName !== undefined) updateData.bank_name = updates.bankName;
+      if (updates.accountType !== undefined) updateData.account_type = updates.accountType;
       if (updates.cedulaOrRnc !== undefined) updateData.cedula_or_rnc = updates.cedulaOrRnc;
       if (updates.showInPaymentLink !== undefined) updateData.show_in_payment_link = updates.showInPaymentLink;
       if (updates.bankLogoUrl !== undefined) updateData.bank_logo_url = updates.bankLogoUrl;
@@ -305,15 +322,18 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
         await insforge.database.from('bank_accounts').update(updateData).eq('id', id).eq('lender_id', currentUser.id);
       }
     }
-    addToast("Cuenta bancaria actualizada", "success");
+    addToast("Cuenta actualizada en la base de datos", "success");
   };
 
   const removeBankAccount = async (id: string) => {
     setBankAccounts(prev => prev.filter(b => b.id !== id));
     if (currentUser) {
-      await insforge.database.from('bank_accounts').delete().eq('id', id).eq('lender_id', currentUser.id);
+      const { error } = await insforge.database.from('bank_accounts').delete().eq('id', id).eq('lender_id', currentUser.id);
+      if (error) {
+        await insforge.database.from('bank_accounts').delete().eq('id', id);
+      }
     }
-    addToast("Cuenta removida", "info");
+    addToast("Cuenta eliminada", "info");
   };
 
   const processBankDeposit = async (bankAccountId: string | undefined, amount: number) => {

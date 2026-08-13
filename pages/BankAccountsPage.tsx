@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Landmark, Plus, CreditCard, Trash2, Edit3, Building2, X, Link, Copy, Check,
-  ExternalLink, Smartphone, Eye, Sparkles, Sliders
+  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ArrowRight, ShieldAlert, CheckCircle2
 } from 'lucide-react';
 import { useAccounting, useSettings } from '../context/StoreContext';
 import { BankAccount, CustomPaymentMethod, PaymentLinkConfig } from '../types';
@@ -9,37 +9,45 @@ import { DOMINICAN_BANKS, getBankLogoUrl } from '../utils/bankLogos';
 import { PublicPaymentPortal } from './PublicPaymentPortal';
 import { toast } from 'sonner';
 
+type InstrumentCategory = 'bank_transfer' | 'verifone_pos' | 'cash_box' | 'digital_wallet';
+
 export const BankAccountsPage: React.FC = () => {
   const { 
     bankAccounts, addBankAccount, removeBankAccount, updateBankAccount,
-    paymentMethods, addPaymentMethod, updatePaymentMethod, togglePaymentMethodStatus
+    paymentMethods, addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus
   } = useAccounting();
   const { companySettings } = useSettings();
 
   // Tab State: 'accounts' | 'payment-link'
   const [activeTab, setActiveTab] = useState<'accounts' | 'payment-link'>('accounts');
 
-  // Bank Account Modal Form State
-  const [isAddingBank, setIsAddingBank] = useState(false);
+  // Modal State for Create/Edit Instrument
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+
+  // Category Selection
+  const [selectedCategory, setSelectedCategory] = useState<InstrumentCategory>('bank_transfer');
+
+  // Form Fields State
   const [bankName, setBankName] = useState(DOMINICAN_BANKS[0].name);
   const [customBankName, setCustomBankName] = useState('');
-  const [accountType, setAccountType] = useState<'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo'>('Corriente');
-  const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
+  const [holderName, setHolderName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountType, setAccountType] = useState<'Ahorros' | 'Corriente' | 'Caja Chica / Efectivo'>('Corriente');
   const [cedulaOrRnc, setCedulaOrRnc] = useState('');
   const [currency, setCurrency] = useState<'DOP' | 'USD'>('DOP');
   const [balance, setBalance] = useState<number>(0);
+  const [isActive, setIsActive] = useState(true);
 
-  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
-  const [editBalanceVal, setEditBalanceVal] = useState<number>(0);
+  // POS / Verifone Specific Fields
+  const [posNetwork, setPosNetwork] = useState('CardNet POS');
+  const [terminalCode, setTerminalCode] = useState('');
+  const [feePercentage, setFeePercentage] = useState<number>(2.5);
 
-  // Payment Method Modal Form State
-  const [isAddingPm, setIsAddingPm] = useState(false);
-  const [editingPmId, setEditingPmId] = useState<string | null>(null);
-  const [pmName, setPmName] = useState('');
-  const [pmCategory, setPmCategory] = useState<CustomPaymentMethod['category']>('POS / Verifone');
-  const [pmDescription, setPmDescription] = useState('');
-  const [pmRequiresRef, setPmRequiresRef] = useState(true);
+  // Confirm Delete Modal State
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingType, setDeletingType] = useState<'account' | 'payment_method'>('account');
 
   // Payment Link Configuration State for Live Preview
   const [linkConfig, setLinkConfig] = useState<PaymentLinkConfig>({
@@ -64,97 +72,115 @@ export const BankAccountsPage: React.FC = () => {
 
   const publicLinkUrl = `${window.location.origin}/linkpagos/${formattedSlug}`;
 
-  const handleBankSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const finalBankName = bankName === 'Otro Banco / Entidad' ? (customBankName.trim() || 'Banco Personalizado') : bankName;
-
-    if (!accountName.trim()) {
-      toast.error('Ingrese el nombre o titular de la cuenta/caja');
-      return;
-    }
-
-    const newAccount: BankAccount = {
-      id: `bank-${Date.now()}`,
-      bankName: finalBankName,
-      accountType,
-      accountNumber: accountNumber.trim() || 'S/N',
-      accountName: accountName.trim(),
-      holderName: accountName.trim(),
-      cedulaOrRnc: cedulaOrRnc.trim() || companySettings?.rnc || '',
-      showInPaymentLink: true,
-      currency,
-      balance: balance || 0,
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
-
-    addBankAccount(newAccount);
-    toast.success(`Cuenta "${accountName}" agregada con éxito`);
-    setIsAddingBank(false);
-    setAccountNumber('');
-    setAccountName('');
-    setCedulaOrRnc('');
-    setBalance(0);
-  };
-
-  const handleSaveEditBalance = (id: string) => {
-    updateBankAccount(id, { balance: editBalanceVal });
-    toast.success('Balance de la cuenta actualizado');
+  // Open Modal for Create or Edit
+  const handleOpenCreateModal = (category: InstrumentCategory = 'bank_transfer') => {
     setEditingAccountId(null);
+    setSelectedCategory(category);
+    setBankName(DOMINICAN_BANKS[0].name);
+    setCustomBankName('');
+    setAccountName('');
+    setHolderName(companySettings?.name || '');
+    setAccountNumber('');
+    setAccountType(category === 'bank_transfer' ? 'Corriente' : category === 'cash_box' ? 'Caja Chica / Efectivo' : 'Ahorros');
+    setCedulaOrRnc(companySettings?.rnc || '');
+    setCurrency('DOP');
+    setBalance(0);
+    setIsActive(true);
+    setPosNetwork('CardNet POS');
+    setTerminalCode('');
+    setFeePercentage(2.5);
+    setIsModalOpen(true);
   };
 
-  // Open Payment Method Modal for Create or Edit
-  const handleOpenPmModal = (pm?: CustomPaymentMethod) => {
-    if (pm) {
-      setEditingPmId(pm.id);
-      setPmName(pm.name);
-      setPmCategory(pm.category);
-      setPmDescription(pm.description || '');
-      setPmRequiresRef(Boolean(pm.requiresReference));
+  const handleOpenEditModal = (acc: BankAccount) => {
+    setEditingAccountId(acc.id);
+    
+    // Determine category
+    if (acc.accountType === 'Caja Chica / Efectivo') {
+      setSelectedCategory('cash_box');
+    } else if (acc.bankName.toLowerCase().includes('paypal') || acc.bankName.toLowerCase().includes('zelle') || acc.bankName.toLowerCase().includes('billet')) {
+      setSelectedCategory('digital_wallet');
+    } else if (acc.bankName.toLowerCase().includes('pos') || acc.bankName.toLowerCase().includes('verifone')) {
+      setSelectedCategory('verifone_pos');
     } else {
-      setEditingPmId(null);
-      setPmName('');
-      setPmCategory('POS / Verifone');
-      setPmDescription('');
-      setPmRequiresRef(true);
+      setSelectedCategory('bank_transfer');
     }
-    setIsAddingPm(true);
+
+    setBankName(acc.bankName);
+    setCustomBankName(acc.bankName);
+    setAccountName(acc.accountName || '');
+    setHolderName(acc.holderName || acc.accountName || '');
+    setAccountNumber(acc.accountNumber || '');
+    setAccountType(acc.accountType || 'Corriente');
+    setCedulaOrRnc(acc.cedulaOrRnc || '');
+    setCurrency(acc.currency || 'DOP');
+    setBalance(acc.balance || 0);
+    setIsActive(acc.isActive !== false);
+    setIsModalOpen(true);
   };
 
-  const handlePmSubmit = (e: React.FormEvent) => {
+  // Submit Form (Create or Edit)
+  const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pmName.trim()) {
-      toast.error('Ingrese el nombre del método de pago (ej. Verifone CardNet)');
-      return;
+
+    let finalBankName = bankName;
+    if (selectedCategory === 'cash_box') {
+      finalBankName = 'Caja Chica / Efectivo';
+    } else if (selectedCategory === 'verifone_pos') {
+      finalBankName = `${posNetwork} (${terminalCode || 'Verifone'})`;
+    } else if (bankName === 'Otro Banco / Entidad') {
+      finalBankName = customBankName.trim() || 'Entidad Financiera';
     }
 
-    if (editingPmId) {
-      updatePaymentMethod(editingPmId, {
-        name: pmName.trim(),
-        category: pmCategory,
-        description: pmDescription.trim(),
-        requiresReference: pmRequiresRef
+    const finalAccountName = accountName.trim() || (selectedCategory === 'cash_box' ? 'Caja General' : `${finalBankName}`);
+
+    if (editingAccountId) {
+      // Update existing account
+      updateBankAccount(editingAccountId, {
+        bankName: finalBankName,
+        accountName: finalAccountName,
+        holderName: holderName.trim() || finalAccountName,
+        accountNumber: accountNumber.trim() || 'S/N',
+        accountType: selectedCategory === 'cash_box' ? 'Caja Chica / Efectivo' : accountType,
+        cedulaOrRnc: cedulaOrRnc.trim(),
+        currency,
+        balance,
+        isActive,
+        bankLogoUrl: getBankLogoUrl(finalBankName)
       });
-      toast.success(`Método "${pmName}" actualizado`);
+      toast.success('Cuenta actualizada con éxito');
     } else {
-      const newPm: CustomPaymentMethod = {
-        id: `pm-${Date.now()}`,
-        name: pmName.trim(),
-        category: pmCategory,
-        description: pmDescription.trim() || undefined,
-        requiresReference: pmRequiresRef,
-        isActive: true,
-        isDefault: false,
+      // Create new account
+      const newAccount: BankAccount = {
+        id: `bank-${Date.now()}`,
+        bankName: finalBankName,
+        accountName: finalAccountName,
+        holderName: holderName.trim() || finalAccountName,
+        accountNumber: accountNumber.trim() || 'S/N',
+        accountType: selectedCategory === 'cash_box' ? 'Caja Chica / Efectivo' : accountType,
+        cedulaOrRnc: cedulaOrRnc.trim() || companySettings?.rnc || '',
+        currency,
+        balance,
+        isActive,
+        showInPaymentLink: true,
+        bankLogoUrl: getBankLogoUrl(finalBankName),
         createdAt: new Date().toISOString()
       };
-      addPaymentMethod(newPm);
-      toast.success(`Método de pago "${pmName}" registrado`);
+      addBankAccount(newAccount);
     }
 
-    setIsAddingPm(false);
-    setEditingPmId(null);
-    setPmName('');
-    setPmDescription('');
+    setIsModalOpen(false);
+  };
+
+  // Handle Delete Confirmation
+  const handleConfirmDelete = () => {
+    if (!deletingId) return;
+    if (deletingType === 'account') {
+      removeBankAccount(deletingId);
+    } else {
+      removePaymentMethod(deletingId);
+    }
+    setDeletingId(null);
   };
 
   const handleCopyLink = () => {
@@ -183,17 +209,17 @@ export const BankAccountsPage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
-      {/* Top Banner */}
+      {/* Top Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-slate-800">
         <div className="space-y-2">
           <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-extrabold uppercase border border-indigo-400/30">
-            Módulo Financiero & Pagos
+            Gestión Financiera & Métodos de Pago
           </span>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-indigo-400" /> Cuentas Bancarias & Link de Pagos
+            <Building2 className="w-8 h-8 text-indigo-400" /> Cuentas Bancarias & Formas de Cobro
           </h1>
           <p className="text-xs sm:text-sm text-indigo-200/80 max-w-xl">
-            Administra tus cuentas de banco, verifones POS, y genera links de cobro interactivos con logos de bancos dominicanos.
+            Crea y administra tus cuentas de transferencia bancaria, terminales verifone POS, cajas chicas y pasarelas digitales.
           </p>
         </div>
 
@@ -207,16 +233,16 @@ export const BankAccountsPage: React.FC = () => {
 
           {activeTab === 'accounts' && (
             <button
-              onClick={() => setIsAddingBank(true)}
-              className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-extrabold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all"
+              onClick={() => handleOpenCreateModal('bank_transfer')}
+              className="px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-extrabold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
-              <Plus className="w-5 h-5" /> + Añadir Cuenta Bancaria
+              <Plus className="w-5 h-5" /> + Crear Cuenta o Método
             </button>
           )}
         </div>
       </div>
 
-      {/* Module Navigation Tabs */}
+      {/* Navigation Tabs */}
       <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-md">
         <button
           onClick={() => setActiveTab('accounts')}
@@ -243,129 +269,80 @@ export const BankAccountsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* TAB 1: ACCOUNTS & PAYMENT METHODS */}
+      {/* TAB 1: FINANCIAL INSTRUMENTS & ACCOUNTS GRID */}
       {activeTab === 'accounts' && (
         <div className="space-y-8 animate-fade-in">
-          {/* Add Bank Account Modal Form */}
-          {isAddingBank && (
-            <form onSubmit={handleBankSubmit} className="bg-white dark:bg-slate-900 border-2 border-indigo-500 dark:border-indigo-600 rounded-3xl p-6 shadow-xl space-y-6 animate-fade-in">
-              <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 className="font-extrabold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-                  <Landmark className="w-5 h-5 text-indigo-600" /> Crear Nueva Cuenta Bancaria o Caja
-                </h3>
-                <button type="button" onClick={() => setIsAddingBank(false)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
+
+          {/* Quick Action Selector Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              onClick={() => handleOpenCreateModal('bank_transfer')}
+              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                <Landmark className="w-6 h-6" />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Banco Dominicano / Entidad</label>
-                  <select
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                  >
-                    {DOMINICAN_BANKS.map((b) => (
-                      <option key={b.name} value={b.name}>{b.name}</option>
-                    ))}
-                    <option value="Otro Banco / Entidad">Otro Banco / Entidad</option>
-                  </select>
-                </div>
-
-                {bankName === 'Otro Banco / Entidad' && (
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nombre del Banco Personalizado</label>
-                    <input
-                      type="text"
-                      value={customBankName}
-                      onChange={(e) => setCustomBankName(e.target.value)}
-                      placeholder="Ej: Banco Lafise"
-                      className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nombre o Titular de la Cuenta</label>
-                  <input
-                    type="text"
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Ej. UltraMoney SRL - Cuenta Principal"
-                    className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Cédula / RNC del Titular</label>
-                  <input
-                    type="text"
-                    value={cedulaOrRnc}
-                    onChange={(e) => setCedulaOrRnc(e.target.value)}
-                    placeholder="Ej. 131-1234567-8"
-                    className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Número de Cuenta</label>
-                  <input
-                    type="text"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="Ej. 960-1234567-1"
-                    className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Tipo de Cuenta</label>
-                  <select
-                    value={accountType}
-                    onChange={(e) => setAccountType(e.target.value as BankAccount['accountType'])}
-                    className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                  >
-                    <option value="Corriente">Cuenta Corriente</option>
-                    <option value="Ahorros">Cuenta de Ahorros</option>
-                    <option value="Caja Chica / Efectivo">Caja Chica / Efectivo</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Balance Inicial</label>
-                  <input
-                    type="number"
-                    value={balance}
-                    onChange={(e) => setBalance(Number(e.target.value))}
-                    placeholder="0.00"
-                    className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                  />
-                </div>
+              <div>
+                <h4 className="font-black text-slate-900 dark:text-white text-base">Cuenta Bancaria</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Transferencia Banreservas, Popular, BHD, APAP, etc.</p>
               </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsAddingBank(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs hover:bg-slate-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs shadow-md shadow-indigo-600/30"
-                >
-                  Guardar Cuenta
-                </button>
+              <div className="flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                <span>+ Agregar Cuenta</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </div>
-            </form>
-          )}
+            </button>
 
-          {/* Accounts Grid */}
+            <button
+              onClick={() => handleOpenCreateModal('verifone_pos')}
+              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold group-hover:bg-cyan-600 group-hover:text-white transition-all">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 dark:text-white text-base">Verifone / POS</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Terminales CardNet, Visanet/Azul, PixelPay.</p>
+              </div>
+              <div className="flex items-center text-xs font-bold text-cyan-600 group-hover:translate-x-1 transition-transform">
+                <span>+ Registrar POS</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleOpenCreateModal('cash_box')}
+              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                <Wallet className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 dark:text-white text-base">Caja Chica / Efectivo</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Caja Principal, Mostrador o Cobrador en Ruta.</p>
+              </div>
+              <div className="flex items-center text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">
+                <span>+ Crear Caja</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleOpenCreateModal('digital_wallet')}
+              className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-lg transition-all text-left group space-y-3"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold group-hover:bg-purple-600 group-hover:text-white transition-all">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 dark:text-white text-base">Pasarela Digital</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">PayPal, Zelle, Billet, Bitcoin wallet.</p>
+              </div>
+              <div className="flex items-center text-xs font-bold text-purple-600 group-hover:translate-x-1 transition-transform">
+                <span>+ Añadir Billetera</span> <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </div>
+            </button>
+          </div>
+
+          {/* Instrument Accounts List */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {bankAccounts.map((acc) => {
-              const isEditing = editingAccountId === acc.id;
               const logoPath = acc.bankLogoUrl || getBankLogoUrl(acc.bankName);
 
               return (
@@ -374,7 +351,7 @@ export const BankAccountsPage: React.FC = () => {
                   className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-md border border-slate-200/80 dark:border-slate-800 space-y-4 relative overflow-hidden group hover:border-indigo-400 transition-all"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm">
                         <img 
                           src={logoPath} 
@@ -385,59 +362,64 @@ export const BankAccountsPage: React.FC = () => {
                           }}
                         />
                       </div>
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 dark:text-white text-base leading-tight">
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-slate-900 dark:text-white text-base leading-tight truncate">
                           {acc.bankName}
                         </h4>
-                        <span className="text-xs text-slate-500 font-semibold block">
+                        <span className="text-xs text-slate-500 font-semibold block truncate">
                           {acc.accountName || acc.holderName}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    {/* Edit and Delete Buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
-                        onClick={() => {
-                          setEditingAccountId(acc.id);
-                          setEditBalanceVal(acc.balance || 0);
-                        }}
-                        className="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
-                        title="Editar balance"
+                        onClick={() => handleOpenEditModal(acc)}
+                        className="p-2.5 rounded-2xl text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-all font-bold"
+                        title="Editar cuenta completa"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      {!acc.isDefault && (
-                        <button
-                          onClick={() => {
-                            removeBankAccount(acc.id);
-                            toast.success('Cuenta eliminada');
-                          }}
-                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
-                          title="Eliminar cuenta"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          setDeletingId(acc.id);
+                          setDeletingType('account');
+                        }}
+                        className="p-2.5 rounded-2xl text-rose-600 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900 transition-all font-bold"
+                        title="Eliminar cuenta"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-400 font-bold uppercase tracking-wider">Número de Cuenta</span>
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-bold uppercase tracking-wider">Número / ID</span>
                       <span className="font-mono font-extrabold text-slate-800 dark:text-slate-200">
                         {acc.accountNumber}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-400 font-bold uppercase tracking-wider">Tipo de Cuenta</span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 font-bold uppercase tracking-wider">Tipo / Categoría</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
                         {acc.accountType}
                       </span>
                     </div>
 
+                    {acc.holderName && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 font-bold uppercase tracking-wider">Titular</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                          {acc.holderName}
+                        </span>
+                      </div>
+                    )}
+
                     {acc.cedulaOrRnc && (
-                      <div className="flex justify-between items-center text-xs">
+                      <div className="flex justify-between items-center">
                         <span className="text-slate-400 font-bold uppercase tracking-wider">Cédula / RNC</span>
                         <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">
                           {acc.cedulaOrRnc}
@@ -445,28 +427,11 @@ export const BankAccountsPage: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center pt-2">
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
                       <span className="text-xs text-slate-500 font-bold">Balance Disponible</span>
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={editBalanceVal}
-                            onChange={(e) => setEditBalanceVal(Number(e.target.value))}
-                            className="w-28 p-1.5 border rounded-xl text-xs font-mono font-bold dark:bg-slate-800"
-                          />
-                          <button
-                            onClick={() => handleSaveEditBalance(acc.id)}
-                            className="p-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
-                          RD$ {(acc.balance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                        </span>
-                      )}
+                      <span className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
+                        RD$ {(acc.balance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -474,64 +439,16 @@ export const BankAccountsPage: React.FC = () => {
             })}
           </div>
 
-          {/* Payment Methods Section */}
+          {/* Payment Methods / Terminals Section */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  <CreditCard className="w-6 h-6 text-indigo-600" /> Otros Métodos de Pago & Terminales POS
+                  <CreditCard className="w-6 h-6 text-indigo-600" /> Formas de Pago & Terminales POS Registradas
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">Configura terminales de tarjeta, PayPal, Zelle o cobros personalizados.</p>
+                <p className="text-xs text-slate-500 mt-1">Habilita o deshabilita terminales POS, cobros en efectivo y transferencias.</p>
               </div>
-
-              <button
-                onClick={() => handleOpenPmModal()}
-                className="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all"
-              >
-                <Plus className="w-4 h-4" /> + Nuevo Método de Pago
-              </button>
             </div>
-
-            {/* Payment Method Modal */}
-            {isAddingPm && (
-              <form onSubmit={handlePmSubmit} className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 border border-indigo-200 dark:border-indigo-900 space-y-4">
-                <h4 className="font-bold text-sm text-slate-800 dark:text-white">
-                  {editingPmId ? 'Editar Método de Pago' : 'Nuevo Método de Pago'}
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre del Método</label>
-                    <input
-                      type="text"
-                      value={pmName}
-                      onChange={(e) => setPmName(e.target.value)}
-                      placeholder="Ej: CardNet POS 01"
-                      className="w-full p-2.5 border rounded-xl dark:bg-slate-900 font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
-                    <select
-                      value={pmCategory}
-                      onChange={(e) => setPmCategory(e.target.value as CustomPaymentMethod['category'])}
-                      className="w-full p-2.5 border rounded-xl dark:bg-slate-900 font-bold"
-                    >
-                      <option value="POS / Verifone">POS / Verifone</option>
-                      <option value="Pasarela Digital">Pasarela Digital (PayPal / Stripe)</option>
-                      <option value="Transferencia">Transferencia Directa</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Otro">Otro</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => setIsAddingPm(false)} className="px-4 py-2 text-xs font-bold">Cancelar</button>
-                  <button type="submit" className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl">Guardar</button>
-                </div>
-              </form>
-            )}
 
             {/* Payment Methods Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -544,17 +461,30 @@ export const BankAccountsPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => togglePaymentMethodStatus(pm.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-extrabold ${
+                      className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
                         pm.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
                       }`}
                     >
                       {pm.isActive ? 'Activo' : 'Inactivo'}
                     </button>
+                    {!pm.isDefault && (
+                      <button
+                        onClick={() => {
+                          setDeletingId(pm.id);
+                          setDeletingType('payment_method');
+                        }}
+                        className="p-1.5 text-rose-500 hover:bg-rose-100 rounded-lg transition-all"
+                        title="Eliminar método"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
         </div>
       )}
 
@@ -673,28 +603,6 @@ export const BankAccountsPage: React.FC = () => {
                       className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-medium"
                     />
                   </div>
-
-                  <div className="pt-2 space-y-2 border-t border-slate-100 dark:border-slate-800">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={linkConfig.showCompanyLogo}
-                        onChange={(e) => setLinkConfig(prev => ({ ...prev, showCompanyLogo: e.target.checked }))}
-                        className="w-4 h-4 rounded text-indigo-600"
-                      />
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Mostrar Logo de la Empresa</span>
-                    </label>
-
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={linkConfig.showCompanyRnc}
-                        onChange={(e) => setLinkConfig(prev => ({ ...prev, showCompanyRnc: e.target.checked }))}
-                        className="w-4 h-4 rounded text-indigo-600"
-                      />
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Mostrar RNC en la Cabecera</span>
-                    </label>
-                  </div>
                 </div>
               </div>
 
@@ -744,32 +652,6 @@ export const BankAccountsPage: React.FC = () => {
                             </div>
                           </label>
                         </div>
-
-                        {/* Inline Edit Inputs for Holder & Cédula */}
-                        {isSelected && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs">
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Titular</label>
-                              <input
-                                type="text"
-                                value={acc.holderName || acc.accountName || ''}
-                                onChange={(e) => updateBankAccount(acc.id, { holderName: e.target.value, accountName: e.target.value })}
-                                placeholder="Nombre del Titular"
-                                className="w-full p-2 border rounded-xl dark:bg-slate-800 font-bold"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase">Cédula / RNC</label>
-                              <input
-                                type="text"
-                                value={acc.cedulaOrRnc || ''}
-                                onChange={(e) => updateBankAccount(acc.id, { cedulaOrRnc: e.target.value })}
-                                placeholder="Cédula o RNC"
-                                className="w-full p-2 border rounded-xl dark:bg-slate-800 font-bold font-mono"
-                              />
-                            </div>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
@@ -789,10 +671,10 @@ export const BankAccountsPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* iPhone 15 Pro Max Titanium Ultra-Thin Bezel Chassis */}
+              {/* iPhone 15 Pro Max Titanium Chassis */}
               <div className="relative max-w-[380px] mx-auto bg-[#1a191d] p-[7px] rounded-[52px] shadow-[0_30px_90px_-15px_rgba(0,0,0,0.65)] border-[6px] border-[#2e2d33] ring-1 ring-white/10 select-none">
                 
-                {/* Physical Side Buttons (Volume & Power Accents) */}
+                {/* Physical Side Buttons */}
                 <div className="absolute -left-[9px] top-28 w-[3px] h-9 bg-[#3a3940] rounded-l-md" />
                 <div className="absolute -left-[9px] top-42 w-[3px] h-12 bg-[#3a3940] rounded-l-md" />
                 <div className="absolute -left-[9px] top-58 w-[3px] h-12 bg-[#3a3940] rounded-l-md" />
@@ -801,7 +683,7 @@ export const BankAccountsPage: React.FC = () => {
                 {/* Inner Device Viewport Screen */}
                 <div className="relative bg-[#f8fafc] dark:bg-slate-950 rounded-[44px] overflow-hidden max-h-[710px] overflow-y-auto border border-black/80">
                   
-                  {/* Dynamic Island (Isla Dinámica de Apple) */}
+                  {/* Dynamic Island */}
                   <div className="sticky top-0 z-40 bg-[#f8fafc]/90 dark:bg-slate-950/90 backdrop-blur-md pt-2 pb-1 text-center">
                     <div className="w-28 h-6 bg-black rounded-full mx-auto flex items-center justify-between px-2.5 shadow-md">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#111116] border border-white/10" />
@@ -827,6 +709,378 @@ export const BankAccountsPage: React.FC = () => {
 
           </div>
 
+        </div>
+      )}
+
+      {/* CREATE & EDIT INSTRUMENT MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400">
+                  {editingAccountId ? 'Editar Instrumento' : 'Nuevo Instrumento Financiero'}
+                </span>
+                <h3 className="text-xl font-black">
+                  {editingAccountId ? 'Modificar Datos de la Cuenta' : 'Registrar Cuenta, Verifone o Caja'}
+                </h3>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-white rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content Form */}
+            <form onSubmit={handleSubmitForm} className="p-6 overflow-y-auto space-y-6 text-xs">
+              
+              {/* Category Selector Tabs */}
+              {!editingAccountId && (
+                <div className="space-y-2">
+                  <label className="block font-extrabold text-slate-700 dark:text-slate-300">
+                    1. Selecciona el Tipo de Método Financiero
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory('bank_transfer')}
+                      className={`p-3 rounded-2xl border text-center transition-all ${
+                        selectedCategory === 'bank_transfer'
+                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 font-extrabold ring-2 ring-indigo-500/20'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:border-slate-300 font-bold'
+                      }`}
+                    >
+                      <Landmark className="w-5 h-5 mx-auto mb-1" />
+                      <span>Banco</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory('verifone_pos')}
+                      className={`p-3 rounded-2xl border text-center transition-all ${
+                        selectedCategory === 'verifone_pos'
+                          ? 'border-cyan-600 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 font-extrabold ring-2 ring-cyan-500/20'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:border-slate-300 font-bold'
+                      }`}
+                    >
+                      <CreditCard className="w-5 h-5 mx-auto mb-1" />
+                      <span>Verifone POS</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory('cash_box')}
+                      className={`p-3 rounded-2xl border text-center transition-all ${
+                        selectedCategory === 'cash_box'
+                          ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 font-extrabold ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:border-slate-300 font-bold'
+                      }`}
+                    >
+                      <Wallet className="w-5 h-5 mx-auto mb-1" />
+                      <span>Caja Efectivo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory('digital_wallet')}
+                      className={`p-3 rounded-2xl border text-center transition-all ${
+                        selectedCategory === 'digital_wallet'
+                          ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/60 text-purple-600 font-extrabold ring-2 ring-purple-500/20'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:border-slate-300 font-bold'
+                      }`}
+                    >
+                      <Smartphone className="w-5 h-5 mx-auto mb-1" />
+                      <span>Billetera</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Category Specific Form Fields */}
+              {selectedCategory === 'bank_transfer' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Banco Dominicano</label>
+                    <select
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    >
+                      {DOMINICAN_BANKS.map(b => (
+                        <option key={b.name} value={b.name}>{b.name}</option>
+                      ))}
+                      <option value="Otro Banco / Entidad">Otro Banco / Entidad</option>
+                    </select>
+                  </div>
+
+                  {bankName === 'Otro Banco / Entidad' && (
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre del Banco</label>
+                      <input
+                        type="text"
+                        value={customBankName}
+                        onChange={(e) => setCustomBankName(e.target.value)}
+                        placeholder="Ej. Banco Lafise"
+                        className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Cuenta</label>
+                    <input
+                      type="text"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      placeholder="Ej. Banreservas Principal SRL"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Número de Cuenta</label>
+                    <input
+                      type="text"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      placeholder="Ej. 960-1234567-1"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Titular de la Cuenta</label>
+                    <input
+                      type="text"
+                      value={holderName}
+                      onChange={(e) => setHolderName(e.target.value)}
+                      placeholder="Ej. Juan Pérez"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cédula / RNC</label>
+                    <input
+                      type="text"
+                      value={cedulaOrRnc}
+                      onChange={(e) => setCedulaOrRnc(e.target.value)}
+                      placeholder="Ej. 402-1234567-8"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Cuenta</label>
+                    <select
+                      value={accountType}
+                      onChange={(e) => setAccountType(e.target.value as BankAccount['accountType'])}
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    >
+                      <option value="Corriente">Cuenta Corriente</option>
+                      <option value="Ahorros">Cuenta de Ahorros</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === 'verifone_pos' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Red del Verifone / Procesador</label>
+                    <select
+                      value={posNetwork}
+                      onChange={(e) => setPosNetwork(e.target.value)}
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    >
+                      <option value="CardNet POS">CardNet (Dominicano)</option>
+                      <option value="Visanet / Azul">Visanet / Azul (Banco Popular)</option>
+                      <option value="PixelPay POS">PixelPay</option>
+                      <option value="Clover POS">Clover</option>
+                      <option value="Otro POS">Otro Verifone</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Código de Afiliado / Terminal ID</label>
+                    <input
+                      type="text"
+                      value={terminalCode}
+                      onChange={(e) => setTerminalCode(e.target.value)}
+                      placeholder="Ej. TER-884920"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre o Etiqueta</label>
+                    <input
+                      type="text"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      placeholder="Ej. Verifone Caja Mostrador 01"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Comisión Estimada (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={feePercentage}
+                      onChange={(e) => setFeePercentage(Number(e.target.value))}
+                      placeholder="2.5"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === 'cash_box' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Caja</label>
+                    <input
+                      type="text"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      placeholder="Ej. Caja Principal Mostrador"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Responsable / Encargado</label>
+                    <input
+                      type="text"
+                      value={holderName}
+                      onChange={(e) => setHolderName(e.target.value)}
+                      placeholder="Ej. María Rodríguez"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedCategory === 'digital_wallet' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Plataforma Digital</label>
+                    <select
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    >
+                      <option value="PayPal">PayPal</option>
+                      <option value="Zelle">Zelle</option>
+                      <option value="Billet">Billet</option>
+                      <option value="Bitcoin / Crypto">Bitcoin / Wallet Crypto</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Usuario / Email / ID de Pago</label>
+                    <input
+                      type="text"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      placeholder="Ej. pagos@ultramoney.app"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Titular Registrado</label>
+                    <input
+                      type="text"
+                      value={holderName}
+                      onChange={(e) => setHolderName(e.target.value)}
+                      placeholder="Ej. UltraMoney SRL"
+                      className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Shared Balance & Status Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Balance Actual (RD$)</label>
+                  <input
+                    type="number"
+                    value={balance}
+                    onChange={(e) => setBalance(Number(e.target.value))}
+                    placeholder="0.00"
+                    className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-mono font-black text-emerald-600 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Estado de la Cuenta</label>
+                  <select
+                    value={isActive ? 'true' : 'false'}
+                    onChange={(e) => setIsActive(e.target.value === 'true')}
+                    className="w-full p-3 border rounded-2xl dark:bg-slate-800 font-bold"
+                  >
+                    <option value="true">Activa (Disponible para Operar)</option>
+                    <option value="false">Inactiva (Deshabilitada)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Modal Footer Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-7 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black shadow-lg shadow-indigo-600/30"
+                >
+                  {editingAccountId ? 'Guardar Cambios' : 'Crear Instrumento'}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE MODAL */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">¿Eliminar este elemento?</h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Esta acción eliminará de forma permanente el elemento seleccionado de la base de datos de InsForge.
+              </p>
+            </div>
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-xs shadow-md shadow-rose-600/30"
+              >
+                Sí, Eliminar de la Base de Datos
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
