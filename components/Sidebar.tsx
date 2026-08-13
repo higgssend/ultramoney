@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
@@ -7,7 +6,7 @@ import {
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
   Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2,
-  LayoutGrid, List
+  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon
 } from 'lucide-react';
 import { useAuth, useSettings } from '../context/StoreContext';
 
@@ -18,33 +17,27 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
-  const { companySettings, globalCurrency, setGlobalCurrency } = useSettings();
+  const { globalCurrency, setGlobalCurrency } = useSettings();
   const navigate = useNavigate();
   const [drawerLayout, setDrawerLayout] = useState<'grid' | 'list'>('grid');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
-      return localStorage.getItem('theme') === 'dark';
+    return localStorage.getItem('theme') === 'dark';
   });
 
   useEffect(() => {
-      if (darkMode) {
-          document.documentElement.classList.add('dark');
-          localStorage.setItem('theme', 'dark');
-      } else {
-          document.documentElement.classList.remove('dark');
-          localStorage.setItem('theme', 'light');
-      }
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
   }, [darkMode]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const handleEditProfile = () => {
-    navigate('/configuracion', { state: { activeTab: 'security' } });
-    if (window.innerWidth < 768) {
-        onClose();
-    }
   };
 
   const menuItems: { name: string; path: string; icon: React.ElementType; highlight?: boolean }[] = [
@@ -70,7 +63,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Bitácora', path: '/bitacora', icon: ShieldCheck },
     { name: 'Buró de Crédito', path: '/buro-credito', icon: Building2 },
     { name: 'Centro de Migración', path: '/migracion', icon: Database },
-    { name: 'Configuración', path: '/configuracion', icon: Settings },
   ];
 
   const sidebarClasses = `
@@ -91,7 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       <aside className={sidebarClasses}>
-        {/* Brand */}
+        {/* Brand Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-10 h-10 object-contain" />
@@ -130,24 +122,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className={drawerLayout === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 gap-2.5 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
+          <div className={drawerLayout === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 gap-3 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
             {menuItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 onClick={() => onClose()}
                 className={({ isActive }) => `
-                  flex ${drawerLayout === 'grid' ? 'flex-col md:flex-row items-center justify-center md:justify-start p-3 text-center md:text-left rounded-2xl md:rounded-xl border md:border-none' : 'flex-row items-center px-3 py-2.5 rounded-xl'} transition-all duration-200 group
+                  flex transition-all duration-200 group active:scale-95
+                  ${drawerLayout === 'grid' 
+                    ? 'flex-col md:flex-row items-center justify-center md:justify-start aspect-square md:aspect-auto p-3.5 md:p-3 text-center md:text-left rounded-2xl md:rounded-xl border md:border-none shadow-sm md:shadow-none' 
+                    : 'flex-row items-center px-3 py-3 rounded-xl border border-transparent'}
                   ${isActive 
-                    ? 'bg-indigo-600 text-white md:bg-indigo-50 md:dark:bg-indigo-900/30 md:text-indigo-700 md:dark:text-indigo-400 font-bold shadow-md shadow-indigo-200 dark:shadow-none' 
-                    : 'bg-slate-50 dark:bg-slate-800/40 md:bg-transparent border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium'}
-                  ${item.highlight ? 'mt-4 border border-indigo-100 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : ''}
+                    ? 'bg-indigo-600 text-white border-indigo-600 md:bg-indigo-50 md:dark:bg-indigo-900/30 md:text-indigo-700 md:dark:text-indigo-400 font-bold shadow-md shadow-indigo-200 dark:shadow-none' 
+                    : 'bg-slate-50 dark:bg-slate-800/40 md:bg-transparent border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold'}
                 `}
               >
                 {({ isActive }) => (
                   <>
-                    <item.icon className={`${drawerLayout === 'grid' ? 'w-6 h-6 mb-1 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : (item.highlight ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300')}`} />
-                    <span className="text-xs md:text-sm leading-tight">{item.name}</span>
+                    <item.icon className={`${drawerLayout === 'grid' ? 'w-7 h-7 mb-1.5 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                    <span className="text-xs md:text-sm leading-tight font-bold md:font-medium">{item.name}</span>
                   </>
                 )}
               </NavLink>
@@ -155,60 +149,124 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Dark Mode Toggle & Footer */}
+        {/* Footer Profile & Preferences Button */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 mb-16 md:mb-0 shrink-0 bg-slate-50/50 dark:bg-slate-800/30">
-          <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preferencia</span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setGlobalCurrency(globalCurrency === 'DOP' ? 'USD' : 'DOP')}
-                  className="px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1"
-                >
-                  <DollarSign className="w-3 h-3" /> {globalCurrency}
-                </button>
-                <button 
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="p-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                    {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
-              </div>
-          </div>
-
-          <div className="flex items-center justify-between mb-4 px-2 group">
-            <div className="flex items-center gap-3 overflow-hidden cursor-pointer" onClick={handleEditProfile}>
-                {currentUser?.user_metadata?.avatar_url ? (
-                  <img src={currentUser.user_metadata.avatar_url} alt="Profile" className="w-10 h-10 rounded-full border border-indigo-200 dark:border-indigo-700 shrink-0 object-cover" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-700 shrink-0">
-                    {currentUser?.user_metadata?.name ? currentUser.user_metadata.name.charAt(0).toUpperCase() : (currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U')}
-                  </div>
-                )}
-                <div className="overflow-hidden">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate w-32 group-hover:text-indigo-600 transition-colors">
-                      {currentUser?.user_metadata?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Usuario')}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{currentUser?.roleId || 'Admin'}</p>
-                </div>
-            </div>
-            <button 
-                onClick={handleEditProfile}
-                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors border border-transparent hover:border-slate-200 shadow-sm"
-                title="Editar Perfil"
-            >
-                <Edit className="w-4 h-4" />
-            </button>
-          </div>
-
-          <button 
-            onClick={handleLogout}
-            className="flex items-center w-full px-3 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30"
+          <div 
+            onClick={() => setIsProfileModalOpen(true)}
+            className="flex items-center justify-between p-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-sm cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 transition-all group"
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            Cerrar Sesión
-          </button>
+            <div className="flex items-center gap-3 overflow-hidden">
+              {currentUser?.user_metadata?.avatar_url ? (
+                <img src={currentUser.user_metadata.avatar_url} alt="Profile" className="w-10 h-10 rounded-full border-2 border-indigo-500 shrink-0 object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                  {currentUser?.user_metadata?.name ? currentUser.user_metadata.name.charAt(0).toUpperCase() : (currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U')}
+                </div>
+              )}
+              <div className="overflow-hidden text-left">
+                <p className="text-sm font-bold text-slate-800 dark:text-white truncate w-28 group-hover:text-indigo-600 transition-colors">
+                  {currentUser?.user_metadata?.name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Usuario')}
+                </p>
+                <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold capitalize">{currentUser?.roleId || 'Administrador'}</p>
+              </div>
+            </div>
+
+            <div className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <ChevronUp className="w-5 h-5" />
+            </div>
+          </div>
         </div>
       </aside>
+
+      {/* Profile & Options Action Sheet Modal */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" onClick={() => setIsProfileModalOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-scale-up" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Mi Perfil y Ajustes</h3>
+                  <p className="text-xs text-slate-400">Opciones rápidas y configuración</p>
+                </div>
+              </div>
+              <button onClick={() => setIsProfileModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Info Badge */}
+            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-md">
+                {currentUser?.user_metadata?.name ? currentUser.user_metadata.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="overflow-hidden">
+                <p className="font-extrabold text-slate-900 dark:text-white text-sm truncate">{currentUser?.user_metadata?.name || 'Usuario'}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{currentUser?.email}</p>
+                <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 uppercase">
+                  {currentUser?.roleId || 'Administrador'}
+                </span>
+              </div>
+            </div>
+
+            {/* Navigation Options */}
+            <div className="space-y-2">
+              <button 
+                onClick={() => { navigate('/configuracion'); setIsProfileModalOpen(false); onClose(); }} 
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-800 dark:text-slate-200 hover:text-indigo-600 transition-all font-semibold text-sm border border-slate-100 dark:border-slate-800"
+              >
+                <div className="flex items-center gap-3">
+                  <Settings className="w-4 h-4 text-indigo-500" />
+                  <span>Configuración General</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+
+              <button 
+                onClick={() => { navigate('/configuracion', { state: { activeTab: 'security' } }); setIsProfileModalOpen(false); onClose(); }} 
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-800 dark:text-slate-200 hover:text-indigo-600 transition-all font-semibold text-sm border border-slate-100 dark:border-slate-800"
+              >
+                <div className="flex items-center gap-3">
+                  <Edit className="w-4 h-4 text-indigo-500" />
+                  <span>Editar Perfil y Seguridad</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+
+              {/* Currency & Theme Toggles */}
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <button 
+                  onClick={() => setGlobalCurrency(globalCurrency === 'DOP' ? 'USD' : 'DOP')}
+                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 transition-all"
+                >
+                  <DollarSign className="w-4 h-4 text-indigo-500" /> Moneda: <span className="text-indigo-600 dark:text-indigo-400 font-extrabold">{globalCurrency}</span>
+                </button>
+
+                <button 
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 transition-all"
+                >
+                  {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                  <span>{darkMode ? 'Modo Claro' : 'Modo Oscuro'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <button 
+              onClick={() => { setIsProfileModalOpen(false); handleLogout(); }}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-sm border border-rose-100 dark:border-rose-900/50 transition-all"
+            >
+              <LogOut className="w-4 h-4" /> Cerrar Sesión
+            </button>
+
+          </div>
+        </div>
+      )}
     </>
   );
 };
