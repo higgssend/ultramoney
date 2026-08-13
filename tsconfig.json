@@ -25,5 +25,10 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "insforge",
+    "dist",
+    "node_modules"
+  ]
 }
