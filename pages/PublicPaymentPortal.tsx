@@ -4,6 +4,7 @@ import {
   Copy, Check, Share2, Smartphone, ChevronDown, ChevronUp, 
   ShieldCheck, CheckCircle2, Download, ArrowLeft, Building2, Landmark, Wallet, CreditCard
 } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { BankAccount, PaymentLinkConfig } from '../types';
 import { getBankLogoUrl } from '../utils/bankLogos';
 import { useSettings, useAccounting, useAuth } from '../context/StoreContext';
@@ -92,7 +93,7 @@ Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
   };
 
   const cleanWhatsappPhone = whatsappPhone.replace(/\D/g, '');
-  const whatsappUrl = `https://wa.me/${cleanWhatsappPhone}?text=${encodeURIComponent('Hola, adjunto comprobante de pago realizado por transferencia bancaria.')}`;
+  const whatsappUrl = `https://wa.me/${cleanWhatsappPhone}?text=${encodeURIComponent('Adjunto comprobante de pago realizado por transferencia bancaria.')}`;
 
   return (
     <div className={`w-full min-h-screen ${isLivePreview ? 'bg-slate-100/70 p-3 sm:p-5 rounded-[36px]' : 'bg-[#f8fafc] dark:bg-slate-950 py-6 px-4 sm:px-6'}`}>
@@ -124,12 +125,8 @@ Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
         {/* Main Profile & User Card (Exact replica of reference image) */}
         <div className="bg-white dark:bg-slate-900 rounded-[32px] p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 text-center relative space-y-4">
           
-          {/* Avatar with Floating Speech Pill */}
+          {/* Avatar Container */}
           <div className="relative inline-block mx-auto">
-            {/* Speech Bubble Pill */}
-            <div className="absolute -top-3 -right-6 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-md rounded-full px-2.5 py-0.5 text-[11px] font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1 z-10">
-              <span>👋 ¡Hola!</span>
-            </div>
 
             {/* Avatar Circle */}
             {showLogo && companySettings?.logoUrl ? (
@@ -390,7 +387,7 @@ Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
             rel="noopener noreferrer"
             className="w-full py-4 px-6 rounded-2xl bg-[#10b981] hover:bg-[#059669] active:scale-98 text-white font-black text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 transition-all text-center"
           >
-            <Smartphone className="w-5 h-5" />
+            <FaWhatsapp className="w-6 h-6 text-white shrink-0" />
             <span>Enviar Comprobante por WhatsApp</span>
           </a>
         </div>

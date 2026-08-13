@@ -3,6 +3,7 @@ import {
   Landmark, Plus, CreditCard, Trash2, Edit3, Building2, X, Link, Copy, Check,
   ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ShieldAlert, Save, FileText
 } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { useAccounting, useSettings } from '../context/StoreContext';
 import { BankAccount, CustomPaymentMethod, PaymentLinkConfig } from '../types';
 import { DOMINICAN_BANKS, getBankLogoUrl } from '../utils/bankLogos';
@@ -272,7 +273,7 @@ export const BankAccountsPage: React.FC = () => {
   };
 
   const handleShareWhatsapp = () => {
-    const text = `Hola, aquí tienes nuestras cuentas bancarias oficiales para transferencias y pagos: ${publicLinkUrl}`;
+    const text = `Aquí tienes nuestras cuentas bancarias oficiales para transferencias y pagos: ${publicLinkUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -569,7 +570,7 @@ export const BankAccountsPage: React.FC = () => {
                   className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all"
                   title="Compartir por WhatsApp"
                 >
-                  <Smartphone className="w-4 h-4" />
+                  <FaWhatsapp className="w-5 h-5 text-white shrink-0" />
                   <span className="hidden sm:inline">WhatsApp</span>
                 </button>
               </div>
