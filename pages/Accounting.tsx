@@ -35,7 +35,10 @@ const defaultChartOfAccounts: Account[] = [
 ];
 
 const Accounting: React.FC = () => {
-  const { transactions, getFinancialStats, activeCashShift, openCashShift, closeCashShift, getCashShiftSummary, addTransaction } = useAccounting();
+  const { 
+    transactions, bankAccounts, getFinancialStats, activeCashShift, openCashShift, 
+    closeCashShift, getCashShiftSummary, addTransaction, processBankDisbursement 
+  } = useAccounting();
   const { loans } = useLoans();
   const { clients } = useClients();
   const { addAuditLog } = useSettings();
@@ -51,6 +54,7 @@ const Accounting: React.FC = () => {
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseMethod, setExpenseMethod] = useState<PaymentMethod>('Efectivo');
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('');
 
   // Manual Journal Entry Form State
   const [manualDebitCode, setManualDebitCode] = useState('1100');
@@ -155,14 +159,20 @@ const Accounting: React.FC = () => {
       category: expenseCategory,
       description: expenseDescription || `Gasto de ${expenseCategory}`,
       amount: amount,
-      paymentMethod: expenseMethod,
+      paymentMethod: selectedBankAccountId ? 'Transferencia' : expenseMethod,
+      bank_account_id: selectedBankAccountId || undefined,
       lender_id: ''
     });
+
+    if (selectedBankAccountId) {
+      processBankDisbursement(selectedBankAccountId, amount);
+    }
     
     addAuditLog('expense_registered', `Registró gasto por RD$ ${amount} (${expenseCategory})`);
     toast.success("Gasto registrado y contabilizado");
     setExpenseAmount('');
     setExpenseDescription('');
+    setSelectedBankAccountId('');
     setActiveTab('overview');
   };
 
@@ -362,6 +372,22 @@ const Accounting: React.FC = () => {
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Cuenta o Método Pagador (Opcional)</label>
+                  <select
+                    value={selectedBankAccountId}
+                    onChange={(e) => setSelectedBankAccountId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-xs font-bold"
+                  >
+                    <option value="">-- Sin cuenta específica (Caja General) --</option>
+                    {bankAccounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.bankName} - {acc.accountName || acc.holderName} (RD$ {(acc.balance || 0).toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <button

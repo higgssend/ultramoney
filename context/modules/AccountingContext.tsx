@@ -338,12 +338,11 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const processBankDeposit = async (bankAccountId: string | undefined, amount: number) => {
     if (amount <= 0) return;
-    const target = (bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null) 
-      || bankAccounts.find(a => a.accountType === 'Caja Chica / Efectivo' || a.isDefault) 
-      || bankAccounts[0];
+    const target = bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null;
     if (!target) return;
 
-    const newBal = (target.balance || 0) + amount;
+    const currentBal = Number(target.balance) || 0;
+    const newBal = currentBal + amount;
     setBankAccounts(prev => prev.map(acc => acc.id === target.id ? { ...acc, balance: newBal } : acc));
     if (currentUser) {
       await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', target.id).eq('lender_id', currentUser.id);
@@ -352,12 +351,13 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const processBankDisbursement = async (bankAccountId: string | undefined, amount: number) => {
     if (amount <= 0) return;
-    const target = (bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null) 
-      || bankAccounts.find(a => a.accountType === 'Caja Chica / Efectivo' || a.isDefault) 
-      || bankAccounts[0];
+    const target = bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null;
     if (!target) return;
 
-    const finalBal = (target.balance || 0) - amount;
+    const currentBal = Number(target.balance) || 0;
+    // If target account balance is 0 or less, retain at 0 to avoid driving balance negative or blocking operational disbursements
+    const finalBal = currentBal > 0 ? Math.max(0, currentBal - amount) : 0;
+
     setBankAccounts(prev => prev.map(acc => acc.id === target.id ? { ...acc, balance: finalBal } : acc));
     if (currentUser) {
       await insforge.database.from('bank_accounts').update({ initial_balance: finalBal }).eq('id', target.id).eq('lender_id', currentUser.id);
