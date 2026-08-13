@@ -260,7 +260,7 @@ export class LoanEngine {
         if (loanTypeOverride) {
             if (loanTypeOverride === 'Amortizado (Cuota Fija)' || loanTypeOverride === 'Amortizado' || loanTypeOverride === 'Amortización' || loanTypeOverride === 'Financiamiento de Equipo (Con/Sin Inicial)') method = 'Amortizado';
             if (loanTypeOverride === 'Amortizado (Capital Fijo)') method = 'Flat';
-            if (loanTypeOverride === 'Rédito (Solo Interés)' || loanTypeOverride === 'Rédito') method = 'Bullet';
+            if (loanTypeOverride === 'Rédito (Solo Interés)' || loanTypeOverride === 'Rédito' || loanTypeOverride === 'Pagaré / Préstamo Abierto' || loanTypeOverride === 'Pagaré Abierto') method = 'Bullet';
             if (loanTypeOverride === 'Interés Adelantado') method = 'Adelantado';
         }
 

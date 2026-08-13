@@ -13,6 +13,8 @@ export type LoanType =
   | 'Rédito (Solo Interés)' 
   | 'Interés Adelantado' 
   | 'Financiamiento de Equipo (Con/Sin Inicial)'
+  | 'Pagaré / Préstamo Abierto'
+  | 'Pagaré Abierto'
   | 'Amortización' 
   | 'Rédito';
 

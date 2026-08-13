@@ -17,6 +17,7 @@ const LOAN_TYPE_OPTIONS: { value: LoanType; label: string; description: string }
   { value: 'Rédito (Solo Interés)', label: 'Rédito (Solo Interés / Abierto)', description: 'Solo se pagan intereses en cada período. El capital se salda al vencimiento.' },
   { value: 'Interés Adelantado', label: 'Interés Adelantado', description: 'Los intereses se retienen/descuentan por adelantado al momento del desembolso.' },
   { value: 'Financiamiento de Equipo (Con/Sin Inicial)', label: 'Financiamiento de Equipo / Artículos / Vehículos', description: 'Financiamiento de artículos con o sin inicial/enganche previa.' },
+  { value: 'Pagaré / Préstamo Abierto', label: 'Pagaré Abierto / Préstamo Abierto (Línea Flexible)', description: 'Préstamo abierto flexible respaldado por pagaré donde el cliente abona capital libremente o paga intereses periódicos.' },
   { value: 'Amortización', label: 'Amortización Estándar', description: 'Plan de amortización directo equilibrado.' },
   { value: 'Rédito', label: 'Rédito Simple', description: 'Cobro periódico exclusivo de intereses.' }
 ];
@@ -142,7 +143,7 @@ const Simulator: React.FC = () => {
       head: [['#', 'Fecha Pago', 'Capital', 'Interés', 'Cuota Total', 'Balance Residual']],
       body: tableRows,
       theme: 'grid',
-      headStyles: { fillStyle: 'F', fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       styles: { fontSize: 8, cellPadding: 2.5 }
     });
