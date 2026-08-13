@@ -16,6 +16,18 @@ interface MobileNavProps {
   onMenuClick?: () => void;
 }
 
+type IconComponent = React.ComponentType<{ className?: string; size?: number | string }>;
+
+interface NavItem {
+  key: string;
+  label: string;
+  path: string;
+  outlineIcon: IconComponent;
+  fillIcon: IconComponent;
+}
+
+const PlusIcon = BsPlusLg as IconComponent;
+
 export const MobileNav: React.FC<MobileNavProps> = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,35 +52,35 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
     }
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { 
       key: 'dashboard', 
       label: 'Inicio', 
       path: '/dashboard', 
-      outlineIcon: BsHouse, 
-      fillIcon: BsHouseFill 
+      outlineIcon: BsHouse as IconComponent, 
+      fillIcon: BsHouseFill as IconComponent 
     },
     { 
       key: 'pagos', 
       label: 'Pagos', 
       path: '/pagos', 
-      outlineIcon: BsWallet2, 
-      fillIcon: BsCreditCard2BackFill 
+      outlineIcon: BsWallet2 as IconComponent, 
+      fillIcon: BsCreditCard2BackFill as IconComponent 
     },
     // Center Floating Action Button handled separately
     { 
       key: 'prestamos', 
       label: 'Préstamos', 
       path: '/prestamos', 
-      outlineIcon: BsCalendar4Event, 
-      fillIcon: BsCalendarCheckFill 
+      outlineIcon: BsCalendar4Event as IconComponent, 
+      fillIcon: BsCalendarCheckFill as IconComponent 
     },
     { 
       key: 'simulador', 
       label: 'Simulador', 
       path: '/simulador', 
-      outlineIcon: BsCalculator, 
-      fillIcon: BsCalculatorFill 
+      outlineIcon: BsCalculator as IconComponent, 
+      fillIcon: BsCalculatorFill as IconComponent 
     },
   ];
 
@@ -97,9 +109,9 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
                   : 'text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white font-medium'
               }`}
             >
-              {/* Active Background Liquid Pill (Ultra-rounded & Almost Transparent Glass) */}
+              {/* Active Background Liquid Pill (Borderless Clean Glass) */}
               {isActive && (
-                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full border border-indigo-500/20 dark:border-white/20 backdrop-blur-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)] animate-scale-up" />
+                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full backdrop-blur-xl animate-scale-up" />
               )}
 
               {/* Liquid Ripple Wave Ring Effect on Click */}
@@ -136,7 +148,7 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
               <span className="absolute inset-0 rounded-full bg-white/60 animate-ping opacity-90 pointer-events-none" />
             )}
 
-            <BsPlusLg className="w-7 h-7 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-90" />
+            <PlusIcon className="w-7 h-7 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-90" />
           </button>
         </div>
 
@@ -156,9 +168,9 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
                   : 'text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white font-medium'
               }`}
             >
-              {/* Active Background Liquid Pill (Ultra-rounded & Almost Transparent Translucent Glass) */}
+              {/* Active Background Liquid Pill (Borderless Clean Glass) */}
               {isActive && (
-                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full border border-indigo-500/20 dark:border-white/20 backdrop-blur-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)] animate-scale-up" />
+                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full backdrop-blur-xl animate-scale-up" />
               )}
 
               {/* Liquid Ripple Wave Ring Effect on Click */}
