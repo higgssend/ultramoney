@@ -1089,10 +1089,14 @@ export const LoanRequest: React.FC = () => {
                             </h3>
                             <button
                                 type="button"
-                                onClick={() => setIsBankModalOpen(true)}
-                                className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsBankModalOpen(true);
+                                }}
+                                className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-extrabold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
-                                <Plus className="w-3.5 h-3.5" /> + Crear Cuenta / Caja
+                                <Plus className="w-3.5 h-3.5" /> <span>Crear Cuenta / Caja</span>
                             </button>
                         </div>
                         <p className="text-xs text-slate-500 mb-4">
