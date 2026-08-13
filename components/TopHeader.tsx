@@ -78,9 +78,10 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-4 py-3 shadow-sm h-[72px]">
       <div className="w-full h-full flex items-center justify-between gap-2">
       
-        {/* Mobile Logo (Left side) */}
-        <div className="flex items-center gap-3 shrink-0 lg:hidden">
-          <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8" />
+        {/* Mobile Logo & Name (Left side) */}
+        <div className="flex items-center gap-2 shrink-0 lg:hidden">
+          <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8 object-contain" />
+          <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Ultramoney</span>
         </div>
 
         {/* Centralized Block: Search Bar + Notification Button + Add Button */}

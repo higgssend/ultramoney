@@ -72,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   ];
 
   const sidebarClasses = `
-    fixed md:relative left-0 top-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex flex-col z-50 transition-transform duration-300 ease-in-out shadow-xl md:shadow-none shrink-0
+    fixed md:relative left-0 top-0 h-screen w-full md:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex flex-col z-[9999] md:z-50 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none shrink-0
     ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
   `;
 
@@ -83,7 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Overlay for mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/30 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/40 z-[9998] md:hidden backdrop-blur-sm"
           onClick={onClose}
         />
       )}
@@ -93,9 +93,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <img src="/logoultramoney.svg" alt="Ultramoney Logo" className="w-10 h-10 object-contain" />
-            <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent hidden sm:block">Ultramoney</span>
+            <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">Ultramoney</span>
           </div>
-          <button onClick={onClose} className="md:hidden text-slate-400 hover:text-slate-800 dark:hover:text-white">
+          <button 
+            onClick={onClose} 
+            className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors active:scale-95 flex items-center justify-center border border-slate-200 dark:border-slate-700"
+            title="Cerrar Menú"
+            aria-label="Cerrar Menú"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
