@@ -15,6 +15,7 @@ import { insforge } from '../lib/insforge';
 import { LoanEngine } from '../utils/LoanEngine';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 import { LoanContractModal } from './features/LoanContractModal';
+import { RefinanceModal } from '../components/RefinanceModal';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +40,7 @@ export const LoanDetail: React.FC = () => {
   const [refinanceAmount, setRefinanceAmount] = useState<number>(0);
   const [refinanceWeeks, setRefinanceWeeks] = useState<number>(12);
   const [refinanceInterest, setRefinanceInterest] = useState<number>(10);
+  const [isRefinanceModalOpen, setIsRefinanceModalOpen] = useState(false);
 
   // Forgiveness state
   const [forgiveAmount, setForgiveAmount] = useState<number>(0);
@@ -1318,53 +1320,40 @@ export const LoanDetail: React.FC = () => {
 
       {/* TAB CONTENT 6: REFINANCE */}
       {activeTab === 'refinance' && (
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 max-w-2xl mx-auto animate-fade-in">
-          <div className="text-center">
-            <RefreshCw className="w-12 h-12 text-indigo-600 mx-auto mb-2" />
-            <h3 className="font-black text-2xl text-slate-900 dark:text-white">Refinanciamiento del Préstamo</h3>
-            <p className="text-xs text-slate-500">Reestructura las condiciones actuales incrementando capital o extendiendo el plazo.</p>
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 max-w-2xl mx-auto text-center animate-fade-in">
+          <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <RefreshCw className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-2xl text-slate-900 dark:text-white">Asistente de Refinanciamiento Guiado</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">Reestructura cuotas vencidas e intereses acumulados en un nuevo contrato con nuevas condiciones y plan de pagos.</p>
           </div>
 
-          <div className="space-y-4 text-xs">
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Monto a Refinanciar (RD$)</label>
-              <input 
-                type="number" 
-                value={refinanceAmount === 0 ? '' : refinanceAmount} 
-                onFocus={(e) => e.target.select()}
-                onChange={e => setRefinanceAmount(e.target.value === '' ? 0 : Number(e.target.value))} 
-                placeholder="0"
-                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
-              />
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-left text-xs space-y-2">
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-bold">Capital Pendiente Actual:</span>
+              <span className="font-extrabold text-slate-800 dark:text-white">{globalCurrency} {(loan.remainingBalance || 0).toLocaleString()}</span>
             </div>
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Duración (Cuotas)</label>
-              <input 
-                type="number" 
-                value={refinanceWeeks === 0 ? '' : refinanceWeeks} 
-                onFocus={(e) => e.target.select()}
-                onChange={e => setRefinanceWeeks(e.target.value === '' ? 0 : Number(e.target.value))} 
-                placeholder="0"
-                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
-              />
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-bold">Estado del Crédito:</span>
+              <span className="font-bold text-amber-600 dark:text-amber-400">{loan.status}</span>
             </div>
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Tasa de Interés (%)</label>
-              <input 
-                type="number" 
-                value={refinanceInterest === 0 ? '' : refinanceInterest} 
-                onFocus={(e) => e.target.select()}
-                onChange={e => setRefinanceInterest(e.target.value === '' ? 0 : Number(e.target.value))} 
-                placeholder="0"
-                className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold text-sm" 
-              />
-            </div>
-            <button onClick={handleRefinance} className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-500/20">
-              Procesar Refinanciamiento
-            </button>
           </div>
+
+          <button 
+            onClick={() => setIsRefinanceModalOpen(true)}
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-sm shadow-xl shadow-indigo-200 dark:shadow-none flex items-center justify-center gap-2 transition-all">
+            <RefreshCw className="w-5 h-5" /> Iniciar Asistente de Refinanciamiento
+          </button>
         </div>
       )}
+
+      {/* Guided Refinancing Modal */}
+      <RefinanceModal 
+        isOpen={isRefinanceModalOpen}
+        onClose={() => setIsRefinanceModalOpen(false)}
+        loan={loan}
+      />
 
       {/* TAB CONTENT 7: FORGIVENESS */}
       {activeTab === 'forgiveness' && (

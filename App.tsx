@@ -46,6 +46,7 @@ const Simulator = React.lazy(() => import('./pages/Simulator'));
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const HelpPage = React.lazy(() => import('./pages/Help'));
 const MigrationCenter = React.lazy(() => import('./pages/MigrationCenter'));
+const CreditBureauExport = React.lazy(() => import('./pages/CreditBureauExport'));
 
 // Feature Pages Dynamic Imports
 const CreditFeature = React.lazy(() => import('./pages/features/CreditFeature'));
@@ -207,6 +208,7 @@ const AppContent: React.FC = () => {
                 <Route path="/portales-clientes" element={<ProtectedRoute><ClientPortals /></ProtectedRoute>} />
                 <Route path="/configuracion" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/migracion" element={<ProtectedRoute><MigrationCenter /></ProtectedRoute>} />
+                <Route path="/buro-credito" element={<ProtectedRoute><CreditBureauExport /></ProtectedRoute>} />
                 
                 {/* Fallback Catch-all Route */}
                 <Route path="*" element={<Navigate to="/" replace />} />
