@@ -262,8 +262,7 @@ export const DocumentPage: React.FC = () => {
       
       const { error } = await insforge.storage.from('client-documents').upload(
         fileName, 
-        pdfBlob, 
-        { contentType: 'application/pdf', upsert: true }
+        pdfBlob
       );
 
       if (error) throw error;
