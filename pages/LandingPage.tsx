@@ -1616,8 +1616,10 @@ const LandingPage: React.FC = () => {
                   <div className="gradient-border-glow h-full">
                     <div className="card-3d-inner bg-slate-50/90 hover:bg-white rounded-[1.35rem] p-6 h-full text-center flex flex-col items-center justify-between group">
                       <div className="flex flex-col items-center text-center w-full">
-                        <IconComp className="w-12 h-12 text-indigo-600 mb-3 group-hover:scale-110 transition-transform duration-300 mx-auto shrink-0 aspect-square" strokeWidth={1.5} />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mx-auto">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:from-indigo-600 group-hover:to-blue-600 group-hover:text-white transition-all duration-300 shadow-xs mx-auto">
+                          <IconComp className="w-8 h-8 shrink-0 aspect-square" strokeWidth={1.5} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 text-center mb-1">
                           {module.category}
                         </span>
                         <h3 className="text-lg font-extrabold text-slate-900 mt-1 mb-2 text-center group-hover:text-indigo-600 transition-colors">{module.name}</h3>
@@ -1625,8 +1627,8 @@ const LandingPage: React.FC = () => {
                           {module.shortDesc}
                         </p>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-100/80 w-full flex items-center justify-center text-indigo-600 group-hover:text-indigo-700 transition-all">
-                        <div className="w-8 h-8 rounded-full bg-indigo-50 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all shadow-2xs">
+                      <div className="mt-5 pt-3 border-t border-slate-100/90 w-full flex items-center justify-center text-indigo-600 group-hover:text-indigo-700 transition-all">
+                        <div className="w-9 h-9 rounded-full bg-indigo-50 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all shadow-2xs mx-auto">
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
@@ -1656,18 +1658,13 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Part 1: Grid of 6 Specialized Loan Types */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-indigo-600" /> Modalidades de Préstamos Gestionables
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Soporta amortizaciones periódicas, rédito abierto, prendas y refinanciación.</p>
-              </div>
-              <span className="hidden sm:inline-block text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                6 Tipos de Crédito
-              </span>
+          {/* Part 1: Grid of 6 Specialized Loan Types (Centered Design) */}
+          <div className="space-y-8">
+            <div className="text-center max-w-xl mx-auto space-y-1 border-b border-slate-200/80 pb-4">
+              <h3 className="text-2xl font-black text-slate-900 flex items-center justify-center gap-2">
+                <DollarSign className="w-6 h-6 text-indigo-600" /> Modalidades de Préstamos Gestionables
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">Soporta amortizaciones periódicas, rédito abierto, prendas y refinanciación.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1725,20 +1722,20 @@ const LandingPage: React.FC = () => {
                 return (
                   <div key={idx} className="card-3d-wrapper cursor-pointer">
                     <div className="gradient-border-glow h-full">
-                      <div className="card-3d-inner bg-white rounded-[1.35rem] p-6 h-full text-left flex flex-col justify-between group space-y-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <IconC className="w-10 h-10 text-indigo-600 shrink-0 aspect-square group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
-                            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${item.badgeColor}`}>
-                              {item.category}
-                            </span>
+                      <div className="card-3d-inner bg-white rounded-[1.35rem] p-7 h-full text-center flex flex-col items-center justify-between group space-y-4">
+                        <div className="flex flex-col items-center text-center space-y-3 w-full">
+                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-1 group-hover:scale-110 group-hover:from-indigo-600 group-hover:to-blue-600 group-hover:text-white transition-all duration-300 shadow-xs mx-auto">
+                            <IconC className="w-8 h-8 shrink-0 aspect-square" strokeWidth={1.5} />
                           </div>
-                          <h4 className="text-lg font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{item.title}</h4>
-                          <p className="text-xs text-slate-600 leading-relaxed font-normal">{item.desc}</p>
+                          <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border mx-auto ${item.badgeColor}`}>
+                            {item.category}
+                          </span>
+                          <h4 className="text-lg font-extrabold text-slate-900 text-center group-hover:text-indigo-600 transition-colors">{item.title}</h4>
+                          <p className="text-xs text-slate-600 leading-relaxed text-center font-normal">{item.desc}</p>
                         </div>
-                        <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                        <div className="w-full pt-4 border-t border-slate-100/90 space-y-2.5 flex flex-col items-center text-center">
                           {item.features.map((feat, fidx) => (
-                            <div key={fidx} className="flex items-center gap-2 text-slate-700 text-[11px] font-medium">
+                            <div key={fidx} className="flex items-center justify-center gap-2 text-slate-700 text-[11.5px] font-semibold text-center w-full">
                               <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                               <span>{feat}</span>
                             </div>
@@ -1752,18 +1749,13 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Part 2: Grid of 6 Supported Business Types */}
-          <div className="space-y-6 pt-6 border-t border-slate-200/80">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                  <Landmark className="w-5 h-5 text-indigo-600" /> Tipos de Negocios y Financieras que Confían en Ultramoney
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Solución modular escalable para cualquier volumen de operaciones.</p>
-              </div>
-              <span className="hidden sm:inline-block text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                Adaptabilidad 100%
-              </span>
+          {/* Part 2: Grid of 6 Supported Business Types (Centered Design) */}
+          <div className="space-y-8 pt-8 border-t border-slate-200/80">
+            <div className="text-center max-w-xl mx-auto space-y-1 border-b border-slate-200/80 pb-4">
+              <h3 className="text-2xl font-black text-slate-900 flex items-center justify-center gap-2">
+                <Landmark className="w-6 h-6 text-indigo-600" /> Tipos de Negocios y Financieras
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">Solución modular escalable para cualquier estructura u operaciones.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1799,15 +1791,15 @@ const LandingPage: React.FC = () => {
                   impact: 'Reportes de riesgo prudencial A/B/C/D y scoring de crédito.'
                 }
               ].map((biz, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                <div key={idx} className="bg-white p-7 rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-indigo-300 transition-all duration-300 flex flex-col items-center justify-between text-center space-y-4 group">
+                  <div className="flex flex-col items-center text-center space-y-3 w-full">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center shadow-md shadow-indigo-500/25 mx-auto mb-1 group-hover:scale-110 transition-transform">
                       0{idx + 1}
                     </div>
-                    <h4 className="font-extrabold text-base text-slate-900">{biz.title}</h4>
-                    <p className="text-xs text-slate-600 leading-relaxed">{biz.desc}</p>
+                    <h4 className="font-extrabold text-base text-slate-900 text-center group-hover:text-indigo-600 transition-colors">{biz.title}</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed text-center">{biz.desc}</p>
                   </div>
-                  <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/60">
+                  <div className="w-full pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50/70 p-3 rounded-2xl border border-indigo-100/80 text-center">
                     <Zap className="w-4 h-4 text-amber-500 shrink-0" />
                     <span>{biz.impact}</span>
                   </div>
