@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, ChevronLeft, User, CreditCard, Calendar, Briefcase, 
   FileText, ShieldCheck, ShieldAlert, Award, TrendingUp, DollarSign, 
-  CheckCircle2, AlertTriangle, Phone, MapPin, Building2, Sparkles,
+  CheckCircle2, AlertTriangle, Phone, MapPin, Building2,
   ArrowRight, Activity, Clock, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -165,21 +165,11 @@ export const CreditInquiry: React.FC = () => {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold font-secondary text-slate-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-2xl font-bold font-secondary text-slate-900 dark:text-white">
               Datapréstamos & Score Crediticio
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Consulta de score interno y Red de Buró Compartido entre prestamistas.</p>
           </div>
-        </div>
-
-        {/* Shared Network Status Badge */}
-        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-sm">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </span>
-          <span>Red Buró Inter-Empresarial Activa</span>
         </div>
       </div>
 
