@@ -48,7 +48,7 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
     if (!acc.isActive) return false;
     if (acc.accountType === 'Caja Chica / Efectivo') return false;
     if (selectedIds && selectedIds.length > 0) {
-      return selectedIds.includes(acc.id);
+      return selectedIds.includes(acc.id) || acc.showInPaymentLink === true;
     }
     return acc.showInPaymentLink !== false;
   });

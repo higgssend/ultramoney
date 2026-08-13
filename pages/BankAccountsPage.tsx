@@ -64,6 +64,16 @@ export const BankAccountsPage: React.FC = () => {
     selectedAccountIds: bankAccounts.map(a => a.id)
   });
 
+  // Synchronize selectedAccountIds when bankAccounts update so new accounts appear automatically
+  React.useEffect(() => {
+    setLinkConfig(prev => {
+      const existing = prev.selectedAccountIds || [];
+      const allActiveBankIds = bankAccounts.filter(a => a.showInPaymentLink !== false).map(a => a.id);
+      const merged = Array.from(new Set([...existing, ...allActiveBankIds]));
+      return { ...prev, selectedAccountIds: merged };
+    });
+  }, [bankAccounts]);
+
   const [copiedLink, setCopiedLink] = useState(false);
   const [isSavingLink, setIsSavingLink] = useState(false);
 
@@ -203,7 +213,12 @@ export const BankAccountsPage: React.FC = () => {
         bankLogoUrl: logoUrl,
         createdAt: new Date().toISOString()
       };
-      await addBankAccount(newAccount);
+      const created = await addBankAccount(newAccount);
+      const newId = created?.id || newAccount.id;
+      setLinkConfig(prev => ({
+        ...prev,
+        selectedAccountIds: Array.from(new Set([...(prev.selectedAccountIds || []), newId]))
+      }));
     }
 
     setIsModalOpen(false);
@@ -231,6 +246,16 @@ export const BankAccountsPage: React.FC = () => {
           phone: linkConfig.whatsappPhone
         });
       }
+
+      // Persist showInPaymentLink status in PostgreSQL for all bank accounts
+      const selectedSet = new Set(linkConfig.selectedAccountIds || []);
+      for (const acc of bankAccounts) {
+        const shouldShow = selectedSet.has(acc.id);
+        if (acc.showInPaymentLink !== shouldShow) {
+          await updateBankAccount(acc.id, { showInPaymentLink: shouldShow });
+        }
+      }
+
       toast.success('¡Configuración del link de cobro guardada exitosamente!');
     } catch (e) {
       toast.error('Error al guardar la configuración');
@@ -559,20 +584,10 @@ export const BankAccountsPage: React.FC = () => {
               
               {/* General Portal Settings Card */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
                   <h3 className="font-extrabold text-slate-900 dark:text-white text-base flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-indigo-600" /> Personaliza tu Portal
                   </h3>
-
-                  {/* Save Configuration Button */}
-                  <button
-                    onClick={handleSaveLinkConfig}
-                    disabled={isSavingLink}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-md flex items-center gap-1.5 transition-all"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{isSavingLink ? 'Guardando...' : 'Guardar'}</span>
-                  </button>
                 </div>
 
                 <div className="space-y-4 text-xs">
