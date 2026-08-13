@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Users, Banknote, AlertTriangle, Wallet,
   ArrowUpRight, ArrowDownRight, Plus, Calendar,
-  PieChart as PieChartIcon, TrendingUp, BarChart3, ShieldAlert
+  PieChart as PieChartIcon, TrendingUp, BarChart3
 } from 'lucide-react';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
@@ -14,19 +14,21 @@ import { LoanStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
-  const { loans } = useLoans();
-  const { clients } = useClients();
-  const { transactions, getFinancialStats } = useAccounting();
-  const { globalCurrency } = useSettings();
+  const { loans = [] } = useLoans();
+  const { clients = [] } = useClients();
+  const { transactions = [], getFinancialStats } = useAccounting();
+  const { globalCurrency = 'DOP' } = useSettings();
   const navigate = useNavigate();
-  const stats = getFinancialStats();
+  
+  const stats = (typeof getFinancialStats === 'function' ? getFinancialStats() : null) || { income: 0, expense: 0, balance: 0 };
 
   // Filters State
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('month');
 
-  const isDateInRange = (dateStr: string) => {
+  const isDateInRange = (dateStr: string | null | undefined): boolean => {
     if (!dateStr) return false;
-    const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+    const str = String(dateStr);
+    const d = new Date(str.includes('T') ? str : str + 'T00:00:00');
     if (isNaN(d.getTime())) return false;
 
     const now = new Date();
@@ -52,8 +54,8 @@ const Dashboard: React.FC = () => {
     return true;
   };
 
-  // Format date for pill display matching image exactly
-  const getFormattedDatePill = () => {
+  // Format date for pill display
+  const getFormattedDatePill = (): string => {
     const now = new Date();
     if (dateRange === 'today') {
       const formatted = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -68,11 +70,15 @@ const Dashboard: React.FC = () => {
     return `Mes: ${monthStr.charAt(0).toUpperCase() + monthStr.slice(1)}`;
   };
 
-  // Metrics Logic
-  const currencyLoans = loans.filter(l => (l.currency || 'DOP') === globalCurrency);
-  const totalPortfolio = currencyLoans.reduce((sum, loan) => sum + (Number(loan.remainingBalance) || 0), 0);
-  const activeClientsCount = clients.filter(c => c.status !== 'Inactivo' && c.status !== 'Bloqueado').length; 
-  const balance = stats.balance;
+  // Metrics Logic with total null safety
+  const safeLoans = Array.isArray(loans) ? loans : [];
+  const safeClients = Array.isArray(clients) ? clients : [];
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+  const currencyLoans = safeLoans.filter(l => l && (l.currency || 'DOP') === globalCurrency);
+  const totalPortfolio = currencyLoans.reduce((sum, loan) => sum + (Number(loan?.remainingBalance) || 0), 0);
+  const activeClientsCount = safeClients.filter(c => c && c.status !== 'Inactivo' && c.status !== 'Bloqueado').length; 
+  const balance = Number(stats?.balance) || 0;
 
   // Calculate PAR (Portfolio At Risk)
   let par30 = 0;
@@ -80,25 +86,27 @@ const Dashboard: React.FC = () => {
   let par90 = 0;
 
   currencyLoans.forEach(loan => {
-      if (loan.remainingBalance > 0 && loan.status !== LoanStatus.PAID) {
-          if (loan.status === LoanStatus.OVERDUE || loan.status === 'Vencido' || (loan.nextPaymentDate && new Date() > new Date(loan.nextPaymentDate))) {
-              const nextDate = loan.nextPaymentDate ? new Date(loan.nextPaymentDate) : new Date();
-              const diffTime = Math.abs(new Date().getTime() - nextDate.getTime());
-              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-              
-              if (diffDays <= 30) par30 += loan.remainingBalance;
-              else if (diffDays <= 60) par60 += loan.remainingBalance;
-              else par90 += loan.remainingBalance;
-          }
+    if (!loan) return;
+    const remBal = Number(loan.remainingBalance) || 0;
+    if (remBal > 0 && loan.status !== LoanStatus.PAID) {
+      const isOverdue = loan.status === LoanStatus.OVERDUE || loan.status === 'Vencido' || (loan.nextPaymentDate && new Date() > new Date(loan.nextPaymentDate));
+      if (isOverdue) {
+        const nextDate = loan.nextPaymentDate ? new Date(loan.nextPaymentDate) : new Date();
+        const diffTime = Math.abs(new Date().getTime() - nextDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays <= 30) par30 += remBal;
+        else if (diffDays <= 60) par60 += remBal;
+        else par90 += remBal;
       }
+    }
   });
 
   const parTotal = par30 + par60 + par90;
   const overdueAmount = parTotal;
-  const parTotalPercent = totalPortfolio > 0 ? ((parTotal / totalPortfolio) * 100).toFixed(1) : '0';
 
-  const filteredTransactions = transactions.filter(t => (t.currency || 'DOP') === globalCurrency && isDateInRange(t.date));
-  const recentTransactions = (filteredTransactions.length > 0 ? filteredTransactions : transactions).slice(0, 5);
+  const filteredTransactions = safeTransactions.filter(t => t && (t.currency || 'DOP') === globalCurrency && isDateInRange(t.date));
+  const recentTransactions = (filteredTransactions.length > 0 ? filteredTransactions : safeTransactions).slice(0, 5);
 
   // Dynamic Chart 1 Data: Flujo de Caja (100% Real from transactions)
   const getChartData = () => {
@@ -108,10 +116,11 @@ const Dashboard: React.FC = () => {
       hours.forEach(h => map.set(h, { income: 0, expense: 0 }));
       
       const todayStr = new Date().toISOString().split('T')[0];
-      transactions
-        .filter(t => (t.currency || 'DOP') === globalCurrency && t.date.startsWith(todayStr))
+      safeTransactions
+        .filter(t => t && (t.currency || 'DOP') === globalCurrency && t.date && String(t.date).startsWith(todayStr))
         .forEach(t => {
-          const dt = new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00');
+          const tDate = String(t.date);
+          const dt = new Date(tDate.includes('T') ? tDate : tDate + 'T12:00:00');
           const hr = dt.getHours();
           let label = '12:00';
           if (hr < 9) label = '8:00';
@@ -123,8 +132,8 @@ const Dashboard: React.FC = () => {
           else label = '20:00';
           
           const entry = map.get(label) || { income: 0, expense: 0 };
-          if (t.type === 'Ingreso') entry.income += Number(t.amount);
-          if (t.type === 'Gasto') entry.expense += Number(t.amount);
+          if (t.type === 'Ingreso') entry.income += Number(t.amount) || 0;
+          if (t.type === 'Gasto') entry.expense += Number(t.amount) || 0;
         });
 
       return Array.from(map.entries()).map(([name, vals]) => ({ name, income: vals.income, expense: vals.expense }));
@@ -142,21 +151,21 @@ const Dashboard: React.FC = () => {
         result.push({ name: dayLabels[d.getDay()], income: 0, expense: 0, dateStr });
       }
 
-      transactions
-        .filter(t => (t.currency || 'DOP') === globalCurrency)
+      safeTransactions
+        .filter(t => t && (t.currency || 'DOP') === globalCurrency && t.date)
         .forEach(t => {
-          const tDateStr = t.date.split('T')[0];
+          const tDateStr = String(t.date).split('T')[0];
           const found = result.find(r => r.dateStr === tDateStr);
           if (found) {
-            if (t.type === 'Ingreso') found.income += Number(t.amount);
-            if (t.type === 'Gasto') found.expense += Number(t.amount);
+            if (t.type === 'Ingreso') found.income += Number(t.amount) || 0;
+            if (t.type === 'Gasto') found.expense += Number(t.amount) || 0;
           }
         });
 
       return result.map(({ name, income, expense }) => ({ name, income, expense }));
     }
 
-    // Default 'month' (100% Real from real transactions for last 6 months)
+    // Default 'month'
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const chartDataMap = new Map<number, { income: number; expense: number }>();
     const currentMonth = new Date().getMonth();
@@ -166,16 +175,16 @@ const Dashboard: React.FC = () => {
       chartDataMap.set(m, { income: 0, expense: 0 });
     }
 
-    transactions.filter(t => (t.currency || 'DOP') === globalCurrency).forEach(t => {
-      const dateObj = new Date(t.date);
+    safeTransactions.filter(t => t && (t.currency || 'DOP') === globalCurrency && t.date).forEach(t => {
+      const dateObj = new Date(String(t.date));
       if (isNaN(dateObj.getTime())) return;
       const diffMonths = (new Date().getFullYear() - dateObj.getFullYear()) * 12 + (currentMonth - dateObj.getMonth());
       if (diffMonths >= 0 && diffMonths <= 5) {
         const m = dateObj.getMonth();
         if (chartDataMap.has(m)) {
           const current = chartDataMap.get(m)!;
-          if (t.type === 'Ingreso') current.income += Number(t.amount);
-          if (t.type === 'Gasto') current.expense += Number(t.amount);
+          if (t.type === 'Ingreso') current.income += Number(t.amount) || 0;
+          if (t.type === 'Gasto') current.expense += Number(t.amount) || 0;
         }
       }
     });
@@ -189,11 +198,11 @@ const Dashboard: React.FC = () => {
 
   const data = getChartData();
 
-  // Chart 2 Data: Loan Status Distribution (100% Real from loans)
-  const activeCount = currencyLoans.filter(l => l.status === LoanStatus.ACTIVE || l.status === 'Activo' || l.status === 'Vigente').length;
-  const overdueCount = currencyLoans.filter(l => l.status === LoanStatus.OVERDUE || l.status === 'Vencido' || l.status === 'Atrasado').length;
-  const pendingCount = currencyLoans.filter(l => l.status === LoanStatus.PENDING || l.status === 'Pendiente').length;
-  const paidCount = currencyLoans.filter(l => l.status === LoanStatus.PAID || l.status === 'Pagado').length;
+  // Chart 2 Data: Loan Status Distribution
+  const activeCount = currencyLoans.filter(l => l && (l.status === LoanStatus.ACTIVE || l.status === 'Activo' || l.status === 'Vigente')).length;
+  const overdueCount = currencyLoans.filter(l => l && (l.status === LoanStatus.OVERDUE || l.status === 'Vencido' || l.status === 'Atrasado')).length;
+  const pendingCount = currencyLoans.filter(l => l && (l.status === LoanStatus.PENDING || l.status === 'Pendiente')).length;
+  const paidCount = currencyLoans.filter(l => l && (l.status === LoanStatus.PAID || l.status === 'Pagado')).length;
 
   const loanStatusData = [
     { name: 'Al Día', value: activeCount, color: '#10b981' },
@@ -202,7 +211,7 @@ const Dashboard: React.FC = () => {
     { name: 'Pagados', value: paidCount, color: '#6366f1' },
   ];
 
-  // Chart 3 Data: Desembolsos vs Cobranzas (100% Real calculation from loans & transactions)
+  // Chart 3 Data: Desembolsos vs Cobranzas
   const getDisbursementVSCollections = () => {
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const currentMonth = new Date().getMonth();
@@ -216,8 +225,9 @@ const Dashboard: React.FC = () => {
 
     // Real Disbursements from loans
     currencyLoans.forEach(l => {
-      if (!l.startDate) return;
-      const dObj = new Date(l.startDate.includes('T') ? l.startDate : l.startDate + 'T12:00:00');
+      if (!l || !l.startDate) return;
+      const sDate = String(l.startDate);
+      const dObj = new Date(sDate.includes('T') ? sDate : sDate + 'T12:00:00');
       if (isNaN(dObj.getTime())) return;
       const diffMonths = (new Date().getFullYear() - dObj.getFullYear()) * 12 + (currentMonth - dObj.getMonth());
       if (diffMonths >= 0 && diffMonths <= 5) {
@@ -229,8 +239,9 @@ const Dashboard: React.FC = () => {
     });
 
     // Real Collections from income transactions
-    transactions.filter(t => (t.currency || 'DOP') === globalCurrency && t.type === 'Ingreso').forEach(t => {
-      const dObj = new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00');
+    safeTransactions.filter(t => t && (t.currency || 'DOP') === globalCurrency && t.type === 'Ingreso' && t.date).forEach(t => {
+      const tDate = String(t.date);
+      const dObj = new Date(tDate.includes('T') ? tDate : tDate + 'T12:00:00');
       if (isNaN(dObj.getTime())) return;
       const diffMonths = (new Date().getFullYear() - dObj.getFullYear()) * 12 + (currentMonth - dObj.getMonth());
       if (diffMonths >= 0 && diffMonths <= 5) {
@@ -246,7 +257,7 @@ const Dashboard: React.FC = () => {
 
   const disbursementVSCollectionsData = getDisbursementVSCollections();
 
-  // Chart 4 Data: Modalidades de Crédito (100% Real from loans, featuring Hipotecario!)
+  // Chart 4 Data: Modalidades de Crédito
   const getLoanTypesBreakdown = () => {
     let hipotecarioCount = 0;
     let hipotecarioMonto = 0;
@@ -264,25 +275,26 @@ const Dashboard: React.FC = () => {
     let microMonto = 0;
 
     currencyLoans.forEach(l => {
+      if (!l) return;
       const cat = (l.loanCategory || '').toLowerCase();
       const colType = (l.collateral?.type || '').toLowerCase();
-      const balance = Number(l.remainingBalance || l.amount || 0);
+      const balanceVal = Number(l.remainingBalance || l.amount || 0);
 
       if (cat.includes('hipotecario') || colType.includes('propiedad')) {
         hipotecarioCount++;
-        hipotecarioMonto += balance;
+        hipotecarioMonto += balanceVal;
       } else if (cat.includes('vehículo') || cat.includes('vehicular') || colType.includes('vehículo')) {
         vehicularCount++;
-        vehicularMonto += balance;
+        vehicularMonto += balanceVal;
       } else if (cat.includes('comercial') || cat.includes('pyme')) {
         comercialCount++;
-        comercialMonto += balance;
+        comercialMonto += balanceVal;
       } else if (cat.includes('micro') || l.frequency === 'Diario') {
         microCount++;
-        microMonto += balance;
+        microMonto += balanceVal;
       } else {
         personalCount++;
-        personalMonto += balance;
+        personalMonto += balanceVal;
       }
     });
 
@@ -296,11 +308,12 @@ const Dashboard: React.FC = () => {
   };
 
   const loanTypesData = getLoanTypesBreakdown();
+  const totalMontoModalidades = loanTypesData.reduce((a, b) => a + (Number(b.monto) || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
       
-      {/* Header with Exact Date Filter Bar matching requested image */}
+      {/* Header with Date Filter Bar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h2 className="text-2xl font-bold font-secondary text-slate-800 dark:text-white flex items-center gap-2">
@@ -309,7 +322,7 @@ const Dashboard: React.FC = () => {
           <p className="text-slate-500 dark:text-slate-400 text-sm">Resumen financiero y métricas en tiempo real.</p>
         </div>
         
-        {/* Date Filter & Range Display Pill - Exact design from image */}
+        {/* Date Filter */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex bg-white dark:bg-slate-800 rounded-2xl p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
             <button 
@@ -344,7 +357,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Date Display Box - Exact Pill Style */}
+          {/* Date Display Pill */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-2 text-xs md:text-sm font-semibold text-indigo-900 dark:text-indigo-200 shadow-sm flex items-center gap-2">
             <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span>{getFormattedDatePill()}</span>
@@ -352,11 +365,11 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Cards Row - Gradient Style */}
+      {/* 4 Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
           title="Cartera por Cobrar"
-          value={`RD$ ${totalPortfolio.toLocaleString()}`}
+          value={`RD$ ${(totalPortfolio || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}`}
           trend="Ver Préstamos ➔"
           trendUp={true}
           icon={Banknote}
@@ -378,7 +391,7 @@ const Dashboard: React.FC = () => {
 
         <StatCard
           title="Mora / Atrasos"
-          value={`RD$ ${overdueAmount.toLocaleString()}`}
+          value={`RD$ ${(overdueAmount || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}`}
           trend="Gestionar Mora ➔"
           trendUp={false}
           icon={AlertTriangle}
@@ -389,7 +402,7 @@ const Dashboard: React.FC = () => {
 
         <StatCard
           title="Balance en Caja"
-          value={`RD$ ${balance.toLocaleString()}`}
+          value={`RD$ ${(balance || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}`}
           trend="Ver Movimientos ➔"
           trendUp={true}
           icon={Wallet}
@@ -399,7 +412,7 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Quick Actions Shortcuts Bar */}
+      {/* Quick Actions */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Accesos Rápidos / Acciones Frecuentes</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -445,12 +458,8 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-
-
-      {/* MULTIPLE CHARTS SECTION - EXPANDED ANALYTICS */}
+      {/* CHARTS SECTION */}
       <div className="space-y-6">
-        
-        {/* Section Header */}
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
@@ -459,10 +468,8 @@ const Dashboard: React.FC = () => {
           <span className="text-xs font-semibold text-slate-400">Filtro activo: {dateRange.toUpperCase()}</span>
         </div>
 
-        {/* Row 1: Main Area Chart (Flujo de Caja) + Donut Chart (Estado de Cartera) */}
+        {/* Row 1: AreaChart + Donut */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Chart 1: Flujo de Caja (AreaChart) */}
           <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-[420px]">
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -481,8 +488,8 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex-1 w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="flex-1 w-full min-w-0 min-h-[220px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={100}>
                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -512,7 +519,7 @@ const Dashboard: React.FC = () => {
                     cursor={{fill: '#f8fafc', opacity: 0.8}}
                     contentStyle={{backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', color: '#1e293b', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
                     formatter={(value: number, name: string) => [
-                      `RD$ ${value.toLocaleString()}`, 
+                      `RD$ ${(value || 0).toLocaleString('es-DO')}`, 
                       name === 'income' ? 'Ingresos' : 'Gastos'
                     ]}
                   />
@@ -538,7 +545,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Chart 2: Estado de la Cartera (Donut PieChart) */}
+          {/* Chart 2: Donut */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[420px] flex flex-col justify-between">
             <div className="flex justify-between items-center mb-2">
               <div>
@@ -551,7 +558,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="flex-1 w-full relative flex items-center justify-center min-h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={100}>
                 <PieChart>
                   <Pie
                     data={loanStatusData}
@@ -568,20 +575,18 @@ const Dashboard: React.FC = () => {
                   </Pie>
                   <Tooltip 
                     contentStyle={{backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0'}}
-                    formatter={(value: number) => [`${value} Préstamos`, 'Cantidad']}
+                    formatter={(value: number) => [`${value || 0} Préstamos`, 'Cantidad']}
                   />
                 </PieChart>
               </ResponsiveContainer>
-              {/* Inner Center Label */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-extrabold text-slate-800 dark:text-white">
-                  {loanStatusData.reduce((acc, curr) => acc + curr.value, 0)}
+                  {loanStatusData.reduce((acc, curr) => acc + (curr.value || 0), 0)}
                 </span>
                 <span className="text-[11px] font-bold text-slate-400 uppercase">Total</span>
               </div>
             </div>
 
-            {/* Custom Legend Cards */}
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
               {loanStatusData.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 dark:bg-slate-700/50">
@@ -594,13 +599,10 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
           </div>
-
         </div>
 
-        {/* Row 2: Desembolsos vs Cobranzas (Bar Chart) + Modalidad de Crédito (Horizontal Bar) */}
+        {/* Row 2: BarChart + Modalidades */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Chart 3: Desembolsos vs Cobranzas (Bar Chart) */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[380px] flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -620,15 +622,15 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="flex-1 w-full min-w-0 min-h-[200px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={100}>
                 <BarChart data={disbursementVSCollectionsData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} tickFormatter={(v) => `$${v/1000}k`} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} tickFormatter={(v) => `$${v >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} />
                   <Tooltip 
                     contentStyle={{backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0'}}
-                    formatter={(val: number, name: string) => [`RD$ ${val.toLocaleString()}`, name === 'desembolsado' ? 'Capital Prestado' : 'Capital Cobrado']}
+                    formatter={(val: number, name: string) => [`RD$ ${(val || 0).toLocaleString('es-DO')}`, name === 'desembolsado' ? 'Capital Prestado' : 'Capital Cobrado']}
                   />
                   <Bar dataKey="desembolsado" fill="#6366f1" radius={[6, 6, 0, 0]} maxBarSize={32} />
                   <Bar dataKey="cobrado" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={32} />
@@ -637,7 +639,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Chart 4: Modalidades de Crédito */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[380px] flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -651,13 +652,12 @@ const Dashboard: React.FC = () => {
 
             <div className="space-y-4 flex-1 overflow-y-auto pr-1">
               {loanTypesData.map((item, idx) => {
-                const totalMonto = loanTypesData.reduce((acc, curr) => acc + curr.monto, 0);
-                const percent = ((item.monto / totalMonto) * 100).toFixed(0);
+                const percent = totalMontoModalidades > 0 ? ((item.monto / totalMontoModalidades) * 100).toFixed(0) : '0';
                 return (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold">
                       <span className="text-slate-800 dark:text-slate-200">{item.name} ({item.cantidad} préstamos)</span>
-                      <span className="text-indigo-600 dark:text-indigo-400">RD$ {item.monto.toLocaleString()} ({percent}%)</span>
+                      <span className="text-indigo-600 dark:text-indigo-400">RD$ {(item.monto || 0).toLocaleString('es-DO')} ({percent}%)</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
                       <div 
@@ -673,11 +673,10 @@ const Dashboard: React.FC = () => {
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs text-slate-500">
               <span>Total Cartera Colocada:</span>
               <span className="font-extrabold text-slate-800 dark:text-white text-sm">
-                RD$ {loanTypesData.reduce((a, b) => a + b.monto, 0).toLocaleString()}
+                RD$ {(totalMontoModalidades || 0).toLocaleString('es-DO')}
               </span>
             </div>
           </div>
-
         </div>
 
       </div>
@@ -691,35 +690,36 @@ const Dashboard: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {recentTransactions.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 col-span-2">
-                  <p className="text-sm">No hay actividad reciente.</p>
-              </div>
+            <div className="text-center py-8 text-slate-400 col-span-2">
+              <p className="text-sm">No hay actividad reciente.</p>
+            </div>
           ) : (
-              recentTransactions.map((t) => (
+            recentTransactions.map((t) => (
               <div 
-                  key={t.id} 
-                  onClick={() => navigate('/pagos')}
-                  className="flex items-center justify-between group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors"
+                key={t.id} 
+                onClick={() => navigate('/pagos')}
+                className="flex items-center justify-between group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors"
               >
-                  <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
-                          t.type === 'Ingreso' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
-                      }`}>
-                          {t.type === 'Ingreso' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                      </div>
-                      <div className="overflow-hidden">
-                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-indigo-600">{t.description}</p>
-                          <p className="text-xs text-slate-400 truncate">{t.date}</p>
-                      </div>
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
+                    t.type === 'Ingreso' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                  }`}>
+                    {t.type === 'Ingreso' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                   </div>
-                  <span className={`text-sm font-bold shrink-0 ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-200'}`}>
-                  {t.type === 'Ingreso' ? '+' : '-'}RD$ {t.amount.toLocaleString()}
-                  </span>
+                  <div className="overflow-hidden">
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-indigo-600">{t.description || 'Transacción'}</p>
+                    <p className="text-xs text-slate-400 truncate">{t.date ? String(t.date) : ''}</p>
+                  </div>
+                </div>
+                <span className={`text-sm font-bold shrink-0 ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-200'}`}>
+                  {t.type === 'Ingreso' ? '+' : '-'}RD$ {(Number(t.amount) || 0).toLocaleString('es-DO')}
+                </span>
               </div>
-              ))
+            ))
           )}
         </div>
       </div>
+
     </div>
   );
 };
