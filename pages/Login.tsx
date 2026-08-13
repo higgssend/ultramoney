@@ -76,23 +76,69 @@ const Login: React.FC = () => {
     }
   };
 
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpResent, setOtpResent] = useState(false);
+
+  const handleOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) { setError('El código debe tener 6 dígitos.'); return; }
+    setOtpLoading(true); setError('');
+    try {
+      const { error } = await insforge.auth.verifyEmail({ email: unverifiedEmail, otp: otpCode });
+      if (error) throw error;
+      
+      // Auto login after verification
+      const { error: loginErr } = await insforge.auth.signInWithPassword({
+        email: unverifiedEmail,
+        password,
+      });
+      if (loginErr) throw loginErr;
+
+      window.location.href = '/dashboard';
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Código de verificación inválido o expirado.');
+    } finally { setOtpLoading(false); }
+  };
+
+  const handleResendOtp = async () => {
+    setOtpResent(false);
+    try {
+      await insforge.auth.resendVerificationEmail({ email: unverifiedEmail });
+      setOtpResent(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo reenviar el código.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const loginEmail = email.includes('@') ? email : `${email}@app.ultramoney.com`;
+      const cleanInput = email.trim().toLowerCase();
+      const loginEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@app.ultramoney.com`;
       const { error } = await insforge.auth.signInWithPassword({
         email: loginEmail,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.statusCode === 403 || error.message?.includes('verify') || (error as any).nextActions?.includes('verify')) {
+          setUnverifiedEmail(loginEmail);
+          setStep('method');
+          // Automatically prompt for OTP verification
+          setError('Tu correo aún no está verificado. Se ha enviado un código de 6 dígitos a tu correo para activar tu cuenta.');
+          return;
+        }
+        throw error;
+      }
 
       // Handle remember me
       if (rememberMe) {
-        localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+        localStorage.setItem(REMEMBER_EMAIL_KEY, cleanInput);
       } else {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
       }
@@ -253,7 +299,48 @@ const Login: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
                   <div className="bg-rose-50 text-rose-600 p-4 rounded-xl text-sm font-medium border border-rose-100 flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 flex-shrink-0" />{error}
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <p>{error}</p>
+                    </div>
+                  </div>
+                )}
+
+                {unverifiedEmail && (
+                  <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5 space-y-4">
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-indigo-900">Verifica tu código de 6 dígitos</p>
+                      <p className="text-xs text-indigo-700 mt-0.5">Enviado a <span className="font-semibold">{unverifiedEmail}</span></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="w-full text-center text-2xl font-mono tracking-widest px-3 py-3 border-2 border-indigo-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                        placeholder="------"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleOtpVerify}
+                        disabled={otpLoading || otpCode.length !== 6}
+                        className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm disabled:opacity-50 transition-all flex-shrink-0"
+                      >
+                        {otpLoading ? 'Verificando...' : 'Verificar'}
+                      </button>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        className="text-indigo-600 font-medium hover:underline"
+                      >
+                        Reenviar código
+                      </button>
+                      {otpResent && <span className="text-emerald-600 font-bold">¡Código reenviado!</span>}
+                    </div>
                   </div>
                 )}
 
