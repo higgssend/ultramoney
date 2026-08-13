@@ -7,7 +7,7 @@ import {
   Edit3, Trash2, Save, X, AlertCircle, Copy, Link
 } from 'lucide-react';
 import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
-import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod } from '../types';
+import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod, LoanStatus } from '../types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
