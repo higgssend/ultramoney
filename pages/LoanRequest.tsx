@@ -499,14 +499,18 @@ export const LoanRequest: React.FC = () => {
                                 ]}
                             />
                             
-                            {/* Full-width "+ Crear Nuevo Cliente" Button positioned directly BELOW the dropdown */}
+                            {/* Full-width "Crear Nuevo Cliente" Button positioned directly BELOW the dropdown */}
                             <button 
                               type="button"
-                              onClick={() => setIsNewClientModalOpen(true)}
-                              className="w-full mt-3 py-3 px-4 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99]"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsNewClientModalOpen(true);
+                              }}
+                              className="w-full mt-3 py-3 px-4 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99] cursor-pointer"
                             >
                               <Plus className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> 
-                              <span>+ Crear Nuevo Cliente</span>
+                              <span>Crear Nuevo Cliente</span>
                             </button>
                         </div>
                         
@@ -1409,7 +1413,7 @@ export const LoanRequest: React.FC = () => {
 
       {/* FULL NEW CLIENT CREATION MODAL */}
       {isNewClientModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 animate-scale-up my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div>
