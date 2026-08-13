@@ -1085,6 +1085,8 @@ const LandingPage: React.FC = () => {
 
   /* ── GSAP ScrollTrigger Animations for ALL Landing Page Sections ── */
   useEffect(() => {
+    const mainScroller = document.querySelector('main') || window;
+    
     const ctx = gsap.context(() => {
       // 1. Hero Section Entrance Timeline
       const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.8 } });
@@ -1101,6 +1103,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#caracteristicas',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1120,6 +1123,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#tipos-prestamos',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1138,6 +1142,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#simulador',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1156,6 +1161,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#comparativa',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1173,6 +1179,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#app-movil',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1191,6 +1198,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#testimonios',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1209,6 +1217,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '.security-grid',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1227,6 +1236,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '#faq',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
@@ -1245,6 +1255,7 @@ const LandingPage: React.FC = () => {
         {
           scrollTrigger: {
             trigger: '.stats-footer',
+            scroller: mainScroller,
             start: 'top 95%',
             toggleActions: 'play none none none'
           },
