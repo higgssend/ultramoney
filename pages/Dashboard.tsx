@@ -720,16 +720,6 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Floating Action Button (Mobile) */}
-      <div className="fixed bottom-24 right-6 md:hidden z-30">
-          <button 
-            onClick={() => navigate('/solicitud')}
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white"
-          >
-              <Plus className="w-8 h-8" />
-          </button>
-      </div>
     </div>
   );
 };
