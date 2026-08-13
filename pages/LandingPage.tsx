@@ -9,7 +9,7 @@ import {
   HelpCircle, Sparkles, Clock, RefreshCw, MessageSquare, Sliders,
   MapPin, CheckSquare, XCircle, ShieldCheck, Calculator, ThumbsUp,
   Briefcase, Landmark, Navigation, Database, Cpu, Layers, AlertCircle,
-  Banknote, FilePlus, Package, TrendingDown, Wallet, BookOpen, Printer
+  Banknote, FilePlus, Package, TrendingDown, Wallet, BookOpen, Printer, Building2
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -1096,123 +1096,173 @@ const LandingPage: React.FC = () => {
         .from('.hero-mockup', { y: 40, opacity: 0, scale: 0.98, duration: 0.9, clearProps: 'all' }, '-=0.6');
 
       // 2. Section 22 Modules Ecosistema Grid Reveal
-      gsap.from('#caracteristicas .card-3d-wrapper', {
-        scrollTrigger: {
-          trigger: '#caracteristicas',
-          start: 'top 80%',
-        },
-        y: 45,
-        opacity: 0,
-        scale: 0.96,
-        duration: 0.7,
-        stagger: 0.05,
-        ease: 'power2.out',
-        clearProps: 'all'
-      });
+      gsap.fromTo('#caracteristicas .card-3d-wrapper',
+        { opacity: 0, y: 40, scale: 0.96 },
+        {
+          scrollTrigger: {
+            trigger: '#caracteristicas',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.7,
+          stagger: 0.04,
+          ease: 'power2.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 3. Simulador en Vivo Section Reveal
-      gsap.from('#simulador .bg-gradient-to-br', {
-        scrollTrigger: {
-          trigger: '#simulador',
-          start: 'top 80%',
-        },
-        y: 40,
-        opacity: 0,
-        scale: 0.97,
-        duration: 0.8,
-        ease: 'power3.out',
-        clearProps: 'all'
-      });
+      // 3. Tipos de Préstamos Section Reveal
+      gsap.fromTo('#tipos-prestamos .card-3d-wrapper',
+        { opacity: 0, y: 40 },
+        {
+          scrollTrigger: {
+            trigger: '#tipos-prestamos',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          duration: 0.7,
+          stagger: 0.08,
+          ease: 'power2.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 4. Comparativa Excel Section Reveal
-      gsap.from('#comparativa .bg-white', {
-        scrollTrigger: {
-          trigger: '#comparativa',
-          start: 'top 80%',
-        },
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        clearProps: 'all'
-      });
+      // 4. Simulador en Vivo Section Reveal
+      gsap.fromTo('#simulador .bg-gradient-to-br',
+        { opacity: 0, y: 40, scale: 0.97 },
+        {
+          scrollTrigger: {
+            trigger: '#simulador',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.8,
+          ease: 'power3.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 5. App Móvil Section Reveal
-      gsap.from('#app-movil .lg\\:col-span-6', {
-        scrollTrigger: {
-          trigger: '#app-movil',
-          start: 'top 80%',
-        },
-        y: 40,
-        opacity: 0,
-        stagger: 0.2,
-        duration: 0.8,
-        ease: 'power3.out',
-        clearProps: 'all'
-      });
+      // 5. Comparativa Excel Section Reveal
+      gsap.fromTo('#comparativa .bg-white',
+        { opacity: 0, y: 40 },
+        {
+          scrollTrigger: {
+            trigger: '#comparativa',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: 'power3.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 6. Testimonios Section Reveal
-      gsap.from('#testimonios .bg-white', {
-        scrollTrigger: {
-          trigger: '#testimonios',
-          start: 'top 82%',
-        },
-        y: 35,
-        opacity: 0,
-        stagger: 0.12,
-        duration: 0.7,
-        ease: 'power2.out',
-        clearProps: 'all'
-      });
+      // 6. App Móvil Section Reveal
+      gsap.fromTo('#app-movil .lg\\:col-span-6',
+        { opacity: 0, y: 40 },
+        {
+          scrollTrigger: {
+            trigger: '#app-movil',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          stagger: 0.2,
+          duration: 0.8,
+          ease: 'power3.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 7. Seguridad Section Reveal
-      gsap.from('.security-grid > div', {
-        scrollTrigger: {
-          trigger: '.security-grid',
-          start: 'top 85%',
-        },
-        y: 30,
-        opacity: 0,
-        stagger: 0.1,
-        duration: 0.7,
-        ease: 'power2.out',
-        clearProps: 'all'
-      });
+      // 7. Testimonios Section Reveal
+      gsap.fromTo('#testimonios .bg-white',
+        { opacity: 0, y: 35 },
+        {
+          scrollTrigger: {
+            trigger: '#testimonios',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          stagger: 0.12,
+          duration: 0.7,
+          ease: 'power2.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 8. FAQ Section Reveal
-      gsap.from('#faq .space-y-3 > div', {
-        scrollTrigger: {
-          trigger: '#faq',
-          start: 'top 85%',
-        },
-        y: 20,
-        opacity: 0,
-        stagger: 0.08,
-        duration: 0.6,
-        ease: 'power2.out',
-        clearProps: 'all'
-      });
+      // 8. Seguridad Section Reveal
+      gsap.fromTo('.security-grid > div',
+        { opacity: 0, y: 30 },
+        {
+          scrollTrigger: {
+            trigger: '.security-grid',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          stagger: 0.1,
+          duration: 0.7,
+          ease: 'power2.out',
+          clearProps: 'all'
+        }
+      );
 
-      // 9. Stats Footer Bar Reveal
-      gsap.from('.stats-footer .stat-item', {
-        scrollTrigger: {
-          trigger: '.stats-footer',
-          start: 'top 90%',
-        },
-        y: 20,
-        opacity: 0,
-        scale: 0.9,
-        stagger: 0.1,
-        duration: 0.6,
-        ease: 'back.out(1.5)',
-        clearProps: 'all'
-      });
+      // 9. FAQ Section Reveal
+      gsap.fromTo('#faq .space-y-3 > div',
+        { opacity: 0, y: 20 },
+        {
+          scrollTrigger: {
+            trigger: '#faq',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          stagger: 0.08,
+          duration: 0.6,
+          ease: 'power2.out',
+          clearProps: 'all'
+        }
+      );
+
+      // 10. Stats Footer Bar Reveal
+      gsap.fromTo('.stats-footer .stat-item',
+        { opacity: 0, y: 20, scale: 0.9 },
+        {
+          scrollTrigger: {
+            trigger: '.stats-footer',
+            start: 'top 95%',
+            toggleActions: 'play none none none'
+          },
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          stagger: 0.1,
+          duration: 0.6,
+          ease: 'back.out(1.5)',
+          clearProps: 'all'
+        }
+      );
 
     }, heroRef);
 
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 200);
+    }, 250);
 
     return () => {
       clearTimeout(timer);
@@ -1270,6 +1320,7 @@ const LandingPage: React.FC = () => {
           <nav className="hidden lg:flex items-center gap-7">
             <a href="#inicio" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Inicio</a>
             <a href="#caracteristicas" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Características</a>
+            <a href="#tipos-prestamos" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Tipos de Préstamos</a>
             <a href="#simulador" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Simulador</a>
             <a href="#comparativa" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Excel vs Ultramoney</a>
             <a href="#app-movil" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">App Móvil</a>
@@ -1315,8 +1366,9 @@ const LandingPage: React.FC = () => {
         <div className="fixed inset-0 z-40 bg-white pt-24 px-6 flex flex-col justify-between pb-10 animate-fade-in lg:hidden">
           <div className="space-y-4">
             <a href="#inicio" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Inicio</a>
-            <a href="#simulador" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Simulador de Préstamos</a>
             <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Características</a>
+            <a href="#tipos-prestamos" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Tipos de Préstamos & Negocios</a>
+            <a href="#simulador" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Simulador de Préstamos</a>
             <a href="#comparativa" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Comparativa Excel</a>
             <a href="#app-movil" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">App Móvil de Campo</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Preguntas Frecuentes</a>
@@ -1573,6 +1625,186 @@ const LandingPage: React.FC = () => {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* ─── NEW SECTION: TIPOS DE PRÉSTAMOS Y MODELOS DE NEGOCIOS SOPORTADOS ─── */}
+      <section id="tipos-prestamos" className="py-20 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-t border-b border-slate-200/70 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
+          
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
+              <Briefcase className="w-4 h-4 text-indigo-600" /> COBERTURA TOTAL DE MERCADO
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+              Tipos de Préstamos y Negocios Soportados
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600">
+              Ultramoney está diseñado para adaptarse a cualquier estructura crediticia y tipo de financiera en República Dominicana y Latinoamérica, desde prestamistas individuales hasta financieras constituidas.
+            </p>
+          </div>
+
+          {/* Part 1: Grid of 6 Specialized Loan Types */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-indigo-600" /> Modalidades de Préstamos Gestionables
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Soporta amortizaciones periódicas, rédito abierto, prendas y refinanciación.</p>
+              </div>
+              <span className="hidden sm:inline-block text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                6 Tipos de Crédito
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: Users,
+                  title: 'Préstamos Personales a la Firma',
+                  category: 'Amortización Regular',
+                  desc: 'Créditos de consumo con cuotas fijas (Método Francés o Cuota Constante). Cálculo automático de capital e interés por período.',
+                  features: ['Frecuencia Diaria, Semanal, Quincenal o Mensual', 'Historial de Garantes y Referencias', 'Generación instantánea de tabla de amortización'],
+                  badgeColor: 'text-indigo-600 bg-indigo-50 border-indigo-100'
+                },
+                {
+                  icon: FileText,
+                  title: 'Pagarés Notariados / Rédito Fijo',
+                  category: 'Interés Fijo + Abonos',
+                  desc: 'Préstamos de solo interés mensual (Rédito). Al abonar capital excedente, el saldo principal se reduce y los intereses futuros se recalculan automáticamente.',
+                  features: ['Re-cálculo de rédito automático tras abonos', 'Impresión de Pagaré Notarial Legal con sello', 'Opción de liquidación anticipada sin penalidad'],
+                  badgeColor: 'text-purple-600 bg-purple-50 border-purple-100'
+                },
+                {
+                  icon: Landmark,
+                  title: 'Financiamiento de Vehículos',
+                  category: 'Garantía de Matrícula',
+                  desc: 'Gestión completa de préstamos con garantía de automóviles, motocicletas o equipos pesados con vinculación de matrícula.',
+                  features: ['Registro de Chasis (VIN), Placa, Marca y Año', 'Control de Vencimiento de Póliza de Seguro', 'Contrato de Prenda sin Desposeimiento'],
+                  badgeColor: 'text-blue-600 bg-blue-50 border-blue-100'
+                },
+                {
+                  icon: Package,
+                  title: 'Préstamos con Garantía Prendaria',
+                  category: 'Custodia de Empeños',
+                  desc: 'Registro de artículos físicos entregados en custodia (laptops, celulares con IMEI, joyas, electrodomésticos) con comprobante de recepción.',
+                  features: ['Asignación de código de custodia en almacén', 'Acta de entrega y devolución de prenda', 'Sistemas de remate por incumplimiento'],
+                  badgeColor: 'text-amber-600 bg-amber-50 border-amber-100'
+                },
+                {
+                  icon: Navigation,
+                  title: 'Cobro Diario de Ruta Comercial',
+                  category: 'App Móvil de Campo',
+                  desc: 'Diseñado para cobradores de calle en comercios locales y rutas comerciales. Registro de cobros en menos de 5 segundos desde el celular.',
+                  features: ['Rutas organizadas por cercanía o sector', 'Comprobantes por WhatsApp en 1 clic', 'Cuadre diario de cobrador contra caja chica'],
+                  badgeColor: 'text-emerald-600 bg-emerald-50 border-emerald-100'
+                },
+                {
+                  icon: RefreshCw,
+                  title: 'Consolidación & Refinanciación',
+                  category: 'Reestructuración 1-Clic',
+                  desc: 'Permite absorber deudas activas anteriores en un nuevo préstamo unificado, relanzando los plazos de amortización limpiamente.',
+                  features: ['Unificación de múltiples deudas en un saldo', 'Cancelación automática de contratos previos', 'Auditoría inalterable de reestructuración'],
+                  badgeColor: 'text-rose-600 bg-rose-50 border-rose-100'
+                }
+              ].map((item, idx) => {
+                const IconC = item.icon;
+                return (
+                  <div key={idx} className="card-3d-wrapper cursor-pointer">
+                    <div className="gradient-border-glow h-full">
+                      <div className="card-3d-inner bg-white rounded-[1.35rem] p-6 h-full text-left flex flex-col justify-between group space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <IconC className="w-10 h-10 text-indigo-600 shrink-0 aspect-square group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+                            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${item.badgeColor}`}>
+                              {item.category}
+                            </span>
+                          </div>
+                          <h4 className="text-lg font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{item.title}</h4>
+                          <p className="text-xs text-slate-600 leading-relaxed font-normal">{item.desc}</p>
+                        </div>
+                        <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                          {item.features.map((feat, fidx) => (
+                            <div key={fidx} className="flex items-center gap-2 text-slate-700 text-[11px] font-medium">
+                              <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <span>{feat}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Part 2: Grid of 6 Supported Business Types */}
+          <div className="space-y-6 pt-6 border-t border-slate-200/80">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                  <Landmark className="w-5 h-5 text-indigo-600" /> Tipos de Negocios y Financieras que Confían en Ultramoney
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Solución modular escalable para cualquier volumen de operaciones.</p>
+              </div>
+              <span className="hidden sm:inline-block text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                Adaptabilidad 100%
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  title: 'Prestamistas Independientes & Privados',
+                  desc: 'Prestamistas que administran su propio capital desde su celular o laptop sin complicaciones contables excesivas.',
+                  impact: 'Elimina libretas en papel y automatiza cobros por WhatsApp.'
+                },
+                {
+                  title: 'Agencias de Cobro Diario / Ruta',
+                  desc: 'Financieras con equipos de cobradores en la calle que requieren reportes geográficos y cuadre de caja al cierre del día.',
+                  impact: 'Control de cuadre diario por cobrador y rutas optimizadas.'
+                },
+                {
+                  title: 'Dealers & Financieras de Vehículos',
+                  desc: 'Empresas de financiamiento automotriz que requieren gestión de matrículas, prendas sin desposeimiento y pólizas de seguro.',
+                  impact: 'Contratos notariales automáticos y expediente de vehículos.'
+                },
+                {
+                  title: 'Casas de Empeño & Custodia Prendaria',
+                  desc: 'Establecimientos que reciben artículos electrónicos, joyas o bienes físicos como colateral de sus préstamos.',
+                  impact: 'Control de stock de prendas y actas de recepción/devolución.'
+                },
+                {
+                  title: 'Cooperativas & Credit Unions Pymes',
+                  desc: 'Instituciones financieras comunitarias que necesitan contabilidad de doble entrada, NCF fiscal de la DGII y multiusuario RLS.',
+                  impact: 'Comprobantes fiscales NCF y contabilidad de doble entrada.'
+                },
+                {
+                  title: 'Prestamistas Comerciales a Pymes',
+                  desc: 'Financieras B2B que conceden avances de capital de trabajo a comerciantes, colmados y pequeñas empresas.',
+                  impact: 'Reportes de riesgo prudencial A/B/C/D y scoring de crédito.'
+                }
+              ].map((biz, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                      0{idx + 1}
+                    </div>
+                    <h4 className="font-extrabold text-base text-slate-900">{biz.title}</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">{biz.desc}</p>
+                  </div>
+                  <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/60">
+                    <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>{biz.impact}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
