@@ -7,6 +7,7 @@ import { HiddenDocumentRenderer } from './components/HiddenDocumentRenderer';
 import { StoreProvider, useAuth } from './context/StoreContext';
 import { ToastProvider } from './context/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PageTransition } from './components/PageTransition';
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 
 // Dynamic Code Splitting with React.lazy
@@ -158,71 +159,73 @@ const AppContent: React.FC = () => {
         <div className={`${!isFullScreenPage && currentUser ? 'p-4 md:p-8 pb-24 md:pb-8' : ''}`}>
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={("__TAURI__" in window || "__TAURI_INTERNALS__" in window || window.navigator.userAgent.includes('Tauri')) ? <Navigate to="/login" replace /> : <LandingPage />} />
-                <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-                <Route path="/login/:slug" element={<PublicOnlyRoute><CompanyLogin /></PublicOnlyRoute>} />
-                <Route path="/login-staff" element={<PublicOnlyRoute><EmployeeLogin /></PublicOnlyRoute>} />
-                <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
-                <Route path="/portal/:clientId" element={<ClientPortal />} />
-                <Route path="/recibo/:transactionId" element={<ReceiptView />} />
-                <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
-                <Route path="/pagar" element={<PublicPaymentPortal />} />
-                <Route path="/pagar/:slug" element={<PublicPaymentPortal />} />
-                <Route path="/linkpagos" element={<PublicPaymentPortal />} />
-                <Route path="/linkpagos/:slug" element={<PublicPaymentPortal />} />
-                <Route path="/ayuda" element={<HelpPage />} />
+              <PageTransition>
+                <Routes location={location} key={location.pathname}>
+                  {/* Public Routes */}
+                  <Route path="/" element={("__TAURI__" in window || "__TAURI_INTERNALS__" in window || window.navigator.userAgent.includes('Tauri')) ? <Navigate to="/login" replace /> : <LandingPage />} />
+                  <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+                  <Route path="/login/:slug" element={<PublicOnlyRoute><CompanyLogin /></PublicOnlyRoute>} />
+                  <Route path="/login-staff" element={<PublicOnlyRoute><EmployeeLogin /></PublicOnlyRoute>} />
+                  <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
+                  <Route path="/portal/:clientId" element={<ClientPortal />} />
+                  <Route path="/recibo/:transactionId" element={<ReceiptView />} />
+                  <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
+                  <Route path="/pagar" element={<PublicPaymentPortal />} />
+                  <Route path="/pagar/:slug" element={<PublicPaymentPortal />} />
+                  <Route path="/linkpagos" element={<PublicPaymentPortal />} />
+                  <Route path="/linkpagos/:slug" element={<PublicPaymentPortal />} />
+                  <Route path="/ayuda" element={<HelpPage />} />
 
-                {/* Feature Routes (Public) */}
-                <Route path="/features/consulta" element={<CreditFeature />} />
-                <Route path="/features/contabilidad" element={<AccountingFeature />} />
-                <Route path="/features/notificaciones" element={<NotificationsFeature />} />
-                <Route path="/features/permisos" element={<PermissionsFeature />} />
-                <Route path="/features/seguridad" element={<SecurityFeature />} />
-                <Route path="/features/nube" element={<CloudFeature />} />
-                <Route path="/features/app-movil" element={<MobileAppFeature />} />
-                <Route path="/features/precios" element={<PricingFeature />} />
-                <Route path="/features/escalabilidad" element={<ScalabilityFeature />} />
+                  {/* Feature Routes (Public) */}
+                  <Route path="/features/consulta" element={<CreditFeature />} />
+                  <Route path="/features/contabilidad" element={<AccountingFeature />} />
+                  <Route path="/features/notificaciones" element={<NotificationsFeature />} />
+                  <Route path="/features/permisos" element={<PermissionsFeature />} />
+                  <Route path="/features/seguridad" element={<SecurityFeature />} />
+                  <Route path="/features/nube" element={<CloudFeature />} />
+                  <Route path="/features/app-movil" element={<MobileAppFeature />} />
+                  <Route path="/features/precios" element={<PricingFeature />} />
+                  <Route path="/features/escalabilidad" element={<ScalabilityFeature />} />
 
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-                <Route path="/consultar" element={<ProtectedRoute><CreditInquiry /></ProtectedRoute>} />
-                <Route path="/solicitud" element={<ProtectedRoute><LoanRequest /></ProtectedRoute>} />
-                <Route path="/simulador" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
-                <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-                <Route path="/clientes/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-                <Route path="/clientes/editar/:id" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
-                <Route path="/documentos/:clientId" element={<ProtectedRoute><DocumentPage /></ProtectedRoute>} />
-                <Route path="/inventario" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
-                <Route path="/solicitudes" element={<ProtectedRoute><LoanRequest /></ProtectedRoute>} />
-                <Route path="/prestamos" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
-                <Route path="/prestamos/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
-                <Route path="/pagos" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-                <Route path="/atrasos" element={<ProtectedRoute><Overdue /></ProtectedRoute>} />
-                <Route path="/cartera" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
-                <Route path="/rutas" element={<ProtectedRoute><RoutesPage /></ProtectedRoute>} />
-                <Route path="/empleados" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-                <Route path="/clasificacion" element={<ProtectedRoute><Classification /></ProtectedRoute>} />
-                <Route path="/contabilidad" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
-                <Route path="/contabilidad-avanzada" element={<ProtectedRoute><DeepAccounting /></ProtectedRoute>} />
-                <Route path="/caja" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
-                <Route path="/gastos" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
-                <Route path="/bancos" element={<ProtectedRoute><BankAccountsPage /></ProtectedRoute>} />
-                <Route path="/bitacora" element={<ProtectedRoute><Bitacora /></ProtectedRoute>} />
-                <Route path="/ganancia" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
-                <Route path="/ganancias" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
-                <Route path="/nuevo-cliente" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
-                <Route path="/facturas" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
-                <Route path="/portales-clientes" element={<ProtectedRoute><ClientPortals /></ProtectedRoute>} />
-                <Route path="/configuracion" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/migracion" element={<ProtectedRoute><MigrationCenter /></ProtectedRoute>} />
-                <Route path="/buro-credito" element={<ProtectedRoute><CreditBureauExport /></ProtectedRoute>} />
-                
-                {/* Fallback Catch-all Route */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* Protected Routes */}
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                  <Route path="/consultar" element={<ProtectedRoute><CreditInquiry /></ProtectedRoute>} />
+                  <Route path="/solicitud" element={<ProtectedRoute><LoanRequest /></ProtectedRoute>} />
+                  <Route path="/simulador" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
+                  <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+                  <Route path="/clientes/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                  <Route path="/clientes/editar/:id" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
+                  <Route path="/documentos/:clientId" element={<ProtectedRoute><DocumentPage /></ProtectedRoute>} />
+                  <Route path="/inventario" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
+                  <Route path="/solicitudes" element={<ProtectedRoute><LoanRequest /></ProtectedRoute>} />
+                  <Route path="/prestamos" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
+                  <Route path="/prestamos/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
+                  <Route path="/pagos" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                  <Route path="/atrasos" element={<ProtectedRoute><Overdue /></ProtectedRoute>} />
+                  <Route path="/cartera" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+                  <Route path="/rutas" element={<ProtectedRoute><RoutesPage /></ProtectedRoute>} />
+                  <Route path="/empleados" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+                  <Route path="/clasificacion" element={<ProtectedRoute><Classification /></ProtectedRoute>} />
+                  <Route path="/contabilidad" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                  <Route path="/contabilidad-avanzada" element={<ProtectedRoute><DeepAccounting /></ProtectedRoute>} />
+                  <Route path="/caja" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                  <Route path="/gastos" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                  <Route path="/bancos" element={<ProtectedRoute><BankAccountsPage /></ProtectedRoute>} />
+                  <Route path="/bitacora" element={<ProtectedRoute><Bitacora /></ProtectedRoute>} />
+                  <Route path="/ganancia" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
+                  <Route path="/ganancias" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
+                  <Route path="/nuevo-cliente" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
+                  <Route path="/facturas" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+                  <Route path="/portales-clientes" element={<ProtectedRoute><ClientPortals /></ProtectedRoute>} />
+                  <Route path="/configuracion" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/migracion" element={<ProtectedRoute><MigrationCenter /></ProtectedRoute>} />
+                  <Route path="/buro-credito" element={<ProtectedRoute><CreditBureauExport /></ProtectedRoute>} />
+                  
+                  {/* Fallback Catch-all Route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </PageTransition>
             </Suspense>
           </ErrorBoundary>
         </div>
