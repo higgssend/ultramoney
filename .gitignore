@@ -18,21 +18,6 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# InsForge & AI agent skills
-.insforge
-.agent
-.agents
-.augment
-.claude
-.cline
-.github/copilot*
-.kilocode
-.qoder
 .qwen
 .roo
 .trae
