@@ -11,7 +11,7 @@ const Clients: React.FC = () => {
   const { loans } = useLoans();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('Todos');
   const [deleteConfirm, setDeleteConfirm] = useState<Client | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);

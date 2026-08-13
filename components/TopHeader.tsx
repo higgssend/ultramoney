@@ -78,11 +78,8 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-4 py-3 shadow-sm h-[72px]">
       <div className="w-full h-full flex items-center justify-between gap-2">
       
-        {/* Mobile Menu Toggle & Logo */}
+        {/* Mobile Logo (Left side) */}
         <div className="flex items-center gap-3 shrink-0 lg:hidden">
-          <button onClick={onMenuClick} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-            <Menu className="w-6 h-6" />
-          </button>
           <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8" />
         </div>
 
@@ -240,8 +237,15 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
 
         </div>
 
-        {/* Mobile Balancing Spacer */}
-        <div className="shrink-0 w-8 lg:hidden"></div>
+        {/* Mobile Menu Button (Far Right End) */}
+        <button 
+          onClick={onMenuClick} 
+          className="p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl transition-colors lg:hidden shrink-0 active:scale-95 border border-slate-200 dark:border-slate-700"
+          aria-label="Abrir Menú"
+          title="Abrir Menú"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
 
       </div>
       <BankAccountsModal isOpen={isBankModalOpen} onClose={() => setIsBankModalOpen(false)} />
