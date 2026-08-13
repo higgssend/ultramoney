@@ -144,7 +144,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
         if (banksRes.data && banksRes.data.length > 0) {
-          setBankAccounts((banksRes.data as (BankAccountDB & Record<string, any>)[]).map((b) => ({
+          const fetchedAccounts = (banksRes.data as (BankAccountDB & Record<string, any>)[]).map((b) => ({
             id: b.id,
             bankName: b.bank_name || b.bankname || '',
             accountName: b.account_name || b.accountname || '',
@@ -157,9 +157,44 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
             cedulaOrRnc: b.cedula_or_rnc || '',
             showInPaymentLink: b.show_in_payment_link !== false,
             bankLogoUrl: b.bank_logo_url || ''
-          })));
+          }));
+
+          const hasCashBox = fetchedAccounts.some(a => a.accountType === 'Caja Chica / Efectivo' || a.bankName.toLowerCase().includes('caja'));
+          if (!hasCashBox) {
+            setBankAccounts([DEFAULT_BANK_ACCOUNTS[0], ...fetchedAccounts]);
+            void (async () => {
+              await insforge.database.from('bank_accounts').insert([{
+                lender_id: currentUser.id,
+                bank_name: DEFAULT_BANK_ACCOUNTS[0].bankName,
+                account_name: DEFAULT_BANK_ACCOUNTS[0].accountName,
+                holder_name: DEFAULT_BANK_ACCOUNTS[0].accountName,
+                account_number: DEFAULT_BANK_ACCOUNTS[0].accountNumber,
+                account_type: DEFAULT_BANK_ACCOUNTS[0].accountType,
+                currency: 'DOP',
+                status: 'Activa',
+                initial_balance: 0,
+                show_in_payment_link: false
+              }]);
+            })();
+          } else {
+            setBankAccounts(fetchedAccounts);
+          }
         } else {
           setBankAccounts(DEFAULT_BANK_ACCOUNTS);
+          void (async () => {
+            await insforge.database.from('bank_accounts').insert([{
+              lender_id: currentUser.id,
+              bank_name: DEFAULT_BANK_ACCOUNTS[0].bankName,
+              account_name: DEFAULT_BANK_ACCOUNTS[0].accountName,
+              holder_name: DEFAULT_BANK_ACCOUNTS[0].accountName,
+              account_number: DEFAULT_BANK_ACCOUNTS[0].accountNumber,
+              account_type: DEFAULT_BANK_ACCOUNTS[0].accountType,
+              currency: 'DOP',
+              status: 'Activa',
+              initial_balance: 0,
+              show_in_payment_link: false
+            }]);
+          })();
         }
         if (shiftsRes.data) {
           setCashShifts((shiftsRes.data as CashShiftDB[]).map((s) => ({
