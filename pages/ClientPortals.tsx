@@ -35,6 +35,25 @@ const ClientPortals: React.FC = () => {
         window.open(link, '_blank');
     };
 
+    const handleNativeShare = async (client: Client) => {
+        const link = `${window.location.origin}/portal/${client.portalAlias || client.id}`;
+        const pinText = client.clientPin ? `\n🔑 Tu PIN de seguridad es: ${client.clientPin}` : '';
+        const title = `Portal de Cliente - ${client.name}`;
+        const text = `Consulta tus préstamos y recibos en línea:${pinText}`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title, text, url: link });
+            } catch (err) {
+                if ((err as Error).name !== 'AbortError') {
+                    handleShareWhatsApp(client);
+                }
+            }
+        } else {
+            handleShareWhatsApp(client);
+        }
+    };
+
     const handleShareWhatsApp = (client: Client) => {
         const link = `${window.location.origin}/portal/${client.portalAlias || client.id}`;
         const pinText = client.clientPin ? `\n🔑 Tu PIN de seguridad es: *${client.clientPin}*` : '\nAcceso directo sin clave.';
@@ -192,7 +211,7 @@ const ClientPortals: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center gap-2">
-                                            <button onClick={() => handleShareWhatsApp(client)} disabled={client.portalActive === false} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm transition-colors border border-emerald-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed" title="Enviar por WhatsApp">
+                                            <button onClick={() => handleNativeShare(client)} disabled={client.portalActive === false} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm transition-colors border border-emerald-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed" title="Compartir (Nativo)">
                                                 <Share2 className="w-4 h-4" />
                                             </button>
                                             <button onClick={() => handleCopyLink(client)} disabled={client.portalActive === false} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm transition-colors border border-indigo-100 font-medium disabled:opacity-50 disabled:cursor-not-allowed" title="Copiar Enlace">

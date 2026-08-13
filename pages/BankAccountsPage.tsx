@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Landmark, Plus, CreditCard, Trash2, Edit3, Building2, X, Link, Copy, Check,
-  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ShieldAlert, Save, FileText
+  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ShieldAlert, Save, FileText, Share2
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useAccounting, useSettings } from '../context/StoreContext';
@@ -270,6 +270,26 @@ export const BankAccountsPage: React.FC = () => {
     setCopiedLink(true);
     toast.success('¡Link de pagos copiado al portapapeles!');
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleNativeShare = async () => {
+    const shareData = {
+      title: `Link de Cobro - ${companySettings?.name || 'UltraMoney'}`,
+      text: `Aquí tienes nuestras cuentas bancarias oficiales para transferencias y pagos:`,
+      url: publicLinkUrl,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          handleCopyLink();
+        }
+      }
+    } else {
+      handleCopyLink();
+      toast.info('Compartir nativo no disponible en este navegador. Enlace copiado.');
+    }
   };
 
   const handleShareWhatsapp = () => {
@@ -556,19 +576,28 @@ export const BankAccountsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <button
                   onClick={handleCopyLink}
-                  className="flex-1 sm:flex-none px-6 py-3 bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all"
+                  className="flex-1 sm:flex-none px-5 py-3 bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all"
                 >
                   {copiedLink ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
                   <span>{copiedLink ? '¡Copiado!' : 'Copiar Link'}</span>
                 </button>
 
                 <button
+                  onClick={handleNativeShare}
+                  className="flex-1 sm:flex-none px-5 py-3 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all"
+                  title="Abrir menú nativo para compartir (WhatsApp, Email, etc.)"
+                >
+                  <Share2 className="w-4 h-4 text-white shrink-0" />
+                  <span>Compartir</span>
+                </button>
+
+                <button
                   onClick={handleShareWhatsapp}
                   className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all"
-                  title="Compartir por WhatsApp"
+                  title="Enviar por WhatsApp"
                 >
                   <FaWhatsapp className="w-5 h-5 text-white shrink-0" />
                   <span className="hidden sm:inline">WhatsApp</span>

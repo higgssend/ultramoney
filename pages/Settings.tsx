@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Phone, MapPin, CreditCard, Upload, Image as ImageIcon, Activity, Smartphone, Key, UserCheck, User as UserIcon, ChevronLeft, Database, Download, FileJson, Eye, EyeOff, Copy, Briefcase, Edit2 } from 'lucide-react';
+import { Save, Building2, Users, Shield, Plus, Trash2, Check, X, Lock, Mail, Phone, MapPin, CreditCard, Upload, Image as ImageIcon, Activity, Smartphone, Key, UserCheck, User as UserIcon, ChevronLeft, Database, Download, FileJson, Eye, EyeOff, Copy, Briefcase, Edit2, Share2 } from 'lucide-react';
 import { useAuth, useSettings } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { Permission, User, ApiKey } from '../types';
@@ -70,6 +70,37 @@ const Settings: React.FC = () => {
 
   const toggleKeyVisibility = (id: string) => {
     setVisibleKeys(prev => ({...prev, [id]: !prev[id]}));
+  };
+
+  const [copiedCustomLink, setCopiedCustomLink] = useState(false);
+
+  const handleCopyCustomLink = () => {
+    const slug = companyForm.customLink || 'ultramoney';
+    const url = `${window.location.origin}/login/${slug}`;
+    navigator.clipboard.writeText(url);
+    setCopiedCustomLink(true);
+    toast.success('¡Enlace copiado al portapapeles!');
+    setTimeout(() => setCopiedCustomLink(false), 2500);
+  };
+
+  const handleNativeShareCustomLink = async () => {
+    const slug = companyForm.customLink || 'ultramoney';
+    const url = `${window.location.origin}/login/${slug}`;
+    const title = `Portal de Empleados - ${companyForm.name || 'Ultramoney'}`;
+    const text = `Acceso directo al portal de empleados/sucursal de ${companyForm.name || 'Ultramoney'}:`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          handleCopyCustomLink();
+        }
+      }
+    } else {
+      handleCopyCustomLink();
+      toast.info('Compartir nativo no disponible en este dispositivo. Enlace copiado.');
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -585,23 +616,50 @@ CONTENIDO DEL PAQUETE (.ZIP):
                           <input type="text" className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500" 
                             value={companyForm.slogan || ''} onChange={e => setCompanyForm({...companyForm, slogan: e.target.value})} placeholder="Tu socio financiero de confianza" />
                         </div>
-                     </div>
-                       <div className="md:col-span-2">
-                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Enlace Personalizado (Portal Empleados / Sucursal)</label>
-                          <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800">
-                            <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-3.5 py-2.5 text-xs font-bold font-mono border-r border-slate-200 dark:border-slate-700 flex items-center shrink-0">
-                              {window.location.origin}/login/
-                            </span>
-                            <input 
-                              type="text" 
-                              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono text-sm focus:outline-none font-bold" 
-                              value={companyForm.customLink || ''} 
-                              onChange={e => setCompanyForm({...companyForm, customLink: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} 
-                              placeholder="mi-empresa" 
-                            />
+                        <div className="md:col-span-2 space-y-1.5">
+                          <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">Enlace Personalizado (Portal Empleados / Sucursal)</label>
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <div className="flex-1 flex rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 bg-white dark:bg-slate-800">
+                              <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-3.5 py-2.5 text-xs font-bold font-mono border-r border-slate-200 dark:border-slate-700 flex items-center shrink-0">
+                                {window.location.origin}/login/
+                              </span>
+                              <input 
+                                type="text" 
+                                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-mono text-sm focus:outline-none font-bold" 
+                                value={companyForm.customLink || ''} 
+                                onChange={e => setCompanyForm({...companyForm, customLink: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} 
+                                placeholder="mi-empresa" 
+                              />
+                            </div>
+
+                            {/* Share & Copy Action Buttons */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button 
+                                type="button" 
+                                onClick={handleCopyCustomLink} 
+                                className="flex-1 sm:flex-none px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 active:scale-95 shadow-sm"
+                                title="Copiar enlace al portapapeles"
+                              >
+                                {copiedCustomLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-indigo-500" />}
+                                <span>{copiedCustomLink ? '¡Copiado!' : 'Copiar'}</span>
+                              </button>
+
+                              <button 
+                                type="button" 
+                                onClick={handleNativeShareCustomLink} 
+                                className="flex-1 sm:flex-none px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-95"
+                                title="Abrir menú nativo del dispositivo para compartir"
+                              >
+                                <Share2 className="w-4 h-4" />
+                                <span>Compartir</span>
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Este será el enlace único que le darás a tus empleados o sucursal para iniciar sesión directamente.</p>
-                       </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Presiona <strong>Compartir</strong> para abrir el menú nativo de tu teléfono/PC (WhatsApp, Telegram, Correo, etc.) o <strong>Copiar</strong> para guardar la URL.
+                          </p>
+                        </div>
+                     </div>
                        <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
                         <div className="relative">
