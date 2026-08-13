@@ -70,10 +70,10 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
 
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-4 py-3 shadow-sm h-[72px]">
-      <div className="w-full h-full flex items-center justify-between">
+      <div className="w-full h-full flex items-center justify-between gap-2">
       
       {/* Mobile Menu Toggle & Logo */}
-      <div className="flex items-center gap-3 lg:hidden w-1/4">
+      <div className="flex items-center gap-3 lg:hidden shrink-0">
         <button onClick={onMenuClick} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
           <Menu className="w-6 h-6" />
         </button>
@@ -82,11 +82,9 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
 
       <div className="hidden lg:block w-1/4"></div>
 
-      {/* Global Search & Actions - Hidden on very small screens, visible on md+ */}
-      <div className="hidden md:flex flex-1 items-center justify-center gap-4">
-        
-        {/* Search */}
-        <div className="relative w-full max-w-lg" ref={searchRef}>
+      {/* Global Search (Hidden on small screens, visible on md+) */}
+      <div className="hidden md:flex flex-1 items-center justify-center max-w-lg mx-auto" ref={searchRef}>
+        <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
             <Search className="w-5 h-5" />
           </div>
@@ -124,9 +122,10 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Right Actions (Centered with Search) */}
-        <div className="flex items-center gap-2">
+      {/* Right Actions (Visible on BOTH Desktop & Mobile) */}
+      <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
         
         {/* Global Add Button */}
         <div className="relative" ref={addRef}>
@@ -135,7 +134,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 md:px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-indigo-200 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden md:inline">Añadir</span>
+            <span className="hidden sm:inline">Añadir</span>
           </button>
 
           {isAddOpen && (
@@ -159,7 +158,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           )}
         </div>
 
-        {/* Notifications Button & Dropdown */}
+        {/* Notifications Button & Dropdown (Visible on Desktop & Mobile) */}
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -185,7 +184,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                       <CheckCircle2 className="w-3.5 h-3.5" /> Leídas
                     </button>
                   )}
-                  <button onClick={() => setIsNotifOpen(false)} className="md:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                  <button onClick={() => setIsNotifOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -232,26 +231,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
             </div>
           )}
         </div>
-        
-        </div>
-      </div>
 
-      <div className="hidden md:block w-1/4"></div>
-
-      {/* Mobile Right Actions */}
-      <div className="md:hidden flex items-center gap-2 ml-auto">
-        <button 
-          onClick={() => setIsNotifOpen(!isNotifOpen)}
-          className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative"
-        >
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-            </span>
-          )}
-        </button>
       </div>
 
       </div>
