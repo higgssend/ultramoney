@@ -1227,7 +1227,7 @@ CONTENIDO DEL PAQUETE (.ZIP):
 
       {/* ... (Modals remain unchanged) ... */}
       {isRoleModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-fade-in">
              <div className="flex justify-between items-center mb-6">
                <h3 className="font-bold text-lg text-slate-800">{editingRoleId ? 'Editar Rol' : 'Crear Nuevo Rol'}</h3>
@@ -1275,7 +1275,7 @@ CONTENIDO DEL PAQUETE (.ZIP):
       )}
 
       {isCargoModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-fade-in">
              <div className="flex justify-between items-center mb-6">
                <h3 className="font-bold text-lg text-slate-800">{editingCargoId ? 'Editar Cargo' : 'Crear Nuevo Cargo'}</h3>
@@ -1305,7 +1305,7 @@ CONTENIDO DEL PAQUETE (.ZIP):
       )}
 
       {isUserModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
              <div className="flex justify-between items-center mb-6">
                <h3 className="font-bold text-lg text-slate-800">Registrar Usuario</h3>

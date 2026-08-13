@@ -60,7 +60,7 @@ export const LoanCreatedSharingModal: React.FC<LoanCreatedSharingModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-8 border border-slate-200 dark:border-slate-800 animate-scale-in my-8">
         
         {/* Header */}

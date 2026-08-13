@@ -686,7 +686,7 @@ const NewClient: React.FC = () => {
 
       {/* Modal de Confirmación de Registro Exitoso & Portal del Cliente */}
       {createdSuccessClient && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl space-y-6">
             
             <div className="text-center space-y-2">

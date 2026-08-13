@@ -277,7 +277,7 @@ const Employees: React.FC = () => {
 
       {/* New Employee Modal */}
       {isModalOpen && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in p-6">
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="font-bold text-lg text-slate-800">Registrar Empleado</h3>

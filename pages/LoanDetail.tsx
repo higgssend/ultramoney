@@ -1389,7 +1389,7 @@ export const LoanDetail: React.FC = () => {
 
       {/* MODAL 1: EDIT LOAN (EDICIÓN COMPLETA) */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-4 sticky top-0 bg-white dark:bg-slate-900 z-10">
               <div>
@@ -1640,7 +1640,7 @@ export const LoanDetail: React.FC = () => {
 
       {/* MODAL 2: HISTORICAL / PAST MANUAL PAYMENT */}
       {isHistoricalModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="text-lg font-black text-slate-800 dark:text-white flex items-center gap-2">
@@ -1751,7 +1751,7 @@ export const LoanDetail: React.FC = () => {
 
       {/* MODAL 3: DELETE LOAN CONFIRMATION */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl p-6 relative border border-slate-100 dark:border-slate-800 text-center space-y-4">
             <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
               <AlertTriangle className="w-8 h-8" />

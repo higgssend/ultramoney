@@ -1048,7 +1048,7 @@ const ClientDetail: React.FC = () => {
 
       {/* Upload Document Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
                  <div className="flex justify-between items-center mb-6">
                      <h3 className="font-bold text-lg text-slate-800 dark:text-white">Subir Documento</h3>
@@ -1130,7 +1130,7 @@ const ClientDetail: React.FC = () => {
 
       {/* Document Preview Modal */}
       {previewDoc && (
-          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setPreviewDoc(null)}>
+          <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-4" onClick={() => setPreviewDoc(null)}>
               <div className="relative max-w-4xl max-h-[90vh] w-full">
                   <button className="absolute -top-12 right-0 text-white hover:text-slate-300" onClick={() => setPreviewDoc(null)}><X className="w-8 h-8" /></button>
                   {previewDoc.fileType.startsWith('image/') ? (
@@ -1145,7 +1145,7 @@ const ClientDetail: React.FC = () => {
 
       {/* Edit Document Modal */}
       {isEditDocModalOpen && editingDoc && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
                  <div className="flex justify-between items-center mb-6">
                      <h3 className="font-bold text-lg text-slate-800 dark:text-white">Editar Documento del Cliente</h3>

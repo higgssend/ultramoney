@@ -435,7 +435,7 @@ const Loans: React.FC = () => {
 
       {/* Advanced Loan Detail Modal */}
       {selectedLoan && (
-          <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 bg-slate-900/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
              <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-3xl shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
                  
                  {/* Modal Header */}
