@@ -324,7 +324,12 @@ const ClientDetail: React.FC = () => {
                   </p>
                </div>
            </div>
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-2 flex-wrap">
+              <button 
+                onClick={() => navigate(`/solicitud?clientId=${client.id}`)} 
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm flex items-center gap-2 shadow-md transition-all">
+                  <Plus className="w-4 h-4" /> Crear Préstamo
+              </button>
               <button onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/portal/${client.id}`);
                   addToast('Link copiado al portapapeles', 'success');

@@ -109,7 +109,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                 { value: '', label: '-- Llenar Formulario Manualmente --' },
                                 ...availableItems.map(item => ({
                                     value: item.id,
-                                    label: `📦 ${item.name} (${item.brand || ''} ${item.model || ''}) - RD$ ${item.cashPrice.toLocaleString()} [${item.condition || 'Disponible'}]`
+                                    label: `${item.name} (${item.brand || ''} ${item.model || ''}) - RD$ ${item.cashPrice.toLocaleString()} [${item.condition || 'Disponible'}]`
                                 }))
                             ]}
                         />
@@ -125,13 +125,13 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                         className="w-full"
                         options={[
                             { value: 'Sin Garantía', label: 'Sin Garantía' },
-                            { value: 'Teléfono / Celular', label: '📱 Teléfono / Celular / Dispositivo Móvil' },
-                            { value: 'Tarjeta de Crédito / Débito', label: '💳 Tarjeta de Crédito / Débito en Custodia' },
-                            { value: 'Vehículo', label: '🚗 Vehículo' },
-                            { value: 'Propiedad', label: '🏠 Propiedad Inmobiliaria' },
-                            { value: 'Electrodoméstico', label: '📺 Electrodoméstico / Equipo' },
-                            { value: 'Joya', label: '💎 Joya / Objeto de Valor' },
-                            { value: 'Otro', label: '📦 Otro bien en garantía' }
+                            { value: 'Teléfono / Celular', label: 'Teléfono / Celular / Dispositivo Móvil' },
+                            { value: 'Tarjeta de Crédito / Débito', label: 'Tarjeta de Crédito / Débito en Custodia' },
+                            { value: 'Vehículo', label: 'Vehículo / Auto / Pasola' },
+                            { value: 'Propiedad', label: 'Propiedad Inmobiliaria / Terreno' },
+                            { value: 'Electrodoméstico', label: 'Electrodoméstico / Equipo' },
+                            { value: 'Joya', label: 'Joya / Objeto de Valor' },
+                            { value: 'Otro', label: 'Otro bien en garantía' }
                         ]}
                     />
                 </div>
@@ -301,11 +301,11 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                         onChange={(val) => handleChange('cardType', val)}
                                         className="w-full"
                                         options={[
-                                            { value: 'Visa Crédito', label: '💳 Visa Crédito' },
-                                            { value: 'Visa Débito', label: '💳 Visa Débito / Nómina' },
-                                            { value: 'Mastercard Crédito', label: '💳 Mastercard Crédito' },
-                                            { value: 'Mastercard Débito', label: '💳 Mastercard Débito' },
-                                            { value: 'American Express', label: '💳 American Express' }
+                                            { value: 'Visa Crédito', label: 'Visa Crédito' },
+                                            { value: 'Visa Débito', label: 'Visa Débito / Nómina' },
+                                            { value: 'Mastercard Crédito', label: 'Mastercard Crédito' },
+                                            { value: 'Mastercard Débito', label: 'Mastercard Débito' },
+                                            { value: 'American Express', label: 'American Express' }
                                         ]}
                                     />
                                 </div>

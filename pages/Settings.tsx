@@ -7,6 +7,7 @@ import { Permission, User, ApiKey } from '../types';
 import { insforge } from '../lib/insforge';
 import { LoanProductsTab } from '../components/LoanProductsTab';
 import { CustomSelect } from '../components/CustomSelect';
+import JSZip from 'jszip';
 
 const Settings: React.FC = () => {
   const location = useLocation();
@@ -164,6 +165,101 @@ const Settings: React.FC = () => {
       }
     } catch (err) {
       toast.error('Error al generar la copia de seguridad');
+      console.error(err);
+    } finally {
+      setIsCreatingBackup(false);
+    }
+  };
+
+  const createZipBackup = async () => {
+    setIsCreatingBackup(true);
+    try {
+      const [clientsRes, loansRes, txRes, productsRes] = await Promise.all([
+        insforge.database.from('clients').select('*'),
+        insforge.database.from('loans').select('*'),
+        insforge.database.from('transactions').select('*'),
+        insforge.database.from('loan_products').select('*')
+      ]);
+
+      const clientsData = clientsRes.data || [];
+      const loansData = loansRes.data || [];
+      const txData = txRes.data || [];
+      const productsData = productsRes.data || [];
+
+      const arrayToCsv = (data: Record<string, unknown>[]) => {
+        if (!data || data.length === 0) return '';
+        const keys = Object.keys(data[0]);
+        const header = keys.join(',');
+        const rows = data.map(row => 
+          keys.map(k => {
+            const val = row[k];
+            const str = typeof val === 'object' ? JSON.stringify(val) : String(val ?? '');
+            return `"${str.replace(/"/g, '""')}"`;
+          }).join(',')
+        );
+        return [header, ...rows].join('\n');
+      };
+
+      const zip = new JSZip();
+      const timestamp = new Date().toISOString();
+      const dateStr = timestamp.split('T')[0];
+
+      // 1. JSON database dump
+      const jsonBackupData = {
+        version: '2.0.0',
+        platform: 'UltraMoney',
+        timestamp,
+        company: companySettings,
+        clients: clientsData,
+        loans: loansData,
+        transactions: txData,
+        products: productsData
+      };
+      zip.file('database_dump.json', JSON.stringify(jsonBackupData, null, 2));
+
+      // 2. CSV files for Excel
+      zip.file('clientes.csv', arrayToCsv(clientsData as unknown as Record<string, unknown>[]));
+      zip.file('prestamos.csv', arrayToCsv(loansData as unknown as Record<string, unknown>[]));
+      zip.file('transacciones_pagos.csv', arrayToCsv(txData as unknown as Record<string, unknown>[]));
+      zip.file('productos_prestamo.csv', arrayToCsv(productsData as unknown as Record<string, unknown>[]));
+
+      // 3. Manifesto text file
+      zip.file('LEAME_RESPALDO.txt', `ULTRAMONEY - PAQUETE COMPLETO DE RESPALDO DE SEGURIDAD
+============================================================
+Fecha de Generación: ${timestamp}
+Empresa: ${companySettings?.name || 'UltraMoney'}
+
+CONTENIDO DEL PAQUETE (.ZIP):
+- database_dump.json: Respaldo estructurado en JSON para restauración en la plataforma.
+- clientes.csv: Tabla de clientes exportada para Microsoft Excel (${clientsData.length} registros).
+- prestamos.csv: Tabla de cartera de préstamos exportada para Excel (${loansData.length} registros).
+- transacciones_pagos.csv: Historial de transacciones y pagos en CSV (${txData.length} registros).
+- productos_prestamo.csv: Productos de crédito configurados (${productsData.length} registros).
+============================================================`);
+
+      const zipContent = await zip.generateAsync({ type: 'blob' });
+      const zipFileName = `ultramoney_backup_COMPLETO_${dateStr}_${Date.now().toString().slice(-4)}.zip`;
+
+      // Trigger local download
+      const url = URL.createObjectURL(zipContent);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = zipFileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Upload copy to InsForge backups storage bucket
+      const { error } = await insforge.storage.from('backups').upload(zipFileName, zipContent);
+      if (!error) {
+        toast.success('¡Paquete ZIP de respaldo descargado y subido a la nube!');
+        fetchCloudBackups();
+      } else {
+        toast.success('Paquete de respaldo ZIP descargado en tu equipo.');
+      }
+    } catch (err) {
+      toast.error('Error al generar paquete de respaldo ZIP');
       console.error(err);
     } finally {
       setIsCreatingBackup(false);
@@ -981,10 +1077,17 @@ const Settings: React.FC = () => {
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <button 
+                    onClick={() => createZipBackup()}
+                    disabled={isCreatingBackup}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all transform hover:scale-[1.02]">
+                    <Database className="w-4 h-4" /> {isCreatingBackup ? 'Generando Paquete...' : '🚀 CREAR RESPALDO AHORA (ZIP Completo: JSON + CSVs)'}
+                  </button>
+
+                  <button 
                     onClick={() => createFullBackup(false)}
                     disabled={isCreatingBackup}
                     className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all">
-                    <Download className="w-4 h-4" /> {isCreatingBackup ? 'Generando...' : 'Descargar Copia (JSON)'}
+                    <Download className="w-4 h-4" /> {isCreatingBackup ? 'Generando...' : 'Descargar JSON'}
                   </button>
 
                   <button 

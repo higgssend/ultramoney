@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, FileText, AlertTriangle, TrendingUp, Landmark } from 'lucide-react';
 import { useClients, useLoans, useSettings, useAccounting } from '../context/StoreContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
 import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct } from '../types';
@@ -14,29 +14,38 @@ import { BankAccountsModal } from '../components/BankAccountsModal';
 
 export const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests = [], loanProducts = [], loans = [] } = useLoans();
-  const { updateClient, clients = [] } = useClients();
+  const { updateClient, addClient, clients = [] } = useClients();
   const { globalCurrency, companySettings } = useSettings();
   const { bankAccounts = [], processBankDisbursement } = useAccounting();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [disbursementBankAccountId, setDisbursementBankAccountId] = useState<string>('');
   const [createdLoanForSharing, setCreatedLoanForSharing] = useState<Loan | null>(null);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
-  
-  // Refinancing State
-  const [isRefinanceEnabled, setIsRefinanceEnabled] = useState(false);
-  const [selectedLoanToRefinance, setSelectedLoanToRefinance] = useState<string>('');
-  
-  // View State
-  const [viewMode, setViewMode] = useState<'create' | 'queue'>('queue');
-  const [creationMode, setCreationMode] = useState<'request' | 'direct'>('request'); // 'request' = Solicitud, 'direct' = Loan
-  
-  // Track if we are processing a pending request (to delete it later)
-  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
-  // Form State
-  const [selectedProductId, setSelectedProductId] = useState('');
-  const [selectedClientId, setSelectedClientId] = useState('');
+  // Quick Client Creation Modal State
+  const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({
+    name: '',
+    lastName: '',
+    cedula: '',
+    phone: '',
+    address: '',
+    income: 0
+  });
+
+  // Pre-fill client from query parameter ?clientId=xyz
+  const initialClientId = searchParams.get('clientId') || '';
+  const [selectedClientId, setSelectedClientId] = useState(initialClientId);
+
+  useEffect(() => {
+    const qClientId = searchParams.get('clientId');
+    if (qClientId) {
+      setSelectedClientId(qClientId);
+      setViewMode('create');
+    }
+  }, [searchParams]);
   const [amount, setAmount] = useState(10000);
   const [weeks, setWeeks] = useState(12); // Duración
   const [interest, setInterest] = useState(10); // Porcentaje
@@ -448,7 +457,15 @@ export const LoanRequest: React.FC = () => {
                         </h3>
                         <div className="grid grid-cols-1 gap-4">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Seleccionar Cliente</label>
+                            <div className="flex justify-between items-center mb-2">
+                              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Seleccionar Cliente</label>
+                              <button 
+                                type="button"
+                                onClick={() => setIsNewClientModalOpen(true)}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-lg border border-indigo-100 dark:border-indigo-800 flex items-center gap-1">
+                                <Plus className="w-3.5 h-3.5" /> Crear Nuevo Cliente
+                              </button>
+                            </div>
                             <CustomSelect 
                                 className="w-full text-sm"
                                 value={selectedClientId}
@@ -458,8 +475,8 @@ export const LoanRequest: React.FC = () => {
                                     setSelectedLoanToRefinance('');
                                 }}
                                 options={[
-                                    { value: '', label: '-- Buscar Cliente --' },
-                                    ...clients.map(client => ({ value: client.id, label: `${client.name} - ${maskCedula(client.cedula)}` }))
+                                    { value: '', label: '-- Buscar / Seleccionar Cliente --' },
+                                    ...clients.map(client => ({ value: client.id, label: `${client.name} ${client.lastName || ''} - ${maskCedula(client.cedula)}` }))
                                 ]}
                             />
                         </div>
@@ -1359,6 +1376,129 @@ export const LoanRequest: React.FC = () => {
           }} 
           onNavigateToDetail={() => navigate(`/prestamos/${createdLoanForSharing.id}`)} 
         />
+      )}
+
+      {/* QUICK NEW CLIENT CREATION MODAL */}
+      {isNewClientModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg p-6 border border-slate-100 dark:border-slate-800 animate-scale-up">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                <User className="w-5 h-5 text-indigo-600" /> Registro Rápido de Nuevo Cliente
+              </h3>
+              <button onClick={() => setIsNewClientModalOpen(false)} className="p-1 hover:bg-slate-100 rounded-full">
+                <XCircle className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newClientForm.name || !newClientForm.cedula) {
+                toast.error('Nombre y cédula son obligatorios');
+                return;
+              }
+              const created = await addClient({
+                name: newClientForm.name,
+                lastName: newClientForm.lastName,
+                cedula: newClientForm.cedula,
+                phone: newClientForm.phone,
+                address: newClientForm.address,
+                income: Number(newClientForm.income) || 0,
+                status: 'Activo'
+              });
+              if (created?.id) {
+                setSelectedClientId(created.id);
+                toast.success(`Cliente ${created.name} creado y seleccionado.`);
+              }
+              setIsNewClientModalOpen(false);
+              setNewClientForm({ name: '', lastName: '', cedula: '', phone: '', address: '', income: 0 });
+            }} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newClientForm.name}
+                    onChange={e => setNewClientForm({ ...newClientForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 font-medium"
+                    placeholder="Ej. Juan"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Apellido</label>
+                  <input 
+                    type="text" 
+                    value={newClientForm.lastName}
+                    onChange={e => setNewClientForm({ ...newClientForm, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 font-medium"
+                    placeholder="Ej. Pérez"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cédula / Pasaporte *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newClientForm.cedula}
+                    onChange={e => setNewClientForm({ ...newClientForm, cedula: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 font-mono font-bold"
+                    placeholder="001-0000000-0"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
+                  <input 
+                    type="text" 
+                    value={newClientForm.phone}
+                    onChange={e => setNewClientForm({ ...newClientForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 font-medium"
+                    placeholder="809-000-0000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Dirección de Residencia</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.address}
+                  onChange={e => setNewClientForm({ ...newClientForm, address: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 font-medium"
+                  placeholder="Calle, No., Sector, Ciudad"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Ingresos Mensuales Declarados ($)</label>
+                <input 
+                  type="number" 
+                  value={newClientForm.income || ''}
+                  onChange={e => setNewClientForm({ ...newClientForm, income: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 font-bold"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsNewClientModalOpen(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-bold">
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700">
+                  Guardar y Seleccionar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {isBankModalOpen && (
