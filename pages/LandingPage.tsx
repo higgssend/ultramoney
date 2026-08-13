@@ -1083,15 +1083,131 @@ const LandingPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /* ── GSAP Animations ── */
+  /* ── GSAP ScrollTrigger Animations for ALL Landing Page Sections ── */
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // 1. Hero Section Entrance Timeline
       const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.8 } });
       tl.from('.hero-badge', { y: 20, opacity: 0, clearProps: 'all' })
         .from('.hero-title', { y: 30, opacity: 0, duration: 0.8, clearProps: 'all' }, '-=0.5')
         .from('.hero-sub', { y: 25, opacity: 0, clearProps: 'all' }, '-=0.6')
         .from('.hero-cta-btn', { y: 20, opacity: 0, stagger: 0.1, clearProps: 'all' }, '-=0.5')
+        .from('.hero-social', { y: 15, opacity: 0, clearProps: 'all' }, '-=0.4')
         .from('.hero-mockup', { y: 40, opacity: 0, scale: 0.98, duration: 0.9, clearProps: 'all' }, '-=0.6');
+
+      // 2. Section 22 Modules Ecosistema Grid Reveal
+      gsap.from('#caracteristicas .card-3d-wrapper', {
+        scrollTrigger: {
+          trigger: '#caracteristicas',
+          start: 'top 80%',
+        },
+        y: 45,
+        opacity: 0,
+        scale: 0.96,
+        duration: 0.7,
+        stagger: 0.05,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
+
+      // 3. Simulador en Vivo Section Reveal
+      gsap.from('#simulador .bg-gradient-to-br', {
+        scrollTrigger: {
+          trigger: '#simulador',
+          start: 'top 80%',
+        },
+        y: 40,
+        opacity: 0,
+        scale: 0.97,
+        duration: 0.8,
+        ease: 'power3.out',
+        clearProps: 'all'
+      });
+
+      // 4. Comparativa Excel Section Reveal
+      gsap.from('#comparativa .bg-white', {
+        scrollTrigger: {
+          trigger: '#comparativa',
+          start: 'top 80%',
+        },
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        clearProps: 'all'
+      });
+
+      // 5. App Móvil Section Reveal
+      gsap.from('#app-movil .lg\\:col-span-6', {
+        scrollTrigger: {
+          trigger: '#app-movil',
+          start: 'top 80%',
+        },
+        y: 40,
+        opacity: 0,
+        stagger: 0.2,
+        duration: 0.8,
+        ease: 'power3.out',
+        clearProps: 'all'
+      });
+
+      // 6. Testimonios Section Reveal
+      gsap.from('#testimonios .bg-white', {
+        scrollTrigger: {
+          trigger: '#testimonios',
+          start: 'top 82%',
+        },
+        y: 35,
+        opacity: 0,
+        stagger: 0.12,
+        duration: 0.7,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
+
+      // 7. Seguridad Section Reveal
+      gsap.from('.security-grid > div', {
+        scrollTrigger: {
+          trigger: '.security-grid',
+          start: 'top 85%',
+        },
+        y: 30,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.7,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
+
+      // 8. FAQ Section Reveal
+      gsap.from('#faq .space-y-3 > div', {
+        scrollTrigger: {
+          trigger: '#faq',
+          start: 'top 85%',
+        },
+        y: 20,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 0.6,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
+
+      // 9. Stats Footer Bar Reveal
+      gsap.from('.stats-footer .stat-item', {
+        scrollTrigger: {
+          trigger: '.stats-footer',
+          start: 'top 90%',
+        },
+        y: 20,
+        opacity: 0,
+        scale: 0.9,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: 'back.out(1.5)',
+        clearProps: 'all'
+      });
+
     }, heroRef);
 
     const timer = setTimeout(() => {
@@ -1882,7 +1998,7 @@ const LandingPage: React.FC = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="security-grid grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
               <ShieldCheck className="w-8 h-8 text-indigo-600 mx-auto" />
               <h3 className="font-bold text-sm text-slate-800">Aislamiento RLS en PostgreSQL</h3>
