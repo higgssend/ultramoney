@@ -155,7 +155,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             note: l.note,
             currency: (l.currency as 'DOP' | 'USD') || 'DOP',
           };
-        })));
+        }));
         }
         if (productsRes.data) {
           setLoanProducts((productsRes.data as LoanProductDB[]).map((p) => ({
