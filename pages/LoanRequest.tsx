@@ -1308,8 +1308,274 @@ export const LoanRequest: React.FC = () => {
                     financedAmount={loanType.includes('Financiamiento') ? amount - (hasInitialPayment ? (downPayment || 0) : 0) : undefined}
                     collateral={collateral}
                 />
+
+              {/* LoanCreatedSharingModal — needed in create view too */}
+              {createdLoanForSharing && (
+                <LoanCreatedSharingModal 
+                  loan={createdLoanForSharing} 
+                  client={selectedClient} 
+                  companyName={companySettings?.companyName || companySettings?.name} 
+                  onClose={() => { 
+                    const loanId = createdLoanForSharing.id;
+                    setCreatedLoanForSharing(null); 
+                    navigate(`/prestamos/${loanId}`); 
+                  }} 
+                  onNavigateToDetail={() => navigate(`/prestamos/${createdLoanForSharing.id}`)} 
+                />
+              )}
             </div>
         </div>
+
+        {/* FULL NEW CLIENT CREATION MODAL */}
+        {isNewClientModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 animate-scale-up my-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="font-bold text-xl text-slate-800 dark:text-white flex items-center gap-2">
+                    <User className="w-6 h-6 text-indigo-600" /> Formulario Completo de Nuevo Cliente
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Ingresa los datos para registrar al cliente y asociarlo a este préstamo.</p>
+                </div>
+                <button type="button" onClick={() => setIsNewClientModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                  <XCircle className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newClientForm.name || !newClientForm.cedula) {
+                  toast.error('Nombre y Cédula son obligatorios');
+                  return;
+                }
+                try {
+                  const created = await addClient({
+                    name: newClientForm.name.trim(),
+                    lastName: newClientForm.lastName.trim(),
+                    sex: newClientForm.sex,
+                    cedula: newClientForm.cedula.trim(),
+                    documentType: newClientForm.documentType,
+                    phone: newClientForm.phone.trim(),
+                    whatsapp: newClientForm.whatsapp.trim() || newClientForm.phone.trim(),
+                    phoneHome: newClientForm.phoneHome.trim(),
+                    email: newClientForm.email.trim(),
+                    address: newClientForm.address.trim(),
+                    province: newClientForm.province.trim(),
+                    municipality: newClientForm.municipality.trim(),
+                    sector: newClientForm.sector.trim(),
+                    referenceAddress: newClientForm.referenceAddress.trim(),
+                    companyName: newClientForm.companyName.trim(),
+                    jobPosition: newClientForm.jobPosition.trim(),
+                    occupation: newClientForm.occupation.trim(),
+                    income: Number(newClientForm.income) || 0,
+                    references: newClientForm.guarantorName ? [{
+                      name: newClientForm.guarantorName,
+                      phone: newClientForm.guarantorPhone,
+                      relation: 'Garante',
+                      cedula: newClientForm.guarantorCedula
+                    }] : [],
+                    creditScore: 100,
+                    status: 'Activo'
+                  });
+                  if (created?.id) {
+                    setSelectedClientId(created.id);
+                    toast.success(`Cliente ${created.name} ${created.lastName || ''} creado y seleccionado exitosamente.`);
+                  }
+                  setIsNewClientModalOpen(false);
+                  setNewClientForm({ 
+                    name: '', lastName: '', sex: 'Masculino', cedula: '', documentType: 'Cedula', 
+                    phone: '', whatsapp: '', phoneHome: '', email: '', address: '', province: '', 
+                    municipality: '', sector: '', referenceAddress: '', companyName: '', jobPosition: '', 
+                    occupation: '', income: 0, guarantorName: '', guarantorPhone: '', guarantorCedula: '' 
+                  });
+                } catch (err: unknown) {
+                  const errorMessage = err instanceof Error ? err.message : String(err);
+                  toast.error(`Error al registrar cliente: ${errorMessage}`);
+                }
+              }} className="space-y-6 text-sm">
+
+                {/* Bloque 1: Datos Personales */}
+                <div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                    <User className="w-4 h-4" /> 1. Datos Personales Principales
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Nombre *</label>
+                      <input type="text" required value={newClientForm.name}
+                        onChange={e => setNewClientForm({ ...newClientForm, name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Ej. Carlos" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Apellido *</label>
+                      <input type="text" required value={newClientForm.lastName}
+                        onChange={e => setNewClientForm({ ...newClientForm, lastName: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Ej. Rosario" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Tipo Documento</label>
+                      <select value={newClientForm.documentType}
+                        onChange={e => setNewClientForm({ ...newClientForm, documentType: e.target.value as 'Cedula' | 'Pasaporte' | 'Licencia' | 'ID' })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold text-xs">
+                        <option value="Cedula">Cédula</option>
+                        <option value="Pasaporte">Pasaporte</option>
+                        <option value="Licencia">Licencia</option>
+                        <option value="ID">ID / RNC</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Cédula / Pasaporte *</label>
+                      <input type="text" required value={newClientForm.cedula}
+                        onChange={e => setNewClientForm({ ...newClientForm, cedula: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-mono font-bold text-sm focus:ring-2 focus:ring-indigo-500"
+                        placeholder="001-0000000-0" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Sexo</label>
+                      <select value={newClientForm.sex}
+                        onChange={e => setNewClientForm({ ...newClientForm, sex: e.target.value as 'Masculino' | 'Femenino' | 'Otro' })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-xs">
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque 2: Contacto y Dirección */}
+                <div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                    <Phone className="w-4 h-4" /> 2. Contacto y Residencia
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Celular Principal *</label>
+                      <input type="text" required value={newClientForm.phone}
+                        onChange={e => setNewClientForm({ ...newClientForm, phone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="809-000-0000" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">WhatsApp</label>
+                      <input type="text" value={newClientForm.whatsapp}
+                        onChange={e => setNewClientForm({ ...newClientForm, whatsapp: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="829-000-0000" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Correo Electrónico</label>
+                      <input type="email" value={newClientForm.email}
+                        onChange={e => setNewClientForm({ ...newClientForm, email: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="cliente@email.com" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Dirección Completa *</label>
+                      <input type="text" required value={newClientForm.address}
+                        onChange={e => setNewClientForm({ ...newClientForm, address: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="Calle 12 #45, Ensanche Naco" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Sector / Ciudad</label>
+                      <input type="text" value={newClientForm.sector}
+                        onChange={e => setNewClientForm({ ...newClientForm, sector: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="Santo Domingo" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque 3: Datos Laborales */}
+                <div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4" /> 3. Actividad Laboral e Ingresos
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Empresa / Negocio</label>
+                      <input type="text" value={newClientForm.companyName}
+                        onChange={e => setNewClientForm({ ...newClientForm, companyName: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="Ej. Grupo Ramos" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Puesto / Ocupación</label>
+                      <input type="text" value={newClientForm.jobPosition}
+                        onChange={e => setNewClientForm({ ...newClientForm, jobPosition: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="Ej. Gerente de Ventas" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Ingresos Mensuales ($)</label>
+                      <input type="number" value={newClientForm.income || ''}
+                        onChange={e => setNewClientForm({ ...newClientForm, income: Number(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold text-sm text-indigo-600 dark:text-indigo-400"
+                        placeholder="35000" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque 4: Garante */}
+                <div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                    <User className="w-4 h-4" /> 4. Garante o Referencia Personal
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Nombre Garante</label>
+                      <input type="text" value={newClientForm.guarantorName}
+                        onChange={e => setNewClientForm({ ...newClientForm, guarantorName: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="Nombre del garante" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Teléfono Garante</label>
+                      <input type="text" value={newClientForm.guarantorPhone}
+                        onChange={e => setNewClientForm({ ...newClientForm, guarantorPhone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-medium text-sm"
+                        placeholder="809-000-0000" />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">Cédula Garante</label>
+                      <input type="text" value={newClientForm.guarantorCedula}
+                        onChange={e => setNewClientForm({ ...newClientForm, guarantorCedula: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-mono text-sm"
+                        placeholder="001-0000000-0" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button type="button" onClick={() => setIsNewClientModalOpen(false)}
+                    className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit"
+                    className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2 active:scale-95">
+                    <Save className="w-4 h-4" />
+                    <span>Guardar y Seleccionar Cliente</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Bank Accounts Modal */}
+        {isBankModalOpen && (
+          <BankAccountsModal 
+            isOpen={isBankModalOpen} 
+            onClose={() => setIsBankModalOpen(false)} 
+          />
+        )}
     );
   }
 
