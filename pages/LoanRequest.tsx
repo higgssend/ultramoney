@@ -12,11 +12,11 @@ import { LoanContractModal } from './features/LoanContractModal';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 import { BankAccountsModal } from '../components/BankAccountsModal';
 
-const LoanRequest: React.FC = () => {
-  const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests, loanProducts, loans } = useLoans();
-  const { updateClient, clients } = useClients();
+export const LoanRequest: React.FC = () => {
+  const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests = [], loanProducts = [], loans = [] } = useLoans();
+  const { updateClient, clients = [] } = useClients();
   const { globalCurrency, companySettings } = useSettings();
-  const { bankAccounts, processBankDisbursement } = useAccounting();
+  const { bankAccounts = [], processBankDisbursement } = useAccounting();
   const navigate = useNavigate();
 
   const [disbursementBankAccountId, setDisbursementBankAccountId] = useState<string>('');

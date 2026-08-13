@@ -12,7 +12,7 @@ import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
 // Dynamic Code Splitting with React.lazy
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Clients = React.lazy(() => import('./pages/Clients'));
-const LoanRequest = React.lazy(() => import('./pages/LoanRequest'));
+const LoanRequest = React.lazy(() => import('./pages/LoanRequest').then(m => ({ default: m.default || (m as any).LoanRequest })));
 const Accounting = React.lazy(() => import('./pages/Accounting'));
 const CreditInquiry = React.lazy(() => import('./pages/CreditInquiry'));
 const Loans = React.lazy(() => import('./pages/Loans'));
