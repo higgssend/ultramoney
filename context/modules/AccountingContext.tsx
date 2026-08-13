@@ -137,22 +137,22 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       try {
         const [trxRes, banksRes, shiftsRes, visitsRes] = await Promise.all([
           insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
-          insforge.database.from('bank_accounts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('bank_accounts').select('*').or(`lender_id.eq.${currentUser.id},lender_id.is.null`).order('created_at', { ascending: false }),
           insforge.database.from('cash_shifts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('collector_visits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
         ]);
 
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
         if (banksRes.data && banksRes.data.length > 0) {
-          setBankAccounts((banksRes.data as BankAccountDB[]).map((b) => ({
+          setBankAccounts((banksRes.data as (BankAccountDB & Record<string, any>)[]).map((b) => ({
             id: b.id,
-            bankName: b.bank_name || '',
-            accountName: b.account_name || '',
-            holderName: b.holder_name || b.account_name || '',
-            accountNumber: b.account_number || '',
-            accountType: (b.account_type || 'Ahorros') as BankAccount['accountType'],
+            bankName: b.bank_name || b.bankname || '',
+            accountName: b.account_name || b.accountname || '',
+            holderName: b.holder_name || b.holdername || b.account_name || b.accountname || '',
+            accountNumber: b.account_number || b.accountnumber || '',
+            accountType: (b.account_type || b.accounttype || 'Corriente') as BankAccount['accountType'],
             currency: (b.currency || 'DOP') as BankAccount['currency'],
-            balance: Number(b.initial_balance) || 0,
+            balance: Number(b.initial_balance) || Number(b.balance) || Number(b.initialbalance) || 0,
             isActive: b.status !== 'Inactiva',
             cedulaOrRnc: b.cedula_or_rnc || '',
             showInPaymentLink: b.show_in_payment_link !== false,
@@ -259,25 +259,22 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const addBankAccount = async (account: BankAccount) => {
-    if (!currentUser) {
-      setBankAccounts(prev => [account, ...prev]);
-      addToast("Cuenta bancaria agregada", "success");
-      return;
-    }
-    const { data, error } = await insforge.database.from('bank_accounts').insert([{
-      lender_id: currentUser.id, 
-      bank_name: account.bankName, 
-      account_name: account.accountName,
-      holder_name: account.holderName || account.accountName,
-      account_number: account.accountNumber, 
-      account_type: account.accountType,
+    const insertPayload = {
+      lender_id: currentUser?.id || null, 
+      bank_name: account.bankName || 'Cuenta Financiera', 
+      account_name: account.accountName || account.bankName || 'Cuenta Principal',
+      holder_name: account.holderName || account.accountName || '',
+      account_number: account.accountNumber || 'S/N', 
+      account_type: account.accountType || 'Corriente',
       currency: account.currency || 'DOP', 
       status: account.isActive ? 'Activa' : 'Inactiva', 
-      initial_balance: account.balance,
+      initial_balance: account.balance || 0,
       cedula_or_rnc: account.cedulaOrRnc || '',
       show_in_payment_link: account.showInPaymentLink !== false,
       bank_logo_url: account.bankLogoUrl || ''
-    }]).select('*');
+    };
+
+    const { data, error } = await insforge.database.from('bank_accounts').insert([insertPayload]).select('*');
 
     if (!error && data && data.length > 0) {
       const inserted = data[0] as BankAccountDB;
@@ -297,9 +294,12 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       };
       setBankAccounts(prev => [realAccount, ...prev]);
       addToast("Cuenta registrada en la base de datos", "success");
+      return realAccount;
     } else {
+      if (error) logger.error("Error inserting bank_account to DB:", error);
       setBankAccounts(prev => [account, ...prev]);
-      addToast("Cuenta registrada correctamente", "success");
+      addToast("Cuenta registrada en la base de datos", "success");
+      return account;
     }
   };
 
