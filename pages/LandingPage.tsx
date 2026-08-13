@@ -9,7 +9,7 @@ import {
   HelpCircle, Sparkles, Clock, RefreshCw, MessageSquare, Sliders,
   MapPin, CheckSquare, XCircle, ShieldCheck, Calculator, ThumbsUp,
   Briefcase, Landmark, Navigation, Database, Cpu, Layers, AlertCircle,
-  Banknote, FilePlus, Package, TrendingDown, Wallet, BookOpen
+  Banknote, FilePlus, Package, TrendingDown, Wallet, BookOpen, Printer
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -472,6 +472,586 @@ const SYSTEM_MODULES: SystemModule[] = [
   }
 ];
 
+/* ─── INTERACTIVE DEMO SIMULATOR FOR ALL 22 MODULES ─── */
+const ModuleInteractiveDemo: React.FC<{ module: SystemModule }> = ({ module }) => {
+  const [valA, setValA] = useState<number>(50000);
+  const [valB, setValB] = useState<number>(10);
+  const [textInput, setTextInput] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('B02');
+  const [demoStatus, setDemoStatus] = useState<string>('ready');
+
+  switch (module.id) {
+    case 1: // Dashboard Central
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Monitor KPIs en Vivo
+            </span>
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">EN TIEMPO REAL</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="space-y-1.5">
+              <label className="text-slate-400 font-bold block">Ajustar Capital Prestado Hoy:</label>
+              <input type="range" min={10000} max={200000} step={5000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-indigo-500" />
+              <div className="text-right font-black text-indigo-300">RD$ {valA.toLocaleString()}</div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-slate-400 font-bold block">Ajustar Cobros del Día:</label>
+              <input type="range" min={5000} max={valA} step={2500} value={valB} onChange={e => setValB(Number(e.target.value))} className="w-full accent-emerald-500" />
+              <div className="text-right font-black text-emerald-400">RD$ {valB.toLocaleString()}</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-800">
+            <div className="bg-slate-800/80 p-2.5 rounded-xl">
+              <span className="text-[10px] text-slate-400 block">Eficiencia Cobro</span>
+              <span className="text-sm font-black text-emerald-400">{Math.round((valB / Math.max(1, valA)) * 100)}%</span>
+            </div>
+            <div className="bg-slate-800/80 p-2.5 rounded-xl">
+              <span className="text-[10px] text-slate-400 block">Pendiente Hoy</span>
+              <span className="text-sm font-black text-amber-400">RD$ {(valA - valB).toLocaleString()}</span>
+            </div>
+            <div className="bg-slate-800/80 p-2.5 rounded-xl">
+              <span className="text-[10px] text-slate-400 block">Proyección Mes</span>
+              <span className="text-sm font-black text-indigo-400">RD$ {(valB * 24).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 2: // Facturas & Comprobantes NCF
+      const ncfTotal = valA;
+      const itbis = Math.round(ncfTotal * 0.18);
+      const subtotal = ncfTotal - itbis;
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Emisor NCF & Recibo QR
+            </span>
+            <div className="flex gap-1">
+              {['B01', 'B02', 'B14'].map(t => (
+                <button key={t} onClick={() => setActiveTab(t)} className={`px-2 py-0.5 text-[10px] font-bold rounded ${activeTab === t ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <div className="space-y-2 text-xs">
+              <label className="text-slate-400 font-bold block">Monto de la Transacción:</label>
+              <input type="range" min={1000} max={50000} step={1000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-indigo-500" />
+              <button 
+                onClick={() => { setDemoStatus('generating'); setTimeout(() => setDemoStatus('printed'), 800); }} 
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 font-bold text-white rounded-xl transition-colors shadow flex items-center justify-center gap-1.5"
+              >
+                {demoStatus === 'generating' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />} Simular Impresión Ticket
+              </button>
+            </div>
+            <div className="bg-white text-slate-900 p-3 rounded-xl shadow font-mono text-[10px] space-y-1 relative">
+              {demoStatus === 'printed' && <span className="absolute top-2 right-2 text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-sans font-bold">¡Impreso!</span>}
+              <p className="font-bold text-center border-b border-dashed pb-1">ULTRAMONEY FINANCIAL</p>
+              <p>NCF: <span className="font-bold text-indigo-600">{activeTab}00008492</span></p>
+              <p>Subtotal: RD$ {subtotal.toLocaleString()}</p>
+              <p>ITBIS (18%): RD$ {itbis.toLocaleString()}</p>
+              <p className="font-bold text-sm text-slate-900 border-t border-dashed pt-1">TOTAL: RD$ {ncfTotal.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 3: // Consulta Crediticia & Scoring
+      const score = Math.min(850, Math.max(300, 300 + Math.round((valA / 100000) * 550)));
+      const isApproved = score >= 580;
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Simulador de Scoring Crediticio
+            </span>
+          </div>
+          <div className="space-y-3 text-xs">
+            <label className="text-slate-400 font-bold block">Ajustar Historial de Pagos Previos:</label>
+            <input type="range" min={10000} max={100000} step={5000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-indigo-500" />
+            <div className="grid grid-cols-3 gap-2 text-center pt-2">
+              <div className="bg-slate-800 p-2.5 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Score Evaluado</span>
+                <span className={`text-base font-black ${score >= 700 ? 'text-emerald-400' : score >= 580 ? 'text-amber-400' : 'text-rose-400'}`}>{score} / 850</span>
+              </div>
+              <div className="bg-slate-800 p-2.5 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Dictamen</span>
+                <span className={`text-xs font-bold uppercase ${isApproved ? 'text-emerald-400' : 'text-rose-400'}`}>{isApproved ? 'APROBADO' : 'RECHAZADO'}</span>
+              </div>
+              <div className="bg-slate-800 p-2.5 rounded-xl">
+                <span className="text-[10px] text-slate-400 block">Límite Sugerido</span>
+                <span className="text-xs font-black text-indigo-300">RD$ {(score * 250).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 4: // Solicitud & Originación
+      const inicialReq = Math.round(valA * 0.20);
+      const cuotaEst = Math.round((valA - inicialReq) * 1.15 / 12);
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Originación de Crédito
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="space-y-2">
+              <label className="text-slate-400 font-bold block">Valor del Bien a Financiar:</label>
+              <input type="range" min={20000} max={300000} step={10000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-indigo-500" />
+              <p className="text-right font-black text-indigo-300">RD$ {valA.toLocaleString()}</p>
+            </div>
+            <div className="bg-slate-800/90 p-3 rounded-xl space-y-2 border border-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Inicial Requerida (20%):</span>
+                <span className="font-bold text-amber-400">RD$ {inicialReq.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Monto a Financiar:</span>
+                <span className="font-bold text-indigo-300">RD$ {(valA - inicialReq).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-t border-slate-700 pt-1 font-bold">
+                <span className="text-white">Cuota Mensual (12 Meses):</span>
+                <span className="text-emerald-400">RD$ {cuotaEst.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 5: // Simulador Financiero Avanzado
+      const intSim = Math.round(valA * (valB / 100));
+      const cuotaSim = Math.round((valA + intSim) / 6);
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Calculadora de Amortización
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="space-y-2">
+              <label className="text-slate-400 font-bold block">Monto Préstamo:</label>
+              <input type="range" min={10000} max={150000} step={5000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-indigo-500" />
+              <div className="flex justify-between">
+                <span className="text-slate-400">Tasa Interés: {valB}%</span>
+                <span className="font-black text-indigo-300">RD$ {valA.toLocaleString()}</span>
+              </div>
+            </div>
+            <div className="bg-slate-800/90 p-3 rounded-xl text-[10px] space-y-1 border border-slate-700 font-mono">
+              <div className="flex justify-between border-b border-slate-700 pb-1 font-bold text-slate-300">
+                <span>Mes</span><span>Capital</span><span>Interés</span><span>Cuota</span>
+              </div>
+              {[1, 2, 3].map(m => (
+                <div key={m} className="flex justify-between text-slate-400">
+                  <span>Mes {m}</span>
+                  <span>RD$ {Math.round(valA / 6).toLocaleString()}</span>
+                  <span>RD$ {Math.round(intSim / 6).toLocaleString()}</span>
+                  <span className="text-emerald-400 font-bold">RD$ {cuotaSim.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+    case 6: // Gestión de Clientes 360°
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Expediente Digital 360°
+            </span>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-xl flex items-center gap-3 text-xs">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Avatar" className="w-12 h-12 rounded-full object-cover ring-2 ring-indigo-500" />
+            <div className="space-y-0.5 flex-1">
+              <h5 className="font-bold text-white text-sm">Lic. Laura Cordero</h5>
+              <p className="text-[10px] text-slate-400">Cédula: 001-1829304-5 • Tel: (809) 555-0192</p>
+              <div className="flex gap-2 pt-1">
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">Cliente VIP</span>
+                <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-bold">Garante Vinc.</span>
+              </div>
+            </div>
+            <button onClick={() => alert('Simulación: Iniciando chat de WhatsApp con Laura Cordero...')} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">WhatsApp</button>
+          </div>
+        </div>
+      );
+
+    case 7: // Portales de Cliente Auto-Servicio
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Portal Móvil de Autoservicio
+            </span>
+          </div>
+          <div className="max-w-xs mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-3 text-center space-y-2 text-xs">
+            <div className="w-8 h-1 bg-slate-600 rounded-full mx-auto mb-2" />
+            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block">PORTAL CLIENTE ULTRANET</span>
+            <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
+              <p className="text-[10px] text-slate-400">Próxima Cuota Vence: 15 de este mes</p>
+              <p className="text-lg font-black text-emerald-400">RD$ 4,250.00</p>
+            </div>
+            <button onClick={() => setDemoStatus('downloaded')} className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold rounded-lg transition-colors">
+              {demoStatus === 'downloaded' ? '✓ Recibo PNG Guardado' : 'Descargar Recibo PNG'}
+            </button>
+          </div>
+        </div>
+      );
+
+    case 8: // Administración de Préstamos Activos
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Gestor de Contratos & Refinanciación
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-400">Contrato Vigente #PR-2026-94</span>
+              <p className="font-bold text-white">Saldo Activo: RD$ {valA.toLocaleString()}</p>
+              <button onClick={() => setValA(valA + 25000)} className="w-full mt-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] rounded-lg">Simular Refinanciamiento (+RD$25,000)</button>
+            </div>
+            <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-400">Liquidación Anticipada</span>
+              <p className="font-bold text-emerald-400">Monto de Cierre con Descuento: RD$ {Math.round(valA * 0.9).toLocaleString()}</p>
+              <button onClick={() => setValA(Math.round(valA * 0.9))} className="w-full mt-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-lg">Simular Descuento por Saldo Total</button>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 9: // Inventario / Stock de Garantías
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Registro de Garantía Prendaria
+            </span>
+          </div>
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center gap-2">
+              <input type="text" value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Ej: IMEI 356789101112131 o Chasis Honda Civic" className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none" />
+              <button onClick={() => setDemoStatus('registered')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl">Vincular Prenda</button>
+            </div>
+            {demoStatus === 'registered' && (
+              <div className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 p-2.5 rounded-xl flex items-center justify-between text-[11px]">
+                <span>✓ Prenda Registrada: <strong className="text-white">{textInput || 'iPhone 15 Pro IMEI 356789101112131'}</strong></span>
+                <span className="bg-emerald-500 text-slate-900 font-black text-[9px] px-2 py-0.5 rounded uppercase">En Custodia</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+    case 10: // Gestión de Pagos & Recibos QR
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Terminal Express de Cobro
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs items-center">
+            <div className="space-y-2">
+              <label className="text-slate-400 font-bold block">Ingresar Monto Recibido:</label>
+              <input type="range" min={500} max={15000} step={500} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-emerald-500" />
+              <button onClick={() => setDemoStatus('paid')} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow">Procesar Cobro Express (RD$ {valA.toLocaleString()})</button>
+            </div>
+            <div className="bg-slate-800 p-3 rounded-xl space-y-1 text-[11px] border border-slate-700">
+              <p className="text-slate-400">Distribución Automática del Pago:</p>
+              <p className="text-amber-400">Mora: RD$ 0</p>
+              <p className="text-indigo-300">Interés: RD$ {Math.round(valA * 0.3).toLocaleString()}</p>
+              <p className="text-emerald-400 font-bold">Abono a Capital: RD$ {Math.round(valA * 0.7).toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 11: // Atrasos & Gestión de Morosidad
+      const moraDias = valB;
+      const moraCalc = Math.round(valA * (moraDias * 0.005));
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Calculadora de Mora Pactada
+            </span>
+          </div>
+          <div className="space-y-3 text-xs">
+            <div className="flex justify-between items-center">
+              <label className="text-slate-400 font-bold">Días de Atraso Acumulados:</label>
+              <span className="font-black text-rose-400 text-sm">{moraDias} Días de Mora</span>
+            </div>
+            <input type="range" min={1} max={60} value={valB} onChange={e => setValB(Number(e.target.value))} className="w-full accent-rose-500" />
+            <div className="grid grid-cols-2 gap-3 bg-slate-800 p-3 rounded-xl border border-slate-700 text-center">
+              <div>
+                <span className="text-[10px] text-slate-400 block">Recargo por Mora</span>
+                <span className="font-black text-rose-400">RD$ {moraCalc.toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Condonar Mora con Permiso</span>
+                <button onClick={() => setValB(0)} className="text-[10px] font-bold text-amber-400 underline">Aplicar Condonación 100%</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 12: // Caja Chica & Cuadre Diario
+      const totalBilletes = (valA * 2000) + (valB * 1000);
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Arqueo Físico de Billetes
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="bg-slate-800 p-2.5 rounded-xl space-y-1">
+              <label className="text-slate-400 text-[10px] font-bold">Billetes RD$ 2,000:</label>
+              <input type="number" min={0} max={100} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-center font-bold" />
+            </div>
+            <div className="bg-slate-800 p-2.5 rounded-xl space-y-1">
+              <label className="text-slate-400 text-[10px] font-bold">Billetes RD$ 1,000:</label>
+              <input type="number" min={0} max={100} value={valB} onChange={e => setValB(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-center font-bold" />
+            </div>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center text-xs border border-slate-700">
+            <span className="text-slate-300">Total Arqueado Físico:</span>
+            <span className="text-base font-black text-emerald-400">RD$ {totalBilletes.toLocaleString()}</span>
+          </div>
+        </div>
+      );
+
+    case 13: // Cuentas Bancarias & Pasarelas POS
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Conciliador Bancario Multi-Moneda
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs text-center">
+            <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-400">Cuenta Pesos (Banco BHD)</span>
+              <p className="font-black text-indigo-300 text-sm">RD$ 1,450,000</p>
+              <span className="text-[9px] text-emerald-400 font-bold block">✓ Conciliado</span>
+            </div>
+            <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 space-y-1">
+              <span className="text-[10px] text-slate-400">Cuenta Dólares (Popular)</span>
+              <p className="font-black text-amber-400 text-sm">USD $ 28,500</p>
+              <span className="text-[9px] text-emerald-400 font-bold block">✓ Conciliado</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 14: // Cartera & Rutas de Cobro
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Asignador de Rutas de Cobro
+            </span>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between text-slate-300">
+              <span>Ruta #1 - San Francisco de Macorís:</span>
+              <span className="font-bold text-indigo-400">32 Clientes Asignados</span>
+            </div>
+            <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+              <div className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 w-[68%]" />
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-400">
+              <span>Cobrados: 22</span>
+              <span>Pendientes: 10</span>
+              <span className="text-emerald-400 font-bold">68% Completado</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 15: // Control de Gastos & Egresos
+      const gastoTotal = valA + 12000;
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Registro de Egresos Operativos
+            </span>
+          </div>
+          <div className="space-y-3 text-xs">
+            <label className="text-slate-400 font-bold block">Ajustar Gasto de Combustible & Nómina:</label>
+            <input type="range" min={2000} max={40000} step={2000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-rose-500" />
+            <div className="flex justify-between bg-slate-800 p-3 rounded-xl border border-slate-700 font-bold">
+              <span className="text-slate-300">Total Gastos Operativos:</span>
+              <span className="text-rose-400 text-sm">RD$ {gastoTotal.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 16: // Ganancias, Utilidades & P&L
+      const ingrBruto = valA;
+      const gastosOp = valB * 1000;
+      const utilNeta = Math.max(0, ingrBruto - gastosOp);
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: P&L & Utilidad Neta Real
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="space-y-1">
+              <label className="text-slate-400 font-bold">Ingresos por Intereses:</label>
+              <input type="range" min={50000} max={300000} step={10000} value={valA} onChange={e => setValA(Number(e.target.value))} className="w-full accent-emerald-500" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-slate-400 font-bold">Gastos Operativos:</label>
+              <input type="range" min={5} max={80} step={5} value={valB} onChange={e => setValB(Number(e.target.value))} className="w-full accent-rose-500" />
+            </div>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center text-xs border border-slate-700">
+            <span className="text-slate-300">Utilidad Neta P&L:</span>
+            <span className="text-base font-black text-emerald-400">RD$ {utilNeta.toLocaleString()} ({Math.round((utilNeta / Math.max(1, ingrBruto)) * 100)}% Margen)</span>
+          </div>
+        </div>
+      );
+
+    case 17: // Empleados, Permisos & Seguridad RLS
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Matriz de Permisos RLS
+            </span>
+            <div className="flex gap-1">
+              {['Cajero', 'Cobrador', 'Gerente'].map(r => (
+                <button key={r} onClick={() => setActiveTab(r)} className={`px-2 py-0.5 text-[10px] font-bold rounded ${activeTab === r ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{r}</button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="bg-slate-800 p-2 rounded-lg flex items-center justify-between">
+              <span>Modulo Cobros:</span>
+              <span className="text-emerald-400 font-bold">✓ Permitido</span>
+            </div>
+            <div className="bg-slate-800 p-2 rounded-lg flex items-center justify-between">
+              <span>Ver Ganancias P&L:</span>
+              <span className={activeTab === 'Gerente' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>{activeTab === 'Gerente' ? '✓ Permitido' : '✗ Bloqueado'}</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 18: // Clasificación prudencial A/B/C/D
+      const moraClass = valB;
+      const catLetter = moraClass <= 5 ? 'A' : moraClass <= 15 ? 'B' : moraClass <= 30 ? 'C' : 'D';
+      const catColor = moraClass <= 5 ? 'text-emerald-400' : moraClass <= 15 ? 'text-indigo-300' : moraClass <= 30 ? 'text-amber-400' : 'text-rose-400';
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Categorizador de Riesgo
+            </span>
+          </div>
+          <div className="space-y-3 text-xs">
+            <label className="text-slate-400 font-bold block">Ajustar Días de Atraso:</label>
+            <input type="range" min={0} max={60} value={valB} onChange={e => setValB(Number(e.target.value))} className="w-full accent-indigo-500" />
+            <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center">
+              <span className="text-slate-300">Categoría Prudencial Asignada:</span>
+              <span className={`text-lg font-black ${catColor}`}>Categoría {catLetter}</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 19: // Contabilidad Profunda de Doble Entrada
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Generador de Asiento Contable
+            </span>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-mono text-[10px] space-y-1.5">
+            <p className="text-indigo-400 font-bold border-b border-slate-700 pb-1">Asiento #AST-90231 (Desembolso Préstamo)</p>
+            <div className="flex justify-between text-slate-300">
+              <span>Dr. 1103-01 Préstamos por Cobrar</span>
+              <span className="font-bold text-emerald-400">RD$ 50,000.00</span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span>Cr. 1101-01 Caja Chica General</span>
+              <span className="font-bold text-indigo-300">RD$ 50,000.00</span>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 20: // Bitácora Inalterable de Auditoría
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Audit Log Forense
+            </span>
+          </div>
+          <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-[10px] font-mono space-y-1">
+            <p className="text-indigo-400 font-bold">[2026-08-13 14:02:18] - IP: 190.166.42.10</p>
+            <p className="text-slate-300">Usuario: <strong className="text-white">admin@ultramoney.com</strong></p>
+            <p className="text-amber-400">Acción: Modificación de Tasa de Interés en Préstamo #PR-102</p>
+            <p className="text-slate-400">Valor Anterior: 10% ➔ Nuevo Valor: 8%</p>
+          </div>
+        </div>
+      );
+
+    case 21: // Centro de Migración Masiva AI
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Importador Masivo Excel
+            </span>
+          </div>
+          <div className="space-y-2 text-xs">
+            <button onClick={() => setDemoStatus('migrated')} className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 font-bold text-white rounded-xl shadow">Simular Importación de 250 Clientes desde Excel</button>
+            {demoStatus === 'migrated' && (
+              <div className="bg-emerald-500/20 text-emerald-400 p-2.5 rounded-xl border border-emerald-500/30 text-center font-bold">
+                ✓ 250 Registros Importados con Éxito | 0 Duplicados | Rollback Disponible
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+    case 22: // Configuración General & Sello Notarial
+    default:
+      return (
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg border border-slate-800">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span className="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+              <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva: Personalizador de Contrato Legal
+            </span>
+          </div>
+          <div className="space-y-2 text-xs">
+            <input type="text" value={textInput} onChange={e => setTextInput(e.target.value)} placeholder="Escribe el Nombre de tu Financiera..." className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl text-white focus:outline-none" />
+            <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-[10px] text-slate-300 font-serif leading-relaxed">
+              "En la ciudad de Santo Domingo, la financiera <strong className="text-indigo-300 font-sans">{textInput || 'FINANCIERA ULTRAMONEY S.R.L.'}</strong> otorga el presente préstamo notarial..."
+            </div>
+          </div>
+        </div>
+      );
+  }
+};
+
 /* ─── LANDING PAGE ─── */
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -866,8 +1446,10 @@ const LandingPage: React.FC = () => {
                           {module.shortDesc}
                         </p>
                       </div>
-                      <div className="mt-5 pt-3 border-t border-slate-100/80 w-full flex items-center justify-center text-xs font-extrabold text-indigo-600 group-hover:text-indigo-700 transition-all">
-                        Ver detalles <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-1 transition-transform" />
+                      <div className="mt-4 pt-3 border-t border-slate-100/80 w-full flex items-center justify-center text-indigo-600 group-hover:text-indigo-700 transition-all">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all shadow-2xs">
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1475,6 +2057,14 @@ const LandingPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Live Interactive Demo Widget */}
+              <div className="pt-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-indigo-600 mb-2.5 flex items-center gap-1.5">
+                  <Play className="w-3.5 h-3.5 fill-current" /> Demo Interactiva del Módulo
+                </h4>
+                <ModuleInteractiveDemo module={selectedModule} />
               </div>
 
               {/* Example Config Banner */}
