@@ -57,18 +57,16 @@ export const BankAccountsPage: React.FC = () => {
     showCompanyLogo: true,
     showCompanyRnc: true,
     customNote: 'Esta información ha sido proporcionada directamente por el titular. Asegúrate de verificar los datos antes de transferir.',
-    customSlug: companySettings?.customLink || 'tu-empresa',
+    customSlug: companySettings?.customLink || '',
     selectedAccountIds: bankAccounts.map(a => a.id)
   });
 
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Format custom URL slug
-  const formattedSlug = (linkConfig.customSlug || 'tu-empresa')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-');
+  const formattedSlug = (linkConfig.customSlug && linkConfig.customSlug.trim() !== '')
+    ? linkConfig.customSlug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+    : 'tu-empresa';
 
   const publicLinkUrl = `${window.location.origin}/linkpagos/${formattedSlug}`;
 
@@ -569,16 +567,16 @@ export const BankAccountsPage: React.FC = () => {
                       <Sliders className="w-4 h-4 text-indigo-600" />
                       <span>URL Personalizada (Slug de tu Empresa)</span>
                     </label>
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-2">
-                      <span className="text-slate-400 font-mono font-bold select-none text-[11px]">
+                    <div className="flex flex-row items-center gap-1.5 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-2xl px-3.5 py-2.5 overflow-x-auto no-scrollbar whitespace-nowrap">
+                      <span className="text-slate-400 font-mono font-bold select-none text-xs shrink-0 whitespace-nowrap">
                         ultramoney.app/linkpagos/
                       </span>
                       <input
                         type="text"
-                        value={linkConfig.customSlug || 'tu-empresa'}
+                        value={linkConfig.customSlug ?? ''}
                         onChange={(e) => setLinkConfig(prev => ({ ...prev, customSlug: e.target.value }))}
                         placeholder="tu-empresa"
-                        className="w-full bg-transparent font-mono font-black text-indigo-600 dark:text-indigo-400 outline-none"
+                        className="w-full bg-transparent font-mono font-black text-indigo-600 dark:text-indigo-400 outline-none min-w-[120px]"
                       />
                     </div>
                   </div>
@@ -681,7 +679,7 @@ export const BankAccountsPage: React.FC = () => {
                 <div className="absolute -right-[9px] top-36 w-[3px] h-18 bg-[#3a3940] rounded-r-md" />
 
                 {/* Inner Device Viewport Screen */}
-                <div className="relative bg-[#f8fafc] dark:bg-slate-950 rounded-[44px] overflow-hidden max-h-[710px] overflow-y-auto border border-black/80">
+                <div className="relative bg-[#f8fafc] dark:bg-slate-950 rounded-[44px] overflow-hidden max-h-[710px] overflow-y-auto no-scrollbar scrollbar-none border border-black/80">
                   
                   {/* Dynamic Island */}
                   <div className="sticky top-0 z-40 bg-[#f8fafc]/90 dark:bg-slate-950/90 backdrop-blur-md pt-2 pb-1 text-center">
