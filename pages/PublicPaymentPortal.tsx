@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { 
-  Landmark, Copy, Check, ExternalLink, Smartphone, 
-  ChevronDown, ChevronUp, ShieldCheck, Sparkles, Building2, HelpCircle
+  Copy, Check, Share2, Smartphone, ChevronDown, ChevronUp, 
+  ShieldCheck, CheckCircle2, Download, ArrowLeft, Building2, Landmark
 } from 'lucide-react';
 import { BankAccount, PaymentLinkConfig } from '../types';
 import { getBankLogoUrl } from '../utils/bankLogos';
-import { useSettings, useAccounting } from '../context/StoreContext';
+import { useSettings, useAccounting, useAuth } from '../context/StoreContext';
 import { toast } from 'sonner';
 
 interface PublicPaymentPortalProps {
@@ -21,23 +21,24 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
 }) => {
   const { companySettings } = useSettings();
   const { bankAccounts } = useAccounting();
+  const { currentUser } = useAuth();
 
-  // Accordion open/close state per bank account
+  // Accordion state
   const [openAccountId, setOpenAccountId] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // Configuration values (from preview props or store)
-  const title = previewConfig?.title || 'Portal de Pagos & Transferencias Bancarias';
-  const instructions = previewConfig?.instructions || 'Selecciona el banco de tu preferencia para ver los datos completos. Copia los números directamente y envía tu comprobante de pago por WhatsApp.';
-  const whatsappPhone = previewConfig?.whatsappPhone || companySettings?.phone || '';
+  // Configuration settings
+  const whatsappPhone = previewConfig?.whatsappPhone || companySettings?.phone || '809-555-0123';
   const showLogo = previewConfig?.showCompanyLogo ?? true;
   const showRnc = previewConfig?.showCompanyRnc ?? true;
-  const customNote = previewConfig?.customNote || 'Por favor indica tu nombre o cédula en el concepto de la transferencia.';
+  const customNote = previewConfig?.customNote || 'Esta información ha sido proporcionada directamente por el titular. Asegúrate de verificar los datos antes de transferir.';
 
-  // Determine active accounts to render
+  const holderName = companySettings?.name || currentUser?.name || 'Juan Pérez';
+  const usernameSlug = (companySettings?.name || currentUser?.name || 'juanperez').toLowerCase().replace(/\s+/g, '');
+  const subtitle = companySettings?.slogan || 'Servicios Financieros & Préstamos';
+
+  // Accounts list
   const allAccounts = isLivePreview ? (previewAccounts || []) : bankAccounts;
-  
-  // Filter accounts selected for payment link
   const selectedIds = previewConfig?.selectedAccountIds;
   const accountsToDisplay = allAccounts.filter(acc => {
     if (!acc.isActive) return false;
@@ -60,215 +61,295 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleCopyAllData = (acc: BankAccount) => {
+    const text = `*DATOS BANCARIOS PARA PAGO*
+Banco: ${acc.bankName}
+Tipo de Cuenta: ${acc.accountType}
+Número de Cuenta: ${acc.accountNumber}
+Titular: ${acc.holderName || acc.accountName || holderName}
+Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedField(`all-${acc.id}`);
+    toast.success('¡Todos los datos de la cuenta fueron copiados!');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Cuentas Bancarias - ${holderName}`,
+        url: window.location.href
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('¡Link copiado al portapapeles!');
+    }
+  };
+
   const cleanWhatsappPhone = whatsappPhone.replace(/\D/g, '');
   const whatsappUrl = `https://wa.me/${cleanWhatsappPhone}?text=${encodeURIComponent('Hola, adjunto comprobante de pago realizado por transferencia bancaria.')}`;
 
   return (
-    <div className={`w-full min-h-screen ${isLivePreview ? 'bg-slate-900/5 p-4 rounded-3xl' : 'bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6'}`}>
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className={`w-full min-h-screen ${isLivePreview ? 'bg-slate-100/70 p-3 sm:p-5 rounded-[36px]' : 'bg-[#f8fafc] dark:bg-slate-950 py-6 px-4 sm:px-6'}`}>
+      <div className="max-w-md mx-auto space-y-5 font-sans">
 
-        {/* Company Header Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-100 dark:border-slate-800 text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between px-2 pt-1">
+          {!isLivePreview ? (
+            <button 
+              onClick={() => window.history.back()} 
+              className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:text-slate-950"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Volver</span>
+            </button>
+          ) : (
+            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">Volver</span>
+          )}
+
+          <button
+            onClick={handleShare}
+            className="p-2 rounded-full hover:bg-slate-200/60 text-slate-600 dark:text-slate-300 transition-colors"
+            title="Compartir"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Main Profile & User Card (Exact replica of reference image) */}
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 text-center relative space-y-4">
           
-          <div className="flex flex-col items-center justify-center space-y-3">
+          {/* Avatar with Floating Speech Pill */}
+          <div className="relative inline-block mx-auto">
+            {/* Speech Bubble Pill */}
+            <div className="absolute -top-3 -right-6 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-md rounded-full px-2.5 py-0.5 text-[11px] font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1 z-10">
+              <span>👋 ¡Hola!</span>
+            </div>
+
+            {/* Avatar Circle */}
             {showLogo && companySettings?.logoUrl ? (
               <img 
                 src={companySettings.logoUrl} 
-                alt={companySettings.name} 
-                className="w-20 h-20 object-contain rounded-2xl p-1 bg-white shadow-md border border-slate-100"
+                alt={holderName} 
+                className="w-24 h-24 rounded-full object-cover border-4 border-indigo-500/20 shadow-lg mx-auto p-1 bg-white"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <Building2 className="w-9 h-9" />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white font-black text-3xl flex items-center justify-center shadow-lg shadow-indigo-500/30 border-4 border-white dark:border-slate-800 mx-auto">
+                {holderName.charAt(0).toUpperCase()}
               </div>
             )}
-
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {companySettings?.name || 'UltraMoney Pagos'}
-              </h1>
-              {showRnc && companySettings?.rnc && (
-                <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  RNC: {companySettings.rnc}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Portal Verificado de Cuentas Oficiales</span>
-            </div>
           </div>
+
+          {/* User / Company Information */}
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-1.5">
+              <span>{holderName}</span>
+            </h1>
+            
+            <div className="flex items-center justify-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              <span>{usernameSlug}</span>
+              <CheckCircle2 className="w-4 h-4 text-cyan-500 fill-cyan-500 text-white" />
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium pt-0.5">
+              {subtitle}
+            </p>
+          </div>
+
+          {/* Link Capsule Pill with Glowing Green Status Dot */}
+          <div className="inline-flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 rounded-full px-4 py-1.5 text-[10px] font-extrabold tracking-widest text-slate-600 dark:text-slate-300 uppercase mx-auto">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>ULTRAMONEY.APP/PAGAR</span>
+          </div>
+
+          {/* Phone Number */}
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider font-mono">
+            {whatsappPhone}
+          </p>
+
+          {/* Action Buttons Row */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={() => handleCopy(window.location.href, 'Link de pago')}
+              className="py-3 px-4 bg-[#111827] hover:bg-slate-800 active:scale-95 text-white rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copiar Datos</span>
+            </button>
+
+            <button
+              onClick={() => toast.info('Descargando tarjeta de contacto...')}
+              className="py-3 px-4 bg-white dark:bg-slate-800 hover:bg-slate-50 active:scale-95 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Descargar Tarjeta</span>
+            </button>
+          </div>
+
         </div>
 
-        {/* Portal Title & Instructions */}
-        <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-950 text-white rounded-3xl p-6 shadow-xl space-y-3 relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+        {/* Cuentas Bancarias Accordion List Section */}
+        <div className="space-y-3 pt-2">
           
-          <div className="flex items-center gap-2 text-indigo-200 text-xs font-extrabold uppercase tracking-widest">
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            <span>Transferencias Directas</span>
-          </div>
-
-          <h2 className="text-lg sm:text-xl font-black tracking-tight">{title}</h2>
-          <p className="text-xs sm:text-sm text-indigo-100 leading-relaxed opacity-90">{instructions}</p>
-        </div>
-
-        {/* Bank Cards Container */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              Cuentas Bancarias Disponibles ({accountsToDisplay.length})
-            </h3>
-            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">Toca un banco para abrir detalles</span>
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              CUENTAS BANCARIAS
+            </span>
+            <ChevronUp className="w-4 h-4 text-slate-400" />
           </div>
 
           {accountsToDisplay.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center text-slate-400 border border-slate-100 dark:border-slate-800">
-              <Landmark className="w-12 h-12 mx-auto mb-2 opacity-50 text-slate-400" />
-              <p className="text-sm font-bold">No hay cuentas bancarias seleccionadas en este momento.</p>
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 text-center text-slate-400 border border-slate-100 dark:border-slate-800">
+              <Landmark className="w-10 h-10 mx-auto mb-2 opacity-40 text-slate-400" />
+              <p className="text-xs font-bold">No hay cuentas bancarias visibles actualmente.</p>
             </div>
           ) : (
             accountsToDisplay.map((acc) => {
               const isOpen = openAccountId === acc.id;
-              const logoPath = acc.bankLogoUrl || getBankLogoUrl(acc.bankName);
-              const holder = acc.holderName || acc.accountName || companySettings?.name || 'Titular de Cuenta';
-              const cedulaRnc = acc.cedulaOrRnc || companySettings?.rnc || 'N/A';
+              const logoUrl = acc.bankLogoUrl || getBankLogoUrl(acc.bankName);
+              const accHolder = acc.holderName || acc.accountName || holderName;
+              const accCedula = acc.cedulaOrRnc || companySettings?.rnc || '402-1234567-8';
 
               return (
                 <div 
                   key={acc.id}
-                  className={`bg-white dark:bg-slate-900 rounded-3xl shadow-sm border transition-all duration-300 overflow-hidden ${
+                  className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm border transition-all duration-300 overflow-hidden ${
                     isOpen 
                       ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' 
-                      : 'border-slate-200/80 dark:border-slate-800 hover:border-indigo-300'
+                      : 'border-slate-200/70 dark:border-slate-800 hover:border-slate-300'
                   }`}
                 >
-                  {/* Bank Tile Header (Click to toggle Accordion) */}
+                  {/* Card Tile Header (Click to Expand Accordion) */}
                   <button
                     onClick={() => handleToggleAccordion(acc.id)}
-                    className="w-full p-4 sm:p-5 flex items-center justify-between text-left focus:outline-none select-none group"
+                    className="w-full p-4 flex items-center justify-between text-left focus:outline-none select-none group"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
-                      {/* Bank Logo */}
-                      <div className="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1.5 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {/* Bank Logo in Soft Squircle Container */}
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm">
                         <img 
-                          src={logoPath} 
+                          src={logoUrl} 
                           alt={acc.bankName} 
-                          className="max-w-full max-h-full object-contain rounded-xl"
+                          className="max-w-full max-h-full object-contain rounded-lg"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/banks/Bancos_Banreservas.jpg';
+                            (e.target as HTMLImageElement).src = getBankLogoUrl('Banreservas');
                           }}
                         />
                       </div>
 
-                      {/* Bank Name & Number Preview */}
+                      {/* Bank Title & Type */}
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-slate-900 dark:text-white text-base truncate">
-                            {acc.bankName}
-                          </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
-                            {acc.accountType || 'Ahorros'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate font-mono">
-                          Nº {acc.accountNumber}
-                        </p>
-                        <p className="text-[11px] font-semibold text-slate-400 truncate mt-0.5">
-                          {holder}
-                        </p>
+                        <h4 className="font-black text-slate-900 dark:text-white text-sm sm:text-base truncate">
+                          {acc.bankName}
+                        </h4>
+                        <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                          {acc.accountType || 'AHORROS'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Accordion Arrow Indicator */}
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0 ${
-                      isOpen 
-                        ? 'bg-indigo-600 text-white rotate-180 shadow-md shadow-indigo-500/20' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 group-hover:bg-indigo-50 group-hover:text-indigo-600'
-                    }`}>
-                      <ChevronDown className="w-5 h-5 transition-transform duration-300" />
+                    {/* Chevron Indicator */}
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 group-hover:text-slate-700 transition-colors">
+                      {isOpen ? (
+                        <ChevronUp className="w-4 h-4 text-indigo-600" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
                     </div>
                   </button>
 
-                  {/* Accordion Expandable Details */}
+                  {/* Expanded Accordion Details (Exact replica of Screen 2) */}
                   {isOpen && (
-                    <div className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-4 sm:p-5 space-y-3 animate-fade-in">
+                    <div className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/40 p-4 space-y-3.5 animate-fade-in">
                       
-                      {/* Account Number Row */}
-                      <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Número de Cuenta ({acc.accountType})
-                          </span>
-                          <span className="text-base sm:text-lg font-black font-mono text-indigo-700 dark:text-indigo-400 tracking-tight break-all">
+                      {/* NÚMERO DE CUENTA (Input Box Card with Copy Icon inside) */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                          NÚMERO DE CUENTA
+                        </span>
+                        <div className="bg-white dark:bg-slate-900 border border-indigo-200 dark:border-slate-700 rounded-2xl p-3.5 flex items-center justify-between gap-2 shadow-sm">
+                          <span className="text-base sm:text-lg font-black font-mono text-slate-900 dark:text-white tracking-wider truncate">
                             {acc.accountNumber}
                           </span>
+                          <button
+                            onClick={() => handleCopy(acc.accountNumber, 'Número de cuenta')}
+                            className="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shrink-0"
+                            title="Copiar Número de Cuenta"
+                          >
+                            {copiedField === `Número de cuenta-${acc.accountNumber}` ? (
+                              <Check className="w-5 h-5 text-emerald-500" />
+                            ) : (
+                              <Copy className="w-5 h-5" />
+                            )}
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleCopy(acc.accountNumber, 'Número de cuenta')}
-                          className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition-all shrink-0"
-                        >
-                          {copiedField === `Número de cuenta-${acc.accountNumber}` ? (
-                            <>
-                              <Check className="w-4 h-4 text-emerald-300" />
-                              <span>¡Copiado!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4" />
-                              <span>Copiar</span>
-                            </>
-                          )}
-                        </button>
                       </div>
 
-                      {/* Holder Name Row */}
-                      <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Nombre del Titular
+                      {/* 2 Columns Grid: CÉDULA / RNC & TITULAR */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* CÉDULA / RNC Box */}
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                            CÉDULA / RNC
                           </span>
-                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate block">
-                            {holder}
-                          </span>
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 flex items-center justify-between gap-1 shadow-sm">
+                            <span className="text-xs font-bold font-mono text-slate-800 dark:text-slate-200 truncate">
+                              {accCedula}
+                            </span>
+                            <button
+                              onClick={() => handleCopy(accCedula, 'Cédula / RNC')}
+                              className="p-1 text-slate-400 hover:text-indigo-600 shrink-0"
+                            >
+                              {copiedField === `Cédula / RNC-${accCedula}` ? (
+                                <Check className="w-4 h-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => handleCopy(holder, 'Nombre del titular')}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0"
-                        >
-                          {copiedField === `Nombre del titular-${holder}` ? (
-                            <Check className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Copy className="w-4 h-4 text-slate-400" />
-                          )}
-                          <span>Copiar</span>
-                        </button>
+
+                        {/* TITULAR Box */}
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                            TITULAR
+                          </span>
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 flex items-center justify-between gap-1 shadow-sm">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                              {accHolder}
+                            </span>
+                            <button
+                              onClick={() => handleCopy(accHolder, 'Titular')}
+                              className="p-1 text-slate-400 hover:text-indigo-600 shrink-0"
+                            >
+                              {copiedField === `Titular-${accHolder}` ? (
+                                <Check className="w-4 h-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Cedula / RNC Row */}
-                      <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Cédula / RNC del Titular
-                          </span>
-                          <span className="text-sm font-bold font-mono text-slate-800 dark:text-slate-200 truncate block">
-                            {cedulaRnc}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleCopy(cedulaRnc, 'Cédula / RNC')}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0"
-                        >
-                          {copiedField === `Cédula / RNC-${cedulaRnc}` ? (
-                            <Check className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <Copy className="w-4 h-4 text-slate-400" />
-                          )}
-                          <span>Copiar</span>
-                        </button>
-                      </div>
+                      {/* Copiar Todo Button (Exact style from Screen 2) */}
+                      <button
+                        onClick={() => handleCopyAllData(acc)}
+                        className="w-full py-3.5 px-4 bg-[#111827] hover:bg-slate-800 active:scale-98 text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-md transition-all mt-2"
+                      >
+                        {copiedField === `all-${acc.id}` ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-400" />
+                            <span>¡Datos Copiados al Portapapeles!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copiar Todo</span>
+                          </>
+                        )}
+                      </button>
 
                     </div>
                   )}
@@ -278,34 +359,25 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
           )}
         </div>
 
-        {/* Note / Terms Box */}
-        {customNote && (
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 flex items-start gap-3">
-            <HelpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
-              {customNote}
-            </p>
-          </div>
-        )}
+        {/* Lavender / Blue Info Box */}
+        <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-2xl p-4 flex items-start gap-3 text-xs text-indigo-900 dark:text-indigo-200">
+          <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+          <p className="leading-relaxed font-medium">
+            {customNote}
+          </p>
+        </div>
 
-        {/* WhatsApp Receipt Submission Action */}
-        {whatsappPhone && (
-          <div className="pt-2">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 shadow-lg shadow-emerald-500/30 transition-all text-center"
-            >
-              <Smartphone className="w-5 h-5" />
-              <span>Enviar Comprobante por WhatsApp</span>
-            </a>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="text-center pt-4 text-[11px] text-slate-400">
-          <p>© {new Date().getFullYear()} {companySettings?.name || 'UltraMoney'}. Sistema Seguro de Gestión Bancaria.</p>
+        {/* Large Green WhatsApp Action Button (Exact style from reference screenshot) */}
+        <div className="pt-2">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-4 px-6 rounded-2xl bg-[#10b981] hover:bg-[#059669] active:scale-98 text-white font-black text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 transition-all text-center"
+          >
+            <Smartphone className="w-5 h-5" />
+            <span>Enviar Comprobante por WhatsApp</span>
+          </a>
         </div>
 
       </div>

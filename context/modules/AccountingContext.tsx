@@ -148,11 +148,15 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
             id: b.id,
             bankName: b.bank_name || '',
             accountName: b.account_name || '',
+            holderName: b.holder_name || b.account_name || '',
             accountNumber: b.account_number || '',
             accountType: (b.account_type || 'Ahorros') as BankAccount['accountType'],
             currency: (b.currency || 'DOP') as BankAccount['currency'],
             balance: Number(b.initial_balance) || 0,
             isActive: b.status !== 'Inactiva',
+            cedulaOrRnc: b.cedula_or_rnc || '',
+            showInPaymentLink: b.show_in_payment_link !== false,
+            bankLogoUrl: b.bank_logo_url || ''
           })));
         } else {
           setBankAccounts(DEFAULT_BANK_ACCOUNTS);
@@ -261,9 +265,18 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       return;
     }
     const { error } = await insforge.database.from('bank_accounts').insert([{
-      lender_id: currentUser.id, bank_name: account.bankName, account_name: account.accountName,
-      account_number: account.accountNumber, account_type: account.accountType,
-      currency: account.currency || 'DOP', status: account.isActive ? 'Activa' : 'Inactiva', initial_balance: account.balance
+      lender_id: currentUser.id, 
+      bank_name: account.bankName, 
+      account_name: account.accountName,
+      holder_name: account.holderName || account.accountName,
+      account_number: account.accountNumber, 
+      account_type: account.accountType,
+      currency: account.currency || 'DOP', 
+      status: account.isActive ? 'Activa' : 'Inactiva', 
+      initial_balance: account.balance,
+      cedula_or_rnc: account.cedulaOrRnc || '',
+      show_in_payment_link: account.showInPaymentLink !== false,
+      bank_logo_url: account.bankLogoUrl || ''
     }]);
     if (!error) {
        addToast("Cuenta bancaria agregada", "success");
@@ -281,8 +294,12 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       if (updates.balance !== undefined) updateData.initial_balance = updates.balance;
       if (updates.isActive !== undefined) updateData.status = updates.isActive ? 'Activa' : 'Inactiva';
       if (updates.accountName !== undefined) updateData.account_name = updates.accountName;
+      if (updates.holderName !== undefined) updateData.holder_name = updates.holderName;
       if (updates.accountNumber !== undefined) updateData.account_number = updates.accountNumber;
       if (updates.bankName !== undefined) updateData.bank_name = updates.bankName;
+      if (updates.cedulaOrRnc !== undefined) updateData.cedula_or_rnc = updates.cedulaOrRnc;
+      if (updates.showInPaymentLink !== undefined) updateData.show_in_payment_link = updates.showInPaymentLink;
+      if (updates.bankLogoUrl !== undefined) updateData.bank_logo_url = updates.bankLogoUrl;
 
       if (Object.keys(updateData).length > 0) {
         await insforge.database.from('bank_accounts').update(updateData).eq('id', id).eq('lender_id', currentUser.id);

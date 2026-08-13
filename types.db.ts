@@ -229,6 +229,9 @@ export interface BankAccountDB {
   initial_balance?: number;
   client_id?: string;
   holder_name?: string;
+  cedula_or_rnc?: string;
+  show_in_payment_link?: boolean;
+  bank_logo_url?: string;
 }
 
 export interface CollectorVisitDB {
