@@ -445,57 +445,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Portfolio At Risk (PAR) Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-          <div className="flex justify-between items-center mb-6">
-              <div>
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                      <ShieldAlert className="w-5 h-5 text-rose-500" />
-                      Métricas de Riesgo (Cartera PAR)
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Total en riesgo: <span className="font-bold text-rose-500">RD$ {parTotal.toLocaleString()} ({parTotalPercent}%)</span> del portafolio.</p>
-              </div>
-              <button 
-                  onClick={() => navigate('/atrasos')}
-                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
-              >
-                  Ver Cobranza <ArrowUpRight className="w-4 h-4" />
-              </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div 
-                  onClick={() => navigate('/atrasos')}
-                  className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/50 cursor-pointer hover:bg-rose-100/70 transition-all hover:-translate-y-0.5 group"
-              >
-                  <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-bold text-rose-800 dark:text-rose-400 group-hover:underline">PAR 30</span>
-                      <span className="text-xs font-bold text-rose-500 bg-rose-100 dark:bg-rose-900/50 px-2 py-1 rounded-lg">1-30 Días</span>
-                  </div>
-                  <div className="text-2xl font-bold text-rose-600 dark:text-rose-300">RD$ {par30.toLocaleString()}</div>
-              </div>
-              <div 
-                  onClick={() => navigate('/atrasos')}
-                  className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/50 cursor-pointer hover:bg-orange-100/70 transition-all hover:-translate-y-0.5 group"
-              >
-                  <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-bold text-orange-800 dark:text-orange-400 group-hover:underline">PAR 60</span>
-                      <span className="text-xs font-bold text-orange-500 bg-orange-100 dark:bg-orange-900/50 px-2 py-1 rounded-lg">31-60 Días</span>
-                  </div>
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">RD$ {par60.toLocaleString()}</div>
-              </div>
-              <div 
-                  onClick={() => navigate('/atrasos')}
-                  className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/50 cursor-pointer hover:bg-red-100/70 transition-all hover:-translate-y-0.5 group"
-              >
-                  <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-bold text-red-800 dark:text-red-400 group-hover:underline">PAR 90+</span>
-                      <span className="text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/50 px-2 py-1 rounded-lg">&gt; 60 Días</span>
-                  </div>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-300">RD$ {par90.toLocaleString()}</div>
-              </div>
-          </div>
-      </div>
+
 
       {/* MULTIPLE CHARTS SECTION - EXPANDED ANALYTICS */}
       <div className="space-y-6">
