@@ -132,6 +132,9 @@ export interface BankAccount {
   accountNumber: string;
   accountName?: string;
   holderName?: string;
+  cedulaOrRnc?: string;
+  showInPaymentLink?: boolean;
+  bankLogoUrl?: string;
   currency?: 'DOP' | 'USD';
   balance?: number;
   initialBalance?: number;
@@ -140,6 +143,16 @@ export interface BankAccount {
   status?: 'Activa' | 'Inactiva';
   notes?: string;
   createdAt?: string;
+}
+
+export interface PaymentLinkConfig {
+  title: string;
+  instructions: string;
+  whatsappPhone: string;
+  showCompanyLogo: boolean;
+  showCompanyRnc: boolean;
+  customNote: string;
+  selectedAccountIds: string[];
 }
 
 export interface ClientNote {

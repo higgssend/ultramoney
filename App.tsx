@@ -59,6 +59,8 @@ const MobileAppFeature = React.lazy(() => import('./pages/features/MobileAppFeat
 const PricingFeature = React.lazy(() => import('./pages/features/PricingFeature'));
 const ScalabilityFeature = React.lazy(() => import('./pages/features/ScalabilityFeature'));
 
+const PublicPaymentPortal = React.lazy(() => import('./pages/PublicPaymentPortal').then(m => ({ default: m.PublicPaymentPortal })));
+
 // Initialize Core Web Vitals reporting
 function reportWebVitals(metric: any) {
   if (process.env.NODE_ENV !== 'production') {
@@ -130,6 +132,7 @@ const AppContent: React.FC = () => {
     location.pathname.startsWith('/login/') ||
     location.pathname.startsWith('/recibo/') ||
     location.pathname.startsWith('/documento/') ||
+    location.pathname === '/pagar' ||
     location.pathname === '/ayuda' ||
     location.pathname.startsWith('/features/') || 
     location.pathname === '/';
@@ -164,6 +167,7 @@ const AppContent: React.FC = () => {
                 <Route path="/portal/:clientId" element={<ClientPortal />} />
                 <Route path="/recibo/:transactionId" element={<ReceiptView />} />
                 <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
+                <Route path="/pagar" element={<PublicPaymentPortal />} />
                 <Route path="/ayuda" element={<HelpPage />} />
 
                 {/* Feature Routes (Public) */}
