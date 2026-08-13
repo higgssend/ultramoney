@@ -105,8 +105,9 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const clientMap = new Map<string, string>();
         if (clientsRes.data) {
-          clientsRes.data.forEach((c: any) => {
-            const full = `${c.name} ${c.lastname || c.last_name || ''}`.trim();
+          type ClientRow = { id: string; name: string; lastname: string | null; last_name: string | null };
+          (clientsRes.data as ClientRow[]).forEach((c) => {
+            const full = `${c.name} ${c.lastname ?? c.last_name ?? ''}`.trim();
             if (c.id && full) clientMap.set(c.id, full);
           });
         }
@@ -119,10 +120,12 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Self-heal stale client names stored in loans table
             const dbName = l.clientname || l.client_name;
             if (cId && freshName && freshName !== dbName && freshName !== 'Sin Nombre') {
-              insforge.database.from('loans').update({
-                clientname: freshName,
-                client_name: freshName
-              }).eq('id', l.id).catch(() => {});
+              void (async () => {
+                await insforge.database.from('loans').update({
+                  clientname: freshName,
+                  client_name: freshName
+                }).eq('id', l.id);
+              })();
             }
 
             return {
