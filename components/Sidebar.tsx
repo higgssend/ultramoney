@@ -35,6 +35,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     }
   }, [darkMode]);
 
+  // Prevent background body scrolling when mobile drawer is open
+  useEffect(() => {
+    if (isOpen && window.innerWidth < 768) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isOpen]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -100,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto overscroll-contain touch-pan-y py-4 px-2.5 scrollbar-hide">
           {/* Mobile Drawer View Mode Switcher */}
           <div className="md:hidden flex items-center justify-between px-3 py-2 mb-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Módulos</span>
@@ -122,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className={drawerLayout === 'grid' ? "grid grid-cols-3 gap-2 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
+          <div className={drawerLayout === 'grid' ? "grid grid-cols-4 gap-1.5 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
             {menuItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -131,7 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className={({ isActive }) => `
                   flex transition-all duration-200 group active:scale-95
                   ${drawerLayout === 'grid' 
-                    ? 'flex-col md:flex-row items-center justify-center md:justify-start aspect-square md:aspect-auto p-2 md:p-3 text-center md:text-left rounded-xl border md:border-none shadow-sm md:shadow-none' 
+                    ? 'flex-col md:flex-row items-center justify-center md:justify-start aspect-square md:aspect-auto p-1.5 md:p-3 text-center md:text-left rounded-xl border md:border-none shadow-sm md:shadow-none' 
                     : 'flex-row items-center px-3 py-3 rounded-xl border border-transparent'}
                   ${isActive 
                     ? 'bg-indigo-600 text-white border-indigo-600 md:bg-indigo-50 md:dark:bg-indigo-900/30 md:text-indigo-700 md:dark:text-indigo-400 font-bold shadow-md shadow-indigo-200 dark:shadow-none' 
@@ -140,8 +155,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 {({ isActive }) => (
                   <>
-                    <item.icon className={`${drawerLayout === 'grid' ? 'w-5 h-5 mb-1 md:mb-0 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                    <span className="text-[11px] md:text-sm leading-tight font-bold md:font-medium tracking-tight truncate w-full px-0.5">{item.name}</span>
+                    <item.icon className={`${drawerLayout === 'grid' ? 'w-4 h-4 mb-1 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                    <span className="text-[10px] sm:text-[11px] md:text-sm leading-tight font-bold md:font-medium tracking-tight truncate w-full px-0.5">{item.name}</span>
                   </>
                 )}
               </NavLink>
