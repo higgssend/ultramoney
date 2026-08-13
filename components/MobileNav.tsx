@@ -41,19 +41,11 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
   return (
     <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50 md:hidden pointer-events-auto">
       
-      {/* SVG Glass Distortion Filter definitions */}
-      <svg className="glass-surface__filter" aria-hidden="true">
-        <filter id="glass-filter-_r_b_">
-          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </svg>
-
       {/* Apple Floating Liquid Glass Dock Capsule */}
       <nav className="relative liquidglass flex items-center justify-between px-3.5 py-2 overflow-visible transition-all duration-300">
         
         {/* Apple Top Liquid Ambient Reflection Highlight Line */}
-        <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/90 dark:via-white/40 to-transparent rounded-full pointer-events-none" />
+        <div className="absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/95 dark:via-white/40 to-transparent rounded-full pointer-events-none" />
 
         {/* First 2 Items (Left Side) */}
         {navItems.slice(0, 2).map((item) => {
@@ -68,22 +60,22 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
               className={`relative flex-1 flex flex-col items-center justify-center py-2 px-2.5 rounded-full transition-all duration-300 active:scale-90 hover:bg-slate-900/5 dark:hover:bg-white/10 select-none ${
                 isActive 
                   ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                  : 'text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white font-medium'
               }`}
             >
-              {/* Active Background Liquid Pill (Ultra-rounded & Almost Transparent Translucent Glass) */}
+              {/* Active Background Liquid Pill (Ultra-rounded & Almost Transparent Glass) */}
               {isActive && (
-                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full border border-indigo-500/20 dark:border-white/20 backdrop-blur-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.7)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)] animate-scale-up" />
+                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full border border-indigo-500/20 dark:border-white/20 backdrop-blur-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)] animate-scale-up" />
               )}
 
               {/* Liquid Ripple Wave Ring Effect on Click */}
               {isRippling && (
-                <span className="absolute inset-0 rounded-full bg-indigo-500/25 dark:bg-white/25 animate-ping opacity-75 pointer-events-none" />
+                <span className="absolute inset-0 rounded-full bg-indigo-500/20 dark:bg-white/20 animate-ping opacity-75 pointer-events-none" />
               )}
 
-              {/* Icon with liquid bounce */}
+              {/* Icon with liquid bounce and Line -> Solid Fill inversion on active */}
               <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}>
-                <Icon className="w-5 h-5" />
+                <Icon className="w-5 h-5 transition-all duration-300" fill={isActive ? 'currentColor' : 'none'} />
               </div>
 
               {/* Label */}
@@ -110,7 +102,7 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
               <span className="absolute inset-0 rounded-full bg-white/60 animate-ping opacity-90 pointer-events-none" />
             )}
 
-            <Banknote className="w-6 h-6 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-12" />
+            <Banknote className="w-6 h-6 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-12" fill={location.pathname === '/solicitud' ? 'currentColor' : 'none'} />
           </button>
         </div>
 
@@ -127,22 +119,22 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
               className={`relative flex-1 flex flex-col items-center justify-center py-2 px-2.5 rounded-full transition-all duration-300 active:scale-90 hover:bg-slate-900/5 dark:hover:bg-white/10 select-none ${
                 isActive 
                   ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                  : 'text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white font-medium'
               }`}
             >
               {/* Active Background Liquid Pill (Ultra-rounded & Almost Transparent Translucent Glass) */}
               {isActive && (
-                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full border border-indigo-500/20 dark:border-white/20 backdrop-blur-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.7)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)] animate-scale-up" />
+                <div className="absolute inset-0 bg-indigo-600/10 dark:bg-white/15 rounded-full border border-indigo-500/20 dark:border-white/20 backdrop-blur-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)] animate-scale-up" />
               )}
 
               {/* Liquid Ripple Wave Ring Effect on Click */}
               {isRippling && (
-                <span className="absolute inset-0 rounded-full bg-indigo-500/25 dark:bg-white/25 animate-ping opacity-75 pointer-events-none" />
+                <span className="absolute inset-0 rounded-full bg-indigo-500/20 dark:bg-white/20 animate-ping opacity-75 pointer-events-none" />
               )}
 
-              {/* Icon with liquid bounce */}
+              {/* Icon with liquid bounce and Line -> Solid Fill inversion on active */}
               <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}>
-                <Icon className="w-5 h-5" />
+                <Icon className="w-5 h-5 transition-all duration-300" fill={isActive ? 'currentColor' : 'none'} />
               </div>
 
               {/* Label */}
