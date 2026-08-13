@@ -32,7 +32,7 @@ server.tool("get_dashboard_stats", "Obtiene estadísticas financieras del negoci
 });
 
 // 2. Tool: list_clients
-server.tool("list_clients", "Busca clientes por nombre", { nameQuery: z.string().optional() }, async ({ nameQuery }) => {
+server.tool("list_clients", "Busca clientes por nombre", { nameQuery: z.string().optional() }, async ({ nameQuery }: { nameQuery?: string }) => {
     let query = db.database.from('clients').select('id, name, phone, cedula').order('created_at', { ascending: false }).limit(20);
     if (nameQuery) query = query.ilike('name', `%${nameQuery}%`);
     const { data: clients, error } = await query;
@@ -41,7 +41,7 @@ server.tool("list_clients", "Busca clientes por nombre", { nameQuery: z.string()
 });
 
 // 3. Tool: list_active_loans
-server.tool("list_active_loans", "Lista préstamos activos y atrasados.", { clientId: z.string().optional() }, async ({ clientId }) => {
+server.tool("list_active_loans", "Lista préstamos activos y atrasados.", { clientId: z.string().optional() }, async ({ clientId }: { clientId?: string }) => {
     let query = db.database.from('loans').select('id, clientname, amount, status, remainingbalance').in('status', ['Activo', 'Atrasado']).order('created_at', { ascending: false });
     if (clientId) query = query.eq('clientid', clientId);
     const { data: loans, error } = await query;
@@ -50,14 +50,14 @@ server.tool("list_active_loans", "Lista préstamos activos y atrasados.", { clie
 });
 
 // 4. Tool: get_client_history
-server.tool("get_client_history", "Obtiene pagos de un cliente.", { clientId: z.string() }, async ({ clientId }) => {
+server.tool("get_client_history", "Obtiene pagos de un cliente.", { clientId: z.string() }, async ({ clientId }: { clientId: string }) => {
     const { data: tx, error } = await db.database.from('transactions').select('*').eq('client_id', clientId).order('date', { ascending: false });
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }] };
     return { content: [{ type: "text", text: JSON.stringify(tx, null, 2) }] };
 });
 
 // 5. Tool: register_payment
-server.tool("register_payment", "Registra un pago.", { loanId: z.string(), amount: z.number(), method: z.string(), lenderId: z.string() }, async ({ loanId, amount, method, lenderId }) => {
+server.tool("register_payment", "Registra un pago.", { loanId: z.string(), amount: z.number(), method: z.string(), lenderId: z.string() }, async ({ loanId, amount, method, lenderId }: { loanId: string; amount: number; method: string; lenderId: string }) => {
     const payload = { referenceid: loanId, type: 'Pago', amount, date: new Date().toISOString(), paymenttype: method, currency: 'DOP', category: 'Abono a Cuota', lender_id: lenderId };
     const { error } = await db.database.from('transactions').insert([payload]);
     if (error) return { content: [{ type: "text", text: `Error: ${error.message}` }] };
@@ -67,13 +67,13 @@ server.tool("register_payment", "Registra un pago.", { loanId: z.string(), amoun
 // Para soportar múltiples conexiones simultáneas, guardamos los transportes
 const transports = new Map<string, SSEServerTransport>();
 
-app.get("/mcp", async (req, res) => {
+app.get("/mcp", async (req: any, res: any) => {
   const transport = new SSEServerTransport("/mcp/messages", res);
   await server.connect(transport);
   transports.set(transport.sessionId, transport);
 });
 
-app.post("/mcp/messages", express.json(), async (req, res) => {
+app.post("/mcp/messages", express.json(), async (req: any, res: any) => {
   const sessionId = req.query.sessionId as string;
   const transport = transports.get(sessionId);
   if (!transport) {
