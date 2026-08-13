@@ -73,6 +73,72 @@
   }
 }
 
+/* ─── 3D Card Hover & Animated Travelling Gradient Border ─── */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes spin-border-angle {
+  0% {
+    --border-angle: 0deg;
+  }
+  100% {
+    --border-angle: 360deg;
+  }
+}
+
+.card-3d-wrapper {
+  perspective: 1000px;
+}
+
+.card-3d-inner {
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease, background-color 0.3s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.card-3d-wrapper:hover .card-3d-inner {
+  transform: translateY(-8px) translateZ(16px) scale(1.02);
+  box-shadow: 0 25px 40px -12px rgba(99, 102, 241, 0.25), 0 12px 20px -8px rgba(59, 130, 246, 0.15);
+}
+
+.gradient-border-glow {
+  position: relative;
+  border-radius: 1.5rem;
+  background: transparent;
+  padding: 2px;
+  isolation: isolate;
+}
+
+.gradient-border-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 1.55rem;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 0%,
+    #8b5cf6 25%,
+    #6366f1 50%,
+    #3b82f6 75%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.card-3d-wrapper:hover .gradient-border-glow::before {
+  opacity: 1;
+  animation: spin-border-angle 2.5s linear infinite;
+}
+
 /* Custom Dropdown Utility Components */
 .custom-select-container {
   position: relative;

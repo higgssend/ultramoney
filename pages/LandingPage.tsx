@@ -38,6 +38,440 @@ const Counter: React.FC<{ end: number; suffix?: string; prefix?: string; duratio
   return <span ref={ref}>{prefix}{end}{suffix}</span>;
 };
 
+interface SystemModule {
+  id: number;
+  name: string;
+  category: string;
+  IconComponent: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  shortDesc: string;
+  fullDesc: string;
+  features: string[];
+  exampleConfig: string;
+  roiImpact: string;
+  route: string;
+}
+
+const SYSTEM_MODULES: SystemModule[] = [
+  {
+    id: 1,
+    name: '1. Dashboard Central',
+    category: 'Panel Principal',
+    IconComponent: BarChart3,
+    shortDesc: 'Monitor gerencial en tiempo real de capital colocado, cobranza diaria, mora activa e indicadores KPIs de rentabilidad.',
+    fullDesc: 'El Dashboard Central es la torre de control de tu financiera. Muestra en vivo el estado financiero global, permitiendo a los directores y gerentes visualizar el dinero colocado en calle, los cobros esperados del día vs los cobros realizados, la tasa de morosidad en tiempo real y la utilidad proyectada sin necesidad de generar reportes manuales.',
+    features: [
+      'Monitor de cobros del día en tiempo real',
+      'KPIs de capital prestado vs capital recuperado',
+      'Gráfica comparativa mensual de flujo de caja',
+      'Alerta en vivo de contratos que entran en mora hoy',
+      'Indicador de liquidez y disponible para nuevos préstamos',
+      'Filtros rápidos por sucursal o gestor de cobros'
+    ],
+    exampleConfig: 'Configura el panel para mostrar metas diarias de cobro (ej. RD$ 150,000/día). El gráfico cambia a color verde al alcanzar el 100% del objetivo de la jornada.',
+    roiImpact: 'Reduce en un 95% el tiempo dedicado a reuniones de cierre diario y consolidación de reportes.',
+    route: '/dashboard'
+  },
+  {
+    id: 2,
+    name: '2. Facturas & Comprobantes',
+    category: 'Facturación DGII',
+    IconComponent: FileText,
+    shortDesc: 'Emisión automática de facturas de ingreso, recibos impresos y comprobantes fiscales (NCF) con código QR.',
+    fullDesc: 'Diseñado para cumplir con las normativas fiscales vigentes y entregar soporte impreso o digital a cada transacción. Genera comprobantes de crédito fiscal (B01), consumidor final (B02) y régimen especial, además de facturas comerciales e impresiones en impresoras térmicas de 80mm o 58mm.',
+    features: [
+      'Generación automática de secuencias NCF (B01, B02, B14)',
+      'Diseño personalizable con logo y sello notarial',
+      'Compatibilidad con impresoras térmicas Bluetooth y USB',
+      'Envío instantáneo por correo electrónico y WhatsApp',
+      'Verificación mediante código QR de autenticidad',
+      'Reporte consolidado para declaración mensual (607/608)'
+    ],
+    exampleConfig: 'Ingresa el rango de NCF autorizado por la DGII (ej. B0200000001 a B0200001000). El sistema alertará cuando queden menos de 50 secuencias disponibles.',
+    roiImpact: 'Ahorra más de 20 horas mensuales en la preparación de reportes fiscales para contabilidad.',
+    route: '/facturas'
+  },
+  {
+    id: 3,
+    name: '3. Consulta Crediticia & Scoring',
+    category: 'Evaluación de Riesgo',
+    IconComponent: Search,
+    shortDesc: 'Análisis preventivo de riesgo crediticio con semáforo inteligente y consulta de comportamiento histórico.',
+    fullDesc: 'Este módulo evalúa el nivel de riesgo de un cliente antes de autorizar cualquier desembolso. Calcula un puntaje crediticio propio (Score 300-850) analizando la puntualidad en créditos anteriores, frecuencia de atrasos, relación deuda/ingreso y garantes vinculados.',
+    features: [
+      'Evaluación por número de cédula o RNC en 1 segundo',
+      'Semáforo de riesgo (Verde: Aprobado, Amarillo: Condicionado, Rojo: Rechazado)',
+      'Algoritmo de scoring interno basado en historial real',
+      'Historial cruzado entre sucursales para evitar doble financiamiento',
+      'Límite de crédito máximo recomendado automáticamente',
+      'Generación de reporte PDF con justificación del score'
+    ],
+    exampleConfig: 'Establece que cualquier cliente con Score inferior a 550 requiera obligatoriamente un garante con propiedad inmobiliaria registrada.',
+    roiImpact: 'Reduce las pérdidas por cartera incobrable en más de un 40% desde el primer mes.',
+    route: '/consultar'
+  },
+  {
+    id: 4,
+    name: '4. Solicitud & Originación',
+    category: 'Originación',
+    IconComponent: FilePlus,
+    shortDesc: 'Flujo digital completo desde la captura del solicitante hasta la aprobación y firma del pagaré notarial.',
+    fullDesc: 'Gestiona el proceso comercial previo al otorgamiento del crédito. Permite registrar solicitudes presenciales o en línea, capturar la inicial del cliente en préstamos de bienes, adjuntar documentación de respaldo y someter el expediente a aprobación jerárquica.',
+    features: [
+      'Formulario modular para préstamos personales, vehículos o electrodomésticos',
+      'Cálculo de inicial requerida e insumos garantizados',
+      'Checklist configurable de documentos obligatorios',
+      'Workflow de aprobación multinivel (Oficial -> Gerente)',
+      'Borrador digital de contrato pagaré antes del desembolso',
+      'Notificación SMS/WhatsApp automática al cliente al ser aprobado'
+    ],
+    exampleConfig: 'Para financiamiento de motocicletas, exige ingresar un 20% de inicial y adjuntar la copia del título de propiedad o matrícula.',
+    roiImpact: 'Agiliza la aprobación de crédito de 48 horas a solo 15 minutos.',
+    route: '/solicitud'
+  },
+  {
+    id: 5,
+    name: '5. Simulador Financiero Avanzado',
+    category: 'Cálculo Comercial',
+    IconComponent: Calculator,
+    shortDesc: 'Calculadora financiera interactiva para cuotas fijas, amortización a capital y pagarés a rédito abierto.',
+    fullDesc: 'La herramienta definitiva para vendedores y oficiales de crédito. Permite proyectar la tabla de amortización completa frente al cliente, mostrando cuotas semanales, quincenales, decenales o mensuales, así como la distribución entre capital, interés y seguro.',
+    features: [
+      'Soporte para métodos Francés (cuota fija), Alemán y Pagaré Abierto',
+      'Cálculo dinámico con cuotas semanales, quincenales, bisemanales y mensuales',
+      'Simulación de pagos extraordinarios o abonos directos',
+      'Desglose detallado de gastos de cierre y seguro de vida',
+      'Impresión y exportación de oferta comercial formal en PDF',
+      'Comparativa instantánea entre 2 o más opciones de plazo'
+    ],
+    exampleConfig: 'Genera una tabla comparativa a 6, 12 y 18 meses para un monto de RD$ 100,000 a una tasa mensual del 5% para que el cliente elija la opción conveniente.',
+    roiImpact: 'Aumenta la tasa de conversión de prospectos a préstamos cerrados en un 35%.',
+    route: '/simulador'
+  },
+  {
+    id: 6,
+    name: '6. Gestión de Clientes 360°',
+    category: 'Expedientes Digitales',
+    IconComponent: Users,
+    shortDesc: 'Perfil integral del cliente con foto, documentos, garantes principales, garantes solidarios y geolocalización.',
+    fullDesc: 'Centraliza toda la información personal, laboral y familiar de cada deudor. Permite tomar fotos de perfil con la cámaraweb o celular, recortar la imagen de cédula, guardar teléfonos de trabajo, ubicar la residencia en Google Maps y vincular garantes.',
+    features: [
+      'Ficha digital 360° con foto recortable y datos personales',
+      'Vinculación de Garantes Principales y Solidarios con expedientes propios',
+      'Carga de documentos escaneados (Cédula, Carta de trabajo, Títulos)',
+      'Geolocalización GPS exacta de la vivienda y lugar de trabajo',
+      'Historial completo de préstamos, abonos, recibos y notas de seguimiento',
+      'Acceso directo a WhatsApp y llamada telefónica desde la ficha'
+    ],
+    exampleConfig: 'Sube la cédula frontal/trasera del cliente y el recortador inteligente optimizará el tamaño de la imagen para la impresión del contrato.',
+    roiImpact: 'Elimina el uso de carpetas de papel y reduce los tiempos de búsqueda de expedientes a 0.',
+    route: '/clientes'
+  },
+  {
+    id: 7,
+    name: '7. Portales de Cliente Auto-Servicio',
+    category: 'Auto-Servicio Web',
+    IconComponent: Smartphone,
+    shortDesc: 'Portal web móvil para que tus clientes consulten su saldo, próximas fechas de pago y recibos descargables.',
+    fullDesc: 'Un portal de autoservicio 24/7 diseñado para teléfonos móviles. Los clientes ingresan de forma segura con su cédula para ver cuántas cuotas les faltan por pagar, el monto exacto de la próxima cuota, las cuentas bancarias de la empresa y descargar sus recibos.',
+    features: [
+      'Acceso seguro sin contraseña mediante Cédula + Enlace OTP',
+      'Consulta en vivo del estado del préstamo y balance pendiente',
+      'Descarga de recibos históricos en formato imagen y PDF',
+      'Instrucciones y cuentas bancarias para pago por transferencia',
+      'Botón de notificación de pago realizado adjuntando comprobante',
+      'Diseño ultra-rápido responsivo tipo App Nativa'
+    ],
+    exampleConfig: 'Envía el enlace `https://ultramoney.site/portal/cliente` por WhatsApp para que el cliente consulte sus fechas sin llamar a la oficina.',
+    roiImpact: 'Disminuye las llamadas telefónicas de consulta de balance en un 80%.',
+    route: '/portales-cliente'
+  },
+  {
+    id: 8,
+    name: '8. Administración de Préstamos Activos',
+    category: 'Cartera Operativa',
+    IconComponent: Banknote,
+    shortDesc: 'Control de contratos vigentes, emisión de pagarés legales, refinanciamientos, reestructuraciones y desgloses.',
+    fullDesc: 'Es el núcleo del sistema Ultramoney. Gestiona cada préstamo desde su creación hasta la cancelación. Permite generar el contrato notarial firmado por el abogado, aplicar reestructuraciones de cuota, realizar saldo anticipado con descuento e imprimir estados de cuenta.',
+    features: [
+      'Matriz de préstamos activos con búsqueda rápida por cliente o código',
+      'Generación e impresión del Pagaré Notarial Legal oficial',
+      'Refinanciamiento automático absorbiendo deudas activas en 1 clic',
+      'Cálculo de liquidación anticipada con exención de intereses futuros',
+      'Ajuste de fechas de vencimiento y cambio de modalidad de pago',
+      'Historial cronológico de movimientos financieros del contrato'
+    ],
+    exampleConfig: 'Selecciona un préstamo activo y presiona "Refinanciar" para crear un nuevo crédito de mayor monto cancelando el saldo anterior automáticamente.',
+    roiImpact: 'Automatiza toda la gestión contractual eliminando errores de cálculo manual.',
+    route: '/prestamos'
+  },
+  {
+    id: 9,
+    name: '9. Inventario / Stock de Garantías',
+    category: 'Stock de Prendas',
+    IconComponent: Package,
+    shortDesc: 'Registro de equipos, vehículos (Chasis/Placa), celulares (IMEI) y electrodomésticos dados en prenda.',
+    fullDesc: 'Administra los artículos físicos comercializados a crédito o retenidos como garantía prendaria. Registra datos clave como número de IMEI en teléfonos móviles, número de chasis/VIN en vehículos, marca, modelo, estado físico y valor de tasación comercial.',
+    features: [
+      'Control de inventario de mercancías para financiamiento con o sin inicial',
+      'Campos especializados para IMEI de celulares y Chasis de vehículos',
+      'Estado de prenda (En custodia, Entregado a crédito, Incautado)',
+      'Asociación directa de artículos al contrato de préstamo correspondiente',
+      'Historial de avalúos y depreciación del bien prendado',
+      'Reporte de artículos disponibles para reventa por incautación'
+    ],
+    exampleConfig: 'Registra un iPhone 15 Pro con su número de IMEI `356789101112131`. Al vincularlo al préstamo, el IMEI figurará impreso en el contrato notarial.',
+    roiImpact: 'Garantiza un control del 100% sobre las garantías físicas que respaldan tu capital.',
+    route: '/inventario'
+  },
+  {
+    id: 10,
+    name: '10. Gestión de Pagos & Recibos QR',
+    category: 'Caja & Cobranza',
+    IconComponent: Calendar,
+    shortDesc: 'Módulo ágil para procesar cobros, abonos a capital, impresión de tickets térmicos y envío de recibos QR por WhatsApp.',
+    fullDesc: 'Diseñado para realizar cobros en menos de 10 segundos en ventanilla o terreno. Aplica pagos de cuotas completas, cuotas parciales, abonos directos a capital principal, cobro exclusivo de intereses o recargos por mora con emisión de comprobante.',
+    features: [
+      'Procesamiento express de cobros en 2 clics',
+      'Abonos inteligentes (distribución automática mora -> interés -> capital)',
+      'Opción de abonar 100% al capital principal deduciendo interés',
+      'Impresión instantánea en impresoras térmicas de tickets (80mm/58mm)',
+      'Generación de recibo digital HD con QR único de autenticación',
+      'Compartir recibo por WhatsApp Web o API en 1 segundo'
+    ],
+    exampleConfig: 'Configura tu impresora térmica de 80mm por USB/Bluetooth para que al registrar el cobro se imprima el recibo automáticamente.',
+    roiImpact: 'Agiliza la atención en caja reduciendo las filas de cobro a segundos por cliente.',
+    route: '/pagos'
+  },
+  {
+    id: 11,
+    name: '11. Atrasos & Gestión de Morosidad',
+    category: 'Cobranza & Mora',
+    IconComponent: AlertCircle,
+    shortDesc: 'Monitoreo automático de morosos, cálculo de mora pactada y agenda de compromisos de cobro.',
+    fullDesc: 'Módulo especializado en la recuperación de cartera vencida. Categoriza automáticamente los préstamos en mora por rangos de días (1-15 días, 16-30 días, 31-60 días, +90 días), calcula la mora exacta pactada en contrato y permite registrar promesas de pago.',
+    features: [
+      'Panel con semáforo de clientes morosos actualizado al instante',
+      'Cálculo automático de mora por porcentaje diario o monto fijo',
+      'Registro de bitácora de llamadas y promesas de pago con fecha de cobro',
+      'Asignación de casos a gestores de cobro o abogados externos',
+      'Condonación autorizada de moras con registro de motivo',
+      'Filtro para exportar listas de cobro telefónico o visitas presenciales'
+    ],
+    exampleConfig: 'Define una mora del 1% diario tras 3 días de gracia. El sistema aplicará el recargo únicamente sobre las cuotas vencidas.',
+    roiImpact: 'Recupera hasta un 30% más de capital vencido gracias al seguimiento sistematizado.',
+    route: '/atrasos'
+  },
+  {
+    id: 12,
+    name: '12. Caja Chica & Cuadre Diario',
+    category: 'Control de Efectivo',
+    IconComponent: Wallet,
+    shortDesc: 'Apertura, cierre y arqueo diario de caja, control de flujos de efectivo y auditoría de billetes.',
+    fullDesc: 'Garantiza la transparencia total del dinero físico en posesión de cajeros y sucursales. Permite realizar la apertura con el fondo de caja inicial, registrar salidas por gastos menores o desembolsos, y ejecutar el cuadre de cierre desglosando billetes y monedas.',
+    features: [
+      'Apertura de caja diaria con monto inicial registrado',
+      'Registro inmediato de desembolsos de préstamos y cobros',
+      'Plantilla de arqueo físico por denominación de billetes (RD$ 2000, 1000, 500...)',
+      'Detección automática de sobrantes o faltantes en el cierre',
+      'Cierre ciego (el cajero digita lo que tiene sin ver el sistema)',
+      'Impresión y firma digital del reporte de cuadre diario'
+    ],
+    exampleConfig: 'Activa la función de "Cierre Ciego" para que el cajero deba contar y registrar el dinero físico sin conocer previamente la suma teórica del sistema.',
+    roiImpact: 'Elimina descuadres de caja y fugas de efectivo en el punto de cobro.',
+    route: '/caja'
+  },
+  {
+    id: 13,
+    name: '13. Cuentas Bancarias & Pasarelas POS',
+    category: 'Tesorería & POS',
+    IconComponent: Landmark,
+    shortDesc: 'Conciliación de cuentas bancarias (DOP/USD), depósitos por transferencia y terminales de pago Verifone.',
+    fullDesc: 'Administra el flujo de dinero en cuentas de cheques, cuentas de ahorros y procesadores de tarjetas de crédito/débito. Permite registrar cobros recibidos por transferencia bancaria adjuntando el número de confirmación o cobros por Verifone/POS.',
+    features: [
+      'Soporte para múltiples cuentas bancarias en Pesos (DOP) y Dólares (USD)',
+      'Registro de transferencias con número de referencia del banco',
+      'Conciliación bancaria entre el extracto del banco y el sistema',
+      'Registro de comisiones cobradas por procesadores Verifone/POS',
+      'Control de transferencias entre cuentas propias y caja chica',
+      'Reporte consolidado de liquidez disponible en bancos'
+    ],
+    exampleConfig: 'Vincular la cuenta del Banco BHD y Banco Popular para que al registrar un pago el cajero elija la cuenta de destino exacta.',
+    roiImpact: 'Garantiza una conciliación bancaria 100% exacta sin diferencias en libros.',
+    route: '/bancos'
+  },
+  {
+    id: 14,
+    name: '14. Cartera & Rutas de Cobro',
+    category: 'Logística de Campo',
+    IconComponent: Briefcase,
+    shortDesc: 'Asignación de rutas geográficas para cobradores en terreno, zonas de cobro y mapa de riesgo.',
+    fullDesc: 'Organiza la logística de cobro en calle para empresas con cobradores motorizados. Permite agrupar a los clientes por sectores o barrios, trazar la ruta de cobro diaria más eficiente y monitorear los cobros realizados en tiempo real.',
+    features: [
+      'Creación y administración de rutas de cobro personalizadas',
+      'Asignación de cartera de clientes por cobrador o zona geográfica',
+      'Ordenamiento inteligente de paradas para optimizar el recorrido',
+      'Monitoreo en vivo de cuotas cobradas vs pendientes en la ruta',
+      'Reasignación rápida de clientes entre cobradores',
+      'Reporte de efectividad y comisiones ganadas por gestor de campo'
+    ],
+    exampleConfig: 'Crea la ruta "Zona Norte - San Francisco" y asigna 45 clientes para que el cobrador recorra la zona en orden geográfico óptimo.',
+    roiImpact: 'Reduce los costos de combustible y tiempo de recorrido en terreno en un 35%.',
+    route: '/cartera'
+  },
+  {
+    id: 15,
+    name: '15. Control de Gastos & Egresos',
+    category: 'Egresos Operativos',
+    IconComponent: TrendingDown,
+    shortDesc: 'Registro categorizado de gastos operativos, pago de nómina, servicios y comisiones de cobradores.',
+    fullDesc: 'Mantiene un registro riguroso de todos los fondos que salen de la empresa. Categoriza los egresos en gastos administrativos, alquiler, energía eléctrica, combustible, papelería, comisiones por cobranza y nómina de empleados.',
+    features: [
+      'Categorización personalizada de tipos de gasto',
+      'Registro de comprobantes de compras NCF (B01 / B11)',
+      'Cálculo y pago de comisiones automáticas a cobradores',
+      'Adjunto de fotos o archivos PDF de facturas de proveedores',
+      'Alertas de gastos que superan el presupuesto asignado',
+      'Integración directa con el estado de pérdidas y ganancias (P&L)'
+    ],
+    exampleConfig: 'Crea la categoría "Mantenimiento de Vehículos" para registrar los gastos de combustible y repuestos de los cobradores de calle.',
+    roiImpact: 'Permite identificar y recortar gastos innecesarios aumentando el margen de ganancia.',
+    route: '/gastos'
+  },
+  {
+    id: 16,
+    name: '16. Ganancias, Utilidades & P&L',
+    category: 'Reportes Financieros',
+    IconComponent: TrendingUp,
+    shortDesc: 'Estado de Pérdidas y Ganancias (P&L), proyección de intereses cobrados vs devengados y margen neto.',
+    fullDesc: 'El reporte financiero maestro de la empresa. Muestra el ingreso real generado por cobro de intereses, mora y cargos administrativos, resta los gastos operativos y pérdidas por incobrabilidad para entregar la Utilidad Neta Exacta del período.',
+    features: [
+      'Estado de Resultados P&L en tiempo real',
+      'Desglose de ingresos por intereses, recargos por mora y comisiones',
+      'Comparativa entre intereses devengados (teóricos) e intereses cobrados (reales)',
+      'Margen de rentabilidad sobre el capital colocado (ROI %)',
+      'Filtro de ganancias por rango de fechas, sucursal o cartera',
+      'Exportación formal a libros de Excel y documentos PDF'
+    ],
+    exampleConfig: 'Genera el reporte P&L trimestral para evaluar la utilidad neta obtenida sobre una inversión inicial de 5 millones de pesos.',
+    roiImpact: 'Visibilidad financiera absoluta para la toma de decisiones e inversionistas.',
+    route: '/ganancias'
+  },
+  {
+    id: 17,
+    name: '17. Empleados, Permisos & Seguridad RLS',
+    category: 'Administración & Roles',
+    IconComponent: UserPlus,
+    shortDesc: 'Control de personal, cajeros, administradores y asignación de permisos de seguridad granulares.',
+    fullDesc: 'Garantiza la máxima seguridad operativa administrando quién puede ver, editar o eliminar información en el sistema. Define perfiles con permisos restringidos para cobradores o cajeros y aplicalos a través de Row Level Security (RLS) en la base de datos.',
+    features: [
+      'Creación de usuarios ilimitados con credenciales individuales',
+      'Roles predeterminados: Administrador, Gerente, Cajero, Cobrador',
+      'Permisos granulares por módulo (ej. Cobrar sí, pero ver ganancias no)',
+      'Restricción de acceso por dirección IP o horario de trabajo',
+      'Bloqueo instantáneo de usuarios por desvinculación laboral',
+      'Registro de productividad por cada empleado en el sistema'
+    ],
+    exampleConfig: 'Asigna al usuario "Cajero 1" permiso exclusivo para ingresar al módulo de Pagos y Caja Chica, bloqueando el acceso a reportes de ganancias.',
+    roiImpact: 'Protege la información confidencial y evita la manipulación no autorizada de datos.',
+    route: '/empleados'
+  },
+  {
+    id: 18,
+    name: '18. Clasificación prudencial A/B/C/D',
+    category: 'Scoring de Cartera',
+    IconComponent: Tag,
+    shortDesc: 'Segmentación automática de clientes según su nivel de cumplimiento y riesgo de mora prudencial.',
+    fullDesc: 'Clasifica la cartera total de clientes bajo criterios prudenciales financieros. Categoriza a cada deudor en Clase A (Excelente cumplimiento), Clase B (Riesgo bajo), Clase C (Riesgo medio), Clase D (Alto riesgo) y Clase E (Irrecuperable/Judicial).',
+    features: [
+      'Clasificación automática actualizada cada noche según días de mora',
+      'Matriz visual de distribución de cartera A, B, C, D, E',
+      'Cálculo de provisión de reserva requerida por categoría de riesgo',
+      'Políticas comerciales diferenciadas según la categoría del cliente',
+      'Alertas tempranas de clientes en transición de Categoría A a B',
+      'Reporte de comportamiento consolidado para análisis prudencial'
+    ],
+    exampleConfig: 'Configura la regla para que cualquier cliente que alcance 30 días de mora pase automáticamente a Categoría C exigiendo gestión telefónica intensiva.',
+    roiImpact: 'Mantiene reservas de capital saludables ante posibles impagos.',
+    route: '/clasificacion'
+  },
+  {
+    id: 19,
+    name: '19. Contabilidad Profunda de Doble Entrada',
+    category: 'Motor Contable',
+    IconComponent: BookOpen,
+    shortDesc: 'Asientos contables automáticos, catálogo de cuentas, libro diario, mayor general y balance de comprobación.',
+    fullDesc: 'Un motor contable completo integrado nativamente al sistema financiero. Cada vez que se realiza un desembolso, se cobra una cuota o se registra un gasto, el sistema genera automáticamente el asiento contable de partida doble sin necesidad de digitar manuales.',
+    features: [
+      'Generación 100% automática de asientos contables por cada transacción',
+      'Catálogo de cuentas financieras estándar totalmente personalizable',
+      'Libro Diario General y Libro Mayor actualizados en tiempo real',
+      'Balance de Comprobación de sumas y saldos',
+      'Estado de Situación Financiera (Balance General)',
+      'Exportación de asientos a archivos para auditores externos'
+    ],
+    exampleConfig: 'Asocia la cuenta contable `1101-01 Caja General` y `1103-01 Préstamos por Cobrar` para que el desembolso genere el débito y crédito automático.',
+    roiImpact: 'Ahorra el sueldo entero de digitación contable manual y elimina descuadres.',
+    route: '/contabilidad'
+  },
+  {
+    id: 20,
+    name: '20. Bitácora Inalterable de Auditoría',
+    category: 'Seguridad & Audit Log',
+    IconComponent: ShieldCheck,
+    shortDesc: 'Registro inalterable de auditoría que guarda cada creación, modificación o eliminación realizada en la plataforma.',
+    fullDesc: 'Registro de seguridad forense que graba de forma imborrable todas las acciones ejecutadas en el sistema. Registra la fecha, hora exacta, usuario responsable, dirección IP y los valores anteriores vs valores nuevos de cada registro editado o borrado.',
+    features: [
+      'Auditoría imborrable de todas las transacciones del sistema',
+      'Rastreo detallado de ediciones en montos, tasas o nombres de clientes',
+      'Registro de eliminación de recibos o condonación de moras',
+      'Filtros avanzados por usuario, tipo de acción, módulo o rango de fechas',
+      'Identificación de la dirección IP y dispositivo utilizado',
+      'Exportación de reportes de auditoría para revisiones de seguridad'
+    ],
+    exampleConfig: 'Filtra la bitácora por la acción "Eliminar Recibo" para revisar qué usuario solicitó anular un cobro y la justificación dada.',
+    roiImpact: 'Disuade el fraude interno y proporciona trazabilidad forense del 100%.',
+    route: '/bitacora'
+  },
+  {
+    id: 21,
+    name: '21. Centro de Migración Masiva AI',
+    category: 'Importación de Datos',
+    IconComponent: Database,
+    shortDesc: 'Carga masiva de clientes, préstamos y balances históricos desde archivos Excel/CSV con inteligencia artificial.',
+    fullDesc: 'Facilita la transición a Ultramoney desde hojas de cálculo de Excel u otros sistemas antiguos. Mapea automáticamente las columnas del archivo importado, detecta duplicados por cédula y permite revertir (rollback) toda la importación si encuentras un error.',
+    features: [
+      'Importación de miles de clientes y préstamos en segundos mediante Excel/CSV',
+      'Mapeo inteligente de columnas con auto-detectores de campos',
+      'Validación previa de formato de cédula, teléfono y montos',
+      'Detección automática e ignorado de registros duplicados',
+      'Función de Reversión (Rollback) en 1 clic si el archivo contenía errores',
+      'Generación de informe de éxito y errores encontrados durante la carga'
+    ],
+    exampleConfig: 'Descarga la plantilla Excel oficial, llena las columnas de Cédula, Nombre, Monto y Tasa, y sube el archivo para crear 500 préstamos de golpe.',
+    roiImpact: 'Reduce el tiempo de migración de semanas a menos de 10 minutos.',
+    route: '/migracion'
+  },
+  {
+    id: 22,
+    name: '22. Configuración General & Sello Notarial',
+    category: 'Parámetros del Sistema',
+    IconComponent: Sliders,
+    shortDesc: 'Personalización de datos de la empresa, plantilla de contrato notarial, tasas por defecto y WhatsApp API.',
+    fullDesc: 'El panel maestro de configuración comercial e institucional. Permite subir el logotipo oficial de tu empresa, configurar los datos del Abogado-Notario para los pagarés, definir las tasas de interés por defecto y vincular la API de envío automático de mensajes de WhatsApp.',
+    features: [
+      'Configuración de Nombre Comercial, RNC, Dirección y Teléfonos',
+      'Personalización de la plantilla del Contrato Notarial Legal (Pagaré)',
+      'Registro de datos del Abogado Notario y número de colegiatura',
+      'Establecimiento de tasas de interés y días de gracia por defecto',
+      'Configuración de credenciales para pasarela de WhatsApp API',
+      'Selección de moneda base (DOP, USD, EUR) y formato de impresión'
+    ],
+    exampleConfig: 'Configura el texto del contrato en el editor WYSIWYG incluyendo variables como `{NOMBRE_CLIENTE}`, `{MONTO_TEXTO}` y `{CEDULA}`.',
+    roiImpact: 'Personaliza el 100% de la plataforma alineada a la identidad de tu negocio.',
+    route: '/configuracion'
+  }
+];
+
 /* ─── LANDING PAGE ─── */
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,6 +479,7 @@ const LandingPage: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [selectedModule, setSelectedModule] = useState<SystemModule | null>(null);
 
   // 1. Interactive Loan Calculator State
   const [calcAmount, setCalcAmount] = useState<number>(50000);
@@ -138,9 +573,8 @@ const LandingPage: React.FC = () => {
           {/* Nav Links */}
           <nav className="hidden lg:flex items-center gap-7">
             <a href="#inicio" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Inicio</a>
-            <a href="#novedades" className="text-sm font-semibold text-indigo-600 font-bold flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Novedades 2.0</a>
+            <a href="#caracteristicas" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Características</a>
             <a href="#simulador" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Simulador</a>
-            <a href="#caracteristicas" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Características</a>
             <a href="#comparativa" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Excel vs Ultramoney</a>
             <a href="#app-movil" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">App Móvil</a>
             <a href="#faq" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Preguntas</a>
@@ -410,317 +844,36 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Grid of 22 Sidebar Modules (Light Theme with Extra Large Finer Gradient Icons) */}
+          {/* Grid of 22 Sidebar Modules (3D Perspective Hover + Travelling Animated Gradient Border) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            
-            {/* 1. Dashboard */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <BarChart3 className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Panel Principal
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">1. Dashboard Central</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Panel de control en tiempo real con indicadores KPIs de capital colocado, cobros del día, morosidad acumulada y ganancias netas.
-                </p>
-              </div>
-            </div>
-
-            {/* 2. Facturas */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <FileText className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Facturación
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">2. Facturas & Comprobantes</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Emisión, descarga e impresión en PDF/Ticket de facturas comerciales, comprobantes de ingreso y comprobantes fiscales (NCF).
-                </p>
-              </div>
-            </div>
-
-            {/* 3. Consultar */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Search className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Evaluación
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">3. Consulta Crediticia</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Evaluación instantánea de historial crediticio, score de morosidad y validación de antecedentes de clientes en 1 clic.
-                </p>
-              </div>
-            </div>
-
-            {/* 4. Solicitud */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <FilePlus className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Originación
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">4. Solicitud & Créditos</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Originación de préstamos, financiamiento de vehículos o electrodomésticos (con/sin inicial) y aprobación estructurada.
-                </p>
-              </div>
-            </div>
-
-            {/* 5. Simulador */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Calculator className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Cálculo
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">5. Simulador Financiero</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Calculadora interactiva para proyectar amortizaciones, cuotas semanales/quincenales/mensuales y tasas de interés.
-                </p>
-              </div>
-            </div>
-
-            {/* 6. Clientes */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Users className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Expedientes
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">6. Gestión de Clientes 360°</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Expediente digital completo, foto de perfil con recortador, cédula, garantes principales, garantes solidarios y ubicación.
-                </p>
-              </div>
-            </div>
-
-            {/* 7. Portales de Cliente */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Smartphone className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Auto-Servicio
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">7. Portales de Cliente</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Acceso web privado para que los clientes consulten sus préstamos activos, fechas de pago y recibos por WhatsApp.
-                </p>
-              </div>
-            </div>
-
-            {/* 8. Préstamos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Banknote className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Cartera Activa
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">8. Administración de Préstamos</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Control centralizado de cartera activa, contrato legal oficial, desglose financiero, refinanciamiento y liquidación.
-                </p>
-              </div>
-            </div>
-
-            {/* 9. Inventario */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Package className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Stock
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">9. Inventario / Stock</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Control de inventario de equipos, vehículos, celulares y artículos dados en crédito con prendas en garantía.
-                </p>
-              </div>
-            </div>
-
-            {/* 10. Pagos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Calendar className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Cobros
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">10. Gestión de Pagos</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Registro rápido de cobros, abonos a capital, impresión térmica de tickets y recibos digitales QR por WhatsApp.
-                </p>
-              </div>
-            </div>
-
-            {/* 11. Atrasos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <AlertCircle className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Morosidad
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">11. Atrasos & Cobranzas</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Monitoreo de morosos, cálculo automático de recargos por mora pactada y alertas de seguimiento inmediato.
-                </p>
-              </div>
-            </div>
-
-            {/* 12. Caja */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Wallet className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Efectivo
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">12. Caja Chica</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Apertura, cierre y arqueo diario de caja chica, control de flujos de efectivo en tiempo real y cuadre de ingresos/egresos.
-                </p>
-              </div>
-            </div>
-
-            {/* 13. Bancos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Landmark className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Bancos & POS
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">13. Cuentas & Bancos</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Conciliación de cuentas bancarias (USD/DOP), tarjetas de crédito y terminales Verifone/POS para cobros digitales.
-                </p>
-              </div>
-            </div>
-
-            {/* 14. Cartera */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Briefcase className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Riesgo
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">14. Cartera & Rutas</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Análisis de salud de cartera, distribución por cobrador, rutas de cobro en terreno y mapa de riesgo crediticio.
-                </p>
-              </div>
-            </div>
-
-            {/* 15. Gastos */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <TrendingDown className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Egresos
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">15. Control de Gastos</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Registro categorizado de gastos operativos, comisiones de cobradores, nómina y costos fijos de la financiera.
-                </p>
-              </div>
-            </div>
-
-            {/* 16. Ganancia */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <TrendingUp className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  P&L
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">16. Ganancias & Utilidades</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Estado de pérdidas y ganancias, proyección de intereses devengados vs cobrados y análisis de rentabilidad.
-                </p>
-              </div>
-            </div>
-
-            {/* 17. Empleados */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <UserPlus className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Nómina
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">17. Empleados & Permisos</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Control de personal, cobradores, administradores, asignación de permisos RLS y auditoría de rendimiento.
-                </p>
-              </div>
-            </div>
-
-            {/* 18. Clasificación */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Tag className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Scoring
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">18. Clasificación A/B/C/D</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Segmentación automática de clientes por nivel de riesgo (Categorías A, B, C, D) y comportamiento de pago.
-                </p>
-              </div>
-            </div>
-
-            {/* 19. Cont. Profunda */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <BookOpen className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Contabilidad
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">19. Contabilidad Profunda</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Asientos contables automáticos, catálogo de cuentas, libro diario y balance general sin intervención manual.
-                </p>
-              </div>
-            </div>
-
-            {/* 20. Bitácora */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <ShieldCheck className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Auditoría
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">20. Bitácora de Auditoría</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Registro inalterable de auditoría que registra cada creación, edición o eliminación realizada en la plataforma.
-                </p>
-              </div>
-            </div>
-
-            {/* 21. Migración */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Database className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Importación
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">21. Centro de Migración</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Importación masiva de datos desde Excel/CSV mediante inteligencia artificial y herramientas de reversión (rollback).
-                </p>
-              </div>
-            </div>
-
-            {/* 22. Configuración */}
-            <div className="bg-slate-50/80 hover:bg-white rounded-3xl p-6 border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between">
-              <div>
-                <Sliders className="w-14 h-14 mb-4 group-hover:scale-110 transition-transform" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.25} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-100/80">
-                  Ajustes
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-2 mb-1.5">22. Configuración General</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Configuración de nombre comercial, sello notarial, tasas predeterminadas, WhatsApp API y seguridad.
-                </p>
-              </div>
-            </div>
-
+            {SYSTEM_MODULES.map((module) => {
+              const IconComp = module.IconComponent;
+              return (
+                <div 
+                  key={module.id} 
+                  className="card-3d-wrapper cursor-pointer"
+                  onClick={() => setSelectedModule(module)}
+                >
+                  <div className="gradient-border-glow h-full">
+                    <div className="card-3d-inner bg-slate-50/90 hover:bg-white rounded-[1.4rem] p-6 h-full border border-slate-200/70 text-center flex flex-col items-center justify-between group">
+                      <div className="flex flex-col items-center text-center w-full">
+                        <IconComp className="w-12 h-12 text-indigo-600 mb-4 group-hover:scale-110 transition-transform duration-300 mx-auto shrink-0 aspect-square" strokeWidth={1.5} />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/90 px-3 py-1 rounded-full border border-indigo-100 mx-auto">
+                          {module.category}
+                        </span>
+                        <h3 className="text-lg font-extrabold text-slate-900 mt-3 mb-2 text-center group-hover:text-indigo-600 transition-colors">{module.name}</h3>
+                        <p className="text-xs text-slate-600 leading-relaxed text-center">
+                          {module.shortDesc}
+                        </p>
+                      </div>
+                      <div className="mt-5 pt-3 border-t border-slate-100/80 w-full flex items-center justify-center text-xs font-extrabold text-indigo-600 group-hover:text-indigo-700 transition-all">
+                        Ver detalles <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1283,6 +1436,89 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* ─── MODULE DETAIL MODAL ─── */}
+      {selectedModule && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in" onClick={() => setSelectedModule(null)}>
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative overflow-hidden text-left max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
+              <div className="flex items-center gap-4">
+                <selectedModule.IconComponent className="w-11 h-11 text-indigo-600 shrink-0 aspect-square" strokeWidth={1.5} />
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                    {selectedModule.category}
+                  </span>
+                  <h3 className="text-2xl font-black text-slate-900 mt-1">{selectedModule.name}</h3>
+                </div>
+              </div>
+              <button onClick={() => setSelectedModule(null)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-6">
+              <p className="text-sm text-slate-600 leading-relaxed font-normal">
+                {selectedModule.fullDesc}
+              </p>
+
+              {/* Key Features */}
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3">Funcionalidades Principales del Módulo</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {selectedModule.features.map((feat, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-800 bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+                      <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <span className="leading-snug">{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Example Config Banner */}
+              <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100/90 flex items-start gap-3">
+                <Sliders className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider text-indigo-900 block mb-1">Ejemplo Práctico de Configuración & Uso</span>
+                  <p className="text-xs text-slate-700 leading-relaxed">{selectedModule.exampleConfig}</p>
+                </div>
+              </div>
+
+              {/* ROI & Impact Banner */}
+              <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100/90 flex items-start gap-3">
+                <Zap className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-900 block mb-1">Impacto Operativo & Beneficio Financiero</span>
+                  <p className="text-xs text-slate-700 leading-relaxed font-semibold">{selectedModule.roiImpact}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <button 
+                onClick={() => setSelectedModule(null)} 
+                className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cerrar
+              </button>
+              <button 
+                onClick={() => {
+                  const route = selectedModule.route;
+                  setSelectedModule(null);
+                  navigate(currentUser ? route : '/login');
+                }}
+                className="px-6 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 rounded-xl shadow-md shadow-indigo-500/20 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                {currentUser ? 'Ir al Módulo Ahora' : 'Probar Módulo Gratis'} <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
