@@ -67,172 +67,174 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
-
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-4 py-3 shadow-sm h-[72px]">
       <div className="w-full h-full flex items-center justify-between gap-2">
       
-      {/* Mobile Menu Toggle & Logo */}
-      <div className="flex items-center gap-3 lg:hidden shrink-0">
-        <button onClick={onMenuClick} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-          <Menu className="w-6 h-6" />
-        </button>
-        <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8" />
-      </div>
+        {/* Mobile Menu Toggle & Logo */}
+        <div className="flex items-center gap-3 shrink-0 lg:hidden">
+          <button onClick={onMenuClick} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+            <Menu className="w-6 h-6" />
+          </button>
+          <img src="/logoultramoney.svg" alt="Ultramoney" className="w-8 h-8" />
+        </div>
 
-      <div className="hidden lg:block w-1/4"></div>
-
-      {/* Global Search (Hidden on small screens, visible on md+) */}
-      <div className="hidden md:flex flex-1 items-center justify-center max-w-lg mx-auto" ref={searchRef}>
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-5 h-5" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
-            placeholder="Buscar clientes, préstamos o cédulas..."
-            className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-sm text-slate-900 dark:text-white"
-          />
+        {/* Centralized Block: Search Bar + Notification Button + Add Button */}
+        <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto gap-2">
           
-          {/* Search Dropdown */}
-          {isSearchFocused && searchQuery.trim() && (
-            <div className="absolute top-full mt-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 max-h-96 overflow-y-auto z-50">
-              {searchResults.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-slate-500 text-center">No se encontraron resultados para "{searchQuery}"</div>
-              ) : (
-                searchResults.map((res, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => handleSearchResultClick(res)}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-start gap-3 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0"
-                  >
-                    <div className="mt-0.5 p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                      {res.type === 'client' ? <User className="w-4 h-4" /> : <Banknote className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-800 dark:text-white text-sm">{res.title}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{res.subtitle}</p>
-                    </div>
-                  </button>
-                ))
-              )}
+          {/* Global Search Bar */}
+          <div className="relative flex-1 min-w-[140px] max-w-md" ref={searchRef}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right Actions (Visible on BOTH Desktop & Mobile) */}
-      <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
-        
-        {/* Global Add Button */}
-        <div className="relative" ref={addRef}>
-          <button 
-            onClick={() => setIsAddOpen(!isAddOpen)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 md:px-4 py-2 rounded-xl text-sm font-bold shadow-sm shadow-indigo-200 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Añadir</span>
-          </button>
-
-          {isAddOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="px-3 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Crear Nuevo</p>
-              </div>
-              <button onClick={() => { navigate('/clientes'); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
-                <User className="w-4 h-4" /> Cliente
-              </button>
-              <button onClick={() => { navigate('/solicitud'); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Préstamo
-              </button>
-              <button onClick={() => { navigate('/pagos'); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
-                <Banknote className="w-4 h-4" /> Pago
-              </button>
-              <button onClick={() => { setIsBankModalOpen(true); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
-                <Landmark className="w-4 h-4" /> Cuentas / Cajas
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Notifications Button & Dropdown (Visible on Desktop & Mobile) */}
-        <div className="relative" ref={notifRef}>
-          <button 
-            onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors relative"
-            title="Notificaciones"
-          >
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              </span>
-            )}
-          </button>
-
-          {isNotifOpen && (
-            <div className="fixed md:absolute right-2 md:right-0 top-16 md:top-full mt-2 w-[calc(100vw-1rem)] max-w-sm sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
-                <h3 className="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
-                <div className="flex items-center gap-2">
-                  {unreadCount > 0 && (
-                    <button onClick={() => markAllNotificationsAsRead()} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Leídas
-                    </button>
-                  )}
-                  <button onClick={() => setIsNotifOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="max-h-[380px] overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
-                    No tienes notificaciones por el momento
-                  </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              placeholder="Buscar clientes, préstamos o cédulas..."
+              className="block w-full pl-9 sm:pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-xs sm:text-sm text-slate-900 dark:text-white"
+            />
+            
+            {/* Search Dropdown */}
+            {isSearchFocused && searchQuery.trim() && (
+              <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 max-h-96 overflow-y-auto z-50">
+                {searchResults.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-slate-500 text-center">No se encontraron resultados para "{searchQuery}"</div>
                 ) : (
-                  notifications.map(n => (
-                    <div key={n.id} className={`p-4 border-b border-slate-100 dark:border-slate-800 last:border-0 relative group transition-colors ${!n.read ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                      {!n.read && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
-                      )}
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 p-1.5 rounded-full flex-shrink-0 ${n.type === 'error' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : n.type === 'warning' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : n.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
-                          {n.type === 'warning' ? <ShieldAlert className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`text-xs ${!n.read ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-700 dark:text-slate-300'}`}>{n.title}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{n.message}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-[10px] text-slate-400 font-medium">{new Date(n.date).toLocaleString()}</span>
-                            <div className="flex items-center gap-2">
-                              {n.link && (
-                                <button onClick={() => { navigate(n.link!); setIsNotifOpen(false); }} className="text-xs text-indigo-600 dark:text-indigo-400 font-bold">
-                                  Ver
-                                </button>
-                              )}
-                              {!n.read && (
-                                <button onClick={() => markNotificationAsRead(n.id)} className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                  Marcar leída
-                                </button>
-                              )}
+                  searchResults.map((res, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => handleSearchResultClick(res)}
+                      className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-start gap-3 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0"
+                    >
+                      <div className="mt-0.5 p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                        {res.type === 'client' ? <User className="w-4 h-4" /> : <Banknote className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800 dark:text-white text-sm">{res.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{res.subtitle}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Notifications Button & Dropdown */}
+          <div className="relative shrink-0" ref={notifRef}>
+            <button 
+              onClick={() => setIsNotifOpen(!isNotifOpen)}
+              className="p-2 sm:p-2.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-all relative flex items-center justify-center active:scale-95"
+              title="Notificaciones"
+              aria-label="Notificaciones"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 text-[9px] font-bold text-white items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                </span>
+              )}
+            </button>
+
+            {isNotifOpen && (
+              <div className="fixed md:absolute right-2 md:right-auto md:left-1/2 md:-translate-x-1/2 top-16 md:top-full mt-2 w-[calc(100vw-1rem)] max-w-sm sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                  <h3 className="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button onClick={() => markAllNotificationsAsRead()} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Leídas
+                      </button>
+                    )}
+                    <button onClick={() => setIsNotifOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-[380px] overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+                      No tienes notificaciones por el momento
+                    </div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className={`p-4 border-b border-slate-100 dark:border-slate-800 last:border-0 relative group transition-colors ${!n.read ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                        {!n.read && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                        )}
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 p-1.5 rounded-full flex-shrink-0 ${n.type === 'error' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : n.type === 'warning' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : n.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
+                            {n.type === 'warning' ? <ShieldAlert className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-xs ${!n.read ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-700 dark:text-slate-300'}`}>{n.title}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{n.message}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-[10px] text-slate-400 font-medium">{new Date(n.date).toLocaleString()}</span>
+                              <div className="flex items-center gap-2">
+                                {n.link && (
+                                  <button onClick={() => { navigate(n.link!); setIsNotifOpen(false); }} className="text-xs text-indigo-600 dark:text-indigo-400 font-bold">
+                                    Ver
+                                  </button>
+                                )}
+                                {!n.read && (
+                                  <button onClick={() => markNotificationAsRead(n.id)} className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                    Marcar leída
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Global Add Button (Icon only) */}
+          <div className="relative shrink-0" ref={addRef}>
+            <button 
+              onClick={() => setIsAddOpen(!isAddOpen)}
+              className="p-2 sm:p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm shadow-indigo-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center border border-indigo-600"
+              title="Crear nuevo"
+              aria-label="Crear nuevo"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+
+            {isAddOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-3 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Crear Nuevo</p>
+                </div>
+                <button onClick={() => { navigate('/clientes'); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
+                  <User className="w-4 h-4" /> Cliente
+                </button>
+                <button onClick={() => { navigate('/solicitud'); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Préstamo
+                </button>
+                <button onClick={() => { navigate('/pagos'); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
+                  <Banknote className="w-4 h-4" /> Pago
+                </button>
+                <button onClick={() => { setIsBankModalOpen(true); setIsAddOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 flex items-center gap-2">
+                  <Landmark className="w-4 h-4" /> Cuentas / Cajas
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
 
-      </div>
+        {/* Mobile Balancing Spacer */}
+        <div className="shrink-0 w-8 lg:hidden"></div>
 
       </div>
       <BankAccountsModal isOpen={isBankModalOpen} onClose={() => setIsBankModalOpen(false)} />
