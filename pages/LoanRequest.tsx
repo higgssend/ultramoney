@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, FileText, AlertTriangle, TrendingUp, Landmark } from 'lucide-react';
+import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, Phone, FileText, AlertTriangle, TrendingUp, Landmark } from 'lucide-react';
 import { useClients, useLoans, useSettings, useAccounting } from '../context/StoreContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -114,6 +114,7 @@ export const LoanRequest: React.FC = () => {
   const [schedulePreview, setSchedulePreview] = useState<InstallmentPreview[]>([]);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [lastCreatedLoanId, setLastCreatedLoanId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [activeProduct, setActiveProduct] = useState<LoanProduct | null>(null);
 
   // Dates State
