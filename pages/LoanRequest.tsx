@@ -1323,10 +1323,8 @@ export const LoanRequest: React.FC = () => {
                   onNavigateToDetail={() => navigate(`/prestamos/${createdLoanForSharing.id}`)} 
                 />
               )}
-            </div>
-        </div>
 
-        {/* FULL NEW CLIENT CREATION MODAL */}
+              {/* FULL NEW CLIENT CREATION MODAL */}
         {isNewClientModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl p-6 sm:p-8 border border-slate-100 dark:border-slate-800 animate-scale-up my-8 max-h-[90vh] overflow-y-auto">
@@ -1576,6 +1574,8 @@ export const LoanRequest: React.FC = () => {
             onClose={() => setIsBankModalOpen(false)} 
           />
         )}
+            </div>
+        </div>
     );
   }
 
