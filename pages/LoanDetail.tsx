@@ -20,7 +20,7 @@ export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get('tab') as any) || 'summary';
+  const initialTab = searchParams.get('tab') || 'summary';
 
   const { loans, updateLoan, deleteLoan, addHistoricalPayment, refinanceLoan, forgiveDebt } = useLoans();
   const { clients } = useClients();
@@ -111,7 +111,7 @@ export const LoanDetail: React.FC = () => {
     if (!loan) return;
 
     const collateralObj = editCollateralDesc || editCollateralRef ? {
-      type: editCollateralType as any,
+      type: editCollateralType as NonNullable<Loan['collateral']>['type'],
       description: editCollateralDesc,
       refNumber: editCollateralRef,
     } : loan.collateral;
@@ -120,9 +120,9 @@ export const LoanDetail: React.FC = () => {
       ...loan,
       amount: editAmount,
       interestRate: editInterestRate,
-      frequency: editFrequency as any,
-      paymentFrequency: editFrequency as any,
-      loanType: editLoanType as any,
+      frequency: editFrequency as Loan['frequency'],
+      paymentFrequency: editFrequency as Loan['frequency'],
+      loanType: editLoanType as Loan['loanType'],
       installments: editInstallments,
       durationWeeks: editInstallments,
       remainingBalance: editRemainingBalance,
@@ -130,10 +130,10 @@ export const LoanDetail: React.FC = () => {
       startDate: editStartDate,
       nextPaymentDate: editNextPaymentDate || loan.nextPaymentDate,
       note: editNote,
-      status: editStatus as any,
+      status: editStatus as LoanStatus,
       itemPrice: editItemPrice || undefined,
       downPayment: editDownPayment || undefined,
-      downPaymentMode: editDownPaymentMode as any,
+      downPaymentMode: editDownPaymentMode as Loan['downPaymentMode'],
       financedAmount: editItemPrice && editDownPayment ? (editItemPrice - editDownPayment) : loan.financedAmount,
       collateral: collateralObj,
     };

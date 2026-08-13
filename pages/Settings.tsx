@@ -17,8 +17,9 @@ const Settings: React.FC = () => {
 
   // Handle incoming navigation state (e.g. from Sidebar edit profile)
   useEffect(() => {
-    if (location.state && (location.state as any).activeTab) {
-        setActiveTab((location.state as any).activeTab);
+    const state = location.state as { activeTab?: typeof activeTab } | null;
+    if (state?.activeTab) {
+        setActiveTab(state.activeTab);
     }
   }, [location]);
 

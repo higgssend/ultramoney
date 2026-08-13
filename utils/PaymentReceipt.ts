@@ -1,6 +1,10 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Loan, Client } from '../types';
+import { Loan, Client, CompanySettings } from '../types';
+
+interface JsPDFWithAutoTable extends jsPDF {
+  lastAutoTable: { finalY: number };
+}
 
 export interface PaymentData {
     receiptNumber: string;
@@ -33,7 +37,7 @@ export interface PaymentData {
     extraAction?: 'Reduce Plazo' | 'Reduce Cuota';
 }
 
-export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client: Client, companySettings: any) => {
+export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client: Client, companySettings: Partial<CompanySettings>) => {
     const doc = new jsPDF({ format: 'letter' });
     const primaryColor: [number, number, number] = [79, 70, 229]; // Indigo-600
     
@@ -115,7 +119,8 @@ export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client:
         columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'right' } }
     });
 
-    const finalY1 = (doc as any).lastAutoTable.finalY + 10;
+    const docWithAutoTable = doc as JsPDFWithAutoTable;
+    const finalY1 = docWithAutoTable.lastAutoTable.finalY + 10;
 
     // Estado del Préstamo después del pago
     doc.setFontSize(12);
@@ -146,7 +151,7 @@ export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client:
         margin: { left: 110 } // Mitad derecha
     });
 
-    const finalY2 = Math.max((doc as any).lastAutoTable.finalY, finalY1 + 40);
+    const finalY2 = Math.max(docWithAutoTable.lastAutoTable.finalY, finalY1 + 40);
 
     // Garantías
     if (loan.collateral?.type && loan.collateral?.type !== 'Sin Garantía') {

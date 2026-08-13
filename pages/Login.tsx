@@ -50,13 +50,14 @@ const Login: React.FC = () => {
 
   const handleOAuthLogin = async (provider: 'google' | 'apple') => {
     try {
+      type OAuthOptions = { provider: 'google' | 'apple'; redirectTo?: string; skipBrowserRedirect?: boolean };
       const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
       if (isTauri) {
-        const { data, error } = await insforge.auth.signInWithOAuth({
+        const { data, error } = await (insforge.auth.signInWithOAuth as (opts: OAuthOptions) => Promise<{ data?: { url?: string }; error?: Error | null }> )({
           provider,
           redirectTo: 'ultramoney://login',
           skipBrowserRedirect: true
-        } as any);
+        });
         if (error) throw error;
         if (data?.url) {
           await open(data.url);
@@ -64,10 +65,10 @@ const Login: React.FC = () => {
         return;
       }
 
-      const { error } = await insforge.auth.signInWithOAuth({
+      const { error } = await (insforge.auth.signInWithOAuth as (opts: OAuthOptions) => Promise<{ data?: { url?: string }; error?: Error | null }> )({
         provider,
         redirectTo: window.location.origin + '/dashboard'
-      } as any);
+      });
       if (error) throw error;
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : `Error al iniciar sesión con ${provider}.`;

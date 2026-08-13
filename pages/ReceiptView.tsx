@@ -13,8 +13,8 @@ export const ReceiptView: React.FC = () => {
     const { companySettings } = useSettings();
     
     const [transaction, setTransaction] = useState<Transaction | null>(null);
-    const [loan, setLoan] = useState<any | null>(null);
-    const [client, setClient] = useState<any | null>(null);
+    const [loan, setLoan] = useState<Loan | null>(null);
+    const [client, setClient] = useState<Client | null>(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
 
@@ -48,7 +48,7 @@ export const ReceiptView: React.FC = () => {
                 const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(transactionId as string);
                 
                 // 1. Fetch transaction directly from DB if not in local store
-                let txData: any = transactions.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId);
+                let txData: Transaction | null = transactions.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId) || null;
                 
                 if (!txData && isUuid) {
                     const { data, error } = await insforge.database
@@ -59,11 +59,18 @@ export const ReceiptView: React.FC = () => {
 
                     if (data && !error) {
                         txData = {
-                            ...data,
-                            referenceId: data.referenceid || data.reference_id || data.referenceId,
-                            paymentType: data.paymenttype || data.payment_type || data.paymentType,
-                            paymentMethod: data.paymentmethod || data.payment_method || data.paymentMethod || 'Efectivo',
-                            invoiceDate: data.invoicedate || data.invoice_date || data.invoiceDate
+                            id: data.id,
+                            type: data.type as Transaction['type'],
+                            category: data.category as Transaction['category'],
+                            amount: Number(data.amount) || 0,
+                            date: data.date || data.created_at,
+                            description: data.description,
+                            referenceId: data.reference_id || data.referenceid,
+                            paymentType: (data.payment_type || data.paymenttype || 'Interes') as Transaction['paymentType'],
+                            paymentMethod: (data.payment_method || data.paymentmethod || 'Efectivo') as Transaction['paymentMethod'],
+                            invoiceDate: data.invoice_date || data.invoicedate,
+                            bankAccountId: data.bank_account_id,
+                            proofUrl: data.proof_url
                         };
                     }
                 }
@@ -155,7 +162,7 @@ export const ReceiptView: React.FC = () => {
     const previousBalance = loan ? currentBalance + paymentAmount : paymentAmount;
     
     // Payment type classification
-    const rawPaymentType = (transaction as any).paymenttype || (transaction as any).payment_type || transaction.paymentType;
+    const rawPaymentType = transaction.paymentType;
     let capitalPaid = 0;
     let interestPaid = 0;
     let lateFeePaid = 0;
@@ -172,7 +179,7 @@ export const ReceiptView: React.FC = () => {
 
     // Overdue calculation
     let daysOverdue = 0;
-    const nextDateStr = loan?.nextpaymentdate || loan?.nextPaymentDate;
+    const nextDateStr = loan?.nextPaymentDate || loan?.nextpaymentdate;
     if (nextDateStr) {
         const nextDate = new Date(nextDateStr);
         if (!isNaN(nextDate.getTime())) {
@@ -184,8 +191,8 @@ export const ReceiptView: React.FC = () => {
     // Collateral info extraction
     let collateralText = 'Sin Garantía Registrada';
     if (loan) {
-        if (loan.collateralref || loan.collateralRef) {
-            collateralText = String(loan.collateralref || loan.collateralRef);
+        if (loan.guarantorId || loan.collateralref) {
+            collateralText = String(loan.guarantorId || loan.collateralref);
         } else if (loan.collateral) {
             if (typeof loan.collateral === 'object') {
                 const col = loan.collateral;
@@ -200,7 +207,7 @@ export const ReceiptView: React.FC = () => {
     const formattedReceiptNo = formatReceiptId(transaction.id);
     const formattedLoanNo = loan ? formatLoanId(loan.id) : 'No. 000000';
 
-    const rawDateStr = (transaction as any).created_at || transaction.date;
+    const rawDateStr = transaction.date;
     const parsedDate = rawDateStr 
         ? (rawDateStr.includes('T') 
             ? new Date(rawDateStr) 
@@ -386,13 +393,13 @@ export const ReceiptView: React.FC = () => {
                     </div>
 
                     {/* Attached Proof Voucher */}
-                    {(transaction as any)?.proofUrl && (
+                    {transaction.proofUrl && (
                         <div className="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 mb-4 space-y-2">
                             <span className="font-extrabold text-indigo-900 text-xs flex items-center gap-1.5">
                                 <FileText className="w-4 h-4 text-indigo-600" /> Comprobante de Transferencia / Voucher Adjunto
                             </span>
                             <div className="rounded-xl overflow-hidden border border-indigo-200 bg-white max-h-48 flex justify-center items-center">
-                                <img src={(transaction as any).proofUrl} alt="Comprobante de Pago" className="max-h-48 object-contain" />
+                                <img src={transaction.proofUrl} alt="Comprobante de Pago" className="max-h-48 object-contain" />
                             </div>
                         </div>
                     )}

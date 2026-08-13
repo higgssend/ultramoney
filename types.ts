@@ -119,7 +119,7 @@ export interface Client {
   portalActive?: boolean;
   avatarUrl?: string;
   references?: ClientReference[];
-  guarantors?: any[];
+  guarantors?: (ClientReference | string)[];
 }
 
 export interface BankAccount {

@@ -184,23 +184,24 @@ const Register: React.FC = () => {
 
   const triggerOAuth = async (provider: 'google' | 'apple') => {
     try {
+      type OAuthOptions = { provider: 'google' | 'apple'; redirectTo?: string; skipBrowserRedirect?: boolean };
       const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window || window.navigator.userAgent.includes('Tauri');
       if (isTauri) {
-        const { data, error } = await insforge.auth.signInWithOAuth({
+        const { data, error } = await (insforge.auth.signInWithOAuth as (opts: OAuthOptions) => Promise<{ data?: { url?: string }; error?: Error | null }> )({
           provider,
           redirectTo: 'ultramoney://register',
           skipBrowserRedirect: true
-        } as any);
+        });
         if (error) throw error;
         if (data?.url) {
           await open(data.url);
         }
         return;
       }
-      const { error } = await insforge.auth.signInWithOAuth({
+      const { error } = await (insforge.auth.signInWithOAuth as (opts: OAuthOptions) => Promise<{ data?: { url?: string }; error?: Error | null }> )({
         provider,
         redirectTo: window.location.origin + '/onboarding'
-      } as any);
+      });
       if (error) throw error;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : `Error al registrarse con ${provider}.`);

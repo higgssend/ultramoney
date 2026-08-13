@@ -140,7 +140,8 @@ const Loans: React.FC = () => {
           body: tableData,
       });
 
-      const finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY : 200;
+      const docWithAutoTable = doc as unknown as { lastAutoTable?: { finalY: number } };
+      const finalY = docWithAutoTable.lastAutoTable ? docWithAutoTable.lastAutoTable.finalY : 200;
       doc.text("_________________________", 60, finalY + 40, { align: "center" });
       doc.text("Firma del Cliente", 60, finalY + 50, { align: "center" });
       
@@ -224,10 +225,10 @@ const Loans: React.FC = () => {
           
           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
               <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                  {['TODOS', 'A tiempo', 'Atrasado', 'Vencido', 'Pagado'].map(status => (
+                  {(['TODOS', 'A tiempo', 'Atrasado', 'Vencido', 'Pagado'] as const).map(status => (
                       <button 
                           key={status}
-                          onClick={() => setStatusFilter(status as any)}
+                          onClick={() => setStatusFilter(status)}
                           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${statusFilter === status ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                       >
                           {status}

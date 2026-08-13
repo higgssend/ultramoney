@@ -155,7 +155,7 @@ const NewClient: React.FC = () => {
     }
   };
 
-  const set = (field: keyof Client, value: any) => setCurrentClient(prev => ({ ...prev, [field]: value }));
+  const set = <K extends keyof Client>(field: K, value: Client[K]) => setCurrentClient(prev => ({ ...prev, [field]: value }));
 
   const inputClass = "w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 outline-none dark:text-white text-sm transition-all placeholder-slate-400 dark:placeholder-slate-600";
   const labelClass = "block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2";
