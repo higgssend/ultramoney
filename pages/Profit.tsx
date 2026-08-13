@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, TrendingDown, DollarSign, PieChart as PieIcon, ChevronLeft, 
   Download, FileSpreadsheet, Percent, Calendar, Filter, ArrowUpRight, ArrowDownRight,
-  ShieldAlert, Sparkles, Building2, CheckCircle2, Clock, Calculator, BarChart3, Printers as Printer
+  ShieldAlert, Sparkles, Building2, CheckCircle2, Clock, Calculator, BarChart3, Printer
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
