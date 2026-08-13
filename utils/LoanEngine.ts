@@ -258,9 +258,9 @@ export class LoanEngine {
         // Map explicit LoanTypes to Engine methods
         const explicitType = loanTypeOverride || product.name; // In some places, name or type is passed
         if (loanTypeOverride) {
-            if (loanTypeOverride === 'Amortizado (Cuota Fija)' || loanTypeOverride === 'Amortizado') method = 'Amortizado'; // Or DecliningBalance based on preference
+            if (loanTypeOverride === 'Amortizado (Cuota Fija)' || loanTypeOverride === 'Amortizado' || loanTypeOverride === 'Amortización' || loanTypeOverride === 'Financiamiento de Equipo (Con/Sin Inicial)') method = 'Amortizado';
             if (loanTypeOverride === 'Amortizado (Capital Fijo)') method = 'Flat';
-            if (loanTypeOverride === 'Rédito (Solo Interés)' || loanTypeOverride === 'Rédito') method = 'Bullet'; // In DR, Rédito acts like Bullet/Open
+            if (loanTypeOverride === 'Rédito (Solo Interés)' || loanTypeOverride === 'Rédito') method = 'Bullet';
             if (loanTypeOverride === 'Interés Adelantado') method = 'Adelantado';
         }
 
