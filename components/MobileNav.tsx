@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, Banknote, CalendarClock, Calculator, Search } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+  BsHouse, 
+  BsHouseFill, 
+  BsWallet2, 
+  BsCreditCard2BackFill, 
+  BsPlusLg, 
+  BsCalendar4Event, 
+  BsCalendarCheckFill, 
+  BsCalculator, 
+  BsCalculatorFill 
+} from 'react-icons/bs';
 
 interface MobileNavProps {
   onMenuClick?: () => void;
@@ -31,11 +41,35 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
   };
 
   const navItems = [
-    { key: 'dashboard', label: 'Inicio', path: '/dashboard', icon: LayoutDashboard },
-    { key: 'pagos', label: 'Pagos', path: '/pagos', icon: Wallet },
+    { 
+      key: 'dashboard', 
+      label: 'Inicio', 
+      path: '/dashboard', 
+      outlineIcon: BsHouse, 
+      fillIcon: BsHouseFill 
+    },
+    { 
+      key: 'pagos', 
+      label: 'Pagos', 
+      path: '/pagos', 
+      outlineIcon: BsWallet2, 
+      fillIcon: BsCreditCard2BackFill 
+    },
     // Center Floating Action Button handled separately
-    { key: 'prestamos', label: 'Préstamos', path: '/prestamos', icon: CalendarClock },
-    { key: 'simulador', label: 'Simulador', path: '/simulador', icon: Calculator },
+    { 
+      key: 'prestamos', 
+      label: 'Préstamos', 
+      path: '/prestamos', 
+      outlineIcon: BsCalendar4Event, 
+      fillIcon: BsCalendarCheckFill 
+    },
+    { 
+      key: 'simulador', 
+      label: 'Simulador', 
+      path: '/simulador', 
+      outlineIcon: BsCalculator, 
+      fillIcon: BsCalculatorFill 
+    },
   ];
 
   return (
@@ -49,8 +83,8 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
 
         {/* First 2 Items (Left Side) */}
         {navItems.slice(0, 2).map((item) => {
-          const Icon = item.icon;
           const isActive = location.pathname === item.path;
+          const Icon = isActive ? item.fillIcon : item.outlineIcon;
           const isRippling = activeRipple === item.key;
 
           return (
@@ -73,9 +107,9 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
                 <span className="absolute inset-0 rounded-full bg-indigo-500/20 dark:bg-white/20 animate-ping opacity-75 pointer-events-none" />
               )}
 
-              {/* Icon with liquid bounce and Line -> Solid Fill inversion on active */}
+              {/* Icon with liquid bounce and Line -> Solid Fill Bootstrap Icon transition */}
               <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}>
-                <Icon className="w-5 h-5 transition-all duration-300" fill={isActive ? 'currentColor' : 'none'} />
+                <Icon className="w-5 h-5 transition-all duration-300" />
               </div>
 
               {/* Label */}
@@ -102,14 +136,14 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
               <span className="absolute inset-0 rounded-full bg-white/60 animate-ping opacity-90 pointer-events-none" />
             )}
 
-            <Banknote className="w-6 h-6 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-12" fill={location.pathname === '/solicitud' ? 'currentColor' : 'none'} />
+            <BsPlusLg className="w-7 h-7 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-90" />
           </button>
         </div>
 
         {/* Last 2 Items (Right Side) */}
         {navItems.slice(2, 4).map((item) => {
-          const Icon = item.icon;
           const isActive = location.pathname === item.path;
+          const Icon = isActive ? item.fillIcon : item.outlineIcon;
           const isRippling = activeRipple === item.key;
 
           return (
@@ -132,9 +166,9 @@ export const MobileNav: React.FC<MobileNavProps> = () => {
                 <span className="absolute inset-0 rounded-full bg-indigo-500/20 dark:bg-white/20 animate-ping opacity-75 pointer-events-none" />
               )}
 
-              {/* Icon with liquid bounce and Line -> Solid Fill inversion on active */}
+              {/* Icon with liquid bounce and Line -> Solid Fill Bootstrap Icon transition */}
               <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}>
-                <Icon className="w-5 h-5 transition-all duration-300" fill={isActive ? 'currentColor' : 'none'} />
+                <Icon className="w-5 h-5 transition-all duration-300" />
               </div>
 
               {/* Label */}
