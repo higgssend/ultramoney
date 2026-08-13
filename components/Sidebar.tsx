@@ -71,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Cuentas & Bancos', path: '/bancos', icon: Landmark },
     { name: 'Cartera', path: '/cartera', icon: Briefcase },
     { name: 'Gastos', path: '/gastos', icon: TrendingDown },
-    { name: 'Ganancia', path: '/ganancia', icon: TrendingUp },
+    { name: 'Ganancias', path: '/ganancias', icon: TrendingUp },
     { name: 'Empleados', path: '/empleados', icon: UserCog },
     { name: 'Clasificación', path: '/clasificacion', icon: Tags },
     { name: 'Cont. Profunda', path: '/contabilidad', icon: BookOpen },

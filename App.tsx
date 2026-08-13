@@ -208,8 +208,10 @@ const AppContent: React.FC = () => {
                 <Route path="/contabilidad" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
                 <Route path="/contabilidad-avanzada" element={<ProtectedRoute><DeepAccounting /></ProtectedRoute>} />
                 <Route path="/caja" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                <Route path="/gastos" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
                 <Route path="/bancos" element={<ProtectedRoute><BankAccountsPage /></ProtectedRoute>} />
                 <Route path="/bitacora" element={<ProtectedRoute><Bitacora /></ProtectedRoute>} />
+                <Route path="/ganancia" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
                 <Route path="/ganancias" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
                 <Route path="/nuevo-cliente" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
                 <Route path="/facturas" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
