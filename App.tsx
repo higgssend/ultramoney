@@ -132,7 +132,8 @@ const AppContent: React.FC = () => {
     location.pathname.startsWith('/login/') ||
     location.pathname.startsWith('/recibo/') ||
     location.pathname.startsWith('/documento/') ||
-    location.pathname === '/pagar' ||
+    location.pathname.startsWith('/pagar') ||
+    location.pathname.startsWith('/linkpagos') ||
     location.pathname === '/ayuda' ||
     location.pathname.startsWith('/features/') || 
     location.pathname === '/';
@@ -168,6 +169,9 @@ const AppContent: React.FC = () => {
                 <Route path="/recibo/:transactionId" element={<ReceiptView />} />
                 <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
                 <Route path="/pagar" element={<PublicPaymentPortal />} />
+                <Route path="/pagar/:slug" element={<PublicPaymentPortal />} />
+                <Route path="/linkpagos" element={<PublicPaymentPortal />} />
+                <Route path="/linkpagos/:slug" element={<PublicPaymentPortal />} />
                 <Route path="/ayuda" element={<HelpPage />} />
 
                 {/* Feature Routes (Public) */}

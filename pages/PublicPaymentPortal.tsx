@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Copy, Check, Share2, Smartphone, ChevronDown, ChevronUp, 
   ShieldCheck, CheckCircle2, Download, ArrowLeft, Building2, Landmark
@@ -19,6 +20,7 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
   previewConfig,
   previewAccounts
 }) => {
+  const { slug: routeSlug } = useParams<{ slug?: string }>();
   const { companySettings } = useSettings();
   const { bankAccounts } = useAccounting();
   const { currentUser } = useAuth();
@@ -32,6 +34,8 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
   const showLogo = previewConfig?.showCompanyLogo ?? true;
   const showRnc = previewConfig?.showCompanyRnc ?? true;
   const customNote = previewConfig?.customNote || 'Esta información ha sido proporcionada directamente por el titular. Asegúrate de verificar los datos antes de transferir.';
+
+  const currentSlug = (previewConfig?.customSlug || routeSlug || companySettings?.customLink || 'tu-empresa').toLowerCase();
 
   const holderName = companySettings?.name || currentUser?.name || 'Juan Pérez';
   const usernameSlug = (companySettings?.name || currentUser?.name || 'juanperez').toLowerCase().replace(/\s+/g, '');
@@ -160,7 +164,7 @@ Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
           {/* Link Capsule Pill with Glowing Green Status Dot */}
           <div className="inline-flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 rounded-full px-4 py-1.5 text-[10px] font-extrabold tracking-widest text-slate-600 dark:text-slate-300 uppercase mx-auto">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>ULTRAMONEY.APP/PAGAR</span>
+            <span>ULTRAMONEY.APP/LINKPAGOS/{currentSlug.toUpperCase()}</span>
           </div>
 
           {/* Phone Number */}

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { 
-  Landmark, Plus, Wallet, CheckCircle, CreditCard, 
-  Trash2, Edit3, ShieldCheck, Building2, X, Link, Copy, Check,
-  ExternalLink, Share2, Smartphone, Eye, Sparkles, AlertCircle
+  Landmark, Plus, CreditCard, Trash2, Edit3, Building2, X, Link, Copy, Check,
+  ExternalLink, Smartphone, Eye, Sparkles, Sliders
 } from 'lucide-react';
 import { useAccounting, useSettings } from '../context/StoreContext';
 import { BankAccount, CustomPaymentMethod, PaymentLinkConfig } from '../types';
@@ -13,7 +12,7 @@ import { toast } from 'sonner';
 export const BankAccountsPage: React.FC = () => {
   const { 
     bankAccounts, addBankAccount, removeBankAccount, updateBankAccount,
-    paymentMethods, addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus
+    paymentMethods, addPaymentMethod, updatePaymentMethod, togglePaymentMethodStatus
   } = useAccounting();
   const { companySettings } = useSettings();
 
@@ -46,16 +45,24 @@ export const BankAccountsPage: React.FC = () => {
   const [linkConfig, setLinkConfig] = useState<PaymentLinkConfig>({
     title: 'Portal de Pagos & Transferencias Bancarias',
     instructions: 'Transfiere a cualquiera de nuestras cuentas oficiales y envía el comprobante por WhatsApp.',
-    whatsappPhone: companySettings?.phone || '',
+    whatsappPhone: companySettings?.phone || '809-555-0123',
     showCompanyLogo: true,
     showCompanyRnc: true,
-    customNote: 'Por favor indica tu nombre o número de cédula en el concepto de la transferencia.',
+    customNote: 'Esta información ha sido proporcionada directamente por el titular. Asegúrate de verificar los datos antes de transferir.',
+    customSlug: companySettings?.customLink || 'tu-empresa',
     selectedAccountIds: bankAccounts.map(a => a.id)
   });
 
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const publicLinkUrl = `${window.location.origin}/pagar`;
+  // Format custom URL slug
+  const formattedSlug = (linkConfig.customSlug || 'tu-empresa')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-');
+
+  const publicLinkUrl = `${window.location.origin}/linkpagos/${formattedSlug}`;
 
   const handleBankSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,7 +381,7 @@ export const BankAccountsPage: React.FC = () => {
                           alt={acc.bankName} 
                           className="max-w-full max-h-full object-contain rounded-xl"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/banks/Bancos_Banreservas.jpg';
+                            (e.target as HTMLImageElement).src = getBankLogoUrl('Banreservas');
                           }}
                         />
                       </div>
@@ -568,7 +575,7 @@ export const BankAccountsPage: React.FC = () => {
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <a
-                  href="/pagar"
+                  href={`/linkpagos/${formattedSlug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 sm:flex-none px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all border border-white/20"
@@ -613,7 +620,7 @@ export const BankAccountsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* SPLIT VIEW: Customizer Controls (Left) vs Live Real-Time Preview (Right) */}
+          {/* SPLIT VIEW: Customizer Controls (Left) vs Live iPhone 15 Pro Max Mockup (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
             {/* LEFT COLUMN: Customization & Bank Selection (lg:col-span-5) */}
@@ -626,24 +633,24 @@ export const BankAccountsPage: React.FC = () => {
                 </h3>
 
                 <div className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Título del Portal</label>
-                    <input
-                      type="text"
-                      value={linkConfig.title}
-                      onChange={(e) => setLinkConfig(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Instrucciones para el Cliente</label>
-                    <textarea
-                      rows={3}
-                      value={linkConfig.instructions}
-                      onChange={(e) => setLinkConfig(prev => ({ ...prev, instructions: e.target.value }))}
-                      className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-medium"
-                    />
+                  {/* Link Slug Customizer */}
+                  <div className="bg-indigo-50/60 dark:bg-indigo-950/40 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/60 space-y-2">
+                    <label className="block font-extrabold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                      <Sliders className="w-4 h-4 text-indigo-600" />
+                      <span>URL Personalizada (Slug de tu Empresa)</span>
+                    </label>
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl px-3 py-2">
+                      <span className="text-slate-400 font-mono font-bold select-none text-[11px]">
+                        ultramoney.app/linkpagos/
+                      </span>
+                      <input
+                        type="text"
+                        value={linkConfig.customSlug || 'tu-empresa'}
+                        onChange={(e) => setLinkConfig(prev => ({ ...prev, customSlug: e.target.value }))}
+                        placeholder="tu-empresa"
+                        className="w-full bg-transparent font-mono font-black text-indigo-600 dark:text-indigo-400 outline-none"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -652,18 +659,17 @@ export const BankAccountsPage: React.FC = () => {
                       type="text"
                       value={linkConfig.whatsappPhone}
                       onChange={(e) => setLinkConfig(prev => ({ ...prev, whatsappPhone: e.target.value }))}
-                      placeholder="Ej. +1 (809) 555-0199"
+                      placeholder="Ej. 809-555-0123"
                       className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nota Adicional / Concepto</label>
-                    <input
-                      type="text"
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nota de Seguridad / Términos</label>
+                    <textarea
+                      rows={3}
                       value={linkConfig.customNote}
                       onChange={(e) => setLinkConfig(prev => ({ ...prev, customNote: e.target.value }))}
-                      placeholder="Ej. Indicar nombre o cédula en el concepto"
                       className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-medium"
                     />
                   </div>
@@ -772,32 +778,49 @@ export const BankAccountsPage: React.FC = () => {
 
             </div>
 
-            {/* RIGHT COLUMN: Live Real-Time Preview Frame (lg:col-span-7) */}
+            {/* RIGHT COLUMN: iPhone 15 Pro Max Live Preview Chassis (lg:col-span-7) */}
             <div className="lg:col-span-7 space-y-3 sticky top-6">
               <div className="flex items-center justify-between px-2">
                 <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-indigo-600" /> Vista Previa en Vivo (Real-Time Live Device Mockup)
+                  <Eye className="w-4 h-4 text-indigo-600" /> iPhone 15 Pro Max — Vista Previa en Vivo
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 animate-pulse">
-                  ● Actualización en vivo
+                  ● Actualización en tiempo real
                 </span>
               </div>
 
-              {/* Realistic Mobile Device Frame Mockup */}
-              <div className="bg-slate-900 p-4 sm:p-6 rounded-[40px] shadow-2xl border-4 border-slate-800 relative max-w-md mx-auto">
-                {/* Top Phone Camera Notch */}
-                <div className="w-32 h-4 bg-slate-950 rounded-full mx-auto mb-4 flex items-center justify-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-800" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-900" />
-                </div>
+              {/* iPhone 15 Pro Max Titanium Ultra-Thin Bezel Chassis */}
+              <div className="relative max-w-[380px] mx-auto bg-[#1a191d] p-[7px] rounded-[52px] shadow-[0_30px_90px_-15px_rgba(0,0,0,0.65)] border-[6px] border-[#2e2d33] ring-1 ring-white/10 select-none">
+                
+                {/* Physical Side Buttons (Volume & Power Accents) */}
+                <div className="absolute -left-[9px] top-28 w-[3px] h-9 bg-[#3a3940] rounded-l-md" />
+                <div className="absolute -left-[9px] top-42 w-[3px] h-12 bg-[#3a3940] rounded-l-md" />
+                <div className="absolute -left-[9px] top-58 w-[3px] h-12 bg-[#3a3940] rounded-l-md" />
+                <div className="absolute -right-[9px] top-36 w-[3px] h-18 bg-[#3a3940] rounded-r-md" />
 
-                {/* Inner Device Screen */}
-                <div className="bg-slate-50 dark:bg-slate-950 rounded-[30px] overflow-hidden max-h-[680px] overflow-y-auto border border-slate-800">
+                {/* Inner Device Viewport Screen */}
+                <div className="relative bg-[#f8fafc] dark:bg-slate-950 rounded-[44px] overflow-hidden max-h-[710px] overflow-y-auto border border-black/80">
+                  
+                  {/* Dynamic Island (Isla Dinámica de Apple) */}
+                  <div className="sticky top-0 z-40 bg-[#f8fafc]/90 dark:bg-slate-950/90 backdrop-blur-md pt-2 pb-1 text-center">
+                    <div className="w-28 h-6 bg-black rounded-full mx-auto flex items-center justify-between px-2.5 shadow-md">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#111116] border border-white/10" />
+                      <div className="w-2 h-2 rounded-full bg-[#0a0a20] ring-1 ring-indigo-900/50" />
+                    </div>
+                  </div>
+
+                  {/* Render Live Portal Page */}
                   <PublicPaymentPortal
                     isLivePreview={true}
-                    previewConfig={linkConfig}
+                    previewConfig={{ ...linkConfig, customSlug: formattedSlug }}
                     previewAccounts={bankAccounts}
                   />
+
+                  {/* Bottom Home Bar Indicator */}
+                  <div className="sticky bottom-1 z-40 pt-1 pb-1">
+                    <div className="w-32 h-1 bg-slate-900 dark:bg-slate-100 rounded-full mx-auto opacity-75" />
+                  </div>
+
                 </div>
               </div>
             </div>

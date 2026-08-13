@@ -152,6 +152,7 @@ export interface PaymentLinkConfig {
   showCompanyLogo: boolean;
   showCompanyRnc: boolean;
   customNote: string;
+  customSlug?: string;
   selectedAccountIds: string[];
 }
 
