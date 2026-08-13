@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useClients, useLoans } from '../context/StoreContext';
 import { Client, LoanStatus } from '../types';
+import { CreditScoreGauge } from '../components/CreditScoreGauge';
 
 export const CreditInquiry: React.FC = () => {
   const navigate = useNavigate();
@@ -278,72 +279,55 @@ export const CreditInquiry: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
           
           {/* Main Profile & Score Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
             
-            {/* Header Banner */}
-            <div className="p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Banking Header & Gauge Container */}
+            <div className="p-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               
-              {/* Client Summary */}
-              <div className="flex items-center gap-4 text-center md:text-left">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white font-extrabold text-2xl flex items-center justify-center shadow-lg border-2 border-indigo-400/30">
-                  {selectedClient.name.charAt(0)}{selectedClient.lastName ? selectedClient.lastName.charAt(0) : ''}
-                </div>
-                <div>
-                  <div className="flex items-center justify-center md:justify-start gap-2">
-                    <h2 className="text-2xl font-bold uppercase">{selectedClient.name} {selectedClient.lastName}</h2>
+              {/* Client Summary (Left Column - 7 Cols) */}
+              <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
+                <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
+                  <div className="w-20 h-20 rounded-3xl bg-indigo-600 text-white font-black text-3xl flex items-center justify-center shadow-2xl border-2 border-indigo-400/40 shrink-0">
+                    {selectedClient.name.charAt(0)}{selectedClient.lastName ? selectedClient.lastName.charAt(0) : ''}
                   </div>
-                  <p className="text-xs text-indigo-200 mt-0.5">
-                    Cédula: <span className="font-mono font-bold text-white">{selectedClient.cedula}</span> • Ocupación: <span className="text-white font-semibold">{selectedClient.occupation || 'N/A'}</span>
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1 flex items-center justify-center md:justify-start gap-2">
-                    <Phone className="w-3.5 h-3.5" /> {selectedClient.phone || 'N/A'}
-                    <MapPin className="w-3.5 h-3.5 ml-2" /> {selectedClient.address || 'N/A'}
-                  </p>
+                  <div className="space-y-1">
+                    <span className="px-3 py-1 bg-white/10 rounded-full text-[11px] font-extrabold uppercase tracking-widest text-indigo-300 border border-white/10">
+                      Reporte de Buró de Crédito
+                    </span>
+                    <h2 className="text-3xl font-extrabold uppercase font-secondary tracking-tight text-white mt-1">
+                      {selectedClient.name} {selectedClient.lastName}
+                    </h2>
+                    <p className="text-xs text-indigo-200">
+                      Cédula / RNC: <span className="font-mono font-bold text-white">{selectedClient.cedula}</span> • Ocupación: <span className="text-white font-semibold">{selectedClient.occupation || 'N/A'}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-slate-300">
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-indigo-400" /> {selectedClient.phone || 'N/A'}</span>
+                  <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-indigo-400" /> {selectedClient.address || 'N/A'}</span>
+                  <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-400" /> RD$ {(Number(selectedClient.income) || 0).toLocaleString()} / mes</span>
                 </div>
               </div>
 
-              {/* Score Gauge Badge */}
-              <div className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center min-w-[200px]">
-                <span className="text-xs uppercase font-bold tracking-widest text-indigo-300">Score Interno Datacrédito</span>
-                <div className="text-4xl font-black text-white my-1 tracking-tight flex items-baseline gap-1">
-                  <span>{analytics.score}</span>
-                  <span className="text-sm font-normal text-slate-400">/ 850</span>
-                </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase ${analytics.riskBg} ${analytics.riskColor} border`}>
-                  {analytics.riskLevel}
-                </div>
+              {/* Banking Circular Gauge (Right Column - 5 Cols) */}
+              <div className="lg:col-span-5 bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 flex flex-col items-center justify-center text-center relative shadow-2xl">
+                <CreditScoreGauge 
+                  score={analytics.score} 
+                  riskLevel={analytics.riskLevel}
+                  size={240} 
+                />
               </div>
 
             </div>
 
-            {/* Score Progress Bar & Recommendation */}
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
-                <span>Riesgo Crítico (300)</span>
-                <span>Regular (600)</span>
-                <span>Bueno (700)</span>
-                <span>Excelente (850)</span>
-              </div>
-              
-              {/* Meter Bar */}
-              <div className="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden p-0.5 relative">
-                <div 
-                  className={`h-full rounded-full transition-all duration-1000 ${
-                    analytics.score >= 750 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
-                    analytics.score >= 650 ? 'bg-gradient-to-r from-indigo-500 to-blue-400' :
-                    analytics.score >= 550 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
-                    'bg-gradient-to-r from-rose-600 to-red-400'
-                  }`}
-                  style={{ width: `${analytics.scorePercentage}%` }}
-                ></div>
-              </div>
-
-              {/* Recommendation Note */}
-              <div className={`mt-4 p-4 rounded-2xl border flex items-start gap-3 ${analytics.riskBg}`}>
-                <ShieldCheck className={`w-5 h-5 shrink-0 mt-0.5 ${analytics.riskColor}`} />
+            {/* Recommendation & Dictamen Note */}
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
+              <div className={`p-5 rounded-2xl border flex items-start gap-4 ${analytics.riskBg}`}>
+                <ShieldCheck className={`w-6 h-6 shrink-0 mt-0.5 ${analytics.riskColor}`} />
                 <div>
-                  <h4 className={`text-xs font-bold uppercase tracking-wider ${analytics.riskColor}`}>Dictamen & Recomendación del Sistema</h4>
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200 mt-0.5">{analytics.recommendation}</p>
+                  <h4 className={`text-xs font-extrabold uppercase tracking-wider ${analytics.riskColor}`}>Dictamen de Evaluación Crediticia</h4>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1 leading-relaxed">{analytics.recommendation}</p>
                 </div>
               </div>
             </div>

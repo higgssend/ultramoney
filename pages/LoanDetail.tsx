@@ -25,7 +25,7 @@ export const LoanDetail: React.FC = () => {
 
   const { loans, updateLoan, deleteLoan, addHistoricalPayment, refinanceLoan, forgiveDebt } = useLoans();
   const { clients } = useClients();
-  const { companySettings } = useSettings();
+  const { companySettings, globalCurrency } = useSettings();
   const { transactions } = useAccounting();
 
   const loan = loans.find(l => l.id === id);
