@@ -1,27 +1,27 @@
 {
   "short_name": "UltraMoney",
-  "name": "UltraMoney - Gestión de Préstamos",
-  "description": "Sistema integral de administración de préstamos, cobranza y contabilidad.",
+  "name": "UltraMoney | Sistema de Administración de Préstamos",
+  "description": "Plataforma integral de gestión de préstamos, clientes, cobranza, caja y contabilidad para prestamistas y financieras.",
   "icons": [
-    {
-      "src": "/pwa-icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "192x192 512x512",
-      "purpose": "any"
-    },
     {
       "src": "/logoultramoney.svg",
       "type": "image/svg+xml",
       "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
       "purpose": "maskable"
     }
   ],
-  "start_url": "/",
-  "id": "/",
+  "start_url": "https://ultramoney.app/",
+  "id": "https://ultramoney.app/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "theme_color": "#4F46E5",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "scope": "https://ultramoney.app/",
   "categories": ["finance", "business", "productivity"]
 }

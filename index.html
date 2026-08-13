@@ -37,13 +37,14 @@
 
     <!-- Favicon & PWA Icons -->
     <link rel="icon" type="image/svg+xml" href="/logoultramoney.svg">
-    <link rel="apple-touch-icon" href="/pwa-icon.svg">
+    <link rel="apple-touch-icon" href="/logoultramoney.svg">
     <link rel="mask-icon" href="/logoultramoney.svg" color="#4F46E5">
     <link rel="manifest" href="/manifest.json">
 
-    <!-- DNS Prefetch -->
+    <!-- DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- Platform specific PWA Metadata -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -52,7 +53,7 @@
     <meta name="apple-mobile-web-app-title" content="UltraMoney">
     <meta name="application-name" content="UltraMoney">
     <meta name="msapplication-TileColor" content="#4F46E5">
-    <meta name="msapplication-TileImage" content="/pwa-icon.svg">
+    <meta name="msapplication-TileImage" content="/logoultramoney.svg">
     <meta name="msapplication-config" content="/browserconfig.xml">
 
     <!-- Schema.org Structured Data -->
@@ -84,109 +85,6 @@
       }
     ]
     </script>
-
-    <style>
-      /* Base styles override */
-      body {
-        font-family: '"DM Sans"', sans-serif;
-        background-color: #f8fafc; 
-        color: #1e293b;
-      }
-      .dark body {
-        background-color: #0f172a;
-        color: #f8fafc;
-      }
-      
-      /* Utilities */
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
-
-      /* Noise Texture Overlay */
-      .bg-noise {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-        z-index: 50;
-        opacity: 0.03;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      }
-      
-      /* 3D Perspective Utilities */
-      .perspective-1000 {
-        perspective: 1000px;
-      }
-      .transform-style-3d {
-        transform-style: preserve-3d;
-      }
-      .rotate-x-12 {
-        transform: rotateX(12deg) rotateY(-4deg) rotateZ(2deg);
-      }
-      
-      /* Animations */
-      @keyframes shimmer {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
-      }
-
-      .text-gradient {
-        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-size: 200% auto;
-        animation: shimmer 5s linear infinite;
-      }
-      
-      .glass-nav {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      }
-      .dark .glass-nav {
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-  <!-- Unregister any Service Workers (PWA removed) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-          console.log('[SW] Unregistered:', registration.scope);
-        }
-      });
-      caches.keys().then(function(cacheNames) {
-        cacheNames.forEach(function(cacheName) {
-          caches.delete(cacheName);
-          console.log('[Cache] Deleted:', cacheName);
-        });
-      });
-    }
-  </script>
 </head>
   <body>
     <div class="bg-noise"></div>
