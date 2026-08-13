@@ -90,11 +90,12 @@ const Settings: React.FC = () => {
     try {
       const { data, error } = await insforge.storage.from('backups').list();
       if (!error && data) {
-        setCloudBackups(data.map((item: { name: string; size?: number; created_at?: string }) => ({
-          key: item.name,
-          name: item.name,
+        const items = Array.isArray(data) ? data : ((data as unknown as { objects?: { key?: string; name?: string; size?: number; uploadedAt?: string; created_at?: string }[] }).objects || []);
+        setCloudBackups(items.map((item) => ({
+          key: item.key || item.name || 'backup.json',
+          name: item.name || item.key || 'backup.json',
           size: item.size || 0,
-          lastModified: item.created_at || new Date().toISOString()
+          lastModified: item.uploadedAt || item.created_at || new Date().toISOString()
         })));
       }
     } catch (err) {

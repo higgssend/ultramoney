@@ -217,8 +217,8 @@ const AppContent: React.FC = () => {
           </ErrorBoundary>
         </div>
         
-        {/* Mobile Navigation Footer (Only if logged in) */}
-        {!isFullScreenPage && currentUser && <MobileNav />}
+        {/* Mobile Navigation Footer (Only if logged in and sidebar is closed) */}
+        {!isFullScreenPage && !isSidebarOpen && currentUser && <MobileNav />}
 
         {/* Global Renderers */}
         <HiddenDocumentRenderer />
