@@ -169,8 +169,17 @@ export const CreditInquiry: React.FC = () => {
               <Sparkles className="w-6 h-6 text-indigo-600" />
               Datapréstamos & Score Crediticio
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Consulta y evaluación de score de riesgo interno del sistema.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Consulta de score interno y Red de Buró Compartido entre prestamistas.</p>
           </div>
+        </div>
+
+        {/* Shared Network Status Badge */}
+        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-sm">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span>Red Buró Inter-Empresarial Activa</span>
         </div>
       </div>
 
