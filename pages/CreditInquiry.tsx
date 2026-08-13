@@ -281,41 +281,40 @@ export const CreditInquiry: React.FC = () => {
           {/* Main Profile & Score Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
             
-            {/* Banking Header & Gauge Container */}
-            <div className="p-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Banking Header & Gauge Container (Light Theme) */}
+            <div className="p-6 lg:p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               
               {/* Client Summary (Left Column - 7 Cols) */}
               <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
                 <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
-                  <div className="w-20 h-20 rounded-3xl bg-indigo-600 text-white font-black text-3xl flex items-center justify-center shadow-2xl border-2 border-indigo-400/40 shrink-0">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
                     {selectedClient.name.charAt(0)}{selectedClient.lastName ? selectedClient.lastName.charAt(0) : ''}
                   </div>
                   <div className="space-y-1">
-                    <span className="px-3 py-1 bg-white/10 rounded-full text-[11px] font-extrabold uppercase tracking-widest text-indigo-300 border border-white/10">
+                    <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 rounded-full text-[11px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 inline-block">
                       Reporte de Buró de Crédito
                     </span>
-                    <h2 className="text-3xl font-extrabold uppercase font-secondary tracking-tight text-white mt-1">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900 dark:text-white mt-1">
                       {selectedClient.name} {selectedClient.lastName}
                     </h2>
-                    <p className="text-xs text-indigo-200">
-                      Cédula / RNC: <span className="font-mono font-bold text-white">{selectedClient.cedula}</span> • Ocupación: <span className="text-white font-semibold">{selectedClient.occupation || 'N/A'}</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Cédula / RNC: <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{selectedClient.cedula}</span> • Ocupación: <span className="text-slate-700 dark:text-slate-300 font-semibold">{selectedClient.occupation || 'N/A'}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-slate-300">
-                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-indigo-400" /> {selectedClient.phone || 'N/A'}</span>
-                  <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-indigo-400" /> {selectedClient.address || 'N/A'}</span>
-                  <span className="flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-indigo-400" /> RD$ {(Number(selectedClient.income) || 0).toLocaleString()} / mes</span>
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700/60"><Phone className="w-3.5 h-3.5 text-indigo-500" /> {selectedClient.phone || 'N/A'}</span>
+                  <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700/60"><MapPin className="w-3.5 h-3.5 text-indigo-500" /> {selectedClient.address || 'N/A'}</span>
+                  <span className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700/60"><Building2 className="w-3.5 h-3.5 text-indigo-500" /> RD$ {(Number(selectedClient.income) || 0).toLocaleString()} / mes</span>
                 </div>
               </div>
 
               {/* Banking Circular Gauge (Right Column - 5 Cols) */}
-              <div className="lg:col-span-5 bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 flex flex-col items-center justify-center text-center relative shadow-2xl">
+              <div className="lg:col-span-5 bg-slate-50/80 dark:bg-slate-800/60 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-700/60 flex flex-col items-center justify-center text-center relative shadow-sm overflow-hidden">
                 <CreditScoreGauge 
                   score={analytics.score} 
                   riskLevel={analytics.riskLevel}
-                  size={240} 
                 />
               </div>
 
