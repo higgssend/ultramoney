@@ -248,6 +248,25 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     
     if (!error) {
       setClients(prev => prev.map(c => c.id === updatedClient.id ? { ...c, ...updatedClient } : c));
+      
+      // Update denormalized clientname in loans & loan_requests in database
+      const fullName = `${updatedClient.name} ${updatedClient.lastName || ''}`.trim();
+      Promise.all([
+        insforge.database.from('loans').update({
+          clientname: fullName,
+          client_name: fullName
+        }).eq('clientid', updatedClient.id),
+        insforge.database.from('loans').update({
+          clientname: fullName,
+          client_name: fullName
+        }).eq('client_id', updatedClient.id),
+        insforge.database.from('loan_requests').update({
+          client_name: fullName
+        }).eq('client_id', updatedClient.id)
+      ]).catch(err => {
+        logger.error("Error al actualizar nombre en préstamos:", err);
+      });
+
       addToast("Cliente actualizado exitosamente", "success");
     } else {
       logger.error("Error al actualizar cliente:", error);

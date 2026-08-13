@@ -67,6 +67,27 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loanProducts, setLoanProducts] = useState<LoanProduct[]>([]);
   const [loanRequests, setLoanRequests] = useState<LoanRequest[]>([]);
 
+  // Auto-sync loan clientName in real-time when clients array is updated
+  useEffect(() => {
+    if (clients.length > 0 && loans.length > 0) {
+      setLoans(prevLoans => {
+        let changed = false;
+        const updated = prevLoans.map(loan => {
+          const matchingClient = clients.find(c => c.id === loan.clientId);
+          if (matchingClient) {
+            const freshName = `${matchingClient.name} ${matchingClient.lastName || ''}`.trim();
+            if (freshName && freshName !== loan.clientName) {
+              changed = true;
+              return { ...loan, clientName: freshName };
+            }
+          }
+          return loan;
+        });
+        return changed ? updated : prevLoans;
+      });
+    }
+  }, [clients]);
+
   useEffect(() => {
     if (!currentUser) {
       setLoans([]); setLoanProducts([]); setLoanRequests([]);
