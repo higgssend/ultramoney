@@ -341,16 +341,27 @@ export const BankAccountsPage: React.FC = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Logo Container with fallback error handling */}
+                      {/* Logo or Icon Container */}
                       <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
-                        <img 
-                          src={logoPath} 
-                          alt={acc.bankName} 
-                          className="max-w-full max-h-full object-contain rounded-xl"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = getBankLogoUrl('Banreservas');
-                          }}
-                        />
+                        {logoPath ? (
+                          <img 
+                            src={logoPath} 
+                            alt={acc.bankName} 
+                            className="max-w-full max-h-full object-contain rounded-xl"
+                          />
+                        ) : (
+                          <div className={`w-full h-full rounded-xl flex items-center justify-center ${
+                            acc.accountType === 'Caja Chica / Efectivo' || acc.bankName.toLowerCase().includes('caja')
+                              ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+                              : 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400'
+                          }`}>
+                            {acc.accountType === 'Caja Chica / Efectivo' || acc.bankName.toLowerCase().includes('caja') ? (
+                              <Wallet className="w-6 h-6" />
+                            ) : (
+                              <CreditCard className="w-6 h-6" />
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-extrabold text-slate-900 dark:text-white text-base leading-tight truncate">

@@ -10,8 +10,8 @@ export const DOMINICAN_BANKS: DominicanBankInfo[] = [
   { name: 'Banco de Reservas (Banreservas)', logo: `${INSFORGE_STORAGE_BASE}/Bancos_Banreservas.jpg`, shortName: 'Banreservas' },
   { name: 'Banco Popular Dominicano', logo: `${INSFORGE_STORAGE_BASE}/Bancos_BancoPopular.jpg`, shortName: 'Banco Popular' },
   { name: 'Banco BHD', logo: `${INSFORGE_STORAGE_BASE}/Bancos_BancoBHD.jpg`, shortName: 'Banco BHD' },
-  { name: 'Asociación Popular de Ahorros y Préstamos (APAP)', logo: `${INSFORGE_STORAGE_BASE}/Bancos_AsociaciónPopular.jpg`, shortName: 'APAP' },
-  { name: 'Asociación Cibao de Ahorros y Préstamos', logo: `${INSFORGE_STORAGE_BASE}/Bancos_AsociaciónCibao.jpg`, shortName: 'Asociación Cibao' },
+  { name: 'Asociación Popular de Ahorros y Préstamos (APAP)', logo: `${INSFORGE_STORAGE_BASE}/Bancos_Asociaci%C3%B3nPopular.jpg`, shortName: 'APAP' },
+  { name: 'Asociación Cibao de Ahorros y Préstamos', logo: `${INSFORGE_STORAGE_BASE}/Bancos_Asociaci%C3%B3nCibao.jpg`, shortName: 'Asociación Cibao' },
   { name: 'Asociación La Nacional', logo: `${INSFORGE_STORAGE_BASE}/Bancos_LaNacional.jpg`, shortName: 'La Nacional' },
   { name: 'Qik Banco Digital', logo: `${INSFORGE_STORAGE_BASE}/Bancos_BancoQik.jpg`, shortName: 'Qik' },
   { name: 'Banco Ademi', logo: `${INSFORGE_STORAGE_BASE}/Bancos_BancoAdemi.jpg`, shortName: 'Banco Ademi' },
@@ -30,15 +30,19 @@ export const DOMINICAN_BANKS: DominicanBankInfo[] = [
   { name: 'Zelle', logo: `${INSFORGE_STORAGE_BASE}/Bancos_Zelle.jpg`, shortName: 'Zelle' },
 ];
 
-export const getBankLogoUrl = (bankName: string | undefined | null): string => {
-  if (!bankName) return `${INSFORGE_STORAGE_BASE}/Bancos_Banreservas.jpg`;
+export const getBankLogoUrl = (bankName: string | undefined | null): string | null => {
+  if (!bankName) return null;
   const n = String(bankName).toLowerCase();
   
+  // Non-bank instruments should return null so UI renders Cash/POS Icons!
+  if (n.includes('caja') || n.includes('efectivo')) return null;
+  if (n.includes('pos') || n.includes('verifone')) return null;
+
   if (n.includes('banreservas') || n.includes('reservas')) return `${INSFORGE_STORAGE_BASE}/Bancos_Banreservas.jpg`;
   if (n.includes('bhd')) return `${INSFORGE_STORAGE_BASE}/Bancos_BancoBHD.jpg`;
   if (n.includes('popular') && !n.includes('asociación') && !n.includes('apap')) return `${INSFORGE_STORAGE_BASE}/Bancos_BancoPopular.jpg`;
-  if (n.includes('apap') || (n.includes('asociación') && n.includes('popular'))) return `${INSFORGE_STORAGE_BASE}/Bancos_AsociaciónPopular.jpg`;
-  if (n.includes('cibao')) return `${INSFORGE_STORAGE_BASE}/Bancos_AsociaciónCibao.jpg`;
+  if (n.includes('apap') || (n.includes('asociación') && n.includes('popular'))) return `${INSFORGE_STORAGE_BASE}/Bancos_Asociaci%C3%B3nPopular.jpg`;
+  if (n.includes('cibao')) return `${INSFORGE_STORAGE_BASE}/Bancos_Asociaci%C3%B3nCibao.jpg`;
   if (n.includes('nacional')) return `${INSFORGE_STORAGE_BASE}/Bancos_LaNacional.jpg`;
   if (n.includes('qik')) return `${INSFORGE_STORAGE_BASE}/Bancos_BancoQik.jpg`;
   if (n.includes('ademi')) return `${INSFORGE_STORAGE_BASE}/Bancos_BancoAdemi.jpg`;
@@ -56,5 +60,5 @@ export const getBankLogoUrl = (bankName: string | undefined | null): string => {
   if (n.includes('paypal')) return `${INSFORGE_STORAGE_BASE}/Bancos_Paypal.jpg`;
   if (n.includes('zelle')) return `${INSFORGE_STORAGE_BASE}/Bancos_Zelle.jpg`;
   
-  return `${INSFORGE_STORAGE_BASE}/Bancos_Banreservas.jpg`;
+  return null;
 };

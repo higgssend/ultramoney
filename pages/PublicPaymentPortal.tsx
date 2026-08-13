@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Copy, Check, Share2, Smartphone, ChevronDown, ChevronUp, 
-  ShieldCheck, CheckCircle2, Download, ArrowLeft, Building2, Landmark
+  ShieldCheck, CheckCircle2, Download, ArrowLeft, Building2, Landmark, Wallet, CreditCard
 } from 'lucide-react';
 import { BankAccount, PaymentLinkConfig } from '../types';
 import { getBankLogoUrl } from '../utils/bankLogos';
@@ -230,16 +230,27 @@ Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
                     className="w-full p-4 flex items-center justify-between text-left focus:outline-none select-none group"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      {/* Bank Logo in Soft Squircle Container */}
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm">
-                        <img 
-                          src={logoUrl} 
-                          alt={acc.bankName} 
-                          className="max-w-full max-h-full object-contain rounded-lg"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = getBankLogoUrl('Banreservas');
-                          }}
-                        />
+                      {/* Bank Logo or Cash/POS Icon Container */}
+                      <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                        {logoUrl ? (
+                          <img 
+                            src={logoUrl} 
+                            alt={acc.bankName} 
+                            className="max-w-full max-h-full object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className={`w-full h-full rounded-lg flex items-center justify-center ${
+                            acc.accountType === 'Caja Chica / Efectivo' || acc.bankName.toLowerCase().includes('caja')
+                              ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400'
+                              : 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400'
+                          }`}>
+                            {acc.accountType === 'Caja Chica / Efectivo' || acc.bankName.toLowerCase().includes('caja') ? (
+                              <Wallet className="w-5 h-5" />
+                            ) : (
+                              <CreditCard className="w-5 h-5" />
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Bank Title & Type */}
