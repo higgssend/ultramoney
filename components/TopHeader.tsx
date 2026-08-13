@@ -29,16 +29,25 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const notifRef = useRef<HTMLDivElement>(null);
-  const addRef = useRef<HTMLDivElement>(null);
+  const mobileNotifRef = useRef<HTMLDivElement>(null);
+  const desktopNotifRef = useRef<HTMLDivElement>(null);
+  const mobileAddRef = useRef<HTMLDivElement>(null);
+  const desktopAddRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) setIsNotifOpen(false);
-      if (addRef.current && !addRef.current.contains(event.target as Node)) setIsAddOpen(false);
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setIsSearchFocused(false);
+      const target = event.target as Node;
+      const isInsideNotif = (mobileNotifRef.current && mobileNotifRef.current.contains(target)) ||
+                            (desktopNotifRef.current && desktopNotifRef.current.contains(target));
+      if (!isInsideNotif) setIsNotifOpen(false);
+
+      const isInsideAdd = (mobileAddRef.current && mobileAddRef.current.contains(target)) ||
+                          (desktopAddRef.current && desktopAddRef.current.contains(target));
+      if (!isInsideAdd) setIsAddOpen(false);
+
+      if (searchRef.current && !searchRef.current.contains(target)) setIsSearchFocused(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -91,7 +100,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           {/* Mobile Action Buttons (Add + Notif + Menu) */}
           <div className="flex items-center gap-1.5 lg:hidden">
             {/* Mobile Add Button */}
-            <div className="relative" ref={addRef}>
+            <div className="relative" ref={mobileAddRef}>
               <button 
                 onClick={() => setIsAddOpen(!isAddOpen)}
                 className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center border border-indigo-600"
@@ -123,7 +132,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
             </div>
 
             {/* Mobile Notifications Button */}
-            <div className="relative" ref={notifRef}>
+            <div className="relative" ref={mobileNotifRef}>
               <button 
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
                 className="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-all relative flex items-center justify-center active:scale-95"
@@ -147,7 +156,14 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                     <h3 className="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
                     <div className="flex items-center gap-2">
                       {unreadCount > 0 && (
-                        <button onClick={() => markAllNotificationsAsRead()} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            markAllNotificationsAsRead();
+                          }} 
+                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                        >
                           <CheckCircle2 className="w-3.5 h-3.5" /> Leídas
                         </button>
                       )}
@@ -181,7 +197,14 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                                     </button>
                                   )}
                                   {!n.read && (
-                                    <button onClick={() => markNotificationAsRead(n.id)} className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        markNotificationAsRead(n.id);
+                                      }} 
+                                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-1 bg-indigo-50 dark:bg-indigo-900/40 rounded-md transition-colors"
+                                    >
                                       Marcar leída
                                     </button>
                                   )}
@@ -262,7 +285,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
         {/* Desktop Right Block: Add & Notifications Buttons (Only visible on Desktop lg) */}
         <div className="hidden lg:flex items-center gap-2 shrink-0">
           {/* Desktop Add Button */}
-          <div className="relative" ref={addRef}>
+          <div className="relative" ref={desktopAddRef}>
             <button 
               onClick={() => setIsAddOpen(!isAddOpen)}
               className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm shadow-indigo-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center border border-indigo-600"
@@ -294,7 +317,7 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           </div>
 
           {/* Desktop Notifications Button */}
-          <div className="relative" ref={notifRef}>
+          <div className="relative" ref={desktopNotifRef}>
             <button 
               onClick={() => setIsNotifOpen(!isNotifOpen)}
               className="p-2.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-all relative flex items-center justify-center active:scale-95"
@@ -318,7 +341,14 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                   <h3 className="font-bold text-slate-800 dark:text-white text-sm">Notificaciones</h3>
                   <div className="flex items-center gap-2">
                     {unreadCount > 0 && (
-                      <button onClick={() => markAllNotificationsAsRead()} className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          markAllNotificationsAsRead();
+                        }} 
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                      >
                         <CheckCircle2 className="w-3.5 h-3.5" /> Leídas
                       </button>
                     )}
@@ -352,7 +382,14 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
                                   </button>
                                 )}
                                 {!n.read && (
-                                  <button onClick={() => markNotificationAsRead(n.id)} className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      markNotificationAsRead(n.id);
+                                    }} 
+                                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline px-2 py-1 bg-indigo-50 dark:bg-indigo-900/40 rounded-md transition-colors"
+                                  >
                                     Marcar leída
                                   </button>
                                 )}
