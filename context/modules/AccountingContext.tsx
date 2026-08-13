@@ -111,8 +111,8 @@ const mapTransaction = (t: TransactionDB): Transaction => ({
   paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
   paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
   invoiceDate: t.invoicedate || t.invoice_date || undefined,
-  bankAccountId: (t as any).bank_account_id || (t as any).bankAccountId || undefined,
-  proofUrl: (t as any).proof_url || (t as any).proofUrl || undefined,
+  bankAccountId: t.bank_account_id || undefined,
+  proofUrl: t.proof_url || undefined,
 });
 
 export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -240,8 +240,18 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     if (!currentUser) return;
     const payload = { ...transaction, lender_id: currentUser.id };
     const { error } = await insforge.database.from('transactions').insert([payload]);
-    if (error) addToast("Error al registrar transacción", 'error');
-    else addToast("Transacción registrada", "success");
+    if (error) {
+      addToast("Error al registrar transacción", 'error');
+    } else {
+      addToast("Transacción registrada", "success");
+      // Refresh transactions state so UI updates without full page reload
+      const { data } = await insforge.database
+        .from('transactions')
+        .select('*')
+        .eq('lender_id', currentUser.id)
+        .order('created_at', { ascending: false });
+      if (data) setTransactions((data as TransactionDB[]).map(mapTransaction));
+    }
   };
 
   const addBankAccount = async (account: BankAccount) => {
@@ -267,7 +277,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
   const updateBankAccount = async (id: string, updates: Partial<BankAccount>) => {
     setBankAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
     if (currentUser) {
-      const updateData: Record<string, any> = {};
+      const updateData: Record<string, string | number | boolean> = {};
       if (updates.balance !== undefined) updateData.initial_balance = updates.balance;
       if (updates.isActive !== undefined) updateData.status = updates.isActive ? 'Activa' : 'Inactiva';
       if (updates.accountName !== undefined) updateData.account_name = updates.accountName;

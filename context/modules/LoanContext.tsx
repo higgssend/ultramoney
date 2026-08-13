@@ -149,10 +149,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             durationWeeks: l.duration_weeks || l.durationweeks,
             lateFeePercentage: l.late_fee_percentage,
             graceDays: l.grace_days,
-            collateral: l.collateral as any,
+            collateral: l.collateral as Loan['collateral'],
             itemPrice: l.item_price ? Number(l.item_price) : undefined,
             downPayment: l.down_payment ? Number(l.down_payment) : undefined,
-            downPaymentMode: l.down_payment_mode as any,
+            downPaymentMode: l.down_payment_mode as Loan['downPaymentMode'],
             financedAmount: l.financed_amount ? Number(l.financed_amount) : undefined,
             guarantorId: l.guarantor_id || l.collateralref,
             note: l.note,
@@ -195,7 +195,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             purpose: r.purpose || r.loan_destination,
             notes: r.notes || r.observations,
             observations: r.observations || r.notes,
-            collateral: r.collateral as any,
+            collateral: r.collateral as LoanRequest['collateral'],
           })));
         }
       } catch (error) {
@@ -376,7 +376,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logger.error('Error updating loan:', error);
         addToast(`Error al actualizar préstamo: ${error.message}`, 'error');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       logger.error('Error in updateLoan:', e);
     }
   };
@@ -395,7 +395,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logger.error('Error deleting loan:', error);
         addToast(`Error al eliminar préstamo: ${error.message}`, 'error');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       logger.error('Error in deleteLoan:', e);
     }
   };
@@ -466,9 +466,9 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         addToast(`Pago histórico de RD$ ${paymentData.amount.toLocaleString()} registrado con éxito. Recibo: ${formatReceiptId(txData.id)}`, 'success');
         addAuditLog('historical_payment_added', `Añadió pago histórico de RD$ ${paymentData.amount} al préstamo #${loan.id}`);
 
-        return mapTransaction(txData as any);
+        return mapTransaction(txData as TransactionDB);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       logger.error('Error adding historical payment:', e);
       addToast('Error al registrar pago histórico', 'error');
     }
@@ -731,10 +731,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         requestedTerm: reqTerm,
         durationWeeks: reqTerm,
         interestRate: reqRate,
-        frequency: reqFreq as any,
-        loanType: reqType as any,
+        frequency: reqFreq as LoanRequest['frequency'],
+        loanType: reqType as LoanRequest['loanType'],
         closingCost: request.closingCost || 0,
-        closingCostMode: (request.closingCostMode || 'Descontado') as any,
+        closingCostMode: (request.closingCostMode || 'Descontado') as LoanRequest['closingCostMode'],
         paymentDay: request.paymentDay,
         purpose: reqPurpose,
         loanDestination: reqPurpose,

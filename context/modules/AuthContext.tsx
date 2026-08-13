@@ -93,9 +93,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsLoadingAuth(false);
         }
 
-        const unsubscribe = (insforge.auth.onAuthStateChange as any)(async (event: string, session: any) => {
+        // InsForge SDK: onAuthStateChange type is not exported; cast to known callback shape
+        type AuthCallback = (event: string, session: { user?: { id: string; user_metadata?: Record<string, unknown>; metadata?: Record<string, unknown>; email?: string } } | null) => void;
+        const unsubscribe = (insforge.auth.onAuthStateChange as (cb: AuthCallback) => () => void)(async (event, session) => {
           if (unmounted) return;
-          const u: any = session?.user;
+          const u = session?.user;
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && u) {
             const meta = u.user_metadata || u.metadata || {};
             const activeUser = {
@@ -217,9 +219,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const registerUser = async (user: User) => {
     try {
-      const { data, error: authError } = await (insforge.auth.signUp as any)({
+      // InsForge SDK: signUp method shape not fully typed; cast to expected signature
+      type SignUpFn = (opts: { email: string; password: string; name: string }) => Promise<{ data: { user?: { id: string } }; error: { message: string } | null }>;
+      const { data, error: authError } = await (insforge.auth.signUp as SignUpFn)({
         email: user.email || `${user.username}@app.ultramoney.com`,
-        password: (user as any).password || '123456',
+        password: user.password || '123456',
         name: user.name
       });
       if (authError) { addToast(authError.message, 'error'); return; }
@@ -236,7 +240,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUsers(prev => [...prev, { ...user, id: newUserId }]);
         addToast("Usuario creado", "success");
       }
-    } catch (e: any) { addToast(e.message, 'error'); }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Error desconocido';
+      addToast(msg, 'error');
+    }
   };
 
   const updateUser = async (updatedUser: User) => {
@@ -276,7 +283,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addCargo = async (cargo: Cargo) => {
     const { data, error } = await insforge.database.from('cargos').insert([{
-      lender_id: currentUser?.id, name: cargo.name, description: cargo.description, permissions: (cargo as any).permissions
+      lender_id: currentUser?.id, name: cargo.name, description: cargo.description, permissions: cargo.permissions
     }]).select().single();
     if (data && !error) setCargos(prev => [...prev, data]);
   };
@@ -292,11 +299,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addEmployee = async (employee: Employee) => {
-    const empAny = employee as any;
     const payload = {
-      lender_id: currentUser?.id, name: employee.name, role: empAny.role || 'Employee', phone: employee.phone,
+      lender_id: currentUser?.id, name: employee.name, role: employee.role || 'Employee', phone: employee.phone,
       assigned_route: employee.assignedRoute, performance: employee.performance, active_routes: employee.activeRoutes,
-      collections: employee.collections, sucursal_id: empAny.sucursalId, cargo_id: employee.cargoId,
+      collections: employee.collections, sucursal_id: employee.sucursalId, cargo_id: employee.cargoId,
       username: employee.username, employee_pin: employee.employeePin
     };
     const { data, error } = await insforge.database.from('employees').insert([payload]).select().single();

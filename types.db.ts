@@ -86,6 +86,11 @@ export interface ClientDB {
   guarantors?: string[];
   clientcode?: string;
   client_code?: string;
+  portal_alias?: string;
+  portal_active?: boolean;
+  avatarurl?: string;
+  avatar_url?: string;
+  photo_url?: string;
   lender_id?: string;
   currency?: string;
   created_at?: string;
@@ -134,6 +139,8 @@ export interface TransactionDB {
   payment_method?: string;
   invoicedate?: string;
   invoice_date?: string;
+  bank_account_id?: string;
+  proof_url?: string;
   lender_id?: string;
   currency?: string;
   created_at?: string;
@@ -159,7 +166,7 @@ export interface LoanRequestDB {
   purpose?: string;
   notes?: string;
   observations?: string;
-  collateral?: any;
+  collateral?: Record<string, unknown>;
   status: string;
   created_at?: string;
   request_date?: string;

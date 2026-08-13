@@ -341,13 +341,15 @@ export interface Cargo {
   id: string;
   name: string;
   description?: string;
+  permissions?: string[];
   createdAt?: string;
 }
 
 export interface Employee {
   id: string;
   name: string;
-  cargoId?: string; // Replaces role
+  role?: string;
+  cargoId?: string;
   phone?: string;
   assignedRoute?: string;
   performance: number;
@@ -355,6 +357,7 @@ export interface Employee {
   collections: number;
   username?: string;
   employeePin?: string;
+  sucursalId?: string;
 }
 
 export interface InvoiceItem {

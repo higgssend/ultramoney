@@ -84,13 +84,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           setCompanySettings(initialCompanySettings);
         }
         if (bitacoraRes.data) {
-           setAuditLogs((bitacoraRes.data as any[]).map((l) => ({
+           setAuditLogs((bitacoraRes.data as AuditLogDB[]).map((l) => ({
              id: l.id,
              userId: l.user_id || '',
              userName: l.user_name || 'Sistema',
              action: l.action || '',
              details: l.details || '',
-             timestamp: l.created_at || l.timestamp || new Date().toISOString()
+             timestamp: l.timestamp || new Date().toISOString()
            })));
         }
       } catch (error) {
