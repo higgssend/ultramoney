@@ -96,17 +96,39 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const fetchLoans = async () => {
       try {
-        const [loansRes, productsRes, requestsRes] = await Promise.all([
+        const [loansRes, productsRes, requestsRes, clientsRes] = await Promise.all([
           insforge.database.from('loans').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('loan_products').select('*').order('created_at', { ascending: false }),
-          insforge.database.from('loan_requests').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
+          insforge.database.from('loan_requests').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('clients').select('id, name, lastname, last_name').eq('lender_id', currentUser.id)
         ]);
 
+        const clientMap = new Map<string, string>();
+        if (clientsRes.data) {
+          clientsRes.data.forEach((c: any) => {
+            const full = `${c.name} ${c.lastname || c.last_name || ''}`.trim();
+            if (c.id && full) clientMap.set(c.id, full);
+          });
+        }
+
         if (loansRes.data) {
-          setLoans((loansRes.data as LoanDB[]).map((l) => ({
-            id: l.id,
-            clientId: l.clientid || l.client_id || '',
-            clientName: l.clientname || l.client_name || 'Sin Nombre',
+          setLoans((loansRes.data as LoanDB[]).map((l) => {
+            const cId = l.clientid || l.client_id || '';
+            const freshName = clientMap.get(cId) || l.clientname || l.client_name || 'Sin Nombre';
+
+            // Self-heal stale client names stored in loans table
+            const dbName = l.clientname || l.client_name;
+            if (cId && freshName && freshName !== dbName && freshName !== 'Sin Nombre') {
+              insforge.database.from('loans').update({
+                clientname: freshName,
+                client_name: freshName
+              }).eq('id', l.id).catch(() => {});
+            }
+
+            return {
+              id: l.id,
+              clientId: cId,
+              clientName: freshName,
             amount: Number(l.amount) || 0,
             interestRate: Number(l.interestrate ?? l.interest_rate) || 0,
             installments: l.installments,
@@ -132,7 +154,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             guarantorId: l.guarantor_id || l.collateralref,
             note: l.note,
             currency: (l.currency as 'DOP' | 'USD') || 'DOP',
-          })));
+          };
+        })));
         }
         if (productsRes.data) {
           setLoanProducts((productsRes.data as LoanProductDB[]).map((p) => ({

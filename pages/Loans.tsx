@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Plus, Filter, Clock, X, Banknote, Calendar, CreditCard, DollarSign, FileText, Printer, RefreshCw, Calculator, ChevronRight, CheckCircle, Tag, Infinity, ChevronLeft, Shield, LayoutGrid, List, AlertTriangle, Eye, Edit3, Trash2 } from 'lucide-react';
-import { useLoans, useSettings } from '../context/StoreContext';
+import { useLoans, useSettings, useClients } from '../context/StoreContext';
 import { toast } from 'sonner';
 import { LoanStatus, Loan, formatLoanId } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import { LoanContractModal } from './features/LoanContractModal';
 
 const Loans: React.FC = () => {
   const { loans, refinanceLoan, forgiveDebt } = useLoans();
+  const { clients } = useClients();
   const { companySettings } = useSettings();
   const navigate = useNavigate();
   const [filterTerm, setFilterTerm] = useState('');
@@ -41,7 +42,11 @@ const Loans: React.FC = () => {
       return { badge: 'A tiempo', color: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800' };
   };
 
-  const filteredLoans = loans.filter(l => {
+  const filteredLoans = loans.map(l => {
+    const matchingClient = clients.find(c => c.id === l.clientId);
+    const liveName = matchingClient ? `${matchingClient.name} ${matchingClient.lastName || ''}`.trim() : l.clientName;
+    return { ...l, clientName: liveName };
+  }).filter(l => {
     const matchesSearch = (l.clientName || '').toLowerCase().includes(filterTerm.toLowerCase()) || l.id.toLowerCase().includes(filterTerm.toLowerCase());
     const statusObj = getStatusStyle(l.status, l.nextPaymentDate);
     const matchesStatus = statusFilter === 'TODOS' || statusObj.badge === statusFilter;
