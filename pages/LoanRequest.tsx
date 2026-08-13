@@ -35,6 +35,17 @@ export const LoanRequest: React.FC = () => {
     income: 0
   });
 
+  // Refinancing State
+  const [isRefinanceEnabled, setIsRefinanceEnabled] = useState(false);
+  const [selectedLoanToRefinance, setSelectedLoanToRefinance] = useState<string>('');
+
+  // View State
+  const [viewMode, setViewMode] = useState<'create' | 'queue'>('create');
+  const [creationMode, setCreationMode] = useState<'request' | 'direct'>('request'); // 'request' = Solicitud, 'direct' = Loan
+
+  // Track if we are processing a pending request (to delete it later)
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+
   // Pre-fill client from query parameter ?clientId=xyz
   const initialClientId = searchParams.get('clientId') || '';
   const [selectedClientId, setSelectedClientId] = useState(initialClientId);
