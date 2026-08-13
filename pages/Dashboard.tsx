@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
   const filteredTransactions = transactions.filter(t => (t.currency || 'DOP') === globalCurrency && isDateInRange(t.date));
   const recentTransactions = (filteredTransactions.length > 0 ? filteredTransactions : transactions).slice(0, 5);
 
-  // Dynamic Chart 1 Data: Flujo de Caja
+  // Dynamic Chart 1 Data: Flujo de Caja (100% Real from transactions)
   const getChartData = () => {
     if (dateRange === 'today') {
       const hours = ['8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
@@ -127,7 +127,7 @@ const Dashboard: React.FC = () => {
           if (t.type === 'Gasto') entry.expense += Number(t.amount);
         });
 
-      return Array.from(map.entries()).map(([name, vals]) => ({ name, income: vals.income || 15000, expense: vals.expense || 3200 }));
+      return Array.from(map.entries()).map(([name, vals]) => ({ name, income: vals.income, expense: vals.expense }));
     }
 
     if (dateRange === 'week') {
@@ -153,14 +153,10 @@ const Dashboard: React.FC = () => {
           }
         });
 
-      return result.map(({ name, income, expense }) => ({ 
-        name, 
-        income: income > 0 ? income : Math.floor(Math.random() * 45000) + 20000, 
-        expense: expense > 0 ? expense : Math.floor(Math.random() * 12000) + 3000 
-      }));
+      return result.map(({ name, income, expense }) => ({ name, income, expense }));
     }
 
-    // Default 'month'
+    // Default 'month' (100% Real from real transactions for last 6 months)
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const chartDataMap = new Map<number, { income: number; expense: number }>();
     const currentMonth = new Date().getMonth();
@@ -172,6 +168,7 @@ const Dashboard: React.FC = () => {
 
     transactions.filter(t => (t.currency || 'DOP') === globalCurrency).forEach(t => {
       const dateObj = new Date(t.date);
+      if (isNaN(dateObj.getTime())) return;
       const diffMonths = (new Date().getFullYear() - dateObj.getFullYear()) * 12 + (currentMonth - dateObj.getMonth());
       if (diffMonths >= 0 && diffMonths <= 5) {
         const m = dateObj.getMonth();
@@ -185,43 +182,120 @@ const Dashboard: React.FC = () => {
 
     return Array.from(chartDataMap.entries()).map(([m, vals]) => ({
       name: monthNames[m],
-      income: vals.income > 0 ? vals.income : (m % 2 === 0 ? 185000 : 240000),
-      expense: vals.expense > 0 ? vals.expense : (m % 2 === 0 ? 42000 : 38000)
+      income: vals.income,
+      expense: vals.expense
     }));
   };
 
   const data = getChartData();
 
-  // Chart 2 Data: Loan Status Distribution
-  const activeCount = loans.filter(l => l.status === LoanStatus.ACTIVE || l.status === 'Activo').length;
-  const overdueCount = loans.filter(l => l.status === LoanStatus.OVERDUE || l.status === 'Vencido').length;
-  const pendingCount = loans.filter(l => l.status === LoanStatus.PENDING || l.status === 'Pendiente').length;
-  const paidCount = loans.filter(l => l.status === LoanStatus.PAID || l.status === 'Pagado').length;
+  // Chart 2 Data: Loan Status Distribution (100% Real from loans)
+  const activeCount = currencyLoans.filter(l => l.status === LoanStatus.ACTIVE || l.status === 'Activo' || l.status === 'Vigente').length;
+  const overdueCount = currencyLoans.filter(l => l.status === LoanStatus.OVERDUE || l.status === 'Vencido' || l.status === 'Atrasado').length;
+  const pendingCount = currencyLoans.filter(l => l.status === LoanStatus.PENDING || l.status === 'Pendiente').length;
+  const paidCount = currencyLoans.filter(l => l.status === LoanStatus.PAID || l.status === 'Pagado').length;
 
   const loanStatusData = [
-    { name: 'Al Día', value: activeCount || 14, color: '#10b981' },
-    { name: 'En Mora', value: overdueCount || 3, color: '#f43f5e' },
-    { name: 'Pendientes', value: pendingCount || 2, color: '#f59e0b' },
-    { name: 'Pagados', value: paidCount || 8, color: '#6366f1' },
+    { name: 'Al Día', value: activeCount, color: '#10b981' },
+    { name: 'En Mora', value: overdueCount, color: '#f43f5e' },
+    { name: 'Pendientes', value: pendingCount, color: '#f59e0b' },
+    { name: 'Pagados', value: paidCount, color: '#6366f1' },
   ];
 
-  // Chart 3 Data: Desembolsos vs Cobranzas (Bar Chart)
-  const disbursementVSCollectionsData = [
-    { month: 'Mar', desembolsado: 120000, cobrado: 95000 },
-    { month: 'Abr', desembolsado: 150000, cobrado: 130000 },
-    { month: 'May', desembolsado: 180000, cobrado: 165000 },
-    { month: 'Jun', desembolsado: 210000, cobrado: 190000 },
-    { month: 'Jul', desembolsado: 195000, cobrado: 210000 },
-    { month: 'Ago', desembolsado: 240000, cobrado: 225000 },
-  ];
+  // Chart 3 Data: Desembolsos vs Cobranzas (100% Real calculation from loans & transactions)
+  const getDisbursementVSCollections = () => {
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentMonth = new Date().getMonth();
+    const result: { month: string; monthIdx: number; desembolsado: number; cobrado: number }[] = [];
 
-  // Chart 4 Data: Modalidad de Crédito
-  const loanTypesData = [
-    { name: 'Personal', cantidad: 12, monto: 450000, color: '#6366f1' },
-    { name: 'Comercial / PYME', cantidad: 8, monto: 890000, color: '#0ea5e9' },
-    { name: 'Vehicular', cantidad: 5, monto: 620000, color: '#8b5cf6' },
-    { name: 'Hipotecario', cantidad: 3, monto: 1450000, color: '#ec4899' },
-  ];
+    for (let i = 5; i >= 0; i--) {
+      let m = currentMonth - i;
+      if (m < 0) m += 12;
+      result.push({ month: monthNames[m], monthIdx: m, desembolsado: 0, cobrado: 0 });
+    }
+
+    // Real Disbursements from loans
+    currencyLoans.forEach(l => {
+      if (!l.startDate) return;
+      const dObj = new Date(l.startDate.includes('T') ? l.startDate : l.startDate + 'T12:00:00');
+      if (isNaN(dObj.getTime())) return;
+      const diffMonths = (new Date().getFullYear() - dObj.getFullYear()) * 12 + (currentMonth - dObj.getMonth());
+      if (diffMonths >= 0 && diffMonths <= 5) {
+        const found = result.find(r => r.monthIdx === dObj.getMonth());
+        if (found) {
+          found.desembolsado += Number(l.amount || 0);
+        }
+      }
+    });
+
+    // Real Collections from income transactions
+    transactions.filter(t => (t.currency || 'DOP') === globalCurrency && t.type === 'Ingreso').forEach(t => {
+      const dObj = new Date(t.date.includes('T') ? t.date : t.date + 'T12:00:00');
+      if (isNaN(dObj.getTime())) return;
+      const diffMonths = (new Date().getFullYear() - dObj.getFullYear()) * 12 + (currentMonth - dObj.getMonth());
+      if (diffMonths >= 0 && diffMonths <= 5) {
+        const found = result.find(r => r.monthIdx === dObj.getMonth());
+        if (found) {
+          found.cobrado += Number(t.amount || 0);
+        }
+      }
+    });
+
+    return result.map(({ month, desembolsado, cobrado }) => ({ month, desembolsado, cobrado }));
+  };
+
+  const disbursementVSCollectionsData = getDisbursementVSCollections();
+
+  // Chart 4 Data: Modalidades de Crédito (100% Real from loans, featuring Hipotecario!)
+  const getLoanTypesBreakdown = () => {
+    let hipotecarioCount = 0;
+    let hipotecarioMonto = 0;
+
+    let personalCount = 0;
+    let personalMonto = 0;
+
+    let vehicularCount = 0;
+    let vehicularMonto = 0;
+
+    let comercialCount = 0;
+    let comercialMonto = 0;
+
+    let microCount = 0;
+    let microMonto = 0;
+
+    currencyLoans.forEach(l => {
+      const cat = (l.loanCategory || '').toLowerCase();
+      const colType = (l.collateral?.type || '').toLowerCase();
+      const balance = Number(l.remainingBalance || l.amount || 0);
+
+      if (cat.includes('hipotecario') || colType.includes('propiedad')) {
+        hipotecarioCount++;
+        hipotecarioMonto += balance;
+      } else if (cat.includes('vehículo') || cat.includes('vehicular') || colType.includes('vehículo')) {
+        vehicularCount++;
+        vehicularMonto += balance;
+      } else if (cat.includes('comercial') || cat.includes('pyme')) {
+        comercialCount++;
+        comercialMonto += balance;
+      } else if (cat.includes('micro') || l.frequency === 'Diario') {
+        microCount++;
+        microMonto += balance;
+      } else {
+        personalCount++;
+        personalMonto += balance;
+      }
+    });
+
+    return [
+      { name: 'Préstamos Hipotecarios', cantidad: hipotecarioCount, monto: hipotecarioMonto, color: '#8b5cf6' },
+      { name: 'Préstamos Personales', cantidad: personalCount, monto: personalMonto, color: '#6366f1' },
+      { name: 'Préstamos Vehiculares', cantidad: vehicularCount, monto: vehicularMonto, color: '#0ea5e9' },
+      { name: 'Comercial / PYME', cantidad: comercialCount, monto: comercialMonto, color: '#10b981' },
+      { name: 'Microcréditos', cantidad: microCount, monto: microMonto, color: '#f59e0b' },
+    ];
+  };
+
+  const loanTypesData = getLoanTypesBreakdown();
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">

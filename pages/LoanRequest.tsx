@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Calculator, Save, User, Plus, Search, Filter, ArrowRight, ChevronLeft, Clock, Banknote, Briefcase, FileCheck, RefreshCw, Scissors, Coins, ExternalLink, Calendar, CheckCircle, XCircle, Smartphone, FileText, AlertTriangle, TrendingUp, Landmark } from 'lucide-react';
 import { useClients, useLoans, useSettings, useAccounting } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -523,6 +523,63 @@ const LoanRequest: React.FC = () => {
                         Configuración Financiera
                         </h3>
                         
+                        {/* Loan Category / Modality Selector */}
+                        <div className="mb-6">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Categoría / Modalidad del Préstamo</label>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setLoanCategory('Personal')}
+                                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${loanCategory === 'Personal' ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-2 ring-indigo-500/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <User className="w-4 h-4 text-indigo-600" />
+                                    <span>Personal</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLoanCategory('Hipotecario');
+                                        if (!collateral || collateral.type === 'Sin Garantía') {
+                                            setCollateral({ type: 'Propiedad', description: 'Título de Propiedad / Inmueble / Vivienda', refNumber: '' });
+                                        }
+                                    }}
+                                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${loanCategory === 'Hipotecario' ? 'bg-purple-50 border-purple-500 text-purple-700 ring-2 ring-purple-500/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Landmark className="w-4 h-4 text-purple-600" />
+                                    <span>Hipotecario</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setLoanCategory('Vehículo');
+                                        if (!collateral || collateral.type === 'Sin Garantía') {
+                                            setCollateral({ type: 'Vehículo', description: 'Matrícula de Vehículo / Auto', refNumber: '' });
+                                        }
+                                    }}
+                                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${loanCategory === 'Vehículo' ? 'bg-blue-50 border-blue-500 text-blue-700 ring-2 ring-blue-500/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Briefcase className="w-4 h-4 text-blue-600" />
+                                    <span>Vehicular</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLoanCategory('Comercial')}
+                                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${loanCategory === 'Comercial' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Banknote className="w-4 h-4 text-emerald-600" />
+                                    <span>Comercial</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLoanCategory('Microcrédito')}
+                                    className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all ${loanCategory === 'Microcrédito' ? 'bg-amber-50 border-amber-500 text-amber-700 ring-2 ring-amber-500/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                >
+                                    <Coins className="w-4 h-4 text-amber-600" />
+                                    <span>Microcrédito</span>
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Loan Type Selector */}
                         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div 
