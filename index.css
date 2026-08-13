@@ -25,6 +25,30 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, :host { 
+  --glass-frost: 0.1;
+  --glass-saturation: 1.2;
+  --filter-id: url(#glass-filter-_r_b_);
+}
+
+.liquidglass {
+  background: hsl(0 0% 0% / var(--glass-frost, 0.1));
+  -webkit-backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.2));
+  backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1.2));
+  box-shadow: inset 0 0 2px 1px lab(100% 0 0 / .35), inset 0 0 10px 4px lab(100% 0 0 / .15), inset 0 4px 16px lab(5.32203% 1.61424 -5.88284 / .0509804), inset 0 8px 24px lab(5.32203% 1.61424 -5.88284 / .0509804), inset 0 6px 56px lab(5.32203% 1.61424 -5.88284 / .0509804);
+  border-radius: 9999px;
+}
+
+.glass-surface__filter {
+  pointer-events: none;
+  opacity: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
 @layer base {
   *, html, body, select, input, textarea, button, p, span, div, td, th {
     font-family: 'DM Sans', sans-serif !important;
