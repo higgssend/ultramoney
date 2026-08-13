@@ -1435,13 +1435,13 @@ const LandingPage: React.FC = () => {
                   onClick={() => setSelectedModule(module)}
                 >
                   <div className="gradient-border-glow h-full">
-                    <div className="card-3d-inner bg-slate-50/90 hover:bg-white rounded-[1.4rem] p-6 h-full border border-slate-200/70 text-center flex flex-col items-center justify-between group">
+                    <div className="card-3d-inner bg-slate-50/90 hover:bg-white rounded-[1.35rem] p-6 h-full text-center flex flex-col items-center justify-between group">
                       <div className="flex flex-col items-center text-center w-full">
-                        <IconComp className="w-12 h-12 text-indigo-600 mb-4 group-hover:scale-110 transition-transform duration-300 mx-auto shrink-0 aspect-square" strokeWidth={1.5} />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/90 px-3 py-1 rounded-full border border-indigo-100 mx-auto">
+                        <IconComp className="w-12 h-12 text-indigo-600 mb-3 group-hover:scale-110 transition-transform duration-300 mx-auto shrink-0 aspect-square" strokeWidth={1.5} />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mx-auto">
                           {module.category}
                         </span>
-                        <h3 className="text-lg font-extrabold text-slate-900 mt-3 mb-2 text-center group-hover:text-indigo-600 transition-colors">{module.name}</h3>
+                        <h3 className="text-lg font-extrabold text-slate-900 mt-1 mb-2 text-center group-hover:text-indigo-600 transition-colors">{module.name}</h3>
                         <p className="text-xs text-slate-600 leading-relaxed text-center">
                           {module.shortDesc}
                         </p>
