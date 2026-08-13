@@ -6,7 +6,8 @@ import {
   CalendarClock, AlertTriangle, Wallet, Briefcase, 
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
-  Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2
+  Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2,
+  LayoutGrid, List
 } from 'lucide-react';
 import { useAuth, useSettings } from '../context/StoreContext';
 
@@ -19,6 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
   const { companySettings, globalCurrency, setGlobalCurrency } = useSettings();
   const navigate = useNavigate();
+  const [drawerLayout, setDrawerLayout] = useState<'grid' | 'list'>('grid');
   const [darkMode, setDarkMode] = useState(() => {
       return localStorage.getItem('theme') === 'dark';
   });
@@ -106,28 +108,51 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 scrollbar-hide">
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => onClose()}
-              className={({ isActive }) => `
-                flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group
-                ${isActive 
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm' 
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white text-slate-500 dark:text-slate-400'}
-                ${item.highlight ? 'mt-4 border border-indigo-100 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : ''}
-              `}
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : (item.highlight ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300')}`} />
-                  <span className="text-sm">{item.name}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
+        <div className="flex-1 overflow-y-auto py-4 px-3 scrollbar-hide">
+          {/* Mobile Drawer View Mode Switcher */}
+          <div className="md:hidden flex items-center justify-between px-3 py-2 mb-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Módulos</span>
+            <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+              <button 
+                onClick={() => setDrawerLayout('grid')} 
+                className={`p-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${drawerLayout === 'grid' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                title="Vista Cuadrícula"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Grid
+              </button>
+              <button 
+                onClick={() => setDrawerLayout('list')} 
+                className={`p-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${drawerLayout === 'list' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                title="Vista Lista"
+              >
+                <List className="w-3.5 h-3.5" /> Lista
+              </button>
+            </div>
+          </div>
+
+          <div className={drawerLayout === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 gap-2.5 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
+            {menuItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => onClose()}
+                className={({ isActive }) => `
+                  flex ${drawerLayout === 'grid' ? 'flex-col md:flex-row items-center justify-center md:justify-start p-3 text-center md:text-left rounded-2xl md:rounded-xl border md:border-none' : 'flex-row items-center px-3 py-2.5 rounded-xl'} transition-all duration-200 group
+                  ${isActive 
+                    ? 'bg-indigo-600 text-white md:bg-indigo-50 md:dark:bg-indigo-900/30 md:text-indigo-700 md:dark:text-indigo-400 font-bold shadow-md shadow-indigo-200 dark:shadow-none' 
+                    : 'bg-slate-50 dark:bg-slate-800/40 md:bg-transparent border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium'}
+                  ${item.highlight ? 'mt-4 border border-indigo-100 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : ''}
+                `}
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.icon className={`${drawerLayout === 'grid' ? 'w-6 h-6 mb-1 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : (item.highlight ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300')}`} />
+                    <span className="text-xs md:text-sm leading-tight">{item.name}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
         </div>
 
         {/* Dark Mode Toggle & Footer */}

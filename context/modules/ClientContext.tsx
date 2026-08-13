@@ -30,20 +30,21 @@ interface ClientContextType {
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { addToast } = useToast();
+  const { addToast, addAuditLog } = useSettings();
   const { currentUser } = useAuth();
-  const { addAuditLog } = useSettings();
   
   const [clients, setClients] = useState<Client[]>([]);
   const [clientNotes, setClientNotes] = useState<ClientNote[]>([]);
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
-  const [routes, setRoutes] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refreshClients = React.useCallback(async () => {
+  const refreshClients = useCallback(async () => {
     if (!currentUser) {
       setClients([]); setClientNotes([]); setClientDocuments([]); setRoutes([]);
       return;
     }
+    setIsLoading(true);
     try {
       const [clientsRes, notesRes, docsRes] = await Promise.all([
         insforge.database.from('clients').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
@@ -55,35 +56,34 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setClients((clientsRes.data as ClientDB[]).map((c) => ({
           id: c.id,
           name: c.name,
-          lastName: c.lastname || c.last_name,
+          lastName: c.lastname || '',
           cedula: c.cedula || '',
-          documentType: (c.documenttype || c.document_type) as Client['documentType'],
-          email: c.email,
+          documentType: (c.documenttype || 'Cedula') as Client['documentType'],
+          email: c.email || '',
           phone: c.phone || '',
-          whatsapp: c.whatsapp,
-          phoneHome: c.phonehome,
+          whatsapp: c.whatsapp || '',
+          phoneHome: c.phonehome || '',
           address: c.address || '',
-          province: c.province,
-          municipality: c.municipality,
-          sector: c.sector,
-          referenceAddress: c.referenceaddress,
-          companyName: c.companyname,
-          jobPosition: c.jobposition,
-          coordinates: c.coordinates ?? undefined,
-          routeId: c.routeid,
-          routeSequence: c.routesequence,
+          province: c.province || '',
+          municipality: c.municipality || '',
+          sector: c.sector || '',
+          referenceAddress: c.referenceaddress || '',
+          companyName: c.companyname || '',
+          jobPosition: c.jobposition || '',
+          coordinates: c.coordinates || undefined,
+          routeId: c.routeid || '',
+          routeSequence: c.routesequence || 0,
           occupation: c.occupation || '',
           sex: (c.sex || 'Otro') as Client['sex'],
-          income: c.income,
-          creditScore: c.creditscore ?? c.credit_score,
-          status: (c.status || 'Activo') as Client['status'],
-          joinedDate: c.joineddate || c.created_at,
-          clientPin: c.clientpin,
-          portalAlias: c.portal_alias || '',
-          portalActive: c.portal_active ?? true,
-          avatarUrl: c.avatarurl || c.avatar_url || c.photo_url || '',
+          income: Number(c.income) || 0,
+          creditScore: Number(c.creditscore) || 100,
+          avatarUrl: c.avatarurl || undefined,
+          status: (c.status || 'Al Día') as Client['status'],
+          joinedDate: c.joineddate || '',
+          clientPin: c.clientpin || '1234',
+          portalAlias: c.portal_alias || undefined,
+          portalActive: c.portal_active !== false,
           guarantors: [],
-          currency: (c.currency || 'DOP') as 'DOP' | 'USD',
         })));
       }
       if (notesRes.data) {
@@ -97,7 +97,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           fileUrl: d.file_url, uploadDate: d.upload_date, tags: d.tags || []
         })));
       }
-      // Routes are optional - table may not exist yet
       try {
         const routesRes = await insforge.database.from('routes').select('*').order('created_at', { ascending: false });
         if (routesRes.data) {
@@ -111,6 +110,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     } catch (error) {
       logger.error("Error fetching clients:", error);
+    } finally {
+      setIsLoading(false);
     }
   }, [currentUser]);
 
@@ -122,6 +123,12 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (!currentUser) return;
     
     const routeIdClean = client.routeId && client.routeId.trim() !== '' ? client.routeId : null;
+
+    let avatarUrl = client.avatarUrl || null;
+    if (avatarUrl && avatarUrl.startsWith('data:')) {
+      const uploadedUrl = await uploadToBucketHelper(avatarUrl, 'client-photos', 'avatars');
+      if (uploadedUrl) avatarUrl = uploadedUrl;
+    }
 
     const { data, error } = await insforge.database.from('clients').insert([{
       lender_id: currentUser.id,
@@ -147,7 +154,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       sex: client.sex || 'Otro',
       income: client.income || 0,
       creditscore: client.creditScore || 100,
-      avatarurl: client.avatarUrl || null,
+      avatarurl: avatarUrl,
       status: 'Al Día',
       joineddate: new Date().toISOString().split('T')[0],
       clientpin: Math.floor(1000 + Math.random() * 9000).toString(),
@@ -178,23 +185,23 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         routeSequence: data.routesequence || 0,
         occupation: data.occupation || '',
         sex: data.sex || 'Otro',
-        income: data.income || 0,
-        creditScore: data.creditscore || 100,
-        avatarUrl: data.avatarurl || data.avatar_url || data.photo_url || client.avatarUrl || '',
+        income: Number(data.income) || 0,
+        creditScore: Number(data.creditscore) || 100,
+        avatarUrl: data.avatarurl || undefined,
         status: data.status || 'Al Día',
-        joinedDate: data.joineddate || data.created_at,
+        joinedDate: data.joineddate || '',
         clientPin: data.clientpin || '',
-        portalAlias: data.portal_alias || data.portalalias || client.portalAlias || '',
+        portalAlias: data.portal_alias || undefined,
         portalActive: data.portal_active ?? true,
         guarantors: []
       };
       setClients(prev => [newClient, ...prev]);
-      addAuditLog('client_created', `Creó el cliente ${newClient.name} ${newClient.lastName || ''}`.trim());
-      addToast("Cliente agregado exitosamente", "success");
+      addAuditLog('client_created', `Registró al cliente ${newClient.name}`);
+      addToast("Cliente registrado exitosamente", "success");
       return newClient;
     } else {
-      logger.error("Error al crear cliente:", error);
-      addToast(`Error al crear cliente: ${error?.message || 'Error desconocido'}`, "error");
+      logger.error("Error al registrar cliente:", error);
+      addToast(`Error al registrar cliente: ${error?.message || 'Error desconocido'}`, "error");
     }
   };
 
@@ -215,6 +222,12 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const updateClient = async (updatedClient: Client) => {
     if (!currentUser) return;
     const routeIdClean = updatedClient.routeId && updatedClient.routeId.trim() !== '' ? updatedClient.routeId : null;
+
+    let avatarUrl = updatedClient.avatarUrl || null;
+    if (avatarUrl && avatarUrl.startsWith('data:')) {
+      const uploadedUrl = await uploadToBucketHelper(avatarUrl, 'client-photos', 'avatars');
+      if (uploadedUrl) avatarUrl = uploadedUrl;
+    }
 
     const { error } = await insforge.database.from('clients').update({
       name: updatedClient.name,
@@ -242,7 +255,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       clientpin: updatedClient.clientPin,
       portal_alias: updatedClient.portalAlias || null,
       portal_active: updatedClient.portalActive !== false,
-      avatarurl: updatedClient.avatarUrl || null,
+      avatarurl: avatarUrl,
       creditscore: updatedClient.creditScore
     }).eq('id', updatedClient.id).eq('lender_id', currentUser.id);
     

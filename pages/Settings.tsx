@@ -89,18 +89,15 @@ const Settings: React.FC = () => {
   const fetchCloudBackups = async () => {
     setIsLoadingCloudBackups(true);
     try {
-      const { data, error } = await insforge.storage.from('backups').list();
-      if (!error && data) {
-        const items = Array.isArray(data) ? data : ((data as unknown as { objects?: { key?: string; name?: string; size?: number; uploadedAt?: string; created_at?: string }[] }).objects || []);
-        setCloudBackups(items.map((item) => ({
-          key: item.key || item.name || 'backup.json',
-          name: item.name || item.key || 'backup.json',
-          size: item.size || 0,
-          lastModified: item.uploadedAt || item.created_at || new Date().toISOString()
-        })));
-      }
+      const files = await listBucketFiles('backups');
+      setCloudBackups(files.map(f => ({
+        key: f.key,
+        name: f.name,
+        size: f.size,
+        lastModified: f.lastModified
+      })));
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching backups from storage bucket:", err);
     } finally {
       setIsLoadingCloudBackups(false);
     }
