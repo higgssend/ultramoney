@@ -325,7 +325,7 @@ export const LoanRequest: React.FC = () => {
                 amount,
                 interestRate: interest,
                 durationWeeks: finalWeeks,
-                frequency: frequency as any,
+                frequency: frequency as Loan['frequency'],
                 loanType,
                 closingCost,
                 closingCostMode,
@@ -345,7 +345,7 @@ export const LoanRequest: React.FC = () => {
                 amount,
                 interestRate: interest,
                 durationWeeks: finalWeeks,
-                frequency: frequency as any,
+                frequency: frequency as Loan['frequency'],
                 loanType,
                 itemPrice: loanType.includes('Financiamiento') ? itemPrice : undefined,
                 downPayment: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPayment : 0,
@@ -388,7 +388,7 @@ export const LoanRequest: React.FC = () => {
             amount,
             interestRate: interest,
             durationWeeks: finalWeeks,
-            frequency: frequency as any,
+            frequency: frequency as Loan['frequency'],
             loanType,
             itemPrice: loanType.includes('Financiamiento') ? itemPrice : undefined,
             downPayment: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPayment : 0,
@@ -708,7 +708,7 @@ export const LoanRequest: React.FC = () => {
                                                 <label className="block text-xs font-bold text-emerald-900 mb-1">Método de Pago de la Inicial</label>
                                                 <CustomSelect
                                                     value={downPaymentMode}
-                                                    onChange={(v) => setDownPaymentMode(v as any)}
+                                                    onChange={(v) => setDownPaymentMode(v as Loan['downPaymentMode'])}
                                                     className="w-full text-xs font-medium"
                                                     options={[
                                                         { value: 'Efectivo', label: 'Efectivo (Cobro Inmediato)' },

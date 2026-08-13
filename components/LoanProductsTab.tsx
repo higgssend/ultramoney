@@ -70,7 +70,7 @@ export const LoanProductsTab: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Tipo de Interés</label>
-                            <CustomSelect value={editingProduct.interestType || ''} onChange={e => setEditingProduct({...editingProduct, interestType: e as any})} className="mt-1" options={[
+                            <CustomSelect value={editingProduct.interestType || ''} onChange={e => setEditingProduct({...editingProduct, interestType: e as LoanProduct['interestType']})} className="mt-1" options={[
                                 { value: 'Fijo', label: 'Fijo' },
                                 { value: 'Simple', label: 'Simple' },
                                 { value: 'Compuesto', label: 'Compuesto' }
@@ -78,7 +78,7 @@ export const LoanProductsTab: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Frecuencia</label>
-                            <CustomSelect value={editingProduct.frequency || ''} onChange={e => setEditingProduct({...editingProduct, frequency: e as any})} className="mt-1" options={[
+                            <CustomSelect value={editingProduct.frequency || ''} onChange={e => setEditingProduct({...editingProduct, frequency: e as LoanProduct['frequency']})} className="mt-1" options={[
                                 { value: 'Diario', label: 'Diario' },
                                 { value: 'Semanal', label: 'Semanal' },
                                 { value: 'Quincenal', label: 'Quincenal' },

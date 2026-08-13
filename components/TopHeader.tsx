@@ -18,7 +18,14 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  interface SearchResultItem {
+    type: 'client' | 'loan';
+    id: string;
+    title: string;
+    subtitle: string;
+  }
+
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
@@ -45,21 +52,21 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
     const q = searchQuery.toLowerCase();
     
     // Search Clients
-    const foundClients = clients.filter(c => 
+    const foundClients: SearchResultItem[] = clients.filter(c => 
       c.name.toLowerCase().includes(q) || 
       (c.cedula && c.cedula.includes(q)) ||
       (c.phone && c.phone.includes(q))
-    ).map(c => ({ type: 'client', id: c.id, title: c.name, subtitle: `Cédula: ${c.cedula || 'N/A'}` })).slice(0, 3);
+    ).map(c => ({ type: 'client' as const, id: c.id, title: c.name, subtitle: `Cédula: ${c.cedula || 'N/A'}` })).slice(0, 3);
     
     // Search Loans
-    const foundLoans = loans.filter(l => 
+    const foundLoans: SearchResultItem[] = loans.filter(l => 
       (l.clientName || '').toLowerCase().includes(q)
-    ).map(l => ({ type: 'loan', id: l.id, title: `Préstamo de ${l.clientName}`, subtitle: `Balance: $${l.remainingBalance}` })).slice(0, 3);
+    ).map(l => ({ type: 'loan' as const, id: l.id, title: `Préstamo de ${l.clientName}`, subtitle: `Balance: $${l.remainingBalance}` })).slice(0, 3);
     
     setSearchResults([...foundClients, ...foundLoans]);
   }, [searchQuery, clients, loans]);
 
-  const handleSearchResultClick = (result: any) => {
+  const handleSearchResultClick = (result: SearchResultItem) => {
     setIsSearchFocused(false);
     setSearchQuery('');
     if (result.type === 'client') navigate(`/clientes/${result.id}`);

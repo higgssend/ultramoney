@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../context/StoreContext';
 import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar, ExternalLink, Printer, LogOut, CheckCircle2, Lock, ArrowUpRight, Percent, Award, Sparkles, Building2, PhoneCall } from 'lucide-react';
-import { Loan, Transaction, CompanySettings, Client, formatLoanId, formatReceiptId } from '../types';
+import { Loan, Transaction, CompanySettings, Client, formatLoanId, formatReceiptId, LoanStatus } from '../types';
+import type { ClientDB, LoanDB, TransactionDB, ClientDocumentDB } from '../types.db';
 import { useParams, Link } from 'react-router-dom';
 import { insforge } from '../lib/insforge';
 
@@ -23,7 +24,7 @@ export const ClientPortal: React.FC = () => {
     // Data State
     const [clientLoans, setClientLoans] = useState<Loan[]>([]);
     const [clientTransactions, setClientTransactions] = useState<Transaction[]>([]);
-    const [clientDocuments, setClientDocuments] = useState<any[]>([]);
+    const [clientDocuments, setClientDocuments] = useState<ClientDocumentDB[]>([]);
 
     // Lender Company Settings State (for custom branding)
     const [lenderBranding, setLenderBranding] = useState<CompanySettings | null>(null);
@@ -55,12 +56,12 @@ export const ClientPortal: React.FC = () => {
             try {
                 const term = clientId.trim();
                 const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(term);
-                let cData: any = null;
+                let cData: ClientDB | null = null;
 
                 // 1. Try ID if valid UUID
                 if (isUuid) {
                     const { data } = await insforge.database.from('clients').select('*').eq('id', term).maybeSingle();
-                    cData = data;
+                    cData = data as ClientDB | null;
                 }
                 
                 // 2. Try portal_alias as passed
@@ -88,7 +89,7 @@ export const ClientPortal: React.FC = () => {
                     if (cleanDigits.length >= 7) {
                         const { data: allClients } = await insforge.database.from('clients').select('*');
                         if (allClients) {
-                            cData = allClients.find((c: any) => (c.cedula || '').replace(/\D/g, '') === cleanDigits);
+                            cData = (allClients as ClientDB[]).find((c) => (c.cedula || '').replace(/\D/g, '') === cleanDigits) || null;
                         }
                     }
                 }
@@ -98,7 +99,7 @@ export const ClientPortal: React.FC = () => {
                     return;
                 }
 
-                const foundClient = cData as any;
+                const foundClient = cData;
                 
                 if (foundClient.portal_active === false) {
                     setAccessDenied(true);
@@ -174,25 +175,25 @@ export const ClientPortal: React.FC = () => {
             }
 
             if (lData && lData.length > 0) {
-                const mappedLoans: Loan[] = lData.map((l: any) => ({
+                const mappedLoans: Loan[] = (lData as LoanDB[]).map((l) => ({
                     ...l,
                     id: l.id,
                     amount: Number(l.amount || 0),
-                    remainingBalance: Number(l.remainingbalance ?? l.remaining_balance ?? l.remainingBalance ?? l.amount ?? 0),
-                    totalToPay: Number(l.totaltopay ?? l.total_to_pay ?? l.totalToPay ?? l.amount ?? 0),
-                    loanType: l.loantype || l.loan_type || l.loanType || 'Préstamo Personal',
-                    loanCategory: l.loancategory || l.loan_category || l.loanCategory || 'Personal',
-                    frequency: l.frequency || 'Mensual',
-                    interestRate: Number(l.interestrate ?? l.interest_rate ?? l.interestRate ?? 0),
-                    durationWeeks: Number(l.durationweeks ?? l.duration_weeks ?? l.durationWeeks ?? l.installments ?? 1),
-                    status: l.status || 'Activo',
-                    startDate: l.startdate || l.start_date || l.startDate || l.created_at,
-                    nextPaymentDate: l.nextpaymentdate || l.next_payment_date || l.nextPaymentDate,
+                    remainingBalance: Number(l.remainingbalance ?? l.remaining_balance ?? l.amount ?? 0),
+                    totalToPay: Number(l.totaltopay ?? l.total_to_pay ?? l.amount ?? 0),
+                    loanType: (l.loantype || l.loan_type || 'Préstamo Personal') as Loan['loanType'],
+                    loanCategory: l.loancategory || l.loan_category || 'Personal',
+                    frequency: (l.frequency || 'Mensual') as Loan['frequency'],
+                    interestRate: Number(l.interestrate ?? l.interest_rate ?? 0),
+                    durationWeeks: Number(l.durationweeks ?? l.duration_weeks ?? l.installments ?? 1),
+                    status: (l.status || 'Activo') as LoanStatus,
+                    startDate: l.startdate || l.start_date || l.created_at || new Date().toISOString().split('T')[0],
+                    nextPaymentDate: l.nextpaymentdate || l.next_payment_date,
                 }));
 
                 setClientLoans(mappedLoans);
 
-                const lIds = lData.map((l: any) => l.id);
+                const lIds = (lData as LoanDB[]).map((l) => l.id);
                 if (lIds.length > 0) {
                     // 2. Fetch Transactions
                     let { data: tData } = await insforge.database
@@ -209,15 +210,15 @@ export const ClientPortal: React.FC = () => {
                     }
 
                     if (tData) {
-                        const mappedTx: Transaction[] = tData.map((t: any) => ({
+                        const mappedTx: Transaction[] = (tData as TransactionDB[]).map((t) => ({
                             ...t,
                             id: t.id,
                             amount: Number(t.amount || 0),
                             date: t.date || t.created_at || new Date().toISOString(),
                             description: t.description || 'Pago de Préstamo',
-                            paymentMethod: t.paymentmethod || t.payment_method || t.paymentMethod || 'Efectivo',
-                            paymentType: t.paymenttype || t.payment_type || t.paymentType || 'Ingreso',
-                            referenceId: t.referenceid || t.reference_id || t.referenceId
+                            paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
+                            paymentType: (t.paymenttype || t.payment_type || 'Ingreso') as Transaction['paymentType'],
+                            referenceId: t.referenceid || t.reference_id
                         }));
                         setClientTransactions(mappedTx.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                     }

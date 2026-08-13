@@ -58,13 +58,13 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             .eq('referenceid', currentLoan.id);
           
           if (data && data.length > 0) {
-            setLoanTransactions(data as any);
+            setLoanTransactions(data as unknown as Transaction[]);
           } else {
             const { data: data2 } = await insforge.database
               .from('transactions')
               .select('*')
               .eq('reference_id', currentLoan.id);
-            if (data2) setLoanTransactions(data2 as any);
+            if (data2) setLoanTransactions(data2 as unknown as Transaction[]);
           }
         } catch (e) {
           console.error("Error fetching transactions for document generator:", e);
@@ -155,7 +155,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       
       const fileName = `${client.id}_${docType}_${currentLoan ? currentLoan.id : 'global'}_${Date.now()}.pdf`;
       
-      const { data, error } = await (insforge.storage.from('client-documents').upload as any)(
+      const { error } = await insforge.storage.from('client-documents').upload(
         fileName, 
         pdfBlob, 
         { contentType: 'application/pdf', upsert: true }
@@ -175,8 +175,9 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       }]);
 
       addToast('Documento guardado en la nube exitosamente', 'success');
-    } catch (err: any) {
-      addToast('Error al guardar en la nube: ' + err.message, 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      addToast('Error al guardar en la nube: ' + msg, 'error');
     } finally {
       setIsUploading(false);
     }

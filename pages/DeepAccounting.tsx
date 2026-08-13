@@ -260,7 +260,7 @@ const DeepAccounting: React.FC = () => {
                 <label className="font-bold text-slate-700 block mb-1">Cuenta Débito (Debe)</label>
                 <CustomSelect
                   value={manualDebitCode}
-                  onChange={(val: any) => setManualDebitCode(val)}
+                  onChange={(val: string) => setManualDebitCode(val)}
                   options={accounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
                 />
               </div>
@@ -269,7 +269,7 @@ const DeepAccounting: React.FC = () => {
                 <label className="font-bold text-slate-700 block mb-1">Cuenta Crédito (Haber)</label>
                 <CustomSelect
                   value={manualCreditCode}
-                  onChange={(val: any) => setManualCreditCode(val)}
+                  onChange={(val: string) => setManualCreditCode(val)}
                   options={accounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
                 />
               </div>

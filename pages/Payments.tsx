@@ -687,7 +687,7 @@ const Payments: React.FC = () => {
                                         <button
                                             key={pm.id}
                                             type="button"
-                                            onClick={() => setPaymentMethod(pm.name as any)}
+                                            onClick={() => setPaymentMethod(pm.name as PaymentMethod)}
                                             className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${paymentMethod === pm.name ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
                                         >
                                             {pm.name}
@@ -742,7 +742,7 @@ const Payments: React.FC = () => {
                                         <label className="block text-sm font-medium text-slate-600 mb-1">Tipo de Pago (Pagaré Abierto)</label>
                                         <CustomSelect 
                                             value={paymentType}
-                                            onChange={(e) => handlePaymentTypeChange(e as any)}
+                                            onChange={(e) => handlePaymentTypeChange(e as 'Interes' | 'Capital' | 'Mixto')}
                                             className="w-full"
                                             options={[
                                                 { value: 'Interes', label: 'Solo Intereses (Réditos)' },

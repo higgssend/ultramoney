@@ -91,7 +91,7 @@ export const InventoryPage: React.FC = () => {
         storage: formData.storage,
         cashPrice: Number(formData.cashPrice) || 0,
         costPrice: Number(formData.costPrice) || 0,
-        status: (formData.status as any) || 'Disponible'
+        status: (formData.status as InventoryItem['status']) || 'Disponible'
       });
     }
 
@@ -374,7 +374,7 @@ export const InventoryPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estado de Stock</label>
                   <CustomSelect
                     value={formData.status || 'Disponible'}
-                    onChange={(v) => setFormData({ ...formData, status: v as any })}
+                    onChange={(v) => setFormData({ ...formData, status: v as InventoryItem['status'] })}
                     className="w-full text-xs"
                     options={[
                       { value: 'Disponible', label: 'Disponible en Stock' },

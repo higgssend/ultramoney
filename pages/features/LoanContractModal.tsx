@@ -101,7 +101,7 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
   const effectiveInstallmentAmount = installmentAmount ?? loan?.installmentAmount ?? (effectiveWeeks > 0 ? Math.round(effectiveTotalToPay / effectiveWeeks) : 0);
   const effectiveCurrency = currency ?? loan?.currency ?? activeCompanySettings.currency ?? 'DOP';
   const effectiveContractId = customContractId || (loan ? formatContractId(loan.id) : undefined);
-  const effectiveCollateral = collateral || (loan?.collaterals?.[0] || (loan?.collateralType ? { type: loan.collateralType as any, description: loan.collateralDescription || '', refNumber: loan.collateralRefNumber || '' } : undefined));
+  const effectiveCollateral = collateral || (loan?.collaterals?.[0] || (loan?.collateralType ? { type: loan.collateralType as Collateral['type'], description: loan.collateralDescription || '', refNumber: loan.collateralRefNumber || '' } : undefined));
 
   const printRef = useRef<HTMLDivElement>(null);
   const contractIdRef = useRef(RECEIPT_ID());

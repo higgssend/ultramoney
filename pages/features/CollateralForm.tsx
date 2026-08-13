@@ -35,7 +35,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                            item.category === 'Electrodoméstico' ? 'Electrodoméstico' : 'Otro';
 
         onChange({
-            type: targetType as any,
+            type: targetType as Collateral['type'],
             description: `${item.brand || ''} ${item.model || item.name}`.trim(),
             refNumber: item.serialNumber || '',
             brand: item.brand,
@@ -48,7 +48,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
         });
     };
 
-    const handleChange = (field: keyof Collateral, value: any) => {
+    const handleChange = <K extends keyof Collateral>(field: K, value: Collateral[K]) => {
         if (!collateral) return;
         
         // Auto-update combined description for phone if brand/model change

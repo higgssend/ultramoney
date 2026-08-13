@@ -376,6 +376,7 @@ export interface Invoice {
   status: 'Emitida' | 'Anulada' | 'Completada';
   paymentStatus: 'Pagado' | 'Pendiente' | 'Parcial';
   items: InvoiceItem[];
+  ncf?: string;
   subtotal: number;
   total: number;
   totalPaid: number;

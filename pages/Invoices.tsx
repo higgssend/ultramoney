@@ -256,7 +256,7 @@ const Invoices: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold">Factura Fiscal {selectedInvoice.id}</h3>
-                  <p className="text-xs text-slate-300">NCF: {(selectedInvoice as any).ncf || 'B0200000000'}</p>
+                  <p className="text-xs text-slate-300">NCF: {selectedInvoice.ncf || 'B0200000000'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

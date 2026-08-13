@@ -1061,7 +1061,7 @@ const ClientDetail: React.FC = () => {
                             <CustomSelect 
                                 className="w-full"
                                 value={uploadDocType} 
-                                onChange={e => setUploadDocType(e as any)}
+                                onChange={e => setUploadDocType(e as ClientDocument['type'])}
                                 options={[
                                     { value: 'Cedula', label: 'Cédula de Identidad' },
                                     { value: 'Contrato', label: 'Contrato Firmado' },
@@ -1162,7 +1162,7 @@ const ClientDetail: React.FC = () => {
                          <CustomSelect 
                              className="w-full"
                              value={editDocType} 
-                             onChange={e => setEditDocType(e as any)}
+                             onChange={e => setEditDocType(e as ClientDocument['type'])}
                              options={[
                                  { value: 'Cedula', label: 'Cédula de Identidad' },
                                  { value: 'Pasaporte', label: 'Pasaporte' },
@@ -1250,7 +1250,7 @@ const ClientDetail: React.FC = () => {
 };
 
 // Helper Components
-const DetailGroup: React.FC<{ icon: any, title: string, children: React.ReactNode }> = ({ icon: Icon, title, children }) => (
+const DetailGroup: React.FC<{ icon: React.ElementType, title: string, children: React.ReactNode }> = ({ icon: Icon, title, children }) => (
     <div>
         <h4 className="flex items-center gap-2 font-bold text-slate-800 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-700">
             <Icon className="w-4 h-4 text-indigo-500" /> {title}
@@ -1268,7 +1268,7 @@ const DetailRow: React.FC<{ label: string; value: string | React.ReactNode; high
   </div>
 );
 
-const ActionButton: React.FC<{ icon: any, label: string, onClick?: () => void, primary?: boolean }> = ({ icon: Icon, label, onClick, primary }) => (
+const ActionButton: React.FC<{ icon: React.ElementType, label: string, onClick?: () => void, primary?: boolean }> = ({ icon: Icon, label, onClick, primary }) => (
   <button 
     onClick={onClick}
     className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all shadow-sm ${primary ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200 hover:border-indigo-300 hover:text-indigo-600'}`}

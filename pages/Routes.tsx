@@ -148,7 +148,7 @@ const RoutesPage: React.FC = () => {
                                 <CustomSelect
                                     className="w-full"
                                     value={formData.status || 'Activa'} 
-                                    onChange={e => setFormData({...formData, status: e as any})}
+                                    onChange={e => setFormData({...formData, status: e as 'Activa' | 'Inactiva'})}
                                     options={[
                                         { value: 'Activa', label: 'Activa' },
                                         { value: 'Inactiva', label: 'Inactiva' }

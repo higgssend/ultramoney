@@ -2017,7 +2017,7 @@ const LandingPage: React.FC = () => {
                 ].map(tab => (
                   <div 
                     key={tab.id}
-                    onClick={() => setActiveMobileTab(tab.id as any)}
+                    onClick={() => setActiveMobileTab(tab.id as typeof activeMobileTab)}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all ${activeMobileTab === tab.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20' : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'}`}
                   >
                     <div className="flex items-center justify-between">

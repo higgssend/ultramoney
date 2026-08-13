@@ -229,7 +229,7 @@ export const BankAccountsPage: React.FC = () => {
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Tipo de Cuenta</label>
               <select
                 value={accountType}
-                onChange={(e) => setAccountType(e.target.value as any)}
+                onChange={(e) => setAccountType(e.target.value as BankAccount['accountType'])}
                 className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
               >
                 <option value="Corriente">Cuenta Corriente</option>
@@ -438,7 +438,7 @@ export const BankAccountsPage: React.FC = () => {
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Categoría / Tipo de Procesamiento</label>
                 <select
                   value={pmCategory}
-                  onChange={(e) => setPmCategory(e.target.value as any)}
+                  onChange={(e) => setPmCategory(e.target.value as CustomPaymentMethod['category'])}
                   className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 font-bold"
                 >
                   <option value="POS / Verifone">POS / Verifone (Terminal Física)</option>

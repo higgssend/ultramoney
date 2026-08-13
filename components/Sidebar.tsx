@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const menuItems: { name: string; path: string; icon: any; highlight?: boolean }[] = [
+  const menuItems: { name: string; path: string; icon: React.ElementType; highlight?: boolean }[] = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Facturas', path: '/facturas', icon: FileText },
     { name: 'Consultar', path: '/consultar', icon: Search },

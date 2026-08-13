@@ -325,7 +325,7 @@ const Accounting: React.FC = () => {
                   <label className="font-bold text-slate-700 block mb-1">Categoría del Gasto</label>
                   <CustomSelect
                     value={expenseCategory}
-                    onChange={(val: any) => setExpenseCategory(val)}
+                    onChange={(val: string) => setExpenseCategory(val)}
                     options={[
                       { value: 'Operativo', label: 'Operativo / General' },
                       { value: 'Nómina', label: 'Nómina & Comisiones' },
@@ -476,12 +476,12 @@ const Accounting: React.FC = () => {
                       <input
                         type="number"
                         min="0"
-                        value={(closingData as any)[b.key]}
+                        value={closingData[b.key as keyof typeof closingData] || 0}
                         onChange={e => setClosingData({ ...closingData, [b.key]: Math.max(0, Number(e.target.value)) })}
                         className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-center font-bold"
                       />
                       <span className="text-[10px] text-slate-400 block text-right mt-1 font-mono">
-                        RD$ {((closingData as any)[b.key] * b.mult).toLocaleString()}
+                        RD$ {((closingData[b.key as keyof typeof closingData] || 0) * b.mult).toLocaleString()}
                       </span>
                     </div>
                   ))}
@@ -581,7 +581,7 @@ const Accounting: React.FC = () => {
                 <label className="font-bold text-slate-700 block mb-1">Cuenta Débito (Debe)</label>
                 <CustomSelect
                   value={manualDebitCode}
-                  onChange={(val: any) => setManualDebitCode(val)}
+                  onChange={(val: string) => setManualDebitCode(val)}
                   options={accounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
                 />
               </div>
@@ -590,7 +590,7 @@ const Accounting: React.FC = () => {
                 <label className="font-bold text-slate-700 block mb-1">Cuenta Crédito (Haber)</label>
                 <CustomSelect
                   value={manualCreditCode}
-                  onChange={(val: any) => setManualCreditCode(val)}
+                  onChange={(val: string) => setManualCreditCode(val)}
                   options={accounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
                 />
               </div>

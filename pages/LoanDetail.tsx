@@ -186,13 +186,13 @@ export const LoanDetail: React.FC = () => {
             .eq('referenceid', loan.id);
           
           if (data && data.length > 0) {
-            setDbTransactions(data as any);
+            setDbTransactions(data as unknown as Transaction[]);
           } else {
             const { data: data2 } = await insforge.database
               .from('transactions')
               .select('*')
               .eq('reference_id', loan.id);
-            if (data2) setDbTransactions(data2 as any);
+            if (data2) setDbTransactions(data2 as unknown as Transaction[]);
           }
         } catch (e) {
           console.error("Error fetching transactions for loan detail:", e);
@@ -216,7 +216,6 @@ export const LoanDetail: React.FC = () => {
   // Combine store transactions and database transactions avoiding duplicates
   const storeLoanTx = transactions.filter(t => 
     t.referenceId === loan.id || 
-    (t as any).referenceid === loan.id || 
     (t.description && t.description.includes(loan.id))
   );
 
@@ -408,8 +407,9 @@ export const LoanDetail: React.FC = () => {
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Documento_${docType}_${loan.clientName.replace(/\s+/g, '_')}_${formatLoanId(loan.id)}.pdf`);
       toast.success('PDF descargado exitosamente');
-    } catch (err: any) {
-      toast.error('Error al exportar PDF: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error('Error al exportar PDF: ' + msg);
     }
   };
 
@@ -444,8 +444,9 @@ export const LoanDetail: React.FC = () => {
       link.href = canvas.toDataURL('image/png');
       link.click();
       toast.success('Imagen guardada exitosamente');
-    } catch (err: any) {
-      toast.error('Error al exportar imagen: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error('Error al exportar imagen: ' + msg);
     }
   };
 
@@ -467,7 +468,7 @@ export const LoanDetail: React.FC = () => {
       const pdfBlob = pdf.output('blob');
       const fileName = `loan_${loan.id}_${docType}_${Date.now()}.pdf`;
       
-      const { data, error } = await (insforge.storage.from('client-documents').upload as any)(
+      const { error } = await insforge.storage.from('client-documents').upload(
         fileName, 
         pdfBlob, 
         { contentType: 'application/pdf', upsert: true }
@@ -487,8 +488,9 @@ export const LoanDetail: React.FC = () => {
       }]);
 
       toast.success('Documento guardado en la nube exitosamente');
-    } catch (err: any) {
-      toast.error('Error al guardar en la nube: ' + err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      toast.error('Error al guardar en la nube: ' + msg);
     } finally {
       setIsUploading(false);
     }
@@ -1694,7 +1696,7 @@ export const LoanDetail: React.FC = () => {
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Método de Pago</label>
                   <select 
                     value={histMethod} 
-                    onChange={e => setHistMethod(e.target.value as any)} 
+                    onChange={e => setHistMethod(e.target.value as Transaction['paymentMethod'])} 
                     className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
                   >
                     <option value="Efectivo">Efectivo</option>
@@ -1708,7 +1710,7 @@ export const LoanDetail: React.FC = () => {
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo de Pago</label>
                   <select 
                     value={histType} 
-                    onChange={e => setHistType(e.target.value as any)} 
+                    onChange={e => setHistType(e.target.value as Transaction['paymentType'])} 
                     className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-800 font-bold"
                   >
                     <option value="Mixto">Cuota Completa / Mixto</option>

@@ -50,13 +50,13 @@ export const DocumentPage: React.FC = () => {
             .eq('referenceid', currentLoan.id);
           
           if (data && data.length > 0) {
-            setLoanTransactions(data as any);
+            setLoanTransactions(data as unknown as Transaction[]);
           } else {
             const { data: data2 } = await insforge.database
               .from('transactions')
               .select('*')
               .eq('reference_id', currentLoan.id);
-            if (data2) setLoanTransactions(data2 as any);
+            if (data2) setLoanTransactions(data2 as unknown as Transaction[]);
           }
         } catch (e) {
           console.error("Error fetching transactions for document page:", e);
@@ -123,11 +123,11 @@ export const DocumentPage: React.FC = () => {
     }
 
     if (collateralType === 'Teléfono / Celular') {
-      const colObj = typeof currentLoan.collateral === 'object' ? currentLoan.collateral as any : {};
+      const colObj = (typeof currentLoan.collateral === 'object' && currentLoan.collateral ? currentLoan.collateral : {}) as Record<string, string | number | undefined>;
       collateralHeading = 'GARANTÍA MOBILIARIA DE DISPOSITIVO MÓVIL (PRENDA SOBRE CELULAR)';
       collateralLegalClause = `PRENDA MOBILIARIA EN CUSTODIA SOBRE EQUIPO CELULAR / DISPOSITIVO MÓVIL: Marca y Modelo: ${collateralDescription || 'Celular'}, IMEI / Serie No.: ${collateralRefNumber || 'N/A'}${colObj.imei2 ? ` (IMEI 2: ${colObj.imei2})` : ''}${colObj.storage ? `, Capacidad: ${colObj.storage}` : ''}${colObj.condition ? `, Condición: ${colObj.condition}` : ''}${collateralEstimatedValue > 0 ? `, por un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL DEUDOR declara bajo fe de juramento que dicho bien es de su exclusiva propiedad y se encuentra libre de todo gravamen.`;
     } else if (collateralType === 'Tarjeta de Crédito / Débito') {
-      const colObj = typeof currentLoan.collateral === 'object' ? currentLoan.collateral as any : {};
+      const colObj = (typeof currentLoan.collateral === 'object' && currentLoan.collateral ? currentLoan.collateral : {}) as Record<string, string | undefined>;
       collateralHeading = 'GARANTÍA MOBILIARIA Y CUSTODIA DE TARJETA BANCARIA';
       collateralLegalClause = `PRENDA MOBILIARIA Y CUSTODIA FÍSICA DE TARJETA BANCARIA: Banco Emisor: ${colObj.bankName || 'Banco Registrado'}, Tipo: ${colObj.cardType || 'Visa/Mastercard'}, Últimos 4 Dígitos: **** **** **** ${collateralRefNumber || colObj.last4 || 'N/A'}${colObj.cardHolder ? `, Tarjetahabiente: ${colObj.cardHolder}` : ''}${colObj.expiryDate ? `, Vencimiento: ${colObj.expiryDate}` : ''}. EL DEUDOR entrega voluntariamente en custodia física dicha tarjeta a favor de EL ACREEDOR como respaldo colateral hasta la salvedad total de la deuda.`;
     } else if (collateralType === 'Vehículo') {
@@ -198,8 +198,9 @@ export const DocumentPage: React.FC = () => {
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Documento_${docType}_${client.name.replace(/\s+/g, '_')}_${currentLoan ? currentLoan.id : 'global'}.pdf`);
       addToast('Documento PDF descargado exitosamente', 'success');
-    } catch (err: any) {
-      addToast('Error al exportar PDF: ' + err.message, 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      addToast('Error al exportar PDF: ' + msg, 'error');
     }
   };
 
@@ -234,8 +235,9 @@ export const DocumentPage: React.FC = () => {
       link.href = canvas.toDataURL('image/png');
       link.click();
       addToast('Imagen guardada exitosamente', 'success');
-    } catch (err: any) {
-      addToast('Error al exportar imagen: ' + err.message, 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      addToast('Error al exportar imagen: ' + msg, 'error');
     }
   };
 
@@ -258,7 +260,7 @@ export const DocumentPage: React.FC = () => {
       
       const fileName = `${client.id}_${docType}_${currentLoan ? currentLoan.id : 'global'}_${Date.now()}.pdf`;
       
-      const { data, error } = await (insforge.storage.from('client-documents').upload as any)(
+      const { error } = await insforge.storage.from('client-documents').upload(
         fileName, 
         pdfBlob, 
         { contentType: 'application/pdf', upsert: true }
@@ -278,8 +280,9 @@ export const DocumentPage: React.FC = () => {
       }]);
 
       addToast('Documento guardado en la nube exitosamente', 'success');
-    } catch (err: any) {
-      addToast('Error al guardar en la nube: ' + err.message, 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      addToast('Error al guardar en la nube: ' + msg, 'error');
     } finally {
       setIsUploading(false);
     }

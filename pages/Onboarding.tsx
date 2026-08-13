@@ -66,8 +66,9 @@ const Onboarding: React.FC = () => {
       });
 
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar la configuración.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar la configuración.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -70,7 +70,7 @@ const Simulator: React.FC = () => {
       setExpenses(expenses.filter(e => e.id !== id));
   };
 
-  const updateExpense = (id: string, field: keyof ExpenseConfig, value: any) => {
+  const updateExpense = <K extends keyof ExpenseConfig>(id: string, field: K, value: ExpenseConfig[K]) => {
       setExpenses(expenses.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
@@ -106,7 +106,7 @@ const Simulator: React.FC = () => {
                     ].map(t => (
                         <button
                             key={t.id}
-                            onClick={() => setActiveTab(t.id as any)}
+                            onClick={() => setActiveTab(t.id as typeof activeTab)}
                             className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                         >
                             {t.icon} {t.label}
