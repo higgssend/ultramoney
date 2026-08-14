@@ -180,7 +180,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       avatarurl: avatarUrl,
       status: 'Al Día',
       joineddate: new Date().toISOString().split('T')[0],
-      clientpin: Math.floor(1000 + Math.random() * 9000).toString(),
+      clientpin: client.clientPin ? client.clientPin.trim() : null,
       portal_alias: client.portalAlias || null,
       portal_active: client.portalActive !== false,
     }]).select().single();
@@ -275,7 +275,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       sex: updatedClient.sex,
       income: updatedClient.income || 0,
       status: updatedClient.status,
-      clientpin: updatedClient.clientPin,
+      clientpin: updatedClient.clientPin ? updatedClient.clientPin.trim() : null,
       portal_alias: updatedClient.portalAlias || null,
       portal_active: updatedClient.portalActive !== false,
       avatarurl: avatarUrl,

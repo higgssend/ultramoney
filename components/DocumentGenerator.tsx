@@ -618,10 +618,29 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     const receiptBalances = calculateReceiptBalances(activeTransaction, currentLoan, loanTransactions);
                     return (
                       <div className="mt-6 border border-slate-200 rounded-xl p-4 bg-slate-50 font-sans text-xs space-y-1.5">
-                        <p><strong>Total de la Deuda Original:</strong> RD$ {receiptBalances.totalDebt.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                        <div className="grid grid-cols-2 gap-2 border-b border-slate-200 pb-1.5">
+                          <p><strong>Total de la Deuda Original:</strong> RD$ {receiptBalances.totalDebt.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                          {!receiptBalances.isOpenLoan && (
+                            <p className="text-right"><strong>No. de Cuota:</strong> <span className="font-mono font-bold text-indigo-700">{receiptBalances.installmentText}</span></p>
+                          )}
+                        </div>
+                        {!receiptBalances.isOpenLoan && (
+                          <div className="grid grid-cols-2 gap-2 text-slate-700">
+                            <p><strong>Abono a Capital:</strong> RD$ {receiptBalances.capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-right"><strong>Abono a Interés:</strong> RD$ {receiptBalances.interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                          </div>
+                        )}
+                        {receiptBalances.lateFeePaid > 0 && (
+                          <p className="text-rose-600"><strong>Mora / Recargo:</strong> RD$ {receiptBalances.lateFeePaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                        )}
                         <p><strong>Balance Anterior al Pago:</strong> RD$ {receiptBalances.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
                         <p><strong>Monto Pagado:</strong> RD$ {receiptBalances.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
-                        <p className="font-black text-sm text-indigo-700 pt-1"><strong>(=) Balance Restante a la Fecha:</strong> RD$ {receiptBalances.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                        <div className="pt-1.5 border-t border-slate-200 flex justify-between items-center">
+                          <p className="font-black text-sm text-indigo-700"><strong>(=) Balance Restante a la Fecha:</strong> RD$ {receiptBalances.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                          {!receiptBalances.isOpenLoan && (
+                            <p className="text-xs font-bold text-slate-600"><strong>Cuotas Restantes:</strong> {receiptBalances.remainingInstallmentsText}</p>
+                          )}
+                        </div>
                       </div>
                     );
                   })()}

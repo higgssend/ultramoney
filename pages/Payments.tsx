@@ -525,7 +525,11 @@ export const Payments: React.FC = () => {
       loanType: loan?.loanType || (calculated.isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
       loanAmount: loan?.amount,
       totalDebt: calculated.totalDebt,
-      installmentInfo: loan ? `Cuota ${loan.frequency}` : undefined,
+      installmentInfo: calculated.installmentText || (loan ? `Cuota ${loan.frequency}` : undefined),
+      installmentNumber: calculated.installmentNumber,
+      totalInstallments: calculated.totalInstallments,
+      remainingInstallments: calculated.remainingInstallments,
+      remainingInstallmentsText: calculated.remainingInstallmentsText,
       amountPaid: calculated.amountPaid,
       capitalAmount: calculated.capitalPaid,
       interestAmount: calculated.interestPaid,
@@ -555,7 +559,7 @@ export const Payments: React.FC = () => {
     const formattedRecNo = formatReceiptId(t.id);
     const url = `${window.location.origin}/recibo/${t.id}`;
     
-    const text = `🏢 *${companySettings.name}*\n📄 *Recibo de Cobro*: ${formattedRecNo}\n👤 *Cliente*: ${clientName}\n💰 *Monto Recibido*: RD$ ${Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+    const text = `*${companySettings.name}*\n*Recibo de Cobro*: ${formattedRecNo}\n*Cliente*: ${clientName}\n*Monto Recibido*: RD$ ${Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
     
     const targetPhone = client?.phone ? client.phone.replace(/[^0-9]/g, '') : '';
     const waUrl = targetPhone 
@@ -1764,7 +1768,7 @@ const PaymentSuccessModal: React.FC<{
     });
   };
 
-  const message = `🏢 *${company.name}*\n📄 *Recibo de Pago*: ${data.receiptNo || formatReceiptId(data.transactionId)}\n👤 *Cliente*: ${data.clientName}\n💰 *Monto Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}\n\nGracias por su pago.`;
+  const message = `*${company.name}*\n*Recibo de Pago*: ${data.receiptNo || formatReceiptId(data.transactionId)}\n*Cliente*: ${data.clientName}\n*Monto Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}\n\nGracias por su pago.`;
   const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
   const mailLink = `mailto:?subject=Recibo de Pago ${data.receiptNo || data.transactionId}&body=${encodeURIComponent(message)}`;
 

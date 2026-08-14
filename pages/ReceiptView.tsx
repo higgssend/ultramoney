@@ -340,7 +340,7 @@ export const ReceiptView: React.FC = () => {
 
     const handleShareWhatsApp = () => {
         const url = window.location.href;
-        const text = `🏢 *${companySettings.name}*\n📄 *Recibo de Pago*: ${formattedReceiptNo}\n👤 *Cliente*: ${clientFullName}\n💰 *Monto*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+        const text = `*${companySettings.name}*\n*Recibo de Pago*: ${formattedReceiptNo}\n*Cliente*: ${clientFullName}\n*Monto Pagado*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
@@ -355,11 +355,16 @@ export const ReceiptView: React.FC = () => {
         loanType: loan?.loanType || (isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
         loanAmount: loan?.amount,
         totalDebt: totalDebt,
-        installmentInfo: loan ? `Cuota ${loan.frequency || 'Mensual'}` : undefined,
+        installmentInfo: calculated?.installmentText || (loan ? `Cuota ${loan.frequency || 'Mensual'}` : undefined),
+        installmentNumber: calculated?.installmentNumber,
+        totalInstallments: calculated?.totalInstallments,
+        remainingInstallments: calculated?.remainingInstallments,
+        remainingInstallmentsText: calculated?.remainingInstallmentsText,
         amountPaid: paymentAmount,
         capitalAmount: capitalPaid,
         interestAmount: interestPaid,
         lateFeeAmount: lateFeePaid,
+        discountAmount: discountPaid,
         previousBalance: previousBalance,
         newBalance: currentBalance,
         paymentMethod: transaction.paymentMethod || 'Efectivo',
@@ -548,6 +553,24 @@ export const ReceiptView: React.FC = () => {
                             <span className="font-black text-slate-900">RD$ {totalDebt.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                         </div>
 
+                        {/* Installment count and remaining installments info */}
+                        {!isOpenLoan && (
+                            <div className="grid grid-cols-2 gap-2 bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-100">
+                                <div>
+                                    <span className="text-slate-500 text-[10px] font-bold block uppercase">No. de Cuota:</span>
+                                    <span className="font-mono font-black text-indigo-700 text-sm">
+                                        {calculated?.installmentText || (loan ? `Cuota ${loan.frequency || 'Mensual'}` : 'Cuota #1')}
+                                    </span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-slate-500 text-[10px] font-bold block uppercase">Cuotas Restantes:</span>
+                                    <span className="font-mono font-black text-slate-800 text-sm">
+                                        {calculated?.remainingInstallmentsText || '0 cuotas restantes'}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex justify-between text-slate-600 px-1">
                             <span>Balance Anterior al Pago:</span>
                             <span className="font-bold text-slate-800">RD$ {previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
@@ -575,11 +598,11 @@ export const ReceiptView: React.FC = () => {
                             <>
                                 <div className="flex justify-between text-slate-600 px-1">
                                     <span>Abono a Capital:</span>
-                                    <span className="font-bold text-slate-800">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                    <span className="font-bold text-emerald-700 font-mono">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between text-slate-600 px-1">
                                     <span>Interés Pagado:</span>
-                                    <span className="font-bold text-slate-800">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                    <span className="font-bold text-indigo-600 font-mono">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </>
                         )}
@@ -587,7 +610,7 @@ export const ReceiptView: React.FC = () => {
                         {lateFeePaid > 0 && (
                             <div className="flex justify-between text-slate-600 px-1">
                                 <span>Mora / Recargo por Atraso:</span>
-                                <span className="font-bold text-rose-600 font-black">
+                                <span className="font-bold text-rose-600 font-black font-mono">
                                     RD$ {lateFeePaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
@@ -596,7 +619,7 @@ export const ReceiptView: React.FC = () => {
                         {discountPaid > 0 && (
                             <div className="flex justify-between text-emerald-700 font-semibold px-1">
                                 <span>Descuento Otorgado:</span>
-                                <span className="font-black">
+                                <span className="font-black font-mono">
                                     -RD$ {discountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
@@ -611,7 +634,7 @@ export const ReceiptView: React.FC = () => {
 
                         <div className="flex justify-between text-slate-900 font-black pt-2 border-t border-slate-300 text-sm bg-indigo-50/70 p-3 rounded-xl border border-indigo-100">
                             <span>(=) Balance Restante a la Fecha:</span>
-                            <span className="text-indigo-700 font-black text-base">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-indigo-700 font-black text-base font-mono">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                         </div>
 
                         {isOpenLoan && (

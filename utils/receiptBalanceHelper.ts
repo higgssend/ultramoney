@@ -10,6 +10,12 @@ export interface CalculatedReceiptBalances {
   discountPaid: number;
   newBalance: number;
   isOpenLoan: boolean;
+  isInstallmentLoan: boolean;
+  totalInstallments: number;
+  installmentNumber: number;
+  remainingInstallments: number;
+  installmentText: string;
+  remainingInstallmentsText: string;
 }
 
 export const isOpenLoanType = (loanType?: string): boolean => {
@@ -30,8 +36,8 @@ export const isOpenLoanType = (loanType?: string): boolean => {
 
 /**
  * Calcula con precisión contable el balance anterior, nuevo balance,
- * desglose y monto total de la deuda para cualquier recibo, soportando
- * tanto pagos nuevos como transacciones históricas previas.
+ * desglose de capital/interés, número de cuota y cuotas restantes
+ * para cualquier recibo, soportando préstamos a cuotas y pagarés abiertos.
  */
 export function calculateReceiptBalances(
   transaction: Transaction,
@@ -40,6 +46,7 @@ export function calculateReceiptBalances(
 ): CalculatedReceiptBalances {
   const amountPaid = Number(transaction.amount) || 0;
   const isOpen = loan ? isOpenLoanType(loan.loanType || loan.loantype) : false;
+  const isInstallmentLoan = !isOpen;
   
   const loanPrincipal = Number(loan?.amount || 0);
   const loanTotalToPay = Number(loan?.totaltopay ?? loan?.totalToPay ?? loanPrincipal);
@@ -47,10 +54,14 @@ export function calculateReceiptBalances(
     ? (isOpen ? loanPrincipal : (loanTotalToPay || loanPrincipal))
     : (transaction.totalDebt !== undefined && Number(transaction.totalDebt) > 0 ? Number(transaction.totalDebt) : amountPaid);
 
-  // 1. Desglose del pago
+  const totalInstallments = loan 
+    ? Number(loan.durationWeeks ?? loan.duration_weeks ?? loan.installments ?? 0)
+    : 0;
+
+  // 1. Desglose del pago (Capital, Interés, Mora, Descuento)
   let capitalPaid = 0;
   let interestPaid = 0;
-  let lateFeePaid = 0;
+  let lateFeePaid = Number(transaction.lateFeeAmount || 0);
   let discountPaid = Number(transaction.discountAmount || 0);
 
   if (
@@ -61,49 +72,53 @@ export function calculateReceiptBalances(
     interestPaid = Number(transaction.interestAmount || 0);
     lateFeePaid = Number(transaction.lateFeeAmount || 0);
   } else if (transaction.paymentType === 'Capital') {
-    capitalPaid = amountPaid;
+    capitalPaid = Math.max(0, amountPaid - lateFeePaid);
+    interestPaid = 0;
   } else if (transaction.paymentType === 'Interes') {
-    interestPaid = amountPaid;
+    interestPaid = Math.max(0, amountPaid - lateFeePaid);
+    capitalPaid = 0;
   } else if (transaction.description?.toLowerCase().includes('mora') || transaction.paymentType === 'Mora') {
     lateFeePaid = amountPaid;
+    capitalPaid = 0;
+    interestPaid = 0;
   } else {
-    // Si no está desglosado explícitamente:
+    // Si no está desglosado explícitamente en la base de datos:
     if (isOpen) {
-      interestPaid = amountPaid;
+      interestPaid = Math.max(0, amountPaid - lateFeePaid);
+      capitalPaid = 0;
     } else {
-      if (loan && (loan.interestRate || loan.interestrate)) {
+      const totalLoanInterest = Math.max(0, loanTotalToPay - loanPrincipal);
+      if (totalInstallments > 0 && totalLoanInterest > 0) {
+        const interestPerCuota = totalLoanInterest / totalInstallments;
+        interestPaid = Math.min(amountPaid, Math.round(interestPerCuota * 100) / 100);
+        capitalPaid = Math.max(0, Math.round((amountPaid - interestPaid - lateFeePaid) * 100) / 100);
+      } else if (loan && (loan.interestRate || loan.interestrate)) {
         const rate = Number(loan.interestRate || loan.interestrate || 0);
-        const approxMonthlyInterest = Math.round(loanPrincipal * (rate / 100));
-        interestPaid = Math.min(amountPaid, Math.max(0, approxMonthlyInterest));
-        capitalPaid = Math.max(0, amountPaid - interestPaid);
+        const approxInterest = totalInstallments > 0 
+          ? ((loanPrincipal * (rate / 100)) / totalInstallments)
+          : Math.round(loanPrincipal * (rate / 100));
+        interestPaid = Math.min(amountPaid, Math.max(0, approxInterest));
+        capitalPaid = Math.max(0, amountPaid - interestPaid - lateFeePaid);
       } else {
-        capitalPaid = amountPaid;
+        capitalPaid = Math.max(0, amountPaid - lateFeePaid);
+        interestPaid = 0;
       }
     }
   }
 
-  // 2. Si la transacción ya tiene guardados los balances calculados en base de datos (> 0)
+  // 2. Cálculo de Balances (Anterior y Nuevo)
+  let previousBalance = 0;
+  let newBalance = 0;
+
   const hasValidStoredBalances = 
     transaction.previousBalance !== undefined && 
     transaction.newBalance !== undefined && 
     (Number(transaction.previousBalance) > 0 || Number(transaction.newBalance) > 0);
 
   if (hasValidStoredBalances) {
-    return {
-      totalDebt: Number(transaction.totalDebt ?? totalDebt),
-      previousBalance: Number(transaction.previousBalance),
-      amountPaid,
-      capitalPaid,
-      interestPaid,
-      lateFeePaid,
-      discountPaid,
-      newBalance: Number(transaction.newBalance),
-      isOpenLoan: isOpen
-    };
-  }
-
-  // 3. Reconstrucción histórica cronológica si hay lista de transacciones del préstamo
-  if (loan && allLoanTransactions && allLoanTransactions.length > 0) {
+    previousBalance = Number(transaction.previousBalance);
+    newBalance = Number(transaction.newBalance);
+  } else if (loan && allLoanTransactions && allLoanTransactions.length > 0) {
     const sortedTxs = [...allLoanTransactions].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
@@ -133,63 +148,116 @@ export function calculateReceiptBalances(
       }
     }
 
-    return {
-      totalDebt: totalDebt || foundPrev,
-      previousBalance: foundPrev,
-      amountPaid,
-      capitalPaid,
-      interestPaid,
-      lateFeePaid,
-      discountPaid,
-      newBalance: foundNew,
-      isOpenLoan: isOpen
-    };
-  }
-
-  // 4. Fallback directo con el balance actual del préstamo
-  if (loan) {
+    previousBalance = foundPrev;
+    newBalance = foundNew;
+  } else if (loan) {
     const currentBal = Number(loan.remainingbalance ?? loan.remainingBalance ?? 0);
-    const effectiveTotal = totalDebt || (currentBal + amountPaid);
-
-    let prevBal = currentBal;
-    let newBal = currentBal;
-
     if (isOpen) {
       if (transaction.paymentType === 'Capital' || capitalPaid > 0) {
-        prevBal = currentBal + (capitalPaid || amountPaid);
-        newBal = currentBal;
+        previousBalance = currentBal + (capitalPaid || amountPaid);
+        newBalance = currentBal;
       } else {
-        prevBal = currentBal > 0 ? currentBal : loanPrincipal;
-        newBal = currentBal > 0 ? currentBal : loanPrincipal;
+        previousBalance = currentBal > 0 ? currentBal : loanPrincipal;
+        newBalance = currentBal > 0 ? currentBal : loanPrincipal;
       }
     } else {
-      prevBal = currentBal + amountPaid;
-      newBal = currentBal;
+      previousBalance = currentBal + amountPaid;
+      newBalance = currentBal;
     }
-
-    return {
-      totalDebt: effectiveTotal || prevBal,
-      previousBalance: prevBal > 0 ? prevBal : effectiveTotal,
-      amountPaid,
-      capitalPaid,
-      interestPaid,
-      lateFeePaid,
-      discountPaid,
-      newBalance: newBal,
-      isOpenLoan: isOpen
-    };
+  } else {
+    previousBalance = amountPaid;
+    newBalance = 0;
   }
 
-  // 5. Fallback sin préstamo asociado
+  // 3. Cálculo de Número de Cuota y Cuotas Restantes
+  let installmentNumber = 1;
+  let remainingInstallments = 0;
+
+  if (isOpen) {
+    installmentNumber = 0;
+    remainingInstallments = 0;
+  } else {
+    // Intenta resolver número de cuota
+    if (transaction.installmentNumber !== undefined && Number(transaction.installmentNumber) > 0) {
+      installmentNumber = Number(transaction.installmentNumber);
+    } else if (transaction.description) {
+      const match = transaction.description.match(/(?:cuota|pago cuota|abono cuota)\s*#?\s*(\d+)/i);
+      if (match && match[1]) {
+        installmentNumber = Number(match[1]);
+      } else if (allLoanTransactions && allLoanTransactions.length > 0) {
+        const sortedTxs = [...allLoanTransactions].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        const idx = sortedTxs.findIndex(t => t.id === transaction.id);
+        installmentNumber = idx >= 0 ? (idx + 1) : 1;
+      } else if (totalInstallments > 0) {
+        const singleInstallment = (totalDebt / totalInstallments) || 1;
+        const paidSoFar = Math.max(0, totalDebt - newBalance);
+        installmentNumber = Math.max(1, Math.min(totalInstallments, Math.round(paidSoFar / singleInstallment) || 1));
+      }
+    } else if (allLoanTransactions && allLoanTransactions.length > 0) {
+      const sortedTxs = [...allLoanTransactions].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      const idx = sortedTxs.findIndex(t => t.id === transaction.id);
+      installmentNumber = idx >= 0 ? (idx + 1) : 1;
+    } else if (totalInstallments > 0) {
+      const singleInstallment = (totalDebt / totalInstallments) || 1;
+      const paidSoFar = Math.max(0, totalDebt - newBalance);
+      installmentNumber = Math.max(1, Math.min(totalInstallments, Math.round(paidSoFar / singleInstallment) || 1));
+    }
+
+    // Cuotas Restantes
+    if (newBalance <= 0.01) {
+      remainingInstallments = 0;
+    } else if (totalInstallments > 0) {
+      const directRemaining = Math.max(0, totalInstallments - installmentNumber);
+      const singleInstallment = (totalDebt / totalInstallments) || 1;
+      const balanceBasedRemaining = Math.max(0, Math.ceil(newBalance / singleInstallment));
+      remainingInstallments = Math.min(totalInstallments, Math.max(directRemaining, balanceBasedRemaining));
+    } else {
+      remainingInstallments = 0;
+    }
+  }
+
+  // Textos formateados
+  let installmentText = '';
+  let remainingInstallmentsText = '';
+
+  if (isOpen) {
+    installmentText = 'Pago de Interés Periódico (Pagaré Abierto)';
+    remainingInstallmentsText = 'Pagaré Abierto (Indefinido)';
+  } else {
+    installmentText = totalInstallments > 0
+      ? `Cuota ${installmentNumber} de ${totalInstallments}`
+      : `Cuota #${installmentNumber}`;
+
+    if (newBalance <= 0.01) {
+      remainingInstallmentsText = '0 (¡Préstamo Saldado Totalmente!)';
+    } else if (remainingInstallments === 1) {
+      remainingInstallmentsText = '1 cuota restante';
+    } else if (remainingInstallments > 1) {
+      remainingInstallmentsText = `${remainingInstallments} cuotas restantes`;
+    } else {
+      remainingInstallmentsText = '0 cuotas restantes';
+    }
+  }
+
   return {
-    totalDebt: amountPaid,
-    previousBalance: amountPaid,
+    totalDebt: Number(totalDebt || previousBalance || amountPaid),
+    previousBalance: Number(previousBalance),
     amountPaid,
-    capitalPaid: amountPaid,
-    interestPaid: 0,
-    lateFeePaid: 0,
-    discountPaid: 0,
-    newBalance: 0,
-    isOpenLoan: false
+    capitalPaid,
+    interestPaid,
+    lateFeePaid,
+    discountPaid,
+    newBalance: Number(newBalance),
+    isOpenLoan: isOpen,
+    isInstallmentLoan,
+    totalInstallments,
+    installmentNumber,
+    remainingInstallments,
+    installmentText,
+    remainingInstallmentsText
   };
 }

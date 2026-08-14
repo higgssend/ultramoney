@@ -22,6 +22,10 @@ export interface ThermalReceiptData {
   loanAmount?: number;
   totalDebt?: number;
   installmentInfo?: string;
+  installmentNumber?: number;
+  totalInstallments?: number;
+  remainingInstallments?: number;
+  remainingInstallmentsText?: string;
   amountPaid: number;
   capitalAmount?: number;
   interestAmount?: number;
@@ -190,6 +194,7 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
       data.loanType ? `TIPO:     ${data.loanType}` : '',
       data.loanAmount ? `CAPITAL:  RD$ ${data.loanAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}` : '',
       data.installmentInfo ? `CUOTA:    ${data.installmentInfo}` : '',
+      !isOpenLoan && data.remainingInstallmentsText ? `RESTANTE: ${data.remainingInstallmentsText}` : '',
       sep,
       data.capitalAmount !== undefined && data.capitalAmount > 0 
         ? `ABONO CAPITAL:  RD$ ${data.capitalAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}` 
@@ -235,7 +240,7 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
 
   const handleShareWhatsApp = () => {
     const url = verificationUrl;
-    const text = `🏢 *${companySettings?.name || 'ULTRAMONEY'}*\n📄 *Recibo de Cobro*: #${data.receiptNo}\n👤 *Cliente*: ${data.clientName}\n💰 *Total Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n📊 *Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver su comprobante digital oficial aquí:\n${url}`;
+    const text = `*${companySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Cobro*: #${data.receiptNo}\n*Cliente*: ${data.clientName}\n*Total Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver su comprobante digital oficial aquí:\n${url}`;
     const targetPhone = data.clientPhone ? data.clientPhone.replace(/[^0-9]/g, '') : '';
     const waUrl = targetPhone 
       ? `https://wa.me/${targetPhone.length === 10 ? '1' + targetPhone : targetPhone}?text=${encodeURIComponent(text)}`
@@ -398,7 +403,13 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
                 {data.installmentInfo && (
                   <div className="flex justify-between text-[10px]">
                     <span>CUOTA:</span>
-                    <span>{data.installmentInfo}</span>
+                    <span className="font-bold">{data.installmentInfo}</span>
+                  </div>
+                )}
+                {!isOpenLoan && data.remainingInstallmentsText && (
+                  <div className="flex justify-between text-[10px]">
+                    <span>CUOTAS RESTANTES:</span>
+                    <span className="font-bold">{data.remainingInstallmentsText}</span>
                   </div>
                 )}
               </div>

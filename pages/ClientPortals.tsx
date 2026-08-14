@@ -38,7 +38,7 @@ const ClientPortals: React.FC = () => {
 
     const handleNativeShare = async (client: Client) => {
         const link = `${window.location.origin}/portal/${client.portalAlias || client.id}`;
-        const pinText = client.clientPin ? `\n🔑 Tu PIN de seguridad es: ${client.clientPin}` : '';
+        const pinText = client.clientPin ? `\nPIN de seguridad: ${client.clientPin}` : '';
         const title = `Portal de Cliente - ${client.name}`;
         const text = `Consulta tus préstamos y recibos en línea:${pinText}`;
 
@@ -57,10 +57,10 @@ const ClientPortals: React.FC = () => {
 
     const handleShareWhatsApp = (client: Client) => {
         const link = `${window.location.origin}/portal/${client.portalAlias || client.id}`;
-        const pinText = client.clientPin ? `\n🔑 Tu PIN de seguridad es: *${client.clientPin}*` : '\nAcceso directo sin clave.';
+        const pinText = client.clientPin ? `\nPIN de seguridad: *${client.clientPin}*` : '\nAcceso directo sin clave.';
         const text = encodeURIComponent(
             `Hola ${client.name}, aquí puedes consultar tus préstamos y recibos de pago en línea:\n\n` +
-            `🌐 Portal Digital: ${link}` +
+            `Portal Digital: ${link}` +
             pinText
         );
         const phoneClean = client.phone ? client.phone.replace(/\D/g, '') : '';

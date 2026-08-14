@@ -127,7 +127,7 @@ const Invoices: React.FC = () => {
   });
 
   const getShareLinks = (inv: Invoice & { ncf?: string }) => {
-    const message = `🏢 *${companySettings.name}*\n📄 *Factura de Venta*: ${inv.id}\n🔢 *NCF*: ${inv.ncf || 'B0200000000'}\n👤 *Cliente*: ${inv.clientName}\n💰 *Monto Total*: RD$ ${inv.total.toLocaleString()}\n\nGracias por confiar en nosotros.`;
+    const message = `*${companySettings.name}*\n*Factura de Venta*: ${inv.id}\n*NCF*: ${inv.ncf || 'B0200000000'}\n*Cliente*: ${inv.clientName}\n*Monto Total*: RD$ ${inv.total.toLocaleString()}\n\nGracias por confiar en nosotros.`;
     const encoded = encodeURIComponent(message);
     return {
       whatsapp: `https://wa.me/?text=${encoded}`,

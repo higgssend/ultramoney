@@ -152,7 +152,8 @@ export const ClientPortal: React.FC = () => {
                 }
 
                 // If no pin is set or portal is open, fetch details & authenticate immediately
-                if (!mappedClient.clientPin) {
+                const hasCustomPin = Boolean(mappedClient.clientPin && mappedClient.clientPin.trim() !== '');
+                if (!hasCustomPin) {
                     await fetchClientDetails(mappedClient.id);
                     setIsAuthenticated(true);
                 }
@@ -261,9 +262,20 @@ export const ClientPortal: React.FC = () => {
             setAuthError('Enlace inválido o cliente no encontrado.');
             return;
         }
-        
-        if (client.clientPin && client.clientPin !== pin) {
-            setAuthError('PIN incorrecto. Inténtalo de nuevo.');
+
+        const inputClean = pin.trim();
+        const configuredPin = client.clientPin ? client.clientPin.trim() : '';
+        const last4Cedula = (client.cedula || '').replace(/\D/g, '').slice(-4);
+        const last4Phone = (client.phone || '').replace(/\D/g, '').slice(-4);
+
+        const isPinValid = 
+            !configuredPin || 
+            inputClean === configuredPin || 
+            (last4Cedula && last4Cedula.length === 4 && inputClean === last4Cedula) ||
+            (last4Phone && last4Phone.length === 4 && inputClean === last4Phone);
+
+        if (!isPinValid) {
+            setAuthError('PIN incorrecto. Puedes ingresar tu PIN asignado o los últimos 4 dígitos de tu cédula.');
             return;
         }
 
