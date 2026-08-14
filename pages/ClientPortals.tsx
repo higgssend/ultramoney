@@ -173,6 +173,7 @@ const ClientPortals: React.FC = () => {
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                                 <th className="px-6 py-4 font-semibold">Cliente</th>
+                                <th className="px-6 py-4 font-semibold text-center">Score FICO</th>
                                 <th className="px-6 py-4 font-semibold text-center">Estado y Seguridad</th>
                                 <th className="px-6 py-4 font-semibold text-center">Alias</th>
                                 <th className="px-6 py-4 font-semibold text-center">Enlace</th>
@@ -200,6 +201,22 @@ const ClientPortals: React.FC = () => {
                                                 <p className="text-xs text-slate-500 font-mono">{client.cedula}</p>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        {(() => {
+                                            const rScore = Number(client.creditScore || 720);
+                                            const nScore = rScore > 100 ? Math.min(850, Math.max(300, rScore)) : Math.round(300 + (rScore / 100) * 550);
+                                            return (
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                                                    nScore >= 750 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' :
+                                                    nScore >= 670 ? 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800' :
+                                                    nScore >= 580 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800' :
+                                                    'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                                                }`}>
+                                                    {nScore} pts
+                                                </span>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex flex-col items-center gap-1.5">
@@ -251,7 +268,7 @@ const ClientPortals: React.FC = () => {
                             ))}
                             {filteredClients.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                                         No se encontraron clientes.
                                     </td>
                                 </tr>

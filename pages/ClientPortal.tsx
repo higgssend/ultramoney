@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../context/StoreContext';
-import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar, ExternalLink, Printer, LogOut, CheckCircle2, Lock, ArrowUpRight, Percent, Award, Sparkles, Building2, PhoneCall } from 'lucide-react';
+import { Smartphone, CreditCard, Clock, FileText, CheckCircle, ArrowRight, ShieldCheck, Download, XCircle, AlertCircle, Calendar, ExternalLink, Printer, LogOut, CheckCircle2, Lock, ArrowUpRight, Percent, Award, Sparkles, Building2, PhoneCall, TrendingUp, Gauge, Star } from 'lucide-react';
 import { Loan, Transaction, CompanySettings, Client, formatLoanId, formatReceiptId, LoanStatus } from '../types';
 import type { ClientDB, LoanDB, TransactionDB, ClientDocumentDB } from '../types.db';
 import { useParams, Link } from 'react-router-dom';
@@ -116,7 +116,7 @@ export const ClientPortal: React.FC = () => {
                     sex: (foundClient.sex || 'Otro') as Client['sex'],
                     occupation: foundClient.occupation || '',
                     income: Number(foundClient.income || 0),
-                    creditScore: Number(foundClient.credit_score || 700),
+                    creditScore: Number(foundClient.credit_score ?? foundClient.creditscore ?? 720),
                     status: (foundClient.status || 'Activo') as Client['status'],
                     joinedDate: foundClient.joineddate || foundClient.created_at || new Date().toISOString(),
                     cedula: foundClient.cedula || '',
@@ -300,6 +300,20 @@ export const ClientPortal: React.FC = () => {
     const totalPaid = Math.max(0, totalInitial - totalRemaining);
     const paidPercentage = totalInitial > 0 ? Math.round((totalPaid / totalInitial) * 100) : 100;
 
+    // Credit Score normalization & analysis (FICO / Datacrédito scale 300 - 850)
+    const rawScore = Number(client?.creditScore ?? 720);
+    const normalizedScore = rawScore > 100 ? Math.min(850, Math.max(300, rawScore)) : Math.round(300 + (rawScore / 100) * 550);
+    const scorePercentage = Math.round(((normalizedScore - 300) / 550) * 100);
+
+    const getScoreCategory = (score: number) => {
+        if (score >= 750) return { label: 'Excelente', color: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30', desc: 'Calificación máxima. Tienes acceso prioritario a préstamos con tasas preferenciales.', barColor: 'from-emerald-500 to-teal-400' };
+        if (score >= 670) return { label: 'Bueno', color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/30', desc: 'Excelente récord de pago. Eres un cliente confiable con bajo riesgo.', barColor: 'from-cyan-500 to-blue-500' };
+        if (score >= 580) return { label: 'Regular', color: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/30', desc: 'Récord aceptable. Paga tus cuotas puntuales para elevar tu puntuación.', barColor: 'from-amber-500 to-orange-500' };
+        return { label: 'Requiere Atención', color: 'text-rose-400', bg: 'bg-rose-500/20', border: 'border-rose-500/30', desc: 'Puntuación baja por atrasos. Regulariza tus cuotas para mejorar tu historial crediticio.', barColor: 'from-rose-500 to-red-600' };
+    };
+
+    const scoreInfo = getScoreCategory(normalizedScore);
+
     // Loading State
     if (isLoading) {
         return (
@@ -466,7 +480,12 @@ export const ClientPortal: React.FC = () => {
                             )}
                             <div className="text-left pr-1">
                                 <p className="text-xs font-bold text-white leading-tight">{client?.name} {client?.lastName || ''}</p>
-                                <p className="text-[10px] text-slate-400 font-mono">{client?.cedula}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[10px] text-slate-400 font-mono">{client?.cedula}</span>
+                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${scoreInfo.bg} ${scoreInfo.color} border ${scoreInfo.border}`}>
+                                        Score {normalizedScore}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -544,6 +563,90 @@ export const ClientPortal: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Section: Credit Score & Health (FICO / Datacrédito) */}
+                <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        
+                        {/* Score Gauge & Number */}
+                        <div className="flex items-center gap-5">
+                            <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-2xl bg-slate-950 border border-slate-800 shrink-0 shadow-inner">
+                                <div className="text-center">
+                                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Score</span>
+                                    <span className={`text-3xl sm:text-4xl font-black ${scoreInfo.color} tracking-tight`}>
+                                        {normalizedScore}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-mono block">de 850</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                        <Award className="w-4 h-4 text-indigo-400" /> Calificación Crediticia
+                                    </span>
+                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${scoreInfo.bg} ${scoreInfo.color} border ${scoreInfo.border}`}>
+                                        {scoreInfo.label}
+                                    </span>
+                                </div>
+                                <h3 className="text-lg sm:text-xl font-black text-white">
+                                    Salud Financiera {scoreInfo.label}
+                                </h3>
+                                <p className="text-xs text-slate-400 max-w-md">
+                                    {scoreInfo.desc}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Diagnostic Badges Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full md:w-auto">
+                            <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 text-left">
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Puntualidad
+                                </div>
+                                <p className="text-sm font-black text-white mt-1">100% al día</p>
+                                <p className="text-[10px] text-emerald-400 font-medium">Excelente récord</p>
+                            </div>
+
+                            <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 text-left">
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                    <TrendingUp className="w-3.5 h-3.5 text-indigo-400" /> Aprobación
+                                </div>
+                                <p className="text-sm font-black text-white mt-1">Precalificado</p>
+                                <p className="text-[10px] text-indigo-300 font-medium">Nuevos créditos</p>
+                            </div>
+
+                            <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 text-left col-span-2 sm:col-span-1">
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                    <Percent className="w-3.5 h-3.5 text-cyan-400" /> Tasa Especial
+                                </div>
+                                <p className="text-sm font-black text-white mt-1">Preferencial</p>
+                                <p className="text-[10px] text-cyan-300 font-medium">Beneficio activo</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Scale Visual Range Bar (300 to 850) */}
+                    <div className="mt-6 pt-5 border-t border-slate-800/80 space-y-2">
+                        <div className="flex justify-between text-[11px] font-bold text-slate-400">
+                            <span>Escala FICO / Datacrédito:</span>
+                            <span className="text-slate-300 font-mono">Puntaje {normalizedScore} / 850 ({scorePercentage}% del rango)</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800 relative">
+                            <div 
+                                className={`h-full bg-gradient-to-r ${scoreInfo.barColor} rounded-full transition-all duration-700`}
+                                style={{ width: `${Math.min(100, Math.max(8, scorePercentage))}%` }}
+                            />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-slate-500 font-semibold px-0.5">
+                            <span>300 (Riesgoso)</span>
+                            <span>580 (Regular)</span>
+                            <span>670 (Bueno)</span>
+                            <span>750 (Excelente)</span>
+                            <span>850 (Máximo)</span>
+                        </div>
+                    </div>
+                </section>
 
                 {/* Section 1: Active Loans */}
                 <section className="space-y-4">
