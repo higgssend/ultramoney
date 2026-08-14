@@ -1249,28 +1249,43 @@ export const Payments: React.FC = () => {
                         <p className="text-xs">Los nuevos cobros aplicados aparecerán automáticamente aquí.</p>
                       </div>
                     ) : (
-                      displayedMainFeedPayments.slice(0, 25).map((t) => {
-                        const loan = loans.find(l => l.id === t.referenceId);
+                      displayedMainFeedPayments.slice(0, 50).map((t) => {
+                        const loan = loans.find(l => 
+                          l.id === t.referenceId || 
+                          formatLoanId(l.id) === t.referenceId || 
+                          formatLoanId(l.id).replace(/\s+/g, '') === (t.referenceId || '').replace(/\s+/g, '')
+                        );
                         const client = loan ? clients.find(c => c.id === loan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
-                        const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan?.clientName || (t.description?.split('-')[1]?.trim() || 'Cliente'));
+                        const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan?.clientName || loan?.clientname || (t.description?.split('-')[1]?.trim() || 'Cliente'));
                         const formattedRec = formatReceiptId(t.id);
                         const parsedDate = t.date ? new Date(t.date) : new Date();
 
                         return (
                           <div 
                             key={t.id}
-                            className="py-3.5 px-2 hover:bg-indigo-50/40 dark:hover:bg-slate-800/60 rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                            onClick={() => navigate(`/recibo/${t.id}`)}
+                            className="py-3.5 px-3 hover:bg-indigo-50/50 dark:hover:bg-slate-800/60 rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group cursor-pointer border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/50"
+                            title="Haga clic para ver el recibo oficial digital de este pago"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center text-sm shrink-0">
-                                {clientName.charAt(0)}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-black text-slate-800 dark:text-slate-100 text-sm">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {client?.avatarUrl ? (
+                                <img 
+                                  src={client.avatarUrl} 
+                                  alt={clientName} 
+                                  className="w-10 h-10 rounded-2xl object-cover border border-emerald-200 dark:border-emerald-800 shrink-0 shadow-2xs"
+                                  crossOrigin="anonymous" 
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black flex items-center justify-center text-sm shrink-0 border border-emerald-200 dark:border-emerald-800">
+                                  {clientName.charAt(0)}
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-black text-slate-800 dark:text-slate-100 text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                                     {clientName}
                                   </span>
-                                  <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md">
+                                  <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900 shrink-0">
                                     {formattedRec}
                                   </span>
                                 </div>
@@ -1293,13 +1308,13 @@ export const Payments: React.FC = () => {
                             </div>
 
                             {/* Amount & Actions */}
-                            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0" onClick={e => e.stopPropagation()}>
                               <div className="text-right">
                                 <span className="font-black text-emerald-600 dark:text-emerald-400 text-base sm:text-lg block">
                                   +RD$ {Number(t.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-medium">
-                                  {t.description?.slice(0, 30)}
+                                <span className="text-[10px] text-slate-400 font-medium truncate max-w-[150px] inline-block">
+                                  {t.description || 'Cobro registrado'}
                                 </span>
                               </div>
 

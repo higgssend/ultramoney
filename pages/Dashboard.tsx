@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Users, Banknote, AlertTriangle, Wallet,
   ArrowUpRight, ArrowDownRight, Plus, Calendar,
-  PieChart as PieChartIcon, TrendingUp, BarChart3
+  PieChart as PieChartIcon, TrendingUp, BarChart3, FileText, Printer
 } from 'lucide-react';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
@@ -11,7 +11,7 @@ import {
 import StatCard from '../components/StatCard';
 import { DailyMorningBriefing } from '../components/DailyMorningBriefing';
 import { useSettings, useClients, useLoans, useAccounting } from '../context/StoreContext';
-import { LoanStatus } from '../types';
+import { LoanStatus, formatReceiptId } from '../types';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
@@ -773,23 +773,49 @@ const Dashboard: React.FC = () => {
             recentTransactions.map((t) => (
               <div 
                 key={t.id} 
-                onClick={() => navigate('/pagos')}
-                className="flex items-center justify-between group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors"
+                onClick={() => {
+                  if (t.type === 'Ingreso') {
+                    navigate(`/recibo/${t.id}`);
+                  } else {
+                    navigate('/contabilidad');
+                  }
+                }}
+                className="flex items-center justify-between group cursor-pointer hover:bg-indigo-50/60 dark:hover:bg-slate-700/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all shadow-2xs hover:shadow-sm"
+                title={t.type === 'Ingreso' ? 'Haga clic para ver el recibo oficial digital de este pago' : 'Ver detalle contable'}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
-                    t.type === 'Ingreso' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                    t.type === 'Ingreso' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400'
                   }`}>
                     {t.type === 'Ingreso' ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate group-hover:text-indigo-600">{t.description || 'Transacción'}</p>
-                    <p className="text-xs text-slate-400 truncate">{t.date ? String(t.date) : ''}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {t.description || 'Transacción'}
+                      </p>
+                      {t.type === 'Ingreso' && (
+                        <span className="font-mono text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-900 shrink-0">
+                          {formatReceiptId(t.id)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 truncate mt-0.5">
+                      {t.date ? new Date(t.date).toLocaleDateString('es-DO', { month: 'short', day: 'numeric', year: 'numeric' }) : ''} 
+                      {t.paymentMethod ? ` • ${t.paymentMethod}` : ''}
+                    </p>
                   </div>
                 </div>
-                <span className={`text-sm font-bold shrink-0 ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-200'}`}>
-                  {t.type === 'Ingreso' ? '+' : '-'}RD$ {(Number(t.amount) || 0).toLocaleString('es-DO')}
-                </span>
+                <div className="text-right shrink-0 pl-2">
+                  <span className={`text-sm font-black font-mono block ${t.type === 'Ingreso' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                    {t.type === 'Ingreso' ? '+' : '-'}RD$ {(Number(t.amount) || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                  </span>
+                  {t.type === 'Ingreso' && (
+                    <span className="text-[10px] font-bold text-indigo-500 group-hover:underline flex items-center justify-end gap-1 mt-0.5">
+                      <FileText className="w-3 h-3" /> Ver Recibo
+                    </span>
+                  )}
+                </div>
               </div>
             ))
           )}

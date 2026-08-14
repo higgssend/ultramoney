@@ -559,9 +559,14 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           </thead>
                           <tbody>
                             {loanTransactions.map(t => (
-                              <tr key={t.id}>
+                              <tr 
+                                key={t.id}
+                                onClick={() => window.open(`/recibo/${t.id}`, '_blank')}
+                                className="hover:bg-indigo-50/60 cursor-pointer transition-colors"
+                                title="Haga clic para ver el comprobante oficial de este pago"
+                              >
                                 <td className="border p-2">{new Date(t.date).toLocaleDateString('es-DO')}</td>
-                                <td className="border p-2 font-mono font-bold text-indigo-700">{formatReceiptId(t.id)}</td>
+                                <td className="border p-2 font-mono font-bold text-indigo-700 hover:underline">{formatReceiptId(t.id)}</td>
                                 <td className="border p-2">{t.description || 'Abono a Préstamo'}</td>
                                 <td className="border p-2 text-right font-black text-emerald-600">RD$ {(t.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</td>
                                 <td className="border p-2 text-center font-bold">{t.paymentMethod || 'Efectivo'}</td>

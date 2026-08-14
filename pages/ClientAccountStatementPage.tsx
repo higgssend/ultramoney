@@ -704,9 +704,16 @@ export const ClientAccountStatementPage: React.FC = () => {
                   clientTransactions.map(t => {
                     const parsedDate = t.date ? new Date(t.date) : new Date();
                     return (
-                      <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-3 font-mono font-black text-indigo-600">
-                          {formatReceiptId(t.id)}
+                      <tr 
+                        key={t.id} 
+                        className="hover:bg-indigo-50/50 transition-colors cursor-pointer group"
+                        onClick={() => window.open(`/recibo/${t.id}`, '_blank')}
+                        title="Haga clic para abrir el recibo oficial digital de este pago"
+                      >
+                        <td className="p-3">
+                          <span className="font-mono font-black text-indigo-600 group-hover:underline inline-flex items-center gap-1">
+                            {formatReceiptId(t.id)}
+                          </span>
                         </td>
                         <td className="p-3 text-slate-600 whitespace-nowrap">
                           {parsedDate.toLocaleDateString('es-DO', { month: 'short', day: 'numeric', year: 'numeric' })} • {parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true })}

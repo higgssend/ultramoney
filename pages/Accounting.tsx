@@ -4,13 +4,13 @@ import {
   AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, 
   PlusCircle, Eye, EyeOff, Scale, PieChart, FileText, CheckCircle2, 
   RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, User,
-  Edit3
+  Edit3, Printer
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { useAccounting, useLoans, useClients, useSettings } from '../context/StoreContext';
 import StatCard from '../components/StatCard';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PaymentMethod, Transaction } from '../types';
+import { PaymentMethod, Transaction, formatReceiptId } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { CashCounterModal } from '../components/CashCounterModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
@@ -817,8 +817,17 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {filteredTransactions.map((t, idx) => (
-                  <tr key={t.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="p-3 font-mono text-slate-500 text-[11px]">
+                  <tr 
+                    key={t.id || idx} 
+                    className="hover:bg-indigo-50/40 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer"
+                    onClick={() => {
+                      if (t.type === 'Ingreso' && t.id) {
+                        navigate(`/recibo/${t.id}`);
+                      }
+                    }}
+                    title={t.type === 'Ingreso' ? 'Haga clic para ver el recibo oficial digital de este pago' : ''}
+                  >
+                    <td className="p-3 font-mono text-slate-500 text-[11px] whitespace-nowrap">
                       {formatExactDateTime(t.date)}
                     </td>
                     <td className="p-3">
@@ -831,22 +840,42 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
                       </span>
                     </td>
                     <td className="p-3 text-slate-500">{t.category || '-'}</td>
-                    <td className="p-3 font-bold text-slate-800 dark:text-white">{t.description}</td>
+                    <td className="p-3 font-bold text-slate-800 dark:text-white">
+                      <div className="flex items-center gap-2">
+                        <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t.description}</span>
+                        {t.type === 'Ingreso' && t.id && (
+                          <span className="font-mono text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-900 shrink-0">
+                            {formatReceiptId(t.id)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-3 text-slate-500">{t.paymentMethod || 'Efectivo'}</td>
-                    <td className={`p-3 text-right font-black font-mono ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <td className={`p-3 text-right font-black font-mono whitespace-nowrap ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {t.type === 'Ingreso' ? '+' : '-'} RD$ {Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="p-3 text-center">
-                      <button
-                        onClick={() => {
-                          setSelectedTransactionToEdit(t);
-                          setIsEditModalOpen(true);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
-                        title="Editar Transacción / Pago"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                    <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-1">
+                        {t.type === 'Ingreso' && t.id && (
+                          <button
+                            onClick={() => navigate(`/recibo/${t.id}`)}
+                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg transition-colors"
+                            title="Ver Recibo Oficial Digital"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setSelectedTransactionToEdit(t);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
+                          title="Editar Transacción / Pago"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

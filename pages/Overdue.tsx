@@ -98,9 +98,13 @@ const Overdue: React.FC = () => {
                     <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full opacity-10 transition-transform group-hover:scale-150 ${daysLate > 15 ? 'bg-rose-600' : 'bg-amber-500'}`}></div>
                     
                     <div className="flex justify-between items-start relative z-10">
-                        <div>
-                            <h3 className="font-bold text-lg text-slate-800 dark:text-white">{clientFullName}</h3>
-                            <p className="text-xs text-slate-400 font-mono">Préstamo #{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}</p>
+                        <div 
+                          onClick={() => navigate(`/prestamos/${loan.id}`)}
+                          className="cursor-pointer group/title"
+                          title="Ver detalle del préstamo y pagos"
+                        >
+                            <h3 className="font-bold text-lg text-slate-800 dark:text-white group-hover/title:text-indigo-600 transition-colors">{clientFullName}</h3>
+                            <p className="text-xs text-slate-400 font-mono group-hover/title:underline">Préstamo #{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}</p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${daysLate > 15 ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/60' : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/60'}`}>
                             {daysLate} días de mora
