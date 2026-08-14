@@ -76,8 +76,8 @@ export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client:
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Nombre: ${client.name} ${client.lastName || ''}`, 14, 62);
-    doc.text(`Cédula: ${client.clientCode || 'N/A'}`, 14, 67);
-    doc.text(`Teléfono: ${client.phone}`, 14, 72);
+    doc.text(`Cédula / Doc: ${client.cedula || client.clientCode || 'N/A'}`, 14, 67);
+    doc.text(`Teléfono: ${client.phone || 'N/A'}`, 14, 72);
 
     doc.text(`Préstamo N°: ${loan.id.substring(0, 8).toUpperCase()}`, 110, 62);
     doc.text(`Tipo: ${loan.loanType}`, 110, 67);

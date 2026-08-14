@@ -4,6 +4,7 @@ import { useAccounting, useSettings, useAuth } from '../context/StoreContext';
 import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer, Edit3 } from 'lucide-react';
 import { Transaction, Loan, Client, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
+import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
@@ -22,6 +23,7 @@ export const ReceiptView: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [isThermalOpen, setIsThermalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
     const handlePrint = () => {
         window.print();
@@ -195,25 +197,36 @@ export const ReceiptView: React.FC = () => {
     }
 
     // Financial breakdown values
+    const isOpenLoan = Boolean(
+        loan?.loanType && (
+            loan.loanType.includes('Rédito') ||
+            loan.loanType.includes('Redito') ||
+            loan.loanType.includes('Solo Interé') ||
+            loan.loanType.includes('Pagaré Abierto')
+        )
+    );
+
     const paymentAmount = Number(transaction.amount || 0);
-    const currentBalance = loan ? Number(loan.remainingbalance ?? loan.remainingBalance ?? 0) : 0;
-    const previousBalance = loan ? currentBalance + paymentAmount : paymentAmount;
-    
-    // Payment type classification
-    const rawPaymentType = transaction.paymentType;
+    const isCapitalPayment = transaction.paymentType === 'Capital';
+
     let capitalPaid = 0;
     let interestPaid = 0;
     let lateFeePaid = 0;
 
-    if (rawPaymentType === 'Capital') {
+    if (isCapitalPayment) {
         capitalPaid = paymentAmount;
-    } else if (rawPaymentType === 'Interes' || rawPaymentType === 'Interés') {
+    } else if (transaction.paymentType === 'Interes' || transaction.paymentType === 'Interés') {
         interestPaid = paymentAmount;
     } else if (transaction.description?.toLowerCase().includes('mora')) {
         lateFeePaid = paymentAmount;
     } else {
         interestPaid = paymentAmount;
     }
+
+    const currentBalance = loan ? Number(loan.remainingbalance ?? loan.remainingBalance ?? 0) : 0;
+    const previousBalance = loan 
+        ? (isOpenLoan && !isCapitalPayment ? currentBalance : currentBalance + capitalPaid) 
+        : paymentAmount;
 
     // Overdue calculation
     let daysOverdue = 0;
@@ -279,11 +292,13 @@ export const ReceiptView: React.FC = () => {
         receiptNo: formattedReceiptNo,
         date: formattedDate,
         time: formattedTime,
-        clientName: client?.name || loan?.clientname || 'Cliente',
-        clientCedula: client?.cedula || client?.documentId,
+        clientName: client?.name || loan?.clientname || loan?.clientName || 'Cliente',
+        clientCedula: client?.cedula || client?.documentId || client?.clientCode,
         clientPhone: client?.phone,
         loanId: loan?.id || transaction.referenceId || '',
-        installmentInfo: loan ? `Cuota de ${loan.frequency || 'Mensual'}` : undefined,
+        loanType: loan?.loanType || (isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
+        loanAmount: loan?.amount,
+        installmentInfo: loan ? `Cuota ${loan.frequency || 'Mensual'}` : undefined,
         amountPaid: paymentAmount,
         capitalAmount: capitalPaid,
         interestAmount: interestPaid,
@@ -291,6 +306,7 @@ export const ReceiptView: React.FC = () => {
         previousBalance: previousBalance,
         newBalance: currentBalance,
         paymentMethod: transaction.paymentMethod || 'Efectivo',
+        paymentType: transaction.paymentType,
         cashierName: 'Administración',
         nextPaymentDate: loan?.nextPaymentDate,
         notes: transaction.description,
@@ -406,7 +422,7 @@ export const ReceiptView: React.FC = () => {
                         </div>
                         <div>
                             <span className="text-slate-400 block font-bold uppercase text-[10px]">Forma de Pago</span>
-                            <span className="font-extrabold text-indigo-600 uppercase">{transaction.paymentMethod || transaction.paymentType || 'Efectivo'}</span>
+                            <span className="font-extrabold text-indigo-600 uppercase">{transaction.paymentMethod || 'Efectivo'}</span>
                         </div>
                         <div className="text-right">
                             <span className="text-slate-400 block font-bold uppercase text-[10px]">Préstamo Ref.</span>
@@ -422,10 +438,22 @@ export const ReceiptView: React.FC = () => {
                             </span>
                             <span className="font-black text-slate-900 text-sm">{client?.name || loan?.clientname || loan?.clientName || 'Cliente General'}</span>
                         </div>
-                        {client?.cedula && (
+                        {(client?.cedula || client?.documentId) && (
                             <div className="flex justify-between items-center px-1">
                                 <span className="text-slate-500 font-medium">Cédula / Documento:</span>
-                                <span className="font-mono font-bold text-slate-800">{client.cedula}</span>
+                                <span className="font-mono font-bold text-slate-800">{client.cedula || client.documentId}</span>
+                            </div>
+                        )}
+                        {client?.phone && (
+                            <div className="flex justify-between items-center px-1">
+                                <span className="text-slate-500 font-medium">Teléfono:</span>
+                                <span className="font-semibold text-slate-800">{client.phone}</span>
+                            </div>
+                        )}
+                        {loan?.loanType && (
+                            <div className="flex justify-between items-center px-1">
+                                <span className="text-slate-500 font-medium">Tipo de Préstamo:</span>
+                                <span className="font-bold text-indigo-600">{loan.loanType}</span>
                             </div>
                         )}
                     </div>
@@ -439,32 +467,55 @@ export const ReceiptView: React.FC = () => {
                     </div>
 
                     {/* Detailed Payment & Financial Breakdown */}
-                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-2 text-xs mb-4">
+                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-2.5 text-xs mb-4">
                         <span className="font-black text-slate-700 uppercase text-[10px] block mb-2 tracking-wider border-b border-slate-200 pb-1">
                             Desglose de Pago & Estado del Préstamo
                         </span>
                         
-                        <div className="flex justify-between text-slate-600">
-                            <span>Abono a Capital:</span>
-                            <span className="font-bold text-slate-800">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
-                        </div>
+                        {/* Open Loans specific vs Amortized Breakdown */}
+                        {isOpenLoan ? (
+                            <>
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Capital Prestado a la Fecha:</span>
+                                    <span className="font-bold text-slate-800">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Intereses Cubiertos del Período:</span>
+                                    <span className="font-bold text-emerald-700">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                {capitalPaid > 0 && (
+                                    <div className="flex justify-between text-slate-600">
+                                        <span>Abono Directo a Capital:</span>
+                                        <span className="font-bold text-slate-800">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Abono a Capital:</span>
+                                    <span className="font-bold text-slate-800">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Interés Pagado:</span>
+                                    <span className="font-bold text-slate-800">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            </>
+                        )}
 
-                        <div className="flex justify-between text-slate-600">
-                            <span>Interés Pagado:</span>
-                            <span className="font-bold text-slate-800">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
-                        </div>
-
-                        <div className="flex justify-between text-slate-600">
-                            <span>Mora / Recargo por Atraso:</span>
-                            <span className={`font-bold ${lateFeePaid > 0 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>
-                                RD$ {lateFeePaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
+                        {lateFeePaid > 0 && (
+                            <div className="flex justify-between text-slate-600">
+                                <span>Mora / Recargo por Atraso:</span>
+                                <span className="font-bold text-rose-600 font-black">
+                                    RD$ {lateFeePaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        )}
 
                         <div className="flex justify-between text-slate-600 pt-1 border-t border-slate-200">
                             <span>Estado de Atraso:</span>
                             <span className={`font-bold ${daysOverdue > 0 ? 'text-rose-600 font-black' : 'text-emerald-700 font-bold'}`}>
-                                {daysOverdue > 0 ? `En Atraso (${daysOverdue} días de mora)` : 'Sin Atraso (0 días moroso)'}
+                                {daysOverdue > 0 ? `En Atraso (${daysOverdue} días de mora)` : 'Sin Atraso (Al día)'}
                             </span>
                         </div>
 
@@ -473,10 +524,17 @@ export const ReceiptView: React.FC = () => {
                             <span className="font-bold text-slate-800">RD$ {previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                         </div>
 
-                        <div className="flex justify-between text-slate-900 font-black pt-2 border-t border-slate-200 text-sm">
+                        <div className="flex justify-between text-slate-900 font-black pt-2 border-t border-slate-300 text-sm bg-indigo-50/60 p-2.5 rounded-xl">
                             <span>(=) Balance Restante Pendiente:</span>
-                            <span className="text-indigo-700">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-indigo-700 font-black text-base">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                         </div>
+
+                        {isOpenLoan && (
+                            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 leading-relaxed mt-2">
+                                <span className="font-bold block mb-0.5">Modalidad Pagaré Abierto (Solo Interés):</span>
+                                Este recibo certifica la cancelación de los intereses correspondientes al período. El capital prestado permanece activo al 100% hasta amortizaciones directas a capital.
+                            </div>
+                        )}
                     </div>
 
                     {/* Attached Proof Voucher */}
@@ -508,13 +566,19 @@ export const ReceiptView: React.FC = () => {
 
                     {/* QR Code and Validation */}
                     <div className="pt-4 text-center border-t border-dashed border-slate-300">
-                        <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(window.location.href)}`}
-                            alt="QR Validación"
-                            className="w-20 h-20 mx-auto mb-2"
-                        />
-                        <p className="text-[11px] text-slate-400 font-medium">Escanee el código QR para validar la autenticidad de este recibo electrónico.</p>
-                        <p className="text-[10px] text-slate-400 mt-2 italic">© {companySettings.name} — Documento oficial emitido electrónicamente.</p>
+                        {qrDataUrl ? (
+                            <img 
+                                src={qrDataUrl}
+                                alt="QR Validación Oficial"
+                                className="w-24 h-24 mx-auto mb-2 object-contain"
+                            />
+                        ) : (
+                            <div className="w-24 h-24 bg-slate-100 mx-auto mb-2 flex items-center justify-center text-[10px] text-slate-400">
+                                Generando QR...
+                            </div>
+                        )}
+                        <p className="text-[11px] text-slate-500 font-bold">Escanee el código QR para validar la autenticidad de este recibo electrónico.</p>
+                        <p className="text-[10px] text-slate-400 mt-1 italic">© {companySettings.name} — Documento oficial emitido electrónicamente.</p>
                     </div>
 
                 </div>

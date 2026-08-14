@@ -495,22 +495,48 @@ export const Payments: React.FC = () => {
     const formattedRecNo = formatReceiptId(t.id);
     const parsedDate = t.date ? new Date(t.date) : new Date();
 
+    const isRedito = Boolean(loan?.loanType && (
+      loan.loanType.includes('Rédito') || 
+      loan.loanType.includes('Redito') || 
+      loan.loanType.includes('Solo Interé') || 
+      loan.loanType.includes('Pagaré Abierto')
+    ));
+
+    const paymentAmount = Number(t.amount) || 0;
+    const isCapitalPayment = t.paymentType === 'Capital';
+
+    let capitalAmt = 0;
+    let interestAmt = 0;
+    if (isCapitalPayment) {
+      capitalAmt = paymentAmount;
+    } else {
+      interestAmt = paymentAmount;
+    }
+
+    const previousBalance = loan 
+      ? (isRedito && !isCapitalPayment ? loan.remainingBalance : loan.remainingBalance + capitalAmt)
+      : paymentAmount;
+
     const data: ThermalReceiptData = {
       receiptNo: formattedRecNo,
       date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
       time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
       clientName: clientName,
-      clientCedula: client?.cedula,
+      clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
-      loanId: loan ? formatLoanId(loan.id) : (t.referenceId || ''),
-      installmentInfo: loan ? `Cuota de ${loan.frequency}` : undefined,
-      amountPaid: Number(t.amount) || 0,
-      capitalAmount: t.paymentType === 'Capital' ? Number(t.amount) : 0,
-      interestAmount: t.paymentType === 'Interes' ? Number(t.amount) : Number(t.amount),
+      loanId: loan ? loan.id : (t.referenceId || ''),
+      loanType: loan?.loanType || (isRedito ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
+      loanAmount: loan?.amount,
+      installmentInfo: loan ? `Cuota ${loan.frequency}` : undefined,
+      amountPaid: paymentAmount,
+      capitalAmount: capitalAmt,
+      interestAmount: interestAmt,
       lateFeeAmount: 0,
-      previousBalance: loan ? (loan.remainingBalance + Number(t.amount)) : Number(t.amount),
+      discountAmount: 0,
+      previousBalance: previousBalance,
       newBalance: loan ? loan.remainingBalance : 0,
       paymentMethod: t.paymentMethod || 'Efectivo',
+      paymentType: t.paymentType,
       cashierName: currentUser?.name || 'Caja',
       notes: t.description,
       transactionId: t.id,

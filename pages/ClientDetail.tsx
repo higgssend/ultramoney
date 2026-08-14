@@ -48,6 +48,10 @@ const ClientDetail: React.FC = () => {
 
   // Direct fetch fallback for full page reload
   useEffect(() => {
+    if (id === 'nuevo' || id === 'crear') {
+      navigate('/clientes/nuevo', { replace: true });
+      return;
+    }
     if (!matchedClient && id) {
       setIsFetchingDirect(true);
       void (async () => {
@@ -249,27 +253,55 @@ const ClientDetail: React.FC = () => {
 
   const handleOpenThermalReceipt = (t: Transaction) => {
     const matchedLoan = clientLoans.find(l => l.id === t.referenceId) || loans.find(l => l.id === t.referenceId);
-    const clientName = client?.name || matchedLoan?.clientName || 'Cliente';
+    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (matchedLoan?.clientName || 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
-    const formattedLoanIdVal = t.referenceId ? formatLoanId(t.referenceId, matchedLoan?.loanCategory, matchedLoan?.loanType) : '-';
     const tDate = t.date ? new Date(t.date) : new Date();
+
+    const isRedito = Boolean(matchedLoan?.loanType && (
+      matchedLoan.loanType.includes('Rédito') || 
+      matchedLoan.loanType.includes('Redito') || 
+      matchedLoan.loanType.includes('Solo Interé') || 
+      matchedLoan.loanType.includes('Pagaré Abierto')
+    ));
+
+    const paymentAmount = Number(t.amount || 0);
+    const isCapitalPayment = t.paymentType === 'Capital';
+
+    let capitalAmt = 0;
+    let interestAmt = 0;
+    if (isCapitalPayment) {
+      capitalAmt = paymentAmount;
+    } else {
+      interestAmt = paymentAmount;
+    }
+
+    const previousBalance = matchedLoan 
+      ? (isRedito && !isCapitalPayment ? matchedLoan.remainingBalance : matchedLoan.remainingBalance + capitalAmt)
+      : paymentAmount;
 
     setThermalModalData({
       receiptNo: formattedRecNo,
       date: tDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
       time: tDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
       clientName,
-      clientCedula: client?.cedula,
+      clientCedula: client?.cedula || client?.documentId,
       clientPhone: client?.phone,
-      loanId: formattedLoanIdVal,
-      installmentInfo: t.description || t.note || 'Pago de Cuota / Abono',
-      amountPaid: Number(t.amount || 0),
+      loanId: matchedLoan?.id || t.referenceId || '',
+      loanType: matchedLoan?.loanType || (isRedito ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
+      loanAmount: matchedLoan?.amount,
+      installmentInfo: t.description || t.note || (matchedLoan ? `Cuota ${matchedLoan.frequency}` : 'Pago'),
+      amountPaid: paymentAmount,
+      capitalAmount: capitalAmt,
+      interestAmount: interestAmt,
+      lateFeeAmount: 0,
+      discountAmount: 0,
       paymentMethod: (t.paymentMethod as PaymentMethod) || 'Efectivo',
-      previousBalance: (matchedLoan?.remainingBalance || 0) + Number(t.amount || 0),
+      paymentType: t.paymentType,
+      previousBalance: previousBalance,
       newBalance: matchedLoan?.remainingBalance || 0,
       cashierName: 'Cajero / Oficial',
       transactionId: t.id,
-      clientId: client?.id
+      clientId: client?.id || matchedLoan?.clientId
     });
   };
 
