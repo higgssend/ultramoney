@@ -6,6 +6,7 @@ import { Transaction, Loan, Client, LoanStatus, LoanType, formatLoanId, formatRe
 import { insforge } from '../lib/insforge';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
@@ -28,24 +29,88 @@ export const ReceiptView: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [isThermalOpen, setIsThermalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isExportingPDF, setIsExportingPDF] = useState(false);
+    const [isExportingImage, setIsExportingImage] = useState(false);
     const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
     const handlePrint = () => {
         window.print();
     };
 
+    const handleDownloadPDF = async () => {
+        const element = document.getElementById('printable-voucher-card');
+        if (!element) return;
+        setIsExportingPDF(true);
+        try {
+            toast.info("Generando PDF oficial del recibo...");
+            const canvas = await html2canvas(element, { 
+                scale: 3, 
+                useCORS: true, 
+                backgroundColor: '#ffffff',
+                scrollY: -window.scrollY,
+                scrollX: -window.scrollX,
+                windowWidth: document.documentElement.offsetWidth,
+                windowHeight: document.documentElement.offsetHeight
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight);
+            pdf.save(`Recibo_Oficial_${formatReceiptId(transaction?.id || transactionId || '1')}.pdf`);
+            toast.success("Recibo PDF descargado exitosamente");
+        } catch (e) {
+            console.error("Error exportando PDF:", e);
+            toast.error("Error al exportar PDF");
+        } finally {
+            setIsExportingPDF(false);
+        }
+    };
+
     const handleDownloadImage = async () => {
         const element = document.getElementById('printable-voucher-card');
         if (!element) return;
+        setIsExportingImage(true);
         try {
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-            const image = canvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.href = image;
-            link.download = `Recibo_${formatReceiptId(transactionId || '1')}.png`;
-            link.click();
+            toast.info("Generando imagen completa del recibo...");
+            const canvas = await html2canvas(element, { 
+                scale: 3, 
+                useCORS: true, 
+                backgroundColor: '#ffffff',
+                scrollY: -window.scrollY,
+                scrollX: -window.scrollX,
+                windowWidth: document.documentElement.offsetWidth,
+                windowHeight: document.documentElement.offsetHeight
+            });
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    const image = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = `Recibo_${formatReceiptId(transaction?.id || transactionId || '1')}.png`;
+                    link.click();
+                    toast.success("Imagen descargada");
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Recibo_${formatReceiptId(transaction?.id || transactionId || '1')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                toast.success("Imagen completa del recibo descargada");
+            }, 'image/png');
         } catch (e) {
             console.error("Error exportando imagen:", e);
+            toast.error("Error al exportar imagen");
+        } finally {
+            setIsExportingImage(false);
         }
     };
 
@@ -444,11 +509,21 @@ export const ReceiptView: React.FC = () => {
                             WhatsApp
                         </button>
                         <button 
+                            onClick={handleDownloadPDF}
+                            disabled={isExportingPDF}
+                            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50"
+                            title="Descargar recibo oficial en formato PDF"
+                        >
+                            <FileText className="w-4 h-4" />
+                            <span>{isExportingPDF ? 'Generando PDF...' : 'Descargar PDF'}</span>
+                        </button>
+                        <button 
                             onClick={handleDownloadImage}
-                            className="px-3.5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-500/20 hover:bg-emerald-700 transition-colors"
+                            disabled={isExportingImage}
+                            className="px-3.5 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-500/20 hover:bg-emerald-700 transition-colors disabled:opacity-50"
                         >
                             <Image className="w-4 h-4" />
-                            Imagen (PNG)
+                            <span>{isExportingImage ? 'Exportando...' : 'Imagen (PNG)'}</span>
                         </button>
                         <button 
                             onClick={handlePrint}

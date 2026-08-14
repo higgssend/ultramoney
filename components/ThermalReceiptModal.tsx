@@ -8,6 +8,7 @@ import { formatLoanId, formatReceiptId, PaymentMethod } from '../types';
 import { formatExactTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import { WhatsAppIcon } from './WhatsAppIcon';
 
@@ -61,6 +62,7 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
   const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('58mm');
   const [copiedText, setCopiedText] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   const matchedClient = useMemo(() => {
@@ -267,20 +269,83 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
     window.open(waUrl, '_blank');
   };
 
+  const handleExportPDF = async () => {
+    const element = document.getElementById('thermal-receipt-preview-card');
+    if (!element) return;
+    setIsExportingPDF(true);
+    try {
+      toast.info('Generando PDF del ticket térmico...');
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        scrollY: -window.scrollY,
+        scrollX: -window.scrollX,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidthMm = paperWidth === '58mm' ? 58 : 80;
+      const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [imgWidthMm, Math.max(imgHeightMm + 8, 100)]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 4, imgWidthMm, imgHeightMm);
+      pdf.save(`Ticket_Termico_${data.receiptNo}.pdf`);
+      toast.success('Ticket PDF descargado exitosamente');
+    } catch (e) {
+      console.error('Error generando PDF térmico:', e);
+      toast.error('Error al generar PDF del ticket');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   const handleExportPNG = async () => {
     const element = document.getElementById('thermal-receipt-preview-card');
     if (!element) return;
     setIsExportingImage(true);
     try {
-      const canvas = await html2canvas(element, { scale: 3, backgroundColor: '#ffffff' });
-      const image = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `Ticket_${data.receiptNo}.png`;
-      link.click();
-      toast.success('Imagen de ticket descargada');
+      toast.info('Generando imagen completa del ticket...');
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        scrollY: -window.scrollY,
+        scrollX: -window.scrollX,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
+      });
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          const image = canvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = image;
+          link.download = `Ticket_${data.receiptNo}.png`;
+          link.click();
+          toast.success('Imagen de ticket descargada');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Ticket_${data.receiptNo}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast.success('Imagen completa del ticket descargada');
+      }, 'image/png');
     } catch (e) {
-      console.error(e);
+      console.error('Error al exportar imagen:', e);
       toast.error('Error al exportar imagen');
     } finally {
       setIsExportingImage(false);
@@ -581,7 +646,25 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleExportPDF}
+              disabled={isExportingPDF}
+              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50 active:scale-95"
+              title="Guardar y descargar ticket en formato PDF"
+            >
+              <FileText className="w-4 h-4" />
+              <span>{isExportingPDF ? 'Generando PDF...' : 'Guardar PDF'}</span>
+            </button>
+            <button
+              onClick={handleExportPNG}
+              disabled={isExportingImage}
+              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all disabled:opacity-50 active:scale-95"
+              title="Guardar y descargar ticket completo como imagen PNG"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isExportingImage ? 'Exportando...' : 'Guardar PNG'}</span>
+            </button>
             <button
               onClick={handleCopyText}
               className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all"
@@ -589,14 +672,6 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
             >
               {copiedText ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               <span>{copiedText ? '¡Copiado!' : 'Copiar RawBT'}</span>
-            </button>
-            <button
-              onClick={handleExportPNG}
-              disabled={isExportingImage}
-              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition-all disabled:opacity-50"
-            >
-              <Download className="w-4 h-4" />
-              <span>{isExportingImage ? 'Exportando...' : 'PNG'}</span>
             </button>
             <button
               onClick={onClose}

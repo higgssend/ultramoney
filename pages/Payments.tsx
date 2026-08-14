@@ -5,7 +5,7 @@ import {
   Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft, 
   Image, ArrowLeftRight, TrendingUp, Sparkles, Clock, Share2, 
   Copy, ExternalLink, ShieldAlert, Check, RefreshCw, Zap, Navigation,
-  Edit3, Trash2
+  Edit3, Trash2, PlusCircle, Layers
 } from 'lucide-react';
 import { useClients, useAuth, useSettings, useLoans, useAccounting } from '../context/StoreContext';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -126,6 +126,12 @@ export const Payments: React.FC = () => {
   // Success Modal & Thermal Modal State
   const [receiptData, setReceiptData] = useState<FullReceiptData | null>(null);
   const [thermalModalData, setThermalModalData] = useState<ThermalReceiptData | null>(null);
+
+  // Mobile View Switcher & Quick Pay State
+  const [mobileViewMode, setMobileViewMode] = useState<'rapida' | 'full'>('rapida');
+  const [mobileQuickSearch, setMobileQuickSearch] = useState<string>('');
+  const [isMobileQuickPayModalOpen, setIsMobileQuickPayModalOpen] = useState<boolean>(false);
+  const [quickPayLoanSearch, setQuickPayLoanSearch] = useState<string>('');
 
   // Monitor State
   const [expandedClients, setExpandedClients] = useState<string[]>([]);
@@ -344,6 +350,54 @@ export const Payments: React.FC = () => {
     });
   }, [paymentTransactions, mainFeedFilter, historySearch, todayStr, now, loans, clients]);
 
+  // Mobile Quick Feed Filtered Payments
+  const quickFeedPayments = useMemo(() => {
+    const term = mobileQuickSearch.toLowerCase().trim();
+    if (!term) return paymentTransactions;
+    return paymentTransactions.filter(t => {
+      const desc = (t.description || '').toLowerCase();
+      const recId = formatReceiptId(t.id).toLowerCase();
+      const rawId = (t.id || '').toLowerCase();
+      const refId = (t.referenceId || '').toLowerCase();
+      const method = (t.paymentMethod || '').toLowerCase();
+      const amountStr = String(t.amount || '');
+      const matchedLoan = loans.find(l => 
+        l.id === t.referenceId || 
+        formatLoanId(l.id) === t.referenceId || 
+        formatLoanId(l.id).replace(/\s+/g, '') === (t.referenceId || '').replace(/\s+/g, '')
+      );
+      const matchedClient = matchedLoan ? clients.find(c => c.id === matchedLoan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
+      const clientFullName = (matchedClient ? `${matchedClient.name} ${matchedClient.lastName || ''}`.trim() : (matchedLoan?.clientName || '')).toLowerCase();
+      const cedula = (matchedClient?.cedula || matchedClient?.documentId || '').toLowerCase();
+
+      return (
+        desc.includes(term) ||
+        recId.includes(term) ||
+        rawId.includes(term) ||
+        refId.includes(term) ||
+        clientFullName.includes(term) ||
+        cedula.includes(term) ||
+        method.includes(term) ||
+        amountStr.includes(term)
+      );
+    });
+  }, [paymentTransactions, mobileQuickSearch, loans, clients]);
+
+  // Quick Pay Modal Loan Picker
+  const quickPayFilteredLoans = useMemo(() => {
+    const term = quickPayLoanSearch.toLowerCase().trim();
+    const activeLoans = loans.filter(l => l && l.remainingBalance > 0 && l.status !== LoanStatus.PAID);
+    if (!term) return activeLoans;
+    return activeLoans.filter(loan => {
+      const client = clients.find(c => c.id === loan.clientId);
+      const clientName = (client ? `${client.name} ${client.lastName || ''}`.trim() : (loan.clientName || '')).toLowerCase();
+      const cedula = (client?.cedula || client?.documentId || '').toLowerCase();
+      const loanFormatted = formatLoanId(loan.id, loan.loanCategory, loan.loanType).toLowerCase();
+      const rawId = loan.id.toLowerCase();
+      return clientName.includes(term) || cedula.includes(term) || loanFormatted.includes(term) || rawId.includes(term);
+    });
+  }, [loans, clients, quickPayLoanSearch]);
+
   // --- Handlers ---
   const handleToggleInstallment = (inst: Installment) => {
     if (inst.status === 'Pagado') return;
@@ -505,6 +559,8 @@ export const Payments: React.FC = () => {
     setPayNote('Cuota Regular');
     setSelectedLoanId(null);
     setSearchTerm('');
+    setIsMobileQuickPayModalOpen(false);
+    setQuickPayLoanSearch('');
 
     toast.success("¡Pago registrado y aplicado exitosamente!");
   };
@@ -643,31 +699,502 @@ export const Payments: React.FC = () => {
         />
       )}
 
-      {/* Full Edit Payment Modal */}
-      <EditPaymentModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedTransactionToEdit(null);
-        }}
-        transaction={selectedTransactionToEdit}
-      />
+      {/* Quick Pay Modal for Mobile */}
+      {isMobileQuickPayModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-600 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-white/15 rounded-xl backdrop-blur-xs">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base sm:text-lg text-white">Realizar un Pago Rápido</h3>
+                  <p className="text-xs text-indigo-100">Selecciona el préstamo e ingresa el monto</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileQuickPayModalOpen(false);
+                  setSelectedLoanId(null);
+                }}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-      {/* Top Header & Navigation Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl text-slate-600 dark:text-slate-300 transition-colors shadow-2xs"
-            title="Volver"
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+              {!selectedLoan ? (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-indigo-500 w-4 h-4" />
+                    <input
+                      type="text"
+                      value={quickPayLoanSearch}
+                      onChange={e => setQuickPayLoanSearch(e.target.value)}
+                      placeholder="Buscar por cliente, cédula o préstamo..."
+                      className="w-full pl-10 pr-9 py-2.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    {quickPayLoanSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setQuickPayLoanSearch('')}
+                        className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 p-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+                    {quickPayFilteredLoans.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400">
+                        <User className="w-8 h-8 mx-auto opacity-40 mb-1" />
+                        <p className="text-xs font-bold">No se encontraron préstamos activos</p>
+                      </div>
+                    ) : (
+                      quickPayFilteredLoans.map(loan => {
+                        const client = clients.find(c => c.id === loan.clientId);
+                        const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : loan.clientName;
+                        return (
+                          <div
+                            key={loan.id}
+                            onClick={() => {
+                              setSelectedLoanId(loan.id);
+                              const isRedito = Boolean(loan.loanType && (
+                                loan.loanType.includes('Rédito') || 
+                                loan.loanType.includes('Redito') || 
+                                loan.loanType.includes('Solo Interé') || 
+                                loan.loanType.includes('Pagaré Abierto')
+                              ));
+                              if (isRedito) {
+                                const interest = Math.round(loan.remainingBalance * (loan.interestRate / 100) * 100) / 100;
+                                setPayAmount(interest.toFixed(2));
+                                setPayNote('Pago de Interés (Rédito)');
+                              } else {
+                                const insts = generateInstallments(loan);
+                                const nextInst = insts.find(i => i.status !== 'Pagado');
+                                if (nextInst) {
+                                  setSelectedInstallments([nextInst.number]);
+                                  setPayAmount((nextInst.amount - nextInst.paidAmount).toFixed(2));
+                                  setPayNote(`Pago cuota #${nextInst.number}`);
+                                } else {
+                                  setPayAmount(loan.remainingBalance.toFixed(2));
+                                }
+                              }
+                            }}
+                            className="p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-3 group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-xs shrink-0">
+                                {(clientFullName || 'C').charAt(0)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-xs text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 truncate">
+                                  {clientFullName}
+                                </p>
+                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                  <span className="font-mono text-indigo-500 font-semibold">#{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}</span>
+                                  <span>•</span>
+                                  <span>{loan.frequency}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 block">
+                                RD$ {loan.remainingBalance.toLocaleString()}
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                Cobrar
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {(() => {
+                    const loanClient = clients.find(c => c.id === selectedLoan.clientId);
+                    const clientFullName = loanClient ? `${loanClient.name} ${loanClient.lastName || ''}`.trim() : selectedLoan.clientName;
+                    return (
+                      <div className="bg-indigo-50 dark:bg-indigo-950/40 p-3.5 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-xs shrink-0">
+                            {(clientFullName || 'C').charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">{clientFullName}</p>
+                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono truncate">
+                              #{formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType)} • Bal: RD$ {selectedLoan.remainingBalance.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLoanId(null)}
+                          className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline shrink-0"
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {Boolean(selectedLoan.loanType && (
+                    selectedLoan.loanType.includes('Rédito') || 
+                    selectedLoan.loanType.includes('Redito') || 
+                    selectedLoan.loanType.includes('Solo Interé') || 
+                    selectedLoan.loanType.includes('Pagaré Abierto')
+                  )) ? (
+                    <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange('Interes')}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${paymentType === 'Interes' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-300'}`}
+                      >
+                        Solo Interés
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange('Capital')}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${paymentType === 'Capital' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-300'}`}
+                      >
+                        Capital
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePaymentTypeChange('Mixto')}
+                        className={`py-1.5 text-xs font-bold rounded-lg transition-all ${paymentType === 'Mixto' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-300'}`}
+                      >
+                        Mixto
+                      </button>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+                      Monto a Cobrar (RD$)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">RD$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={payAmount}
+                        onChange={e => setPayAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-11 pr-3 py-2.5 text-sm sm:text-base font-black border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">Fecha</label>
+                      <input
+                        type="date"
+                        value={paymentDate}
+                        onChange={e => setPaymentDate(e.target.value)}
+                        className="w-full p-2 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">Hora</label>
+                      <input
+                        type="time"
+                        value={paymentTime}
+                        onChange={e => setPaymentTime(e.target.value)}
+                        className="w-full p-2 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Método de Pago</label>
+                    <select
+                      value={paymentMethod}
+                      onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl"
+                    >
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+
+                  {paymentMethod === 'Transferencia' && bankAccounts.length > 0 && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-500 mb-1">Cuenta Bancaria Destino</label>
+                      <select
+                        value={selectedBankAccountId}
+                        onChange={e => setSelectedBankAccountId(e.target.value)}
+                        className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl"
+                      >
+                        <option value="">Seleccionar cuenta bancaria...</option>
+                        {bankAccounts.map(b => (
+                          <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber} ({b.accountType})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 mb-1">Concepto / Nota</label>
+                    <input
+                      type="text"
+                      value={payNote}
+                      onChange={e => setPayNote(e.target.value)}
+                      placeholder="Ej. Cuota Regular"
+                      className="w-full p-2 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePayment}
+                    disabled={!payAmount || Number(payAmount) <= 0}
+                    className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-600/25 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Confirmar y Registrar Pago</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Mobile Switcher: Vista Rápida vs Vista Full */}
+      <div className="md:hidden flex items-center bg-slate-100 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-full mb-1 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setMobileViewMode('rapida')}
+          className={`flex-1 py-2.5 px-3 text-xs sm:text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
+            mobileViewMode === 'rapida'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+              : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600'
+          }`}
+        >
+          <Zap className="w-4 h-4" />
+          <span>Vista Rápida</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileViewMode('full')}
+          className={`flex-1 py-2.5 px-3 text-xs sm:text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
+            mobileViewMode === 'full'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+              : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Vista Full</span>
+        </button>
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE: VISTA RÁPIDA (Default en móviles)                      */}
+      {/* ------------------------------------------------------------- */}
+      {mobileViewMode === 'rapida' && (
+        <div className="md:hidden space-y-4 animate-fade-in">
+          {/* 1. Barra de Búsqueda de Pagos */}
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-indigo-500 w-5 h-5" />
+              <input 
+                type="text" 
+                value={mobileQuickSearch}
+                onChange={e => setMobileQuickSearch(e.target.value)}
+                placeholder="Buscar pagos por cliente, recibo (#REC-...), préstamo o monto..." 
+                className="w-full pl-11 pr-10 py-3 text-xs sm:text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs placeholder-slate-400"
+              />
+              {mobileQuickSearch && (
+                <button 
+                  type="button"
+                  onClick={() => setMobileQuickSearch('')}
+                  className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 2. Botón de Realizar un Pago */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedLoanId(null);
+              setQuickPayLoanSearch('');
+              setIsMobileQuickPayModalOpen(true);
+            }}
+            className="w-full py-4 px-5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white font-black text-sm sm:text-base rounded-3xl shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <PlusCircle className="w-5 h-5" />
+            <span>Realizar un Pago</span>
           </button>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-                Módulo de Cobranza & Caja
-              </h2>
+
+          {/* 3. Lista de Pagos Recientes */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="font-black text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4 text-indigo-500" />
+                <span>Pagos Recientes</span>
+              </h3>
+              <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full">
+                {quickFeedPayments.length} recibos
+              </span>
+            </div>
+
+            {quickFeedPayments.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center border border-dashed border-slate-200 dark:border-slate-800">
+                <Receipt className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No se encontraron pagos registrados</p>
+                <p className="text-xs text-slate-400 mt-1">Los cobros registrados aparecerán aquí en tiempo real.</p>
+              </div>
+            ) : (
+              quickFeedPayments.map(t => {
+                const loan = loans.find(l => 
+                  l.id === t.referenceId || 
+                  formatLoanId(l.id) === t.referenceId || 
+                  formatLoanId(l.id).replace(/\s+/g, '') === (t.referenceId || '').replace(/\s+/g, '')
+                );
+                const client = loan ? clients.find(c => c.id === loan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
+                const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? (loan.clientName || loan.clientname) : (t.description?.split('-')[1]?.trim() || 'Cliente'));
+                const formattedRecNo = formatReceiptId(t.id);
+                const formattedLoanIdText = loan ? formatLoanId(loan.id, loan.loanCategory, loan.loanType) : (t.referenceId || '');
+                const exactTimeStr = formatExactDateTime(t.date || t.createdAt);
+
+                return (
+                  <div 
+                    key={t.id}
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-100 dark:border-slate-800 shadow-sm space-y-3 transition-all hover:shadow-md"
+                  >
+                    {/* Client & Amount Row */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black flex items-center justify-center text-sm shrink-0 border border-indigo-100 dark:border-indigo-900/40">
+                          {(clientName || 'C').charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-black text-slate-800 dark:text-slate-100 text-sm sm:text-base truncate">
+                            {clientName}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                              Recibo #{formattedRecNo}
+                            </span>
+                            {formattedLoanIdText && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono">Préstamo #{formattedLoanIdText}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 block">
+                          RD$ {(Number(t.amount) || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                          {t.paymentMethod || 'Efectivo'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Date / Time and Note */}
+                    <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-50 dark:border-slate-800/60">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{exactTimeStr}</span>
+                      </span>
+                      {t.description && (
+                        <span className="truncate max-w-[180px] text-[11px] text-slate-500 italic">
+                          {t.description}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Action Buttons Bar */}
+                    <div className="grid grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenThermalReceipt(t)}
+                        className="py-2 px-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all active:scale-95 shadow-2xs"
+                        title="Ticket Térmico (58/80mm)"
+                      >
+                        <Printer className="w-3.5 h-3.5 shrink-0" />
+                        <span>Ticket</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleShareWhatsApp(t)}
+                        className="py-2 px-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] dark:text-[#25D366] rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all active:scale-95 shadow-2xs"
+                        title="Enviar por WhatsApp"
+                      >
+                        <WhatsAppIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span>WhatsApp</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/recibo/${t.id}`)}
+                        className="py-2 px-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all active:scale-95 shadow-2xs"
+                        title="Ver Recibo Oficial"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                        <span>Recibo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTransactionToEdit(t);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="py-2 px-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all active:scale-95 shadow-2xs"
+                        title="Editar Pago"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Editar</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* VISTA FULL (Intacta en Escritorio y cuando se activa en móvil) */}
+      {/* ------------------------------------------------------------- */}
+      <div className={`${mobileViewMode === 'rapida' ? 'hidden md:block' : 'block'} space-y-6`}>
+        {/* Top Header & Navigation Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl text-slate-600 dark:text-slate-300 transition-colors shadow-2xs"
+              title="Volver"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+                  Módulo de Cobranza & Caja
+                </h2>
               <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> En Vivo
               </span>
@@ -1751,6 +2278,7 @@ export const Payments: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
 
       {/* Enhanced Success Modal (Receipt) */}
       {receiptData && (
