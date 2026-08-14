@@ -61,7 +61,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { addToast } = useToast();
   const { currentUser } = useAuth();
   const { clients } = useClients();
-  const { addAuditLog } = useSettings();
+  const { addAuditLog, addNotification } = useSettings();
   
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loanProducts, setLoanProducts] = useState<LoanProduct[]>([]);
@@ -342,6 +342,12 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
       setLoans(prev => [newLoan, ...prev]);
       addAuditLog('loan_created', `Creó un préstamo por RD$ ${loanData.amount}`);
+      addNotification({
+        title: 'Nuevo Préstamo Desembolsado',
+        message: `Préstamo #${data.id.slice(0, 8)} de RD$ ${loanData.amount.toLocaleString()} desembolsado para ${clientName}.`,
+        type: 'success',
+        link: `/prestamos/${data.id}`
+      });
       addToast("Préstamo creado exitosamente", "success");
       return newLoan;
     } else {
@@ -762,6 +768,12 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setLoanRequests(prev => [newReq, ...prev]);
       addAuditLog('loan_request_created', `Creó una solicitud de préstamo por RD$ ${reqAmount} para ${newReq.clientName}`);
+      addNotification({
+        title: 'Nueva Solicitud de Crédito',
+        message: `Solicitud de RD$ ${reqAmount.toLocaleString()} registrada para ${newReq.clientName}.`,
+        type: 'info',
+        link: `/solicitudes`
+      });
       addToast("Solicitud guardada con éxito", "success");
     } else if (error) {
       logger.error("Error al crear solicitud de préstamo:", error);

@@ -69,7 +69,7 @@ export const Payments: React.FC = () => {
   const { loans = [], registerPayment } = useLoans();
   const { clients = [] } = useClients();
   const { transactions = [], bankAccounts = [], processBankDeposit, paymentMethods = [], bankDeposits = [] } = useAccounting();
-  const { companySettings } = useSettings();
+  const { companySettings, addNotification } = useSettings();
   const { currentUser, roles = [] } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -415,6 +415,13 @@ export const Payments: React.FC = () => {
     const insertedTx = Array.isArray(insertedTxs) ? insertedTxs[0] : insertedTxs;
     const actualTxId = insertedTx?.id || `REC-${String(Date.now()).slice(-6)}`;
     const formattedRecNo = formatReceiptId(actualTxId);
+
+    addNotification({
+      title: 'Pago Recibido',
+      message: `Cobro de RD$ ${effectiveTotal.toLocaleString()} registrado para ${selectedLoan.clientName} (Recibo #${formattedRecNo}).`,
+      type: 'success',
+      link: '/pagos'
+    });
 
     const otherActiveLoans = loans
       .filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoanId && l.status !== LoanStatus.PAID)

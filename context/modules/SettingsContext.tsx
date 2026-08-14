@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CompanySettings, AuditLog, AppNotification, PdfJob } from '../../types';
-import type { AuditLogDB } from '../../types.db';
+import type { AuditLogDB, NotificationDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
@@ -51,11 +51,10 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { return []; }
     }
-    return [
-      { id: '1', title: 'Bienvenido', message: 'Bienvenido a Ultramoney. Aquí aparecerán tus alertas.', date: new Date().toISOString(), read: false, type: 'info' }
-    ];
+    return [];
   });
 
+  // Local storage caching
   useEffect(() => {
     localStorage.setItem('um_notifications', JSON.stringify(notifications));
   }, [notifications]);
@@ -64,14 +63,16 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!currentUser) {
       setCompanySettings(initialCompanySettings);
       setAuditLogs([]);
+      setNotifications([]);
       return;
     }
 
-    const fetchSettings = async () => {
+    const fetchSettingsAndData = async () => {
       try {
-        const [settingsRes, bitacoraRes] = await Promise.all([
+        const [settingsRes, bitacoraRes, notifRes] = await Promise.all([
           insforge.database.from('company_settings').select('*').eq('lender_id', currentUser.id).maybeSingle(),
-          insforge.database.from('bitacora_logs').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
+          insforge.database.from('bitacora_logs').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('notifications').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }).limit(50)
         ]);
 
         if (settingsRes.data) {
@@ -85,6 +86,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         } else {
           setCompanySettings(initialCompanySettings);
         }
+
         if (bitacoraRes.data) {
            setAuditLogs((bitacoraRes.data as AuditLogDB[]).map((l) => ({
              id: l.id,
@@ -95,11 +97,52 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
              timestamp: l.timestamp || new Date().toISOString()
            })));
         }
+
+        if (notifRes.data && notifRes.data.length > 0) {
+          const dbNotifs: AppNotification[] = (notifRes.data as NotificationDB[]).map(n => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: (n.type as AppNotification['type']) || 'info',
+            read: Boolean(n.read),
+            link: n.link || undefined,
+            date: n.created_at || new Date().toISOString()
+          }));
+          setNotifications(dbNotifs);
+        } else {
+          // If no notifications exist in DB for this lender, create initial welcome
+          const welcomeNotifId = `notif-welcome-${currentUser.id}`;
+          const welcomeNotif: AppNotification = {
+            id: welcomeNotifId,
+            title: 'Bienvenido a UltraMoney',
+            message: 'Su sistema de préstamos y tesorería está activo y sincronizado en la nube.',
+            date: new Date().toISOString(),
+            read: false,
+            type: 'info'
+          };
+          setNotifications([welcomeNotif]);
+
+          void (async () => {
+            try {
+              await insforge.database.from('notifications').insert([{
+                id: welcomeNotifId,
+                lender_id: currentUser.id,
+                user_id: currentUser.id,
+                title: welcomeNotif.title,
+                message: welcomeNotif.message,
+                type: welcomeNotif.type,
+                read: false
+              }]);
+            } catch (err) {
+              logger.error("Error creating initial notification in DB:", err);
+            }
+          })();
+        }
       } catch (error) {
-        logger.error("Error fetching settings:", error);
+        logger.error("Error fetching settings and notifications:", error);
       }
     };
-    fetchSettings();
+    fetchSettingsAndData();
   }, [currentUser]);
 
   const updateCompanySettings = async (settings: CompanySettings) => {
@@ -160,16 +203,66 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const addNotification = (notif: Omit<AppNotification, 'id' | 'date' | 'read'>) => {
-    const newNotif: AppNotification = { ...notif, id: `notif-${Date.now()}`, date: new Date().toISOString(), read: false };
+    const newNotifId = `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+    const newNotif: AppNotification = { 
+      ...notif, 
+      id: newNotifId, 
+      date: new Date().toISOString(), 
+      read: false 
+    };
     setNotifications(prev => [newNotif, ...prev]);
+
+    if (currentUser) {
+      void (async () => {
+        try {
+          await insforge.database.from('notifications').insert([{
+            id: newNotifId,
+            lender_id: currentUser.id,
+            user_id: currentUser.id,
+            title: newNotif.title,
+            message: newNotif.message,
+            type: newNotif.type,
+            read: false,
+            link: newNotif.link || null
+          }]);
+        } catch (err) {
+          logger.error('Error inserting notification to DB:', err);
+        }
+      })();
+    }
   };
   
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    if (currentUser) {
+      void (async () => {
+        try {
+          await insforge.database
+            .from('notifications')
+            .update({ read: true, updated_at: new Date().toISOString() })
+            .eq('id', id);
+        } catch (err) {
+          logger.error('Error marking notification as read in DB:', err);
+        }
+      })();
+    }
   };
   
   const markAllNotificationsAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    if (currentUser) {
+      void (async () => {
+        try {
+          await insforge.database
+            .from('notifications')
+            .update({ read: true, updated_at: new Date().toISOString() })
+            .eq('lender_id', currentUser.id)
+            .eq('read', false);
+        } catch (err) {
+          logger.error('Error marking all notifications as read in DB:', err);
+        }
+      })();
+    }
   };
 
   const addAuditLog = async (action: string, details: string) => {

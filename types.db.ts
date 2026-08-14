@@ -342,3 +342,16 @@ export interface InventoryItemDB {
   lender_id?: string;
   created_at?: string;
 }
+
+export interface NotificationDB {
+  id: string;
+  lender_id: string;
+  user_id?: string | null;
+  title: string;
+  message: string;
+  type?: string;
+  read: boolean;
+  link?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
