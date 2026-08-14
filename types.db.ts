@@ -175,6 +175,47 @@ export interface LoanRequestDB {
   created_at?: string;
   request_date?: string;
   lender_id?: string;
+  item_price?: number;
+  down_payment?: number;
+  financed_amount?: number;
+  down_payment_mode?: string;
+  loan_category?: string;
+  merchant_id?: string;
+  merchant_name?: string;
+  product_description?: string;
+  merchant_invoice_number?: string;
+  merchant_payout_status?: string;
+  merchant_payout_date?: string;
+  buyer_cedula?: string;
+  buyer_id_photo_front?: string;
+  buyer_id_photo_back?: string;
+  product_invoice_photo?: string;
+}
+
+export interface MerchantPartnerDB {
+  id: string;
+  lender_id: string;
+  name: string;
+  rnc_or_cedula?: string | null;
+  category: string;
+  contact_name?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  address?: string | null;
+  city?: string | null;
+  commission_percent?: number;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_account_type?: string | null;
+  bank_holder_name?: string | null;
+  portal_slug: string;
+  pin_code: string;
+  status: string;
+  logo_url?: string | null;
+  total_financed?: number;
+  total_applications?: number;
+  created_at?: string;
 }
 
 export interface LoanProductDB {

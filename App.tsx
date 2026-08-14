@@ -51,6 +51,8 @@ const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const HelpPage = React.lazy(() => import('./pages/Help'));
 const MigrationCenter = React.lazy(() => import('./pages/MigrationCenter'));
 const CreditBureauExport = React.lazy(() => import('./pages/CreditBureauExport'));
+const MerchantPosPortal = React.lazy(() => import('./pages/MerchantPosPortal'));
+const MerchantsPage = React.lazy(() => import('./pages/MerchantsPage'));
 
 // Feature Pages Dynamic Imports
 const CreditFeature = React.lazy(() => import('./pages/features/CreditFeature'));
@@ -66,7 +68,7 @@ const ScalabilityFeature = React.lazy(() => import('./pages/features/Scalability
 const PublicPaymentPortal = React.lazy(() => import('./pages/PublicPaymentPortal').then(m => ({ default: m.PublicPaymentPortal })));
 
 // Initialize Core Web Vitals reporting
-function reportWebVitals(metric: any) {
+function reportWebVitals(metric: { name: string; value: number }) {
   if (process.env.NODE_ENV !== 'production') {
     console.log(metric.name, Math.round(metric.value));
   }
@@ -180,6 +182,7 @@ const AppContent: React.FC = () => {
                   <Route path="/pagar/:slug" element={<PublicPaymentPortal />} />
                   <Route path="/linkpagos" element={<PublicPaymentPortal />} />
                   <Route path="/linkpagos/:slug" element={<PublicPaymentPortal />} />
+                  <Route path="/pos/:slug" element={<MerchantPosPortal />} />
                   <Route path="/ayuda" element={<HelpPage />} />
 
                   {/* Feature Routes (Public) */}
@@ -204,6 +207,8 @@ const AppContent: React.FC = () => {
                   <Route path="/clientes/editar/:id" element={<ProtectedRoute><NewClient /></ProtectedRoute>} />
                   <Route path="/documentos/:clientId" element={<ProtectedRoute><DocumentPage /></ProtectedRoute>} />
                   <Route path="/inventario" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
+                  <Route path="/comercios" element={<ProtectedRoute><MerchantsPage /></ProtectedRoute>} />
+                  <Route path="/aliados" element={<ProtectedRoute><MerchantsPage /></ProtectedRoute>} />
                   <Route path="/solicitudes" element={<ProtectedRoute><LoanRequest /></ProtectedRoute>} />
                   <Route path="/prestamos" element={<ProtectedRoute><Loans /></ProtectedRoute>} />
                   <Route path="/prestamos/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />

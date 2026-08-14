@@ -323,6 +323,44 @@ export interface LoanRequest {
   observations?: string;
   lateFeePercentage?: number;
   graceDays?: number;
+
+  // Merchant Partner / BNPL In-Store POS fields
+  merchantId?: string;
+  merchantName?: string;
+  productDescription?: string;
+  merchantInvoiceNumber?: string;
+  merchantPayoutStatus?: 'Pendiente' | 'Transferido' | 'Liquidado';
+  merchantPayoutDate?: string;
+  buyerCedula?: string;
+  buyerIdPhotoFront?: string;
+  buyerIdPhotoBack?: string;
+  productInvoicePhoto?: string;
+}
+
+export interface MerchantPartner {
+  id: string;
+  lenderId: string;
+  name: string;
+  rncOrCedula?: string;
+  category: 'Mueblería' | 'Celulares & Tecnología' | 'Taller & Repuestos' | 'Electrodomésticos' | 'Ferretería' | 'Salud & Clínica' | 'Otro';
+  contactName?: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  commissionPercent: number;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountType?: 'Corriente' | 'Ahorro';
+  bankHolderName?: string;
+  portalSlug: string;
+  pinCode: string;
+  status: 'Activo' | 'Inactivo';
+  logoUrl?: string;
+  totalFinanced: number;
+  totalApplications: number;
+  createdAt: string;
 }
 
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';

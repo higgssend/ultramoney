@@ -6,7 +6,8 @@ import {
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
   Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2,
-  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon, ArrowLeftRight, LineChart
+  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon, ArrowLeftRight, LineChart,
+  Store, MapPin
 } from 'lucide-react';
 import { useAuth, useSettings, useAccounting } from '../context/StoreContext';
 
@@ -33,7 +34,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
 
@@ -65,10 +65,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Simulador', path: '/simulador', icon: Calculator }, 
     { name: 'Clientes', path: '/clientes', icon: Users },
     { name: 'Portales de Cliente', path: '/portales-clientes', icon: Smartphone },
+    { name: 'Comercios & POS', path: '/comercios', icon: Store },
     { name: 'Préstamos', path: '/prestamos', icon: Banknote },
     { name: 'Inventario / Stock', path: '/inventario', icon: Package },
     { name: 'Pagos', path: '/pagos', icon: CalendarClock },
     { name: 'Atrasos', path: '/atrasos', icon: AlertTriangle },
+    { name: 'Rutas & Cobradores', path: '/rutas', icon: MapPin },
     { name: 'Caja', path: '/caja', icon: Wallet },
     { name: 'Cuentas & Bancos', path: '/bancos', icon: Landmark },
     { name: 'Conciliación Bancaria', path: '/conciliacion', icon: ArrowLeftRight, badge: pendingDepositsCount },
