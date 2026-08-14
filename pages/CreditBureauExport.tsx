@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Building2, Download, Send, ShieldCheck, FileSpreadsheet, FileText, Search, CheckCircle2, Key, Info, HelpCircle } from 'lucide-react';
 import { useLoans, useClients, useSettings } from '../context/StoreContext';
+import { LoanStatus } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -31,21 +32,25 @@ export const CreditBureauExport: React.FC = () => {
   // Compute Days Overdue and Risk Category for each loan
   const bureauData = useMemo(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return loans.map(loan => {
       const client = clients.find(c => c.id === loan.clientId);
       const cedula = client?.cedula?.replace(/[^0-9]/g, '') || '00000000000';
       const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : loan.clientName;
       
       let daysOverdue = 0;
-      if (loan.nextPaymentDate && loan.status === 'Atrasado') {
+      if (loan.nextPaymentDate && Number(loan.remainingBalance) > 0) {
         const dueDate = new Date(loan.nextPaymentDate);
-        const diffTime = Math.max(0, today.getTime() - dueDate.getTime());
-        daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        dueDate.setHours(0, 0, 0, 0);
+        if (today > dueDate) {
+          daysOverdue = Math.max(0, Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
+        }
       }
 
       let category = 'A (Normal)';
       let statusNum = 1;
-      if (daysOverdue > 180) {
+      if (daysOverdue > 180 || loan.status === LoanStatus.LEGAL) {
         category = 'E (Incobrable / Pérdida)';
         statusNum = 4;
       } else if (daysOverdue > 90) {
@@ -59,7 +64,7 @@ export const CreditBureauExport: React.FC = () => {
         statusNum = 2;
       }
 
-      const isOverdue = loan.status === 'Atrasado' || daysOverdue > 0;
+      const isOverdue = loan.status === LoanStatus.OVERDUE || (loan.status as string) === 'Atrasado' || (loan.status as string) === 'Vencido' || daysOverdue > 0;
       const overdueAmount = isOverdue ? (loan.installmentAmount || Math.round(loan.remainingBalance * 0.2)) : 0;
 
       return {
