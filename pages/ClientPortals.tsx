@@ -4,6 +4,7 @@ import { Search, Link as LinkIcon, RefreshCw, XCircle, ShieldCheck, Copy, Chevro
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { Client } from '../types';
+import { PortalModal } from '../components/PortalModal';
 
 const ClientPortals: React.FC = () => {
     const { clients, updateClient } = useClients();
@@ -247,8 +248,8 @@ const ClientPortals: React.FC = () => {
 
             {/* Manage Portal Modal */}
             {selectedClient && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedClient(null)}>
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-modal-pop" onClick={e => e.stopPropagation()}>
+                <PortalModal isOpen={Boolean(selectedClient)} onClose={() => setSelectedClient(null)}>
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-modal-pop">
                         <div className="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-800">
                             <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <ShieldCheck className="w-6 h-6 text-indigo-500" />
@@ -295,7 +296,7 @@ const ClientPortals: React.FC = () => {
                                 <div>
                                     <div className="flex items-center justify-between gap-2 mb-1">
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">
-                                            Enlace Personalizado del Cliente
+                                             Enlace Personalizado del Cliente
                                         </label>
                                         <button
                                             type="button"
@@ -369,7 +370,7 @@ const ClientPortals: React.FC = () => {
                         
                         <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
                             <button 
-                                onClick={() => setSelectedClient(null)}
+                                onClick={() => setSelectedClient(null)} 
                                 className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                             >
                                 Cancelar
@@ -382,10 +383,11 @@ const ClientPortals: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </PortalModal>
             )}
         </div>
     );
 };
 
 export default ClientPortals;
+
