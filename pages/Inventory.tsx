@@ -66,9 +66,7 @@ export const InventoryPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name && (!formData.brand || !formData.model)) return;
-
-    const itemName = formData.name || `${formData.brand || ''} ${formData.model || ''}`.trim();
+    const itemName = formData.name?.trim() || `${formData.brand || 'Equipo'} ${formData.model || ''}`.trim() || 'Artículo de Inventario';
 
     if (editingItem) {
       await updateInventoryItem({
@@ -80,18 +78,9 @@ export const InventoryPage: React.FC = () => {
       } as InventoryItem);
     } else {
       await addInventoryItem({
+        ...formData,
         name: itemName,
         category: formData.category || 'Teléfono / Celular',
-        brand: formData.brand,
-        model: formData.model,
-        serialNumber: formData.serialNumber,
-        imei2: formData.imei2,
-        condition: formData.condition || 'Excelente / Como Nuevo',
-        color: formData.color,
-        storage: formData.storage,
-        cashPrice: Number(formData.cashPrice) || 0,
-        costPrice: Number(formData.costPrice) || 0,
-        status: (formData.status as InventoryItem['status']) || 'Disponible'
       });
     }
 
@@ -160,6 +149,7 @@ export const InventoryPage: React.FC = () => {
             options={[
               { value: 'Todas', label: 'Todas las Categorías' },
               { value: 'Teléfono / Celular', label: 'Teléfonos / Celulares' },
+              { value: 'Tablets / iPads', label: 'Tablets / iPads' },
               { value: 'Laptops / Portátiles', label: 'Laptops / Portátiles' },
               { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio' },
               { value: 'Electrodoméstico', label: 'Electrodomésticos' },
@@ -268,6 +258,7 @@ export const InventoryPage: React.FC = () => {
                     className="w-full text-xs"
                     options={[
                       { value: 'Teléfono / Celular', label: 'Teléfono / Celular' },
+                      { value: 'Tablets / iPads', label: 'Tablets / iPads' },
                       { value: 'Laptops / Portátiles', label: 'Laptops / Portátiles' },
                       { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio' },
                       { value: 'Electrodoméstico', label: 'Electrodoméstico / Equipo' },

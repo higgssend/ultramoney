@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Collateral } from '../../types';
-import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package, Upload, X, Laptop, Monitor, HardDrive, BatteryCharging } from 'lucide-react';
+import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package, Upload, X, Laptop, Monitor, HardDrive, BatteryCharging, Tablet, Wifi } from 'lucide-react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useInventory } from '../../context/StoreContext';
 
@@ -32,6 +32,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
 
         const targetType: Collateral['type'] = 
             item.category === 'Teléfono / Celular' ? 'Teléfono / Celular' : 
+            item.category === 'Tablets / iPads' ? 'Tablets / iPads' :
             item.category === 'Laptops / Portátiles' ? 'Laptops / Portátiles' :
             item.category === 'PC / Computadoras de Escritorio' ? 'PC / Computadoras de Escritorio' :
             item.category === 'Vehículo' ? 'Vehículo' :
@@ -54,7 +55,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
     const handleChange = <K extends keyof Collateral>(field: K, value: Collateral[K]) => {
         if (!collateral) return;
         
-        // Auto-update combined description for phone, laptop, pc
+        // Auto-update combined description for phone, tablet, laptop, pc
         const updated = { ...collateral, [field]: value };
         if (updated.type === 'Teléfono / Celular') {
             const b = updated.brand || '';
@@ -63,6 +64,16 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
             const color = updated.color ? ` - Color: ${updated.color}` : '';
             if (b || m) {
                 updated.description = `${b} ${m}${storage}${color}`.trim();
+            }
+        } else if (updated.type === 'Tablets / iPads') {
+            const b = updated.brand || '';
+            const m = updated.model || '';
+            const storage = updated.storage ? ` (${updated.storage})` : '';
+            const conn = updated.connectivity ? ` - ${updated.connectivity}` : '';
+            const color = updated.color ? ` - Color: ${updated.color}` : '';
+            const serial = updated.serialNumber || updated.refNumber ? ` [S/N: ${updated.serialNumber || updated.refNumber}]` : '';
+            if (b || m) {
+                updated.description = `${b} ${m}${storage}${conn}${color}${serial}`.trim();
             }
         } else if (updated.type === 'Laptops / Portátiles' || updated.type === 'PC / Computadoras de Escritorio') {
             const b = updated.brand || '';
@@ -140,6 +151,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                         options={[
                             { value: 'Sin Garantía', label: 'Sin Garantía' },
                             { value: 'Teléfono / Celular', label: 'Teléfono / Celular / Dispositivo Móvil' },
+                            { value: 'Tablets / iPads', label: 'Tablets / iPads / Dispositivos Tablet' },
                             { value: 'Laptops / Portátiles', label: 'Laptops / Computadoras Portátiles' },
                             { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio / Servidores' },
                             { value: 'Tarjeta de Crédito / Débito', label: 'Tarjeta de Crédito / Débito en Custodia' },
@@ -155,7 +167,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                 {collateral && collateral.type !== 'Sin Garantía' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in pt-2">
                         
-                        {/* 📱 TELÉFONO / CELULAR */}
+                        {/* TELÉFONO / CELULAR */}
                         {collateral.type === 'Teléfono / Celular' && (
                             <>
                                 <div className="md:col-span-2 bg-indigo-50/60 border border-indigo-100 p-3 rounded-2xl flex items-center gap-2 text-indigo-900 text-xs font-semibold mb-1">
@@ -234,10 +246,10 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                         onChange={(val) => handleChange('condition', val)}
                                         className="w-full"
                                         options={[
-                                            { value: 'Excelente / Como Nuevo', label: '✨ Excelente / Como Nuevo' },
-                                            { value: 'Bueno con uso normal', label: '👍 Bueno (Uso Normal)' },
-                                            { value: 'Con detalles / Rayaduras', label: '⚠️ Con detalles cosméticos' },
-                                            { value: 'Pantalla / Cristal Dañado', label: '🛠️ Pantalla / Cristal agrietado' }
+                                            { value: 'Excelente / Como Nuevo', label: 'Excelente / Como Nuevo (Grado A+)' },
+                                            { value: 'Bueno con uso normal', label: 'Bueno (Uso Normal)' },
+                                            { value: 'Con detalles / Rayaduras', label: 'Con detalles cosméticos' },
+                                            { value: 'Pantalla / Cristal Dañado', label: 'Pantalla / Cristal agrietado' }
                                         ]}
                                     />
                                 </div>
@@ -277,6 +289,188 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                         onChange={(e) => handleChange('defects', e.target.value)}
                                         placeholder="Ej. Sin cargador, Batería 84%, Tapa rayada"
                                         className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* TABLETS / IPADS */}
+                        {collateral.type === 'Tablets / iPads' && (
+                            <>
+                                <div className="md:col-span-2 bg-purple-50/70 border border-purple-200 p-3 rounded-2xl flex items-center gap-2 text-purple-950 text-xs font-semibold mb-1">
+                                    <Tablet className="w-4 h-4 text-purple-600 shrink-0" />
+                                    <span>Formulario Especializado de Tablets / iPads (Marca, Modelo, Conectividad, Serial, Pantalla y Accesorios)</span>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Marca de la Tablet</label>
+                                    <CustomSelect
+                                        value={collateral.brand || ''}
+                                        onChange={(val) => handleChange('brand', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Apple', label: 'Apple (iPad Pro / Air / Mini / Clásico)' },
+                                            { value: 'Samsung', label: 'Samsung (Galaxy Tab S / Tab A)' },
+                                            { value: 'Xiaomi', label: 'Xiaomi (Pad / Redmi Pad)' },
+                                            { value: 'Lenovo', label: 'Lenovo (Tab P11 / Tab M10)' },
+                                            { value: 'Amazon', label: 'Amazon (Fire HD 10 / 8 / 7)' },
+                                            { value: 'Huawei', label: 'Huawei (MatePad)' },
+                                            { value: 'Microsoft', label: 'Microsoft (Surface Pro / Go)' },
+                                            { value: 'Otra Marca', label: 'Otra Marca de Tablet' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Modelo Específico</label>
+                                    <div className="relative">
+                                        <Type className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.model || ''}
+                                            onChange={(e) => handleChange('model', e.target.value)}
+                                            placeholder="Ej. iPad Pro 11 M4 / Galaxy Tab S9 FE"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Conectividad de Red</label>
+                                    <CustomSelect
+                                        value={collateral.connectivity || 'Wi-Fi Only'}
+                                        onChange={(val) => handleChange('connectivity', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Wi-Fi Only', label: 'Solo Wi-Fi' },
+                                            { value: 'Wi-Fi + Celular (LTE / 5G)', label: 'Wi-Fi + Celular / SIM / 5G' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Número de Serie / IMEI</label>
+                                    <div className="relative">
+                                        <Hash className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.refNumber || ''}
+                                            onChange={(e) => {
+                                                handleChange('refNumber', e.target.value);
+                                                handleChange('serialNumber', e.target.value);
+                                            }}
+                                            placeholder="Ej. DMPT21XX89 / 356789..."
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-bold font-mono text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Capacidad de Almacenamiento</label>
+                                    <CustomSelect
+                                        value={collateral.storage || '128GB'}
+                                        onChange={(val) => handleChange('storage', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '32GB', label: '32 GB' },
+                                            { value: '64GB', label: '64 GB' },
+                                            { value: '128GB', label: '128 GB' },
+                                            { value: '256GB', label: '256 GB' },
+                                            { value: '512GB', label: '512 GB' },
+                                            { value: '1TB', label: '1 TB' },
+                                            { value: '2TB', label: '2 TB' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tamaño de Pantalla</label>
+                                    <CustomSelect
+                                        value={collateral.screenSize || '11.0"'}
+                                        onChange={(val) => handleChange('screenSize', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '8.3" - 8.7" (Compacta/Mini)', label: '8.3" - 8.7" (Mini / Compacta)' },
+                                            { value: '10.2" - 10.9" (Estándar)', label: '10.2" - 10.9" (Estándar / Air)' },
+                                            { value: '11.0" (Pro)', label: '11.0" (Pro)' },
+                                            { value: '12.4" - 13.0" (Grande)', label: '12.4" - 13.0" (Max / Ultra)' },
+                                            { value: '14.6" (Extra Grande)', label: '14.6" (Ultra Tab)' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Estado / Condición</label>
+                                    <CustomSelect
+                                        value={collateral.condition || 'Excelente / Como Nuevo'}
+                                        onChange={(val) => handleChange('condition', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Nuevo Sellado en Caja', label: 'Nuevo Sellado en Caja' },
+                                            { value: 'Excelente / Como Nuevo', label: 'Excelente / Como Nuevo (Grado A+)' },
+                                            { value: 'Bueno con uso normal', label: 'Bueno (Uso Normal)' },
+                                            { value: 'Con detalles cosméticos', label: 'Con detalles cosméticos / rayaduras' },
+                                            { value: 'Pantalla / Cristal con detalles', label: 'Pantalla / Cristal con fisura' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Salud de Batería (%)</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.batteryHealth || ''}
+                                        onChange={(e) => handleChange('batteryHealth', e.target.value)}
+                                        placeholder="Ej. 100%, 94%"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm font-medium"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Color</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.color || ''}
+                                        onChange={(e) => handleChange('color', e.target.value)}
+                                        placeholder="Ej. Space Gray, Silver, Starlight"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Sistema Operativo</label>
+                                    <CustomSelect
+                                        value={collateral.operatingSystem || 'iPadOS'}
+                                        onChange={(val) => handleChange('operatingSystem', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'iPadOS', label: 'Apple iPadOS' },
+                                            { value: 'Android', label: 'Google Android' },
+                                            { value: 'Windows 11', label: 'Microsoft Windows 11' },
+                                            { value: 'FireOS', label: 'Amazon Fire OS' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Accesorios Incluidos</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.accessories || ''}
+                                        onChange={(e) => handleChange('accessories', e.target.value)}
+                                        placeholder="Ej. Apple Pencil 2da Gen, Magic Keyboard con Trackpad, Cargador 20W USB-C, Cover"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Detalles / Defectos Cosméticos</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.defects || ''}
+                                        onChange={(e) => handleChange('defects', e.target.value)}
+                                        placeholder="Ej. Leves marcas de uso en los bordes, cristal impecable"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                                     />
                                 </div>
                             </>

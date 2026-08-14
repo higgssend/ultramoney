@@ -22,14 +22,14 @@ export type LoanType =
 export type ClosingCostMode = 'Descontado' | 'Financiado' | 'Externo';
 
 export interface Collateral {
-  type: 'Teléfono / Celular' | 'Laptops / Portátiles' | 'PC / Computadoras de Escritorio' | 'Tarjeta de Crédito / Débito' | 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Otro' | 'Sin Garantía';
+  type: 'Teléfono / Celular' | 'Tablets / iPads' | 'Laptops / Portátiles' | 'PC / Computadoras de Escritorio' | 'Tarjeta de Crédito / Débito' | 'Vehículo' | 'Propiedad' | 'Electrodoméstico' | 'Joya' | 'Otro' | 'Sin Garantía';
   description: string;
   refNumber: string;        // Matrícula, título, serial, IMEI, últimos 4 dígitos
-  brand?: string;           // Marca (Apple, Dell, HP, Lenovo, etc.)
+  brand?: string;           // Marca (Apple, Samsung, Dell, HP, Lenovo, etc.)
   model?: string;           // Modelo
   imei2?: string;           // IMEI 2 (Dual SIM)
   condition?: string;       // Estado / Condición (Nuevo, Como Nuevo / Grado A, Usado)
-  storage?: string;         // Almacenamiento (128GB, 256GB, 512GB, 1TB)
+  storage?: string;         // Almacenamiento (64GB, 128GB, 256GB, 512GB, 1TB)
   color?: string;           // Color
   defects?: string;         // Defectos o detalles cosméticos
   estimatedValue?: number;  // Valor estimado
@@ -37,15 +37,20 @@ export interface Collateral {
   photoUrls?: string[];     // URLs / fotos / documentos adjuntos a la garantía
   ownerName?: string;       // Nombre del dueño (si es un tercero)
 
+  // Specific for Tablets / iPads
+  connectivity?: string;    // Wi-Fi Only, Wi-Fi + Celular (LTE/5G)
+  stylusIncluded?: boolean; // Apple Pencil / S-Pen incluido
+  caseIncluded?: boolean;   // Cover / Case / Teclado incluido
+
   // Specific for Laptops, PC / Desktops & Tech Equipment
   processor?: string;        // Intel Core i7-13700H, AMD Ryzen 7, Apple M3 Pro, etc.
   ram?: string;              // 8GB, 16GB DDR5, 32GB, 64GB, etc.
   storageType?: string;      // SSD NVMe 512GB, SSD 1TB, HDD 1TB, Dual SSD+HDD
   graphicsCard?: string;     // NVIDIA GeForce RTX 4060, Intel Iris Xe, Radeon, etc.
-  screenSize?: string;       // 13.3", 14", 15.6", 16", Monitor 24", 27", Torre sola
-  operatingSystem?: string;  // Windows 11 Pro, macOS Sonoma, Linux, etc.
+  screenSize?: string;       // 10.9", 11", 12.9", 13.3", 14", 15.6", 16", Monitor 24", 27", Torre sola
+  operatingSystem?: string;  // iPadOS, Android, Windows 11 Pro, macOS Sonoma, Linux, etc.
   chargerIncluded?: boolean; // Cargador original incluido
-  accessories?: string;      // Mouse, Teclado, Mochila, etc.
+  accessories?: string;      // Mouse, Teclado, Mochila, Pencil, etc.
   batteryHealth?: string;    // Estado de la batería (ej. 100%, 92%)
   serialNumber?: string;     // Serial / Service Tag
 

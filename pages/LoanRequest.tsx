@@ -1497,16 +1497,13 @@ export const LoanRequest: React.FC = () => {
 
               <form onSubmit={async (e) => {
                 e.preventDefault();
-                if (!newClientForm.name || !newClientForm.cedula) {
-                  toast.error('Nombre y Cédula son obligatorios');
-                  return;
-                }
+                const clientName = newClientForm.name.trim() || 'Cliente Nuevo';
                 try {
                   const created = await addClient({
-                    name: newClientForm.name.trim(),
+                    name: clientName,
                     lastName: newClientForm.lastName.trim(),
                     sex: newClientForm.sex,
-                    cedula: newClientForm.cedula.trim(),
+                    cedula: newClientForm.cedula.trim() || `CLI-${Date.now().toString().slice(-6)}`,
                     documentType: newClientForm.documentType,
                     phone: newClientForm.phone.trim(),
                     whatsapp: newClientForm.whatsapp.trim() || newClientForm.phone.trim(),
@@ -1533,7 +1530,7 @@ export const LoanRequest: React.FC = () => {
                   });
                   if (created && 'id' in created) {
                     setSelectedClientId(created.id);
-                    toast.success(`Cliente ${created.name} ${created.lastName || ''} creado y seleccionado exitosamente.`);
+                    toast.success(`Cliente ${created.name} ${created.lastName || ''} registrado y seleccionado exitosamente.`);
                   }
                   setIsNewClientModalOpen(false);
                   setNewClientForm({ 
