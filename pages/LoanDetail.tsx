@@ -4,7 +4,7 @@ import {
   ArrowLeft, FileText, Banknote, Shield, AlertTriangle, RefreshCw, 
   DollarSign, Printer, Download, FileCode, FileImage, CloudUpload, 
   MessageCircle, CreditCard, CheckCircle, Clock, Calendar, ChevronRight, User, Eye, Receipt,
-  Edit3, Trash2, Save, X, AlertCircle, Copy, Link
+  Edit3, Trash2, Save, X, AlertCircle, Copy, Link, ArrowLeftRight
 } from 'lucide-react';
 import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
 import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod, LoanStatus, Guarantor } from '../types';
@@ -603,6 +603,13 @@ export const LoanDetail: React.FC = () => {
             title="Compartir enlaces de contrato y portal de cliente por WhatsApp"
           >
             <MessageCircle className="w-4 h-4" /> Enviar Enlaces
+          </button>
+          <button
+            onClick={() => navigate('/conciliacion')}
+            className="px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border border-emerald-200 dark:border-emerald-800 shadow-sm"
+            title="Conciliar transferencias bancarias entrantes para este préstamo"
+          >
+            <ArrowLeftRight className="w-4 h-4" /> Conciliar Depósito
           </button>
           <button
             onClick={() => setIsHistoricalModalOpen(true)}

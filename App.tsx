@@ -27,6 +27,7 @@ const DeepAccounting = React.lazy(() => import('./pages/DeepAccounting'));
 const Bitacora = React.lazy(() => import('./pages/Bitacora'));
 const Profit = React.lazy(() => import('./pages/Profit'));
 const BankAccountsPage = React.lazy(() => import('./pages/BankAccountsPage'));
+const BankReconciliation = React.lazy(() => import('./pages/BankReconciliation'));
 const ClientDetail = React.lazy(() => import('./pages/ClientDetail'));
 const DocumentPage = React.lazy(() => import('./pages/DocumentPage').then(m => ({ default: m.DocumentPage })));
 const InventoryPage = React.lazy(() => import('./pages/Inventory').then(m => ({ default: m.InventoryPage })));
@@ -212,6 +213,8 @@ const AppContent: React.FC = () => {
                   <Route path="/caja" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
                   <Route path="/gastos" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
                   <Route path="/bancos" element={<ProtectedRoute><BankAccountsPage /></ProtectedRoute>} />
+                  <Route path="/conciliacion" element={<ProtectedRoute><BankReconciliation /></ProtectedRoute>} />
+                  <Route path="/conciliacion-bancaria" element={<ProtectedRoute><BankReconciliation /></ProtectedRoute>} />
                   <Route path="/bitacora" element={<ProtectedRoute><Bitacora /></ProtectedRoute>} />
                   <Route path="/ganancia" element={<ProtectedRoute><Profit /></ProtectedRoute>} />
                   <Route path="/ganancias" element={<ProtectedRoute><Profit /></ProtectedRoute>} />

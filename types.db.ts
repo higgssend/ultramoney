@@ -295,3 +295,25 @@ export interface EmployeeDB {
   username?: string;
   employee_pin?: string;
 }
+
+export interface BankDepositDB {
+  id: string;
+  lender_id: string;
+  bank_name: string;
+  bank_account_id?: string | null;
+  reference_number: string;
+  amount: number;
+  currency?: string | null;
+  sender_name?: string | null;
+  deposit_date: string;
+  voucher_url?: string | null;
+  notes?: string | null;
+  status: string;
+  matched_loan_id?: string | null;
+  matched_client_id?: string | null;
+  matched_receipt_id?: string | null;
+  matched_transaction_id?: string | null;
+  reconciled_at?: string | null;
+  reconciled_by?: string | null;
+  created_at?: string | null;
+}

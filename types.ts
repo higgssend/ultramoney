@@ -162,6 +162,28 @@ export interface BankAccount {
   createdAt?: string;
 }
 
+export interface BankDeposit {
+  id: string;
+  lenderId?: string;
+  bankName: string;
+  bankAccountId?: string;
+  referenceNumber: string;
+  amount: number;
+  currency?: 'DOP' | 'USD';
+  senderName?: string;
+  depositDate: string; // YYYY-MM-DD
+  voucherUrl?: string; // photo/screenshot URL
+  notes?: string;
+  status: 'Pendiente' | 'Conciliado' | 'Rechazado';
+  matchedLoanId?: string;
+  matchedClientId?: string;
+  matchedReceiptId?: string;
+  matchedTransactionId?: string;
+  reconciledAt?: string;
+  reconciledBy?: string;
+  createdAt?: string;
+}
+
 export interface PaymentLinkConfig {
   title: string;
   instructions: string;

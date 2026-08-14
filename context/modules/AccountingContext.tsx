@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod } from '../../types';
-import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB } from '../../types.db';
+import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod, BankDeposit } from '../../types';
+import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB, BankDepositDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
 import { logger } from '../../utils/logger';
+import { uploadToBucketHelper } from '../../utils/storage';
 
 interface AccountingContextType {
   transactions: Transaction[];
@@ -14,6 +15,8 @@ interface AccountingContextType {
   cashShifts: CashShift[];
   activeCashShift: CashShift | null;
   collectorVisits: CollectorVisit[];
+  bankDeposits: BankDeposit[];
+  isLoadingDeposits: boolean;
   
   openCashShift: (initialAmount: number, notes?: string) => void;
   closeCashShift: (finalCashCount: number, notes?: string) => void;
@@ -25,6 +28,14 @@ interface AccountingContextType {
   processBankDeposit: (bankAccountId: string | undefined, amount: number) => void;
   processBankDisbursement: (bankAccountId: string | undefined, amount: number) => void;
   
+  // Bank Deposits & Reconciliation Methods
+  addBankDeposit: (deposit: Omit<BankDeposit, 'id'>, voucherFile?: File | string) => Promise<BankDeposit | void>;
+  updateBankDeposit: (id: string, updates: Partial<BankDeposit>) => Promise<void>;
+  deleteBankDeposit: (id: string) => Promise<void>;
+  reconcileDepositWithLoan: (depositId: string, matchedData: { loanId: string; clientId?: string; receiptId?: string; transactionId?: string; reconciledBy?: string }) => Promise<void>;
+  rejectBankDeposit: (depositId: string, notes?: string) => Promise<void>;
+  refreshBankDeposits: () => Promise<void>;
+
   // Custom Payment Methods Management
   addPaymentMethod: (pm: CustomPaymentMethod) => void;
   updatePaymentMethod: (id: string, updates: Partial<CustomPaymentMethod>) => void;
@@ -115,6 +126,28 @@ const mapTransaction = (t: TransactionDB): Transaction => ({
   proofUrl: t.proof_url || undefined,
 });
 
+const mapBankDeposit = (d: BankDepositDB): BankDeposit => ({
+  id: d.id,
+  lenderId: d.lender_id,
+  bankName: d.bank_name,
+  bankAccountId: d.bank_account_id || undefined,
+  referenceNumber: d.reference_number,
+  amount: Number(d.amount) || 0,
+  currency: (d.currency || 'DOP') as BankDeposit['currency'],
+  senderName: d.sender_name || undefined,
+  depositDate: d.deposit_date,
+  voucherUrl: d.voucher_url || undefined,
+  notes: d.notes || undefined,
+  status: (d.status || 'Pendiente') as BankDeposit['status'],
+  matchedLoanId: d.matched_loan_id || undefined,
+  matchedClientId: d.matched_client_id || undefined,
+  matchedReceiptId: d.matched_receipt_id || undefined,
+  matchedTransactionId: d.matched_transaction_id || undefined,
+  reconciledAt: d.reconciled_at || undefined,
+  reconciledBy: d.reconciled_by || undefined,
+  createdAt: d.created_at || undefined,
+});
+
 export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const { currentUser } = useAuth();
@@ -124,8 +157,29 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
   const [cashShifts, setCashShifts] = useState<CashShift[]>([]);
   const [collectorVisits, setCollectorVisits] = useState<CollectorVisit[]>([]);
+  const [bankDeposits, setBankDeposits] = useState<BankDeposit[]>([]);
+  const [isLoadingDeposits, setIsLoadingDeposits] = useState(false);
 
   const activeCashShift = cashShifts.find(s => s.status === 'Abierta' && s.userId === currentUser?.id) || null;
+
+  const refreshBankDeposits = async () => {
+    if (!currentUser) { setBankDeposits([]); return; }
+    setIsLoadingDeposits(true);
+    try {
+      const { data, error } = await insforge.database
+        .from('bank_deposits')
+        .select('*')
+        .eq('lender_id', currentUser.id)
+        .order('created_at', { ascending: false });
+      if (data && !error) {
+        setBankDeposits((data as BankDepositDB[]).map(mapBankDeposit));
+      }
+    } catch (err) {
+      logger.error('Error fetching bank deposits:', err);
+    } finally {
+      setIsLoadingDeposits(false);
+    }
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -135,14 +189,16 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
     const fetchData = async () => {
       try {
-        const [trxRes, banksRes, shiftsRes, visitsRes] = await Promise.all([
+        const [trxRes, banksRes, shiftsRes, visitsRes, depositsRes] = await Promise.all([
           insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('bank_accounts').select('*').or(`lender_id.eq.${currentUser.id},lender_id.is.null`).order('created_at', { ascending: false }),
           insforge.database.from('cash_shifts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
-          insforge.database.from('collector_visits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
+          insforge.database.from('collector_visits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('bank_deposits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
         ]);
 
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
+        if (depositsRes.data) setBankDeposits((depositsRes.data as BankDepositDB[]).map(mapBankDeposit));
         if (banksRes.data && banksRes.data.length > 0) {
           const fetchedAccounts = (banksRes.data as (BankAccountDB & Record<string, any>)[]).map((b) => ({
             id: b.id,
@@ -451,11 +507,198 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     addToast('Estado del método de pago modificado', 'success');
   };
 
+  const addBankDeposit = async (deposit: Omit<BankDeposit, 'id'>, voucherFile?: File | string): Promise<BankDeposit | void> => {
+    if (!currentUser) return;
+    try {
+      let finalVoucherUrl = deposit.voucherUrl;
+      if (voucherFile) {
+        const uploadedUrl = await uploadToBucketHelper(voucherFile, 'documents', 'vouchers');
+        if (uploadedUrl) {
+          finalVoucherUrl = uploadedUrl;
+        }
+      }
+
+      const insertPayload: Record<string, string | number | null> = {
+        lender_id: currentUser.id,
+        bank_name: deposit.bankName,
+        bank_account_id: deposit.bankAccountId || null,
+        reference_number: deposit.referenceNumber,
+        amount: deposit.amount,
+        currency: deposit.currency || 'DOP',
+        sender_name: deposit.senderName || null,
+        deposit_date: deposit.depositDate || new Date().toISOString().split('T')[0],
+        voucher_url: finalVoucherUrl || null,
+        notes: deposit.notes || null,
+        status: deposit.status || 'Pendiente',
+        matched_loan_id: deposit.matchedLoanId || null,
+        matched_client_id: deposit.matchedClientId || null,
+        matched_receipt_id: deposit.matchedReceiptId || null,
+        matched_transaction_id: deposit.matchedTransactionId || null,
+        reconciled_at: deposit.reconciledAt || null,
+        reconciled_by: deposit.reconciledBy || null
+      };
+
+      const { data, error } = await insforge.database
+        .from('bank_deposits')
+        .insert([insertPayload])
+        .select('*');
+
+      if (error) {
+        logger.error('Error inserting bank deposit:', error);
+        addToast('Error al registrar depósito bancario', 'error');
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const created = mapBankDeposit(data[0] as BankDepositDB);
+        setBankDeposits(prev => [created, ...prev]);
+        addAuditLog('bank_deposit_registered', `Registró depósito/transferencia de ${deposit.bankName} por RD$ ${deposit.amount} Ref: ${deposit.referenceNumber}`);
+        addToast('Depósito bancario registrado correctamente', 'success');
+        return created;
+      }
+    } catch (err) {
+      logger.error('Exception adding bank deposit:', err);
+      addToast('Error inesperado al registrar depósito', 'error');
+    }
+  };
+
+  const updateBankDeposit = async (id: string, updates: Partial<BankDeposit>) => {
+    setBankDeposits(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+    if (!currentUser) return;
+    try {
+      const updateData: Record<string, string | number | null> = {};
+      if (updates.bankName !== undefined) updateData.bank_name = updates.bankName;
+      if (updates.bankAccountId !== undefined) updateData.bank_account_id = updates.bankAccountId || null;
+      if (updates.referenceNumber !== undefined) updateData.reference_number = updates.referenceNumber;
+      if (updates.amount !== undefined) updateData.amount = updates.amount;
+      if (updates.currency !== undefined) updateData.currency = updates.currency;
+      if (updates.senderName !== undefined) updateData.sender_name = updates.senderName || null;
+      if (updates.depositDate !== undefined) updateData.deposit_date = updates.depositDate;
+      if (updates.voucherUrl !== undefined) updateData.voucher_url = updates.voucherUrl || null;
+      if (updates.notes !== undefined) updateData.notes = updates.notes || null;
+      if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.matchedLoanId !== undefined) updateData.matched_loan_id = updates.matchedLoanId || null;
+      if (updates.matchedClientId !== undefined) updateData.matched_client_id = updates.matchedClientId || null;
+      if (updates.matchedReceiptId !== undefined) updateData.matched_receipt_id = updates.matchedReceiptId || null;
+      if (updates.matchedTransactionId !== undefined) updateData.matched_transaction_id = updates.matchedTransactionId || null;
+      if (updates.reconciledAt !== undefined) updateData.reconciled_at = updates.reconciledAt || null;
+      if (updates.reconciledBy !== undefined) updateData.reconciled_by = updates.reconciledBy || null;
+
+      if (Object.keys(updateData).length > 0) {
+        await insforge.database
+          .from('bank_deposits')
+          .update(updateData)
+          .eq('id', id)
+          .eq('lender_id', currentUser.id);
+      }
+      addToast('Depósito actualizado', 'success');
+    } catch (err) {
+      logger.error('Error updating bank deposit:', err);
+      addToast('Error al actualizar depósito', 'error');
+    }
+  };
+
+  const deleteBankDeposit = async (id: string) => {
+    setBankDeposits(prev => prev.filter(d => d.id !== id));
+    if (!currentUser) return;
+    try {
+      const { error } = await insforge.database
+        .from('bank_deposits')
+        .delete()
+        .eq('id', id)
+        .eq('lender_id', currentUser.id);
+      if (error) {
+        logger.error('Error deleting bank deposit:', error);
+        addToast('Error al eliminar depósito de la base de datos', 'error');
+      } else {
+        addToast('Depósito eliminado', 'info');
+      }
+    } catch (err) {
+      logger.error('Error deleting bank deposit:', err);
+    }
+  };
+
+  const reconcileDepositWithLoan = async (
+    depositId: string,
+    matchedData: {
+      loanId: string;
+      clientId?: string;
+      receiptId?: string;
+      transactionId?: string;
+      reconciledBy?: string;
+    }
+  ) => {
+    if (!currentUser) return;
+    const nowIso = new Date().toISOString();
+    const adminName = matchedData.reconciledBy || currentUser.name || currentUser.email || 'Administrador';
+
+    const updates: Partial<BankDeposit> = {
+      status: 'Conciliado',
+      matchedLoanId: matchedData.loanId,
+      matchedClientId: matchedData.clientId,
+      matchedReceiptId: matchedData.receiptId,
+      matchedTransactionId: matchedData.transactionId,
+      reconciledAt: nowIso,
+      reconciledBy: adminName
+    };
+
+    setBankDeposits(prev => prev.map(d => d.id === depositId ? { ...d, ...updates } : d));
+
+    try {
+      await insforge.database
+        .from('bank_deposits')
+        .update({
+          status: 'Conciliado',
+          matched_loan_id: matchedData.loanId,
+          matched_client_id: matchedData.clientId || null,
+          matched_receipt_id: matchedData.receiptId || null,
+          matched_transaction_id: matchedData.transactionId || null,
+          reconciled_at: nowIso,
+          reconciled_by: adminName
+        })
+        .eq('id', depositId)
+        .eq('lender_id', currentUser.id);
+
+      addAuditLog('bank_deposit_reconciled', `Concilió depósito con préstamo #${matchedData.loanId.slice(-6)}`);
+      addToast('Depósito conciliado y vinculado exitosamente al préstamo', 'success');
+    } catch (err) {
+      logger.error('Error reconciling deposit:', err);
+      addToast('Error al actualizar estado de conciliación', 'error');
+    }
+  };
+
+  const rejectBankDeposit = async (depositId: string, notes?: string) => {
+    if (!currentUser) return;
+    const target = bankDeposits.find(d => d.id === depositId);
+    const updatedNotes = notes ? (target?.notes ? `${target.notes} | Motivo rechazo: ${notes}` : `Motivo rechazo: ${notes}`) : target?.notes;
+
+    setBankDeposits(prev => prev.map(d => d.id === depositId ? { ...d, status: 'Rechazado', notes: updatedNotes } : d));
+
+    try {
+      await insforge.database
+        .from('bank_deposits')
+        .update({
+          status: 'Rechazado',
+          notes: updatedNotes || null
+        })
+        .eq('id', depositId)
+        .eq('lender_id', currentUser.id);
+
+      addAuditLog('bank_deposit_rejected', `Rechazó depósito bancario ID #${depositId.slice(-6)}`);
+      addToast('Depósito marcado como rechazado', 'info');
+    } catch (err) {
+      logger.error('Error rejecting deposit:', err);
+      addToast('Error al rechazar depósito', 'error');
+    }
+  };
+
   return (
     <AccountingContext.Provider value={{
       transactions, bankAccounts, paymentMethods, cashShifts, activeCashShift, collectorVisits,
+      bankDeposits, isLoadingDeposits,
       openCashShift, closeCashShift, getCashShiftSummary, addTransaction, addBankAccount,
       updateBankAccount, removeBankAccount, processBankDeposit, processBankDisbursement,
+      addBankDeposit, updateBankDeposit, deleteBankDeposit, reconcileDepositWithLoan, rejectBankDeposit, refreshBankDeposits,
       addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus,
       addCollectorVisit, getFinancialStats
     }}>

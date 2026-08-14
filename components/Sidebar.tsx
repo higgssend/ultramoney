@@ -6,9 +6,9 @@ import {
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
   Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2,
-  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon
+  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon, ArrowLeftRight
 } from 'lucide-react';
-import { useAuth, useSettings } from '../context/StoreContext';
+import { useAuth, useSettings, useAccounting } from '../context/StoreContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -18,6 +18,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, logout } = useAuth();
   const { globalCurrency, setGlobalCurrency } = useSettings();
+  const { bankDeposits } = useAccounting();
+  const pendingDepositsCount = bankDeposits.filter(d => d.status === 'Pendiente').length;
   const navigate = useNavigate();
   const [drawerLayout, setDrawerLayout] = useState<'grid' | 'list'>('grid');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -55,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     navigate('/login');
   };
 
-  const menuItems: { name: string; path: string; icon: React.ElementType; highlight?: boolean }[] = [
+  const menuItems: { name: string; path: string; icon: React.ElementType; highlight?: boolean; badge?: number }[] = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Facturas', path: '/facturas', icon: FileText },
     { name: 'Consultar', path: '/consultar', icon: Search },
@@ -69,6 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Atrasos', path: '/atrasos', icon: AlertTriangle },
     { name: 'Caja', path: '/caja', icon: Wallet },
     { name: 'Cuentas & Bancos', path: '/bancos', icon: Landmark },
+    { name: 'Conciliación Bancaria', path: '/conciliacion', icon: ArrowLeftRight, badge: pendingDepositsCount },
     { name: 'Cartera', path: '/cartera', icon: Briefcase },
     { name: 'Gastos', path: '/gastos', icon: TrendingDown },
     { name: 'Ganancias', path: '/ganancias', icon: TrendingUp },
@@ -155,8 +158,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               >
                 {({ isActive }) => (
                   <>
-                    <item.icon className={`${drawerLayout === 'grid' ? 'w-4 h-4 mb-1 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                    <span className="text-[10px] sm:text-[11px] md:text-sm leading-tight font-bold md:font-medium tracking-tight truncate w-full px-0.5">{item.name}</span>
+                    <div className="relative shrink-0">
+                      <item.icon className={`${drawerLayout === 'grid' ? 'w-4 h-4 mb-1 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                      {item.badge && item.badge > 0 && drawerLayout === 'grid' ? (
+                        <span className="md:hidden absolute -top-1.5 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse ring-1 ring-white dark:ring-slate-900" />
+                      ) : null}
+                    </div>
+                    <span className="text-[10px] sm:text-[11px] md:text-sm leading-tight font-bold md:font-medium tracking-tight truncate flex-1 text-left px-0.5">{item.name}</span>
+                    {item.badge && item.badge > 0 ? (
+                      <span className={`hidden md:inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-extrabold rounded-full ${
+                        isActive 
+                          ? 'bg-white text-indigo-700' 
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    ) : null}
                   </>
                 )}
               </NavLink>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft, Image } from 'lucide-react';
+import { Search, CheckCircle, Receipt, User, CreditCard, Calendar, List, CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft, Image, ArrowLeftRight } from 'lucide-react';
 import { useClients, useAuth, useSettings, useLoans, useAccounting } from '../context/StoreContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
@@ -43,8 +43,6 @@ interface Installment {
     paidAmount: number;
 }
 
-
-
 interface FullReceiptData {
     loanId: string;
     amountPaid: number;
@@ -72,7 +70,8 @@ interface FullReceiptData {
 const Payments: React.FC = () => {
   const { loans, registerPayment } = useLoans();
   const { clients } = useClients();
-  const { transactions, bankAccounts, processBankDeposit, paymentMethods } = useAccounting();
+  const { transactions, bankAccounts, processBankDeposit, paymentMethods, bankDeposits } = useAccounting();
+  const pendingBankDeposits = bankDeposits?.filter(d => d.status === 'Pendiente') || [];
   const { companySettings } = useSettings();
   const { currentUser, users, roles } = useAuth();
   const location = useLocation();
@@ -507,6 +506,33 @@ const Payments: React.FC = () => {
             </button>
         </div>
       </div>
+
+      {/* Pending Bank Deposits Reconciliation Banner */}
+      {pendingBankDeposits.length > 0 && (
+        <div className="bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-emerald-500/30 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30 shrink-0">
+              <ArrowLeftRight className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm sm:text-base flex items-center gap-2">
+                <span>Tienes {pendingBankDeposits.length} transferencias bancarias pendientes</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              </h4>
+              <p className="text-xs text-slate-300">
+                Total por conciliar: <strong className="text-emerald-300">RD$ {pendingBankDeposits.reduce((s, d) => s + d.amount, 0).toLocaleString()}</strong>. Puedes vincularlas automáticamente a préstamos con 1 solo clic.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/conciliacion')}
+            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow transition-all shrink-0 flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            <span>Ir a Conciliación Bancaria</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {activeTab === 'registrar' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">

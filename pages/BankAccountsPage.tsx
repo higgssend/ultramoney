@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Landmark, Plus, CreditCard, Trash2, Edit3, Building2, X, Link, Copy, Check,
-  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ShieldAlert, Save, FileText, Share2
+  ExternalLink, Smartphone, Eye, Sparkles, Sliders, Wallet, ShieldAlert, Save, FileText, Share2,
+  ArrowLeftRight
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useAccounting, useSettings } from '../context/StoreContext';
@@ -13,10 +15,13 @@ import { toast } from 'sonner';
 type InstrumentCategory = 'bank_transfer' | 'verifone_pos' | 'cash_box' | 'digital_wallet';
 
 export const BankAccountsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { 
     bankAccounts, addBankAccount, removeBankAccount, updateBankAccount,
-    paymentMethods, addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus
+    paymentMethods, addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus,
+    bankDeposits
   } = useAccounting();
+  const pendingDepositsCount = bankDeposits?.filter(d => d.status === 'Pendiente').length || 0;
   const { companySettings, updateCompanySettings } = useSettings();
 
   // Tab State: 'accounts' | 'payment-link'
@@ -344,30 +349,45 @@ export const BankAccountsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-md">
-        <button
-          onClick={() => setActiveTab('accounts')}
-          className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'accounts'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-              : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
-          }`}
-        >
-          <Building2 className="w-4 h-4" />
-          <span>Cuentas & Cajas</span>
-        </button>
+      {/* Navigation Tabs & Quick Links */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-md">
+          <button
+            onClick={() => setActiveTab('accounts')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'accounts'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>Cuentas & Cajas</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('payment-link')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'payment-link'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+            }`}
+          >
+            <Link className="w-4 h-4" />
+            <span>Link de Pago & Portal</span>
+          </button>
+        </div>
 
         <button
-          onClick={() => setActiveTab('payment-link')}
-          className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'payment-link'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-              : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
-          }`}
+          onClick={() => navigate('/conciliacion')}
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-md shadow-emerald-500/20 transition-all active:scale-95"
         >
-          <Link className="w-4 h-4" />
-          <span>Link de Pago & Portal</span>
+          <ArrowLeftRight className="w-4 h-4" />
+          <span>Conciliación de Depósitos</span>
+          {pendingDepositsCount > 0 && (
+            <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-xs rounded-full animate-pulse">
+              {pendingDepositsCount} pendientes
+            </span>
+          )}
         </button>
       </div>
 
