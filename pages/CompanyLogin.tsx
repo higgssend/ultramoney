@@ -24,13 +24,13 @@ export const CompanyLogin: React.FC = () => {
       try {
         const { data, error } = await insforge.database
           .from('company_settings')
-          .select('name, logoUrl')
+          .select('name, logourl, custom_link')
           .eq('custom_link', slug)
-          .single();
+          .maybeSingle();
           
         if (data && !error) {
           setCompanyName(data.name);
-          setLogoUrl(data.logoUrl || '');
+          setLogoUrl(data.logourl || '');
         } else {
           setError('Empresa no encontrada.');
         }

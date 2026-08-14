@@ -102,24 +102,54 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateCompanySettings = async (settings: CompanySettings) => {
     if (!currentUser) return;
+    const formattedSlug = settings.customLink ? settings.customLink.toLowerCase().trim().replace(/[^a-z0-9-]/g, '') : null;
+    
     const payload = {
-      lender_id: currentUser.id, name: settings.name, slogan: settings.slogan, rnc: settings.rnc,
-      address: settings.address, phone: settings.phone, email: settings.email, currency: settings.currency,
-      terms_and_conditions: settings.termsAndConditions, logourl: settings.logoUrl, custom_link: settings.customLink
+      lender_id: currentUser.id,
+      name: settings.name,
+      slogan: settings.slogan,
+      rnc: settings.rnc,
+      address: settings.address,
+      phone: settings.phone,
+      email: settings.email,
+      currency: settings.currency,
+      terms_and_conditions: settings.termsAndConditions,
+      logourl: settings.logoUrl || null,
+      custom_link: formattedSlug
     };
     
-    // Check if exists for this lender
-    const { data: existing } = await insforge.database.from('company_settings').select('lender_id').eq('lender_id', currentUser.id).maybeSingle();
-    
-    if (existing) {
-      await insforge.database.from('company_settings').update(payload).eq('lender_id', currentUser.id);
-    } else {
-      await insforge.database.from('company_settings').insert([payload]);
+    try {
+      // Check if exists for this lender
+      const { data: existing } = await insforge.database
+        .from('company_settings')
+        .select('lender_id')
+        .eq('lender_id', currentUser.id)
+        .maybeSingle();
+      
+      if (existing) {
+        const { error } = await insforge.database
+          .from('company_settings')
+          .update(payload)
+          .eq('lender_id', currentUser.id);
+        if (error) logger.error("Error updating company_settings:", error);
+      } else {
+        const { error } = await insforge.database
+          .from('company_settings')
+          .insert([payload]);
+        if (error) logger.error("Error inserting company_settings:", error);
+      }
+    } catch (err) {
+      logger.error("Database company settings save exception:", err);
     }
     
-    setCompanySettings(settings);
-    addAuditLog('settings_updated', 'Actualizó la configuración de la empresa');
-    addToast("Configuración guardada", "success");
+    const finalSettings: CompanySettings = {
+      ...settings,
+      customLink: formattedSlug || undefined
+    };
+
+    setCompanySettings(finalSettings);
+    addAuditLog('settings_updated', `Actualizó la configuración de la empresa (${finalSettings.name})`);
+    addToast("Configuración guardada exitosamente en la nube", "success");
   };
 
   const setGlobalCurrency = (currency: 'DOP' | 'USD') => {

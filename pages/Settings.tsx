@@ -27,6 +27,13 @@ const Settings: React.FC = () => {
   // Company Form State
   const [companyForm, setCompanyForm] = useState(companySettings);
 
+  // Sync form when database settings load
+  useEffect(() => {
+    if (companySettings) {
+      setCompanyForm(companySettings);
+    }
+  }, [companySettings]);
+
   // Security Form State
   const [securityForm, setSecurityForm] = useState({
       name: currentUser?.name || '',
