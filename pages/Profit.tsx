@@ -66,13 +66,13 @@ export const Profit: React.FC = () => {
 
   const interestIncomeOnly = useMemo(() => {
     return filteredTransactions
-      .filter(t => t.type === 'Ingreso' && (t.category === 'Interés' || t.category === 'Pago Préstamo' || t.category === 'Cobro'))
+      .filter(t => t.type === 'Ingreso' && (t.category === 'Pago Préstamo' || t.category === 'Cierre' || t.paymentType === 'Interes'))
       .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   }, [filteredTransactions]);
 
   const lateFeeIncomeOnly = useMemo(() => {
     return filteredTransactions
-      .filter(t => t.type === 'Ingreso' && (t.category === 'Mora' || t.category === 'Recargo'))
+      .filter(t => t.type === 'Ingreso' && (t.paymentType === 'Mora' || t.description?.toLowerCase().includes('mora') || t.description?.toLowerCase().includes('recargo')))
       .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   }, [filteredTransactions]);
 
@@ -654,9 +654,9 @@ export const Profit: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                          loan.status === 'Pagado' || loan.status === 'Saldado' 
+                          loan.status === LoanStatus.PAID || (loan.status as string) === 'Saldado' 
                             ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
-                            : loan.status === 'Atrasado' || loan.status === 'Vencido'
+                            : loan.status === LoanStatus.OVERDUE || (loan.status as string) === 'Vencido'
                             ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
                             : 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400'
                         }`}>

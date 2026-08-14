@@ -62,12 +62,14 @@ export interface InventoryItem {
 }
 
 export interface ClientReference {
-  id: string;
+  id?: string;
   name: string;
-  relationship: string;
+  relationship?: string;
+  relation?: string;
   phone: string;
   address?: string;
-  type: 'Familiar' | 'Personal' | 'Comercial';
+  cedula?: string;
+  type?: 'Familiar' | 'Personal' | 'Comercial';
 }
 
 export interface Guarantor {
@@ -117,6 +119,9 @@ export interface Client {
   sector?: string;
   referenceAddress?: string;
   coordinates?: { lat: number; lng: number }; // Geolocalización
+  lat?: number;
+  lng?: number;
+  documentId?: string;
   
 
   // Informacion laboral
@@ -139,6 +144,15 @@ export interface Client {
   avatarUrl?: string;
   references?: ClientReference[];
   guarantors?: (ClientReference | string)[];
+  civilStatus?: string;
+  lender_id?: string;
+  workplace?: string;
+  guarantorName?: string;
+  coGuarantorName?: string;
+  guarantorCedula?: string;
+  guarantorPhone?: string;
+  coGuarantorCedula?: string;
+  coGuarantorPhone?: string;
 }
 
 export interface BankAccount {
@@ -252,6 +266,21 @@ export interface Loan {
   nextPaymentDate: string;
   // Garantía & Garantes Solidarios
   collateral?: Collateral;
+  collateralType?: string;
+  collateralDescription?: string;
+  collateralRef?: string;
+  collateralref?: string;
+  collateralRefNumber?: string;
+  collaterals?: Collateral[] | unknown[];
+  clientCedula?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  firstPaymentDate?: string;
+  netDisbursementAmount?: number;
+  totalPaid?: number;
+  clientname?: string;
+  remainingbalance?: number;
+  nextpaymentdate?: string;
   guarantors?: Guarantor[]; // Hasta 2 garantes o codeudores solidarios
   guarantor?: Guarantor;    // Retrocompatibilidad para garante principal
   guarantorId?: string;
@@ -287,6 +316,7 @@ export interface LoanRequest {
   requestDate: string;
   status: 'Pendiente' | 'Pending' | 'En evaluación' | 'Aprobado' | 'Rechazado' | 'Cancelado';
   collateral?: Collateral;
+  guarantors?: (ClientReference | string | Guarantor)[];
   loanDestination?: string;
   purpose?: string;
   notes?: string;
@@ -360,10 +390,12 @@ export interface Transaction {
   invoiceDate?: string;
   description: string;
   referenceId?: string; // ID of loan or client related
-  paymentType?: 'Interes' | 'Capital' | 'Mixto';
+  paymentType?: 'Interes' | 'Capital' | 'Mixto' | 'Mora' | 'Cierre' | 'Otro';
   paymentMethod?: PaymentMethod;
   bankAccountId?: string;
   proofUrl?: string;
+  currency?: 'DOP' | 'USD';
+  note?: string;
 }
 
 export interface CashShift {
@@ -459,20 +491,37 @@ export interface Role {
 export interface User {
   id: string;
   name: string;
+  lastName?: string;
   email?: string;
   username?: string;
   password?: string;
+  roleId?: string;
   roleIds?: string[];
   employeeId?: string;
+  isEmployee?: boolean;
+  employeeData?: unknown;
   avatarUrl?: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Activo' | 'Inactivo';
   lastLogin?: string;
+  user_metadata?: {
+    avatar_url?: string;
+    full_name?: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    role?: string;
+    roleId?: string;
+    phone?: string;
+    cedula?: string;
+  };
 }
 
 export interface ApiKey {
   id: string;
   name: string;
   key: string;
+  api_key?: string;
   createdAt: string;
   lastUsed?: string;
 }
@@ -480,9 +529,9 @@ export interface ApiKey {
 export interface CollectorVisit {
   id: string;
   collectorId: string;
-  collectorName: string;
+  collectorName?: string;
   clientId: string;
-  clientName: string;
+  clientName?: string;
   loanId?: string;
   date: string;
   status: 'Cobrado' | 'Ausente' | 'Promesa de Pago' | 'No Pagó';
@@ -504,11 +553,13 @@ export interface NumberSeriesSettings {
 
 export interface CompanySettings {
   name: string;
+  companyName?: string;
   slogan?: string;
   rnc: string;
   address: string;
   phone: string;
   logoUrl?: string;
+  logourl?: string;
   email: string;
   currency: 'DOP' | 'USD';
   termsAndConditions: string;
@@ -540,30 +591,30 @@ export interface AppNotification {
 export interface LoanProduct {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   minAmount: number;
   maxAmount: number;
   interestRate: number;
   interestType: 'Fijo' | 'Simple' | 'Compuesto';
   frequency: 'Diario' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Anual';
-  termMonths: number;
-  defaultInstallments: number;
-  requiresCollateral: boolean;
+  termMonths?: number;
+  defaultInstallments?: number;
+  requiresCollateral?: boolean;
   collateralType?: string;
-  disbursementFee: number;
-  lateFeePercentage: number;
-  graceDays: number;
-  prepaymentAllowed: boolean;
-  autoCalculateInterest: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  disbursementFee?: number;
+  lateFeePercentage?: number;
+  graceDays?: number;
+  prepaymentAllowed?: boolean;
+  autoCalculateInterest?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   
   // Advanced Financial Engine Fields
-  amortizationMethod: 'Amortizado' | 'Flat' | 'DecliningBalance' | 'Open' | 'Bullet' | 'Maturity' | 'CreditLine';
-  paymentOrder: 'Mora_Expenses_Interest_Capital' | 'Interest_Capital_Mora_Expenses';
-  recalculateInterestOnEarlyPayoff: boolean;
-  capitalizationFrequency: 'Diario' | 'Mensual' | 'Ninguno';
+  amortizationMethod?: 'Amortizado' | 'Flat' | 'DecliningBalance' | 'Open' | 'Bullet' | 'Maturity' | 'CreditLine';
+  paymentOrder?: 'Mora_Expenses_Interest_Capital' | 'Interest_Capital_Mora_Expenses';
+  recalculateInterestOnEarlyPayoff?: boolean;
+  capitalizationFrequency?: 'Diario' | 'Mensual' | 'Ninguno';
 }
 
 

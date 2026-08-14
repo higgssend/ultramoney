@@ -44,7 +44,7 @@ export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client:
     // Encabezado
     doc.setFontSize(20);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text(companySettings?.companyName || 'UltraMoney', 14, 20);
+    doc.text(companySettings?.name || 'UltraMoney', 14, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);

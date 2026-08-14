@@ -47,8 +47,8 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
 
   // Helper to determine status color & category
   const getClientLoanInfo = (clientId: string) => {
-    const clientLoans = loans.filter(l => l.clientId === clientId && l.status !== 'Pagado' && l.status !== 'Rechazado');
-    const isOverdue = clientLoans.some(l => l.status === 'Atrasado' || l.status === 'Vencido');
+    const clientLoans = loans.filter(l => l.clientId === clientId && l.status !== LoanStatus.PAID && l.status !== LoanStatus.REJECTED);
+    const isOverdue = clientLoans.some(l => l.status === LoanStatus.OVERDUE || (l.status as string) === 'Vencido');
     const isDueToday = clientLoans.some(l => l.nextPaymentDate === todayStr);
     const totalRemaining = clientLoans.reduce((sum, l) => sum + (Number(l.remainingBalance) || 0), 0);
     const primaryLoan = clientLoans[0];

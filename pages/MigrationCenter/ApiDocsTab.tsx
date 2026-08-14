@@ -216,7 +216,7 @@ export const ApiDocsTab: React.FC = () => {
                                       <button onClick={() => toggleVisibility(key.id)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Mostrar/Ocultar">
                                           {visibleKeys[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                       </button>
-                                      <button onClick={() => handleCopy(key.api_key || key.key)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Copiar">
+                                      <button onClick={() => handleCopy(key.api_key || key.key || '')} className="text-slate-400 hover:text-indigo-600 transition-colors" title="Copiar">
                                           <Copy className="w-4 h-4" />
                                       </button>
                                   </div>

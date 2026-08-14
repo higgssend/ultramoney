@@ -42,7 +42,7 @@ import {
 
 import { useClients, useLoans, useAccounting, useAuth } from '../../context/StoreContext';
 import { useToast } from '../../context/ToastContext';
-import { parseFile, guessMapping } from './SmartImporter';
+import { parseFile, guessMapping, MigrationPrimitive } from './SmartImporter';
 import { CustomSelect } from '../../components/CustomSelect';
 
 interface MigrationWizardProps {
@@ -96,10 +96,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
         const previews = result.data.slice(0, 100).map((row, idx) => ({
           id: `prv-${idx}`,
           rowIndex: idx + 1,
-          entity: 'clientes' as any,
+          entity: 'clientes' as MigrationEntity,
           sourceData: row,
           mappedData: {},
-          status: 'pending' as any,
+          status: 'pending' as const,
+          issues: [],
           isSelected: true
         }));
         setPreviewRecords(previews);
@@ -250,17 +251,17 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
               if (selectedEntities.clientes) {
                 addClient({
                   id: `CLI-MIG-${rec.rowIndex}-${Date.now().toString().slice(-4)}`,
-                  clientCode: rec.mappedData.clientCode || `CLI-${1000 + rec.rowIndex}`,
-                  name: rec.mappedData.name || 'Cliente Migrado',
-                  sex: rec.mappedData.sex || 'Masculino',
-                  occupation: rec.mappedData.occupation || 'Comerciante',
-                  phone: rec.mappedData.phone || '8095550000',
-                  cedula: rec.mappedData.cedula || `001-000000${rec.rowIndex}-1`,
-                  address: rec.mappedData.address || 'Dirección Migrada',
-                  income: rec.mappedData.income || 50000,
-                  creditScore: rec.mappedData.creditScore || 80,
+                  clientCode: String(rec.mappedData.clientCode || `CLI-${1000 + rec.rowIndex}`),
+                  name: String(rec.mappedData.name || 'Cliente Migrado'),
+                  sex: (rec.mappedData.sex as 'Masculino' | 'Femenino') || 'Masculino',
+                  occupation: String(rec.mappedData.occupation || 'Comerciante'),
+                  phone: String(rec.mappedData.phone || '8095550000'),
+                  cedula: String(rec.mappedData.cedula || `001-000000${rec.rowIndex}-1`),
+                  address: String(rec.mappedData.address || 'Dirección Migrada'),
+                  income: Number(rec.mappedData.income) || 50000,
+                  creditScore: Number(rec.mappedData.creditScore) || 80,
                   status: 'Activo',
-                  email: rec.mappedData.email,
+                  email: rec.mappedData.email ? String(rec.mappedData.email) : undefined,
                   joinedDate: new Date().toISOString().split('T')[0]
                 });
                 importedCnt++;
@@ -268,25 +269,25 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
               
               if (selectedEntities.prestamos) {
                 createLoan({
-                  clientId: rec.mappedData.clientId || `CLI-MIG-1`,
-                  clientName: rec.mappedData.name || rec.mappedData.clientName || 'RAMON EMILIO MERCEDES',
+                  clientId: String(rec.mappedData.clientId || `CLI-MIG-1`),
+                  clientName: String(rec.mappedData.name || rec.mappedData.clientName || 'RAMON EMILIO MERCEDES'),
                   amount: Number(rec.mappedData.amount) || 50000,
                   interestRate: Number(rec.mappedData.interestRate) || 10,
                   durationWeeks: Number(rec.mappedData.durationWeeks) || 12,
-                  frequency: rec.mappedData.frequency || 'Mensual',
-                  startDate: rec.mappedData.startDate || new Date().toISOString().split('T')[0],
-                  loanType: rec.mappedData.loanType || 'Amortizado',
-                  closingCost: rec.mappedData.closingCost || 2500
+                  frequency: (rec.mappedData.frequency as Loan['frequency']) || 'Mensual',
+                  startDate: String(rec.mappedData.startDate || new Date().toISOString().split('T')[0]),
+                  loanType: String(rec.mappedData.loanType || 'Amortizado'),
+                  closingCost: Number(rec.mappedData.closingCost) || 2500
                 });
                 importedCnt++;
               }
               
               if (selectedEntities.pagos) {
                 registerPayment(
-                  rec.mappedData.loanId || 'PR-001',
+                  String(rec.mappedData.loanId || 'PR-001'),
                   Number(rec.mappedData.amount) || 1000,
-                  rec.mappedData.concept || 'Pago Migrado',
-                  rec.mappedData.date || new Date().toISOString().split('T')[0]
+                  String(rec.mappedData.concept || 'Pago Migrado'),
+                  String(rec.mappedData.date || new Date().toISOString().split('T')[0])
                 );
                 importedCnt++;
               }
@@ -449,10 +450,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
           return {
             id: `prv-final-${idx}`,
             rowIndex: idx + 1,
-            entity: 'clientes' as any,
+            entity: 'clientes' as MigrationEntity,
             sourceData: row,
             mappedData: newMappedData,
-            status: 'valid' as any,
+            status: 'valid' as const,
+            issues: [],
             isSelected: true
           };
         });

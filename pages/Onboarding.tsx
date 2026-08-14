@@ -61,7 +61,7 @@ const Onboarding: React.FC = () => {
       updateCompanySettings({
         ...formData,
         email: currentUser?.email || '',
-        currency: 'RD$',
+        currency: 'DOP',
         termsAndConditions: 'El incumplimiento de pago generará mora.'
       });
 

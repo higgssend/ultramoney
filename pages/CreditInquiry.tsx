@@ -21,7 +21,7 @@ export const CreditInquiry: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLFormElement>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -133,7 +133,7 @@ export const CreditInquiry: React.FC = () => {
               ) : (
                 filteredClients.map((client) => {
                   const clientLoans = loans.filter(l => l.clientId === client.id);
-                  const hasOverdue = clientLoans.some(l => l.status === LoanStatus.OVERDUE || l.status === 'Atrasado');
+                  const hasOverdue = clientLoans.some(l => l.status === LoanStatus.OVERDUE || (l.status as string) === 'Atrasado');
                   return (
                     <button
                       key={client.id}
@@ -336,9 +336,9 @@ export const CreditInquiry: React.FC = () => {
                         </td>
                         <td className="py-3 px-4">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                            loan.status === LoanStatus.PAID || loan.status === 'Saldado' || loan.status === 'Pagado'
+                            loan.status === LoanStatus.PAID || (loan.status as string) === 'Saldado'
                               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                              : loan.status === LoanStatus.OVERDUE || loan.status === 'Atrasado'
+                              : loan.status === LoanStatus.OVERDUE || (loan.status as string) === 'Atrasado'
                               ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
                               : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
                           }`}>

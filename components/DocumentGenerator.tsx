@@ -117,7 +117,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     } else if (currentLoan.collateralref || currentLoan.collateralRef) {
       collateralRefNumber = String(currentLoan.collateralref || currentLoan.collateralRef);
       collateralDescription = String(currentLoan.collateral || '');
-      collateralType = currentLoan.loanCategory === 'Vehicular' ? 'Vehículo' : (currentLoan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
+      collateralType = (currentLoan.loanCategory as string) === 'Vehicular' ? 'Vehículo' : (currentLoan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
     }
 
     if (collateralType === 'Vehículo') {
@@ -372,7 +372,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 
                 <div className="content space-y-3.5 text-justify leading-relaxed">
                   <p>
-                    POR ANTE MÍ, Notario Público de los del Número para el Distrito Nacional, República Dominicana, matrícula del Colegio Dominicano de Notarios No. ____________, COMPARECE libre y voluntariamente el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, mayor de edad, estado civil {client.civilStatus || 'Soltero/a'}, profesión u ocupación {client.occupation || 'Comerciante'}, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'República Dominicana'}</strong>, quien en lo adelante del presente acto se denominará <strong>EL DEUDOR</strong>.
+                    POR ANTE MÍ, Notario Público de los del Número para el Distrito Nacional, República Dominicana, matrícula del Colegio Dominicano de Notarios No. ____________, COMPARECE libre y voluntariamente el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, mayor de edad, estado civil {client.maritalStatus || client.civilStatus || 'Soltero/a'}, profesión u ocupación {client.occupation || 'Comerciante'}, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'República Dominicana'}</strong>, quien en lo adelante del presente acto se denominará <strong>EL DEUDOR</strong>.
                   </p>
                   
                   <p>

@@ -24,14 +24,14 @@ interface LoanContextType {
       reference?: string;
       notes?: string;
       paymentMethod?: PaymentMethod;
-      paymentType?: 'Interes' | 'Capital' | 'Mixto';
+      paymentType?: Transaction['paymentType'];
     }
   ) => Promise<Transaction | null>;
   refinanceLoan: (oldLoanId: string, newLoanData: Omit<Loan, 'id' | 'status' | 'remainingBalance' | 'totalToPay'>) => void;
   forgiveDebt: (loanId: string, amount: number, note: string) => Promise<void>;
   registerPayment: (
     loanId: string, amount: number, note: string, paymentDate?: string, 
-    invoiceDate?: string, paymentType?: 'Interes' | 'Capital' | 'Mixto',
+    invoiceDate?: string, paymentType?: Transaction['paymentType'],
     capitalAmount?: number, paymentMethod?: PaymentMethod, cashierId?: string,
     bankAccountId?: string, proofUrl?: string
   ) => Promise<Transaction[] | null>;
@@ -424,7 +424,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       reference?: string;
       notes?: string;
       paymentMethod?: PaymentMethod;
-      paymentType?: 'Interes' | 'Capital' | 'Mixto';
+      paymentType?: Transaction['paymentType'];
     }
   ): Promise<Transaction | null> => {
     if (!currentUser) return null;
@@ -575,7 +575,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
   const registerPayment = async (
     loanId: string, amount: number, note: string, paymentDate?: string, 
-    _invoiceDate?: string, paymentType?: 'Interes' | 'Capital' | 'Mixto',
+    _invoiceDate?: string, paymentType?: Transaction['paymentType'],
     capitalAmount?: number, paymentMethod: PaymentMethod = 'Efectivo', cashierId?: string,
     bankAccountId?: string, proofUrl?: string
   ) => {
@@ -601,7 +601,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       proof_url: proofUrl || null
     };
 
-    let transactionsToInsert: any[] = [];
+    let transactionsToInsert: Partial<TransactionDB>[] = [];
 
     const isRedito = (type?: string) => type ? (type.includes('Rédito') || type.includes('Redito') || type.includes('Solo Interé') || type.includes('Pagaré Abierto')) : false;
 
@@ -802,7 +802,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateLoanProduct = async (id: string, updates: Partial<LoanProduct>) => {
     if (!currentUser) return;
-    const payload: any = {};
+    const payload: Partial<LoanProductDB> = {};
     if (updates.name !== undefined) payload.name = updates.name;
     if (updates.description !== undefined) payload.description = updates.description;
     if (updates.minAmount !== undefined) payload.min_amount = updates.minAmount;

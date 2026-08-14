@@ -21,6 +21,8 @@ interface SettingsContextType {
   addAuditLog: (action: string, details: string) => void;
   enqueuePdf: (job: Omit<PdfJob, 'id'>) => void;
   removePdfJob: (id: string) => void;
+  exportSystemBackup?: () => string;
+  importSystemBackup?: (json: string) => boolean;
 }
 
 const initialCompanySettings: CompanySettings = {

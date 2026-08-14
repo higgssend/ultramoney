@@ -7,7 +7,7 @@ import {
   Edit3, Trash2, Save, X, AlertCircle, Copy, Link, ArrowLeftRight
 } from 'lucide-react';
 import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
-import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod, LoanStatus, Guarantor } from '../types';
+import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod, LoanStatus, Guarantor, CompanySettings } from '../types';
 import { toast } from 'sonner';
 import { Phone, Users, MapPin, Briefcase } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -33,7 +33,7 @@ export const LoanDetail: React.FC = () => {
   const loan = loans.find(l => l.id === id);
   const client = clients.find(c => c?.id === loan?.clientId);
 
-  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'payments' | 'documents' | 'collateral' | 'refinance' | 'forgiveness'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'summary' | 'amortization' | 'payments' | 'documents' | 'collateral' | 'refinance' | 'forgiveness'>((initialTab as 'summary' | 'amortization' | 'payments' | 'documents' | 'collateral' | 'refinance' | 'forgiveness') || 'summary');
   const [docType, setDocType] = useState<'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo'>('pagare');
   const [showSharingModal, setShowSharingModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
@@ -85,7 +85,7 @@ export const LoanDetail: React.FC = () => {
   const [histRef, setHistRef] = useState<string>('');
   const [histNotes, setHistNotes] = useState<string>('Pago Histórico / Migrado');
   const [histMethod, setHistMethod] = useState<PaymentMethod>('Efectivo');
-  const [histType, setHistType] = useState<'Interes' | 'Capital' | 'Mixto'>('Mixto');
+  const [histType, setHistType] = useState<Transaction['paymentType']>('Mixto');
 
   const openEditModal = () => {
     if (!loan) return;
@@ -307,11 +307,11 @@ export const LoanDetail: React.FC = () => {
   } else if (loan.collateralref || loan.collateralRef) {
     collateralRefNumber = String(loan.collateralref || loan.collateralRef);
     collateralDescription = String(loan.collateral || '');
-    collateralType = loan.loanCategory === 'Vehicular' ? 'Vehículo' : (loan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
+    collateralType = (loan.loanCategory as string) === 'Vehicular' ? 'Vehículo' : (loan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
   }
 
   const isFinancingLoan = Boolean(
-    loan.loanCategory === 'Financiamiento' || 
+    (loan.loanCategory as string) === 'Financiamiento' || 
     (loan.loanType && loan.loanType.includes('Financiamiento')) ||
     loan.itemPrice
   );
@@ -834,8 +834,8 @@ export const LoanDetail: React.FC = () => {
             {(() => {
               const guarantorsList: Guarantor[] = (loan.guarantors && loan.guarantors.length > 0)
                 ? loan.guarantors
-                : (loan.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as Record<string, unknown>).guarantors))
-                  ? ((loan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+                : (loan.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as unknown as Record<string, unknown>).guarantors))
+                  ? ((loan.collateral as unknown as Record<string, unknown>).guarantors as Guarantor[])
                   : (client?.guarantorName || client?.coGuarantorName)
                     ? [
                         ...(client.guarantorName ? [{
@@ -1217,7 +1217,7 @@ export const LoanDetail: React.FC = () => {
               
               {/* Document Header */}
               <div className="header text-center border-b-2 border-slate-900 pb-5 mb-8">
-                {company.logoUrl && <img src={company.logoUrl} alt="Logo" className="h-16 mx-auto mb-3 object-contain font-sans" />}
+                {(company as CompanySettings).logoUrl && <img src={(company as CompanySettings).logoUrl} alt="Logo" className="h-16 mx-auto mb-3 object-contain font-sans" />}
                 <h1 className="text-2xl font-black uppercase tracking-wider font-sans text-slate-900">{company.name}</h1>
                 {company.rnc && <p className="text-xs text-slate-600 font-sans font-bold">RNC No.: {company.rnc}</p>}
                 <p className="text-xs text-slate-600 font-sans">{company.address} • Teléfono: {company.phone}</p>

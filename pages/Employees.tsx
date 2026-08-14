@@ -58,11 +58,13 @@ const Employees: React.FC = () => {
           
           if (createSystemAccess && newEmp.username && newEmp.employeePin) {
               await registerUser({
+                  id: `usr-${Date.now()}`,
                   name: newEmp.name,
                   username: newEmp.username,
                   password: newEmp.employeePin,
                   employeeId: employeeId,
-                  roleIds: systemRoleIds
+                  roleIds: systemRoleIds,
+                  status: 'Active'
               });
           }
 

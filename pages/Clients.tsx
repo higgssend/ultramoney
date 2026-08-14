@@ -94,7 +94,7 @@ const Clients: React.FC = () => {
 
   // Summary stats
   const totalClients = clients.length;
-  const activeClients = clients.filter(c => c.status !== 'Inactivo').length;
+  const activeClients = clients.filter(c => (c.status as string) !== 'Inactivo').length;
   const overdueClients = clients.filter(c => {
     const stats = getClientLoanStats(c.id);
     return stats.isOverdue;

@@ -158,12 +158,11 @@ const Accounting: React.FC = () => {
     await addTransaction({
       date: new Date().toISOString(),
       type: 'Gasto',
-      category: expenseCategory,
+      category: (expenseCategory === 'Otros' ? 'Otro' : expenseCategory) as Transaction['category'],
       description: expenseDescription || `Gasto de ${expenseCategory}`,
       amount: amount,
       paymentMethod: selectedBankAccountId ? 'Transferencia' : expenseMethod,
-      bank_account_id: selectedBankAccountId || undefined,
-      lender_id: ''
+      bankAccountId: selectedBankAccountId || undefined,
     });
 
     if (selectedBankAccountId) {
@@ -186,11 +185,10 @@ const Accounting: React.FC = () => {
     addTransaction({
       date: new Date().toISOString(),
       type: 'Gasto',
-      category: 'Otros',
+      category: 'Otro',
       description: `[Asiento Manual] ${manualEntryConcept} (Débito: ${manualDebitCode} / Crédito: ${manualCreditCode})`,
       amount: amount,
       paymentMethod: 'Efectivo',
-      lender_id: ''
     });
 
     addAuditLog('journal_entry_created', `Creó asiento contable manual por RD$ ${amount}`);
@@ -347,7 +345,7 @@ const Accounting: React.FC = () => {
                   <label className="font-bold text-slate-700 block mb-1">Categoría del Gasto</label>
                   <CustomSelect
                     value={expenseCategory}
-                    onChange={(val: string) => setExpenseCategory(val)}
+                    onChange={(val: string) => setExpenseCategory(val as typeof expenseCategory)}
                     options={[
                       { value: 'Operativo', label: 'Operativo / General' },
                       { value: 'Nómina', label: 'Nómina & Comisiones' },
@@ -519,7 +517,7 @@ const Accounting: React.FC = () => {
                         className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-center font-bold"
                       />
                       <span className="text-[10px] text-slate-400 block text-right mt-1 font-mono">
-                        RD$ {((closingData[b.key as keyof typeof closingData] || 0) * b.mult).toLocaleString()}
+                        RD$ {((Number(closingData[b.key as keyof typeof closingData]) || 0) * b.mult).toLocaleString()}
                       </span>
                     </div>
                   ))}

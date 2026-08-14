@@ -31,7 +31,8 @@ interface ClientContextType {
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { addToast, addAuditLog } = useSettings();
+  const { addToast } = useToast();
+  const { addAuditLog } = useSettings();
   const { currentUser } = useAuth();
   
   const [clients, setClients] = useState<Client[]>([]);
@@ -95,7 +96,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (docsRes.data) {
         setClientDocuments((docsRes.data as ClientDocumentDB[]).map((d) => ({
           id: d.id, clientId: d.client_id, title: d.title, type: d.type as ClientDocument['type'],
-          fileUrl: d.file_url, uploadDate: d.upload_date, tags: d.tags || []
+          fileUrl: d.file_url, fileType: d.file_type || 'application/pdf', uploadDate: d.upload_date, tags: d.tags || []
         })));
       }
       try {
@@ -387,8 +388,15 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { data, error } = await insforge.database.from('routes').insert([{
       name: route.name, description: route.description, collector_id: route.collectorId, lender_id: currentUser.id
     }]).select();
-    if (!error && data) {
-      setRoutes([...routes, { id: data[0].id, name: data[0].name, description: data[0].description, collectorId: data[0].collector_id }]);
+    if (!error && data && data[0]) {
+      setRoutes([...routes, {
+        id: data[0].id,
+        name: data[0].name,
+        description: data[0].description,
+        collectorId: data[0].collector_id,
+        status: (data[0].status || 'Activa') as Route['status'],
+        createdAt: data[0].created_at || new Date().toISOString()
+      }]);
       addToast("Ruta creada exitosamente", "success");
     } else addToast("Error al crear ruta", "error");
   };
@@ -417,7 +425,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   return (
     <ClientContext.Provider value={{
       clients, clientNotes, clientDocuments, routes,
-      addClient, updateClient, deleteClient, addClientNote, addClientDocument, removeClientDocument, generateClientPin,
+      addClient, updateClient, deleteClient, addClientNote, addClientDocument, updateClientDocument, removeClientDocument, generateClientPin,
       addRoute, updateRoute, deleteRoute, refreshClients
     }}>
       {children}

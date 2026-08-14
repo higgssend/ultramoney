@@ -79,7 +79,7 @@ export const RefinanceModal: React.FC<RefinanceModalProps> = ({ isOpen, onClose,
         interestRate: Number(newInterestRate),
         durationWeeks: Number(newInstallments),
         installments: Number(newInstallments),
-        frequency: newFrequency,
+        frequency: newFrequency as Loan['frequency'],
         startDate: newStartDate,
         loanType: newLoanType,
         note: `Refinanciamiento derivado del préstamo original #${loan.id}`

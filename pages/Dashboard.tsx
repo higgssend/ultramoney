@@ -78,10 +78,28 @@ const Dashboard: React.FC = () => {
 
   const currencyLoans = safeLoans.filter(l => l && (l.currency || 'DOP') === globalCurrency);
   const totalPortfolio = currencyLoans.reduce((sum, loan) => sum + (Number(loan?.remainingBalance) || 0), 0);
-  const activeClientsCount = safeClients.filter(c => c && c.status !== 'Inactivo' && c.status !== 'Bloqueado').length; 
+  const activeClientsCount = safeClients.filter(c => c && (c.status as string) !== 'Inactivo' && c.status !== 'Bloqueado').length; 
   const balance = Number(stats?.balance) || 0;
 
-  // Calculate PAR (Portfolio At Risk)
+  // 1. Préstamos Activos (Cantidad y Monto Activo)
+  const activeLoansList = currencyLoans.filter(l => l && (l.status === LoanStatus.ACTIVE || (l.status as string) === 'Vigente'));
+  const activeLoansCount = activeLoansList.length;
+  const activeLoansAmount = activeLoansList.reduce((sum, l) => sum + (Number(l.remainingBalance) || 0), 0);
+
+  // 2. Monto Prestado (Total Capital Colocado / Desembolsado)
+  const totalLentCapital = currencyLoans.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+
+  // 3. Cobros del Mes (Total Ingresos Cobrados en el mes en curso)
+  const now = new Date();
+  const currentMonthCollections = safeTransactions
+    .filter(t => {
+      if (!t || (t.currency || 'DOP') !== globalCurrency || t.type !== 'Ingreso' || !t.date) return false;
+      const d = new Date(String(t.date));
+      return !isNaN(d.getTime()) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+  // 4. Cartera Vencida / Mora
   let par30 = 0;
   let par60 = 0;
   let par90 = 0;
@@ -90,7 +108,7 @@ const Dashboard: React.FC = () => {
     if (!loan) return;
     const remBal = Number(loan.remainingBalance) || 0;
     if (remBal > 0 && loan.status !== LoanStatus.PAID) {
-      const isOverdue = loan.status === LoanStatus.OVERDUE || loan.status === 'Vencido' || (loan.nextPaymentDate && new Date() > new Date(loan.nextPaymentDate));
+      const isOverdue = loan.status === LoanStatus.OVERDUE || (loan.status as string) === 'Vencido' || (loan.nextPaymentDate && new Date() > new Date(loan.nextPaymentDate));
       if (isOverdue) {
         const nextDate = loan.nextPaymentDate ? new Date(loan.nextPaymentDate) : new Date();
         const diffTime = Math.abs(new Date().getTime() - nextDate.getTime());
@@ -105,6 +123,12 @@ const Dashboard: React.FC = () => {
 
   const parTotal = par30 + par60 + par90;
   const overdueAmount = parTotal;
+
+  const overdueLoansList = currencyLoans.filter(l => l && (l.status === LoanStatus.OVERDUE || (l.status as string) === 'Vencido' || (Number(l.remainingBalance) > 0 && l.status !== LoanStatus.PAID && l.nextPaymentDate && new Date() > new Date(loanDate(l)))));
+  function loanDate(l: typeof currencyLoans[0]): string {
+    return l?.nextPaymentDate || '';
+  }
+  const overdueLoansCount = currencyLoans.filter(l => l && (l.status === LoanStatus.OVERDUE || (l.status as string) === 'Vencido' || (Number(l.remainingBalance) > 0 && l.status !== LoanStatus.PAID && l.nextPaymentDate && new Date() > new Date(l.nextPaymentDate)))).length;
 
   const filteredTransactions = safeTransactions.filter(t => t && (t.currency || 'DOP') === globalCurrency && isDateInRange(t.date));
   const recentTransactions = (filteredTransactions.length > 0 ? filteredTransactions : safeTransactions).slice(0, 5);
@@ -200,10 +224,10 @@ const Dashboard: React.FC = () => {
   const data = getChartData();
 
   // Chart 2 Data: Loan Status Distribution
-  const activeCount = currencyLoans.filter(l => l && (l.status === LoanStatus.ACTIVE || l.status === 'Activo' || l.status === 'Vigente')).length;
-  const overdueCount = currencyLoans.filter(l => l && (l.status === LoanStatus.OVERDUE || l.status === 'Vencido' || l.status === 'Atrasado')).length;
-  const pendingCount = currencyLoans.filter(l => l && (l.status === LoanStatus.PENDING || l.status === 'Pendiente')).length;
-  const paidCount = currencyLoans.filter(l => l && (l.status === LoanStatus.PAID || l.status === 'Pagado')).length;
+  const activeCount = currencyLoans.filter(l => l && (l.status === LoanStatus.ACTIVE || (l.status as string) === 'Vigente')).length;
+  const overdueCount = currencyLoans.filter(l => l && (l.status === LoanStatus.OVERDUE || (l.status as string) === 'Vencido')).length;
+  const pendingCount = currencyLoans.filter(l => l && l.status === LoanStatus.PENDING).length;
+  const paidCount = currencyLoans.filter(l => l && l.status === LoanStatus.PAID).length;
 
   const loanStatusData = [
     { name: 'Al Día', value: activeCount, color: '#10b981' },
@@ -369,51 +393,99 @@ const Dashboard: React.FC = () => {
       {/* Daily Morning Executive Briefing Card */}
       <DailyMorningBriefing />
 
-      {/* 4 Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* 4 Core Executive Metric Cards requested by user */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
-          title="Cartera por Cobrar"
-          value={`RD$ ${(totalPortfolio || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}`}
-          trend="Ver Préstamos ➔"
+          title="Préstamos Activos"
+          value={`${activeLoansCount} Activos`}
+          trend={`Saldo: RD$ ${activeLoansAmount.toLocaleString('es-DO', { maximumFractionDigits: 0 })}`}
           trendUp={true}
           icon={Banknote}
-          gradient="bg-gradient-to-br from-indigo-600 to-purple-700"
+          gradient="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700"
           glowColor="shadow-indigo-500/30"
           onClick={() => navigate('/prestamos')}
         />
 
         <StatCard
-          title="Clientes Activos"
-          value={activeClientsCount.toString()}
-          trend="Ver Clientes ➔"
+          title="Monto Prestado"
+          value={`RD$ ${totalLentCapital.toLocaleString('es-DO', { maximumFractionDigits: 0 })}`}
+          trend="Total Capital Colocado ➔"
           trendUp={true}
-          icon={Users}
+          icon={TrendingUp}
           gradient="bg-gradient-to-br from-blue-600 to-cyan-600"
           glowColor="shadow-blue-500/30"
-          onClick={() => navigate('/clientes')}
+          onClick={() => navigate('/prestamos')}
         />
 
         <StatCard
-          title="Mora / Atrasos"
-          value={`RD$ ${(overdueAmount || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}`}
-          trend="Gestionar Mora ➔"
-          trendUp={false}
-          icon={AlertTriangle}
-          gradient="bg-gradient-to-br from-amber-500 to-rose-600"
-          glowColor="shadow-orange-500/30"
-          onClick={() => navigate('/atrasos')}
-        />
-
-        <StatCard
-          title="Balance en Caja"
-          value={`RD$ ${(balance || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}`}
-          trend="Ver Movimientos ➔"
+          title="Cobros del Mes"
+          value={`RD$ ${currentMonthCollections.toLocaleString('es-DO', { maximumFractionDigits: 0 })}`}
+          trend="Ver Recaudación ➔"
           trendUp={true}
-          icon={Wallet}
+          icon={ArrowUpRight}
           gradient="bg-gradient-to-br from-emerald-500 to-teal-700"
           glowColor="shadow-emerald-500/30"
-          onClick={() => navigate('/caja')}
+          onClick={() => navigate('/pagos')}
         />
+
+        <StatCard
+          title="Cartera Vencida"
+          value={`RD$ ${(overdueAmount || 0).toLocaleString('es-DO', { maximumFractionDigits: 0 })}`}
+          trend={`${overdueLoansCount} Préstamos en Mora ➔`}
+          trendUp={false}
+          icon={AlertTriangle}
+          gradient="bg-gradient-to-br from-amber-500 via-rose-600 to-red-700"
+          glowColor="shadow-rose-500/30"
+          onClick={() => navigate('/atrasos')}
+        />
+      </div>
+
+      {/* Secondary Quick Summary Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div 
+          onClick={() => navigate('/prestamos')}
+          className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
+        >
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cartera Total por Cobrar</p>
+            <h4 className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5">
+              RD$ {(totalPortfolio || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}
+            </h4>
+          </div>
+          <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <Wallet className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div 
+          onClick={() => navigate('/clientes')}
+          className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+        >
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Clientes Registrados</p>
+            <h4 className="text-lg font-black text-slate-800 dark:text-slate-100 mt-0.5">
+              {activeClientsCount} Clientes Activos
+            </h4>
+          </div>
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+            <Users className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div 
+          onClick={() => navigate('/caja')}
+          className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors"
+        >
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Balance en Caja / Bancos</p>
+            <h4 className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+              RD$ {(balance || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })}
+            </h4>
+          </div>
+          <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <Banknote className="w-5 h-5" />
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}

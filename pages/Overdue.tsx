@@ -72,8 +72,8 @@ const Overdue: React.FC = () => {
               // Resolve guarantors
               const guarantorsList: Guarantor[] = (loan.guarantors && loan.guarantors.length > 0)
                 ? loan.guarantors
-                : (loan.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as Record<string, unknown>).guarantors))
-                  ? ((loan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+                : (loan.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as unknown as Record<string, unknown>).guarantors))
+                  ? ((loan.collateral as unknown as Record<string, unknown>).guarantors as Guarantor[])
                   : (client?.guarantorName)
                     ? [{
                         id: 'legacy-1',

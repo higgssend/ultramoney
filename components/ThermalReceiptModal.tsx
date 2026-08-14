@@ -1,3 +1,4 @@
+import React, { useState, useMemo } from 'react';
 import { 
   Printer, X, Smartphone, Copy, Check, Download, Share2, 
   QrCode, Sliders, Receipt, RefreshCw, FileText

@@ -119,15 +119,15 @@ export const DocumentPage: React.FC = () => {
     } else if (currentLoan.collateralref || currentLoan.collateralRef) {
       collateralRefNumber = String(currentLoan.collateralref || currentLoan.collateralRef);
       collateralDescription = String(currentLoan.collateral || '');
-      collateralType = currentLoan.loanCategory === 'Vehicular' ? 'Vehículo' : (currentLoan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
+      collateralType = (currentLoan.loanCategory as string) === 'Vehicular' ? 'Vehículo' : (currentLoan.loanCategory === 'Hipotecario' ? 'Propiedad' : 'Otro');
     }
 
     if (collateralType === 'Teléfono / Celular') {
-      const colObj = (typeof currentLoan.collateral === 'object' && currentLoan.collateral ? currentLoan.collateral : {}) as Record<string, string | number | undefined>;
+      const colObj = (typeof currentLoan.collateral === 'object' && currentLoan.collateral ? currentLoan.collateral : {}) as unknown as Record<string, string | number | undefined>;
       collateralHeading = 'GARANTÍA MOBILIARIA DE DISPOSITIVO MÓVIL (PRENDA SOBRE CELULAR)';
       collateralLegalClause = `PRENDA MOBILIARIA EN CUSTODIA SOBRE EQUIPO CELULAR / DISPOSITIVO MÓVIL: Marca y Modelo: ${collateralDescription || 'Celular'}, IMEI / Serie No.: ${collateralRefNumber || 'N/A'}${colObj.imei2 ? ` (IMEI 2: ${colObj.imei2})` : ''}${colObj.storage ? `, Capacidad: ${colObj.storage}` : ''}${colObj.condition ? `, Condición: ${colObj.condition}` : ''}${collateralEstimatedValue > 0 ? `, por un valor estimado de RD$ ${collateralEstimatedValue.toLocaleString('es-DO')}` : ''}. EL DEUDOR declara bajo fe de juramento que dicho bien es de su exclusiva propiedad y se encuentra libre de todo gravamen.`;
     } else if (collateralType === 'Tarjeta de Crédito / Débito') {
-      const colObj = (typeof currentLoan.collateral === 'object' && currentLoan.collateral ? currentLoan.collateral : {}) as Record<string, string | undefined>;
+      const colObj = (typeof currentLoan.collateral === 'object' && currentLoan.collateral ? currentLoan.collateral : {}) as unknown as Record<string, string | undefined>;
       collateralHeading = 'GARANTÍA MOBILIARIA Y CUSTODIA DE TARJETA BANCARIA';
       collateralLegalClause = `PRENDA MOBILIARIA Y CUSTODIA FÍSICA DE TARJETA BANCARIA: Banco Emisor: ${colObj.bankName || 'Banco Registrado'}, Tipo: ${colObj.cardType || 'Visa/Mastercard'}, Últimos 4 Dígitos: **** **** **** ${collateralRefNumber || colObj.last4 || 'N/A'}${colObj.cardHolder ? `, Tarjetahabiente: ${colObj.cardHolder}` : ''}${colObj.expiryDate ? `, Vencimiento: ${colObj.expiryDate}` : ''}. EL DEUDOR entrega voluntariamente en custodia física dicha tarjeta a favor de EL ACREEDOR como respaldo colateral hasta la salvedad total de la deuda.`;
     } else if (collateralType === 'Vehículo') {
@@ -149,8 +149,8 @@ export const DocumentPage: React.FC = () => {
   // Resolved Guarantors for legal document
   const docGuarantors: Guarantor[] = (currentLoan?.guarantors && currentLoan.guarantors.length > 0)
     ? currentLoan.guarantors
-    : (currentLoan?.collateral && typeof currentLoan.collateral === 'object' && Array.isArray((currentLoan.collateral as Record<string, unknown>).guarantors))
-      ? ((currentLoan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+    : (currentLoan?.collateral && typeof currentLoan.collateral === 'object' && Array.isArray((currentLoan.collateral as unknown as Record<string, unknown>).guarantors))
+      ? ((currentLoan.collateral as unknown as Record<string, unknown>).guarantors as Guarantor[])
       : (client?.guarantorName || client?.coGuarantorName)
         ? [
             ...(client.guarantorName ? [{
@@ -542,7 +542,7 @@ export const DocumentPage: React.FC = () => {
           
           {/* Header */}
           <div className="header text-center border-b-2 border-slate-900 pb-5 mb-8">
-            {company.logoUrl && <img src={company.logoUrl} alt="Logo" className="h-16 mx-auto mb-3 object-contain font-sans" />}
+            {(company as CompanySettings).logoUrl && <img src={(company as CompanySettings).logoUrl} alt="Logo" className="h-16 mx-auto mb-3 object-contain font-sans" />}
             <h1 className="text-2xl font-black uppercase tracking-wider font-sans text-slate-900">{company.name}</h1>
             {company.rnc && <p className="text-xs text-slate-600 font-sans font-bold">RNC No.: {company.rnc}</p>}
             <p className="text-xs text-slate-600 font-sans">{company.address} • Teléfono: {company.phone}</p>
@@ -560,7 +560,7 @@ export const DocumentPage: React.FC = () => {
               
               <div className="content space-y-4 text-justify leading-relaxed">
                 <p>
-                  POR ANTE MÍ, Notario Público de los del Número para el Distrito Nacional, República Dominicana, matrícula del Colegio Dominicano de Notarios No. ____________, COMPARECE libre y voluntariamente el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, mayor de edad, estado civil {client.civilStatus || 'Soltero/a'}, profesión u ocupación {client.occupation || 'Comerciante'}, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'República Dominicana'}</strong>, quien en lo adelante del presente acto se denominará <strong>EL DEUDOR</strong>.
+                  POR ANTE MÍ, Notario Público de los del Número para el Distrito Nacional, República Dominicana, matrícula del Colegio Dominicano de Notarios No. ____________, COMPARECE libre y voluntariamente el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, mayor de edad, estado civil {client.maritalStatus || client.civilStatus || 'Soltero/a'}, profesión u ocupación {client.occupation || 'Comerciante'}, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'República Dominicana'}</strong>, quien en lo adelante del presente acto se denominará <strong>EL DEUDOR</strong>.
                 </p>
 
                 {docGuarantors.length > 0 && (

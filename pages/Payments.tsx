@@ -136,7 +136,7 @@ const Payments: React.FC = () => {
         number: 1,
         date: loan.nextPaymentDate || loan.startDate,
         amount: interestAmount,
-        status: loan.status === 'Atrasado' ? 'Atrasado' : 'Pendiente',
+        status: loan.status === LoanStatus.OVERDUE ? 'Atrasado' : 'Pendiente',
         paidAmount: 0
       }];
     }
@@ -250,7 +250,7 @@ const Payments: React.FC = () => {
           loans: { loan: Loan, installments: Installment[] }[] 
       }> = {};
 
-      loans.filter(l => l.status === 'Activo' || l.status === 'Atrasado').forEach(loan => {
+      loans.filter(l => l.status === LoanStatus.ACTIVE || l.status === LoanStatus.OVERDUE).forEach(loan => {
           const insts = generateInstallments(loan).filter(i => i.status !== 'Pagado');
           if (insts.length === 0) return;
 

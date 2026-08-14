@@ -94,11 +94,10 @@ const DeepAccounting: React.FC = () => {
     addTransaction({
       date: new Date().toISOString(),
       type: 'Gasto',
-      category: 'Otros',
+      category: 'Otro',
       description: `[Asiento Manual] ${manualEntryConcept} (Débito: ${manualDebitCode} / Crédito: ${manualCreditCode})`,
       amount: amount,
       paymentMethod: 'Efectivo',
-      lender_id: ''
     });
 
     addAuditLog('journal_entry_created', `Creó asiento contable manual por RD$ ${amount}`);

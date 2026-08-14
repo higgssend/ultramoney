@@ -79,7 +79,7 @@ const Invoices: React.FC = () => {
 
   // 2. Facturas de Servicios / Honorarios / Transacciones de Gastos y Comprobantes
   transactions
-    .filter(t => t.type === 'Ingreso' || t.category === 'Gasto Cierre' || t.category === 'Servicios')
+    .filter(t => t.type === 'Ingreso' || (t.category as string) === 'Gasto Cierre' || t.category === 'Cierre' || t.category === 'Servicios')
     .forEach((t, idx) => {
       const clientName = getClientName(t.referenceId, t.description);
       const isClosingFee = t.description.toLowerCase().includes('cierre') || t.description.toLowerCase().includes('legal');

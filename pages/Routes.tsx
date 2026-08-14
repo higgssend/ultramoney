@@ -76,8 +76,11 @@ export const RoutesPage: React.FC = () => {
 
   const updateClientSequence = async (clientId: string, newSequence: string) => {
     const num = parseInt(newSequence) || 0;
-    await updateClient(clientId, { routeSequence: num });
-    toast.success('Secuencia de visita actualizada');
+    const cl = clients.find(c => c.id === clientId);
+    if (cl) {
+      await updateClient({ ...cl, routeSequence: num });
+      toast.success('Secuencia de visita actualizada');
+    }
   };
 
   // Format and share route via WhatsApp

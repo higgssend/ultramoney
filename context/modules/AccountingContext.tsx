@@ -200,7 +200,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
         if (depositsRes.data) setBankDeposits((depositsRes.data as BankDepositDB[]).map(mapBankDeposit));
         if (banksRes.data && banksRes.data.length > 0) {
-          const fetchedAccounts = (banksRes.data as (BankAccountDB & Record<string, any>)[]).map((b) => ({
+          const fetchedAccounts = (banksRes.data as BankAccountDB[]).map((b) => ({
             id: b.id,
             bankName: b.bank_name || b.bankname || '',
             accountName: b.account_name || b.accountname || '',

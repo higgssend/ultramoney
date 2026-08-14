@@ -46,20 +46,16 @@ export class CreditScoreEngine {
     const clientLoans = allLoans.filter(l => l.clientId === client.id);
     const activeLoans = clientLoans.filter(l => 
       l.status === LoanStatus.ACTIVE || 
-      l.status === 'Activo' || 
-      l.status === 'Vigente' ||
       l.status === LoanStatus.OVERDUE || 
-      l.status === 'Atrasado'
+      (l.status as string) === 'Vigente'
     );
     const paidLoans = clientLoans.filter(l => 
       l.status === LoanStatus.PAID || 
-      l.status === 'Pagado' || 
-      l.status === 'Saldado'
+      (l.status as string) === 'Saldado'
     );
     const overdueLoans = clientLoans.filter(l => 
       l.status === LoanStatus.OVERDUE || 
-      l.status === 'Atrasado' || 
-      l.status === 'Vencido'
+      (l.status as string) === 'Vencido'
     );
 
     const totalBorrowed = clientLoans.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);

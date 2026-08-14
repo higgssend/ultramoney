@@ -72,18 +72,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         const { data: userData } = await insforge.auth.getCurrentUser();
-        const user: any = userData?.user;
+        type InsforgeUser = {
+          id: string;
+          email?: string;
+          user_metadata?: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+          profile?: { name?: string; roleId?: string; roleIds?: string[] };
+        };
+        const user = userData?.user as InsforgeUser | undefined;
         
         if (!unmounted) {
           if (user) {
             const meta = user.user_metadata || user.metadata || {};
-            const activeUser = {
+            const activeUser: User = {
               id: user.id,
-              email: user.email,
-              name: user.profile?.name || meta.name || user.email,
-              roleId: meta.roleId || user.profile?.roleId || 'Admin',
-              username: meta.username || user.email?.split('@')[0],
-              roleIds: meta.roleIds || []
+              email: user.email || '',
+              name: (user.profile?.name || meta.name || user.email || 'Usuario') as string,
+              roleId: (meta.roleId || user.profile?.roleId || 'Admin') as string,
+              username: (meta.username || user.email?.split('@')[0] || 'usuario') as string,
+              roleIds: (meta.roleIds || []) as string[],
+              status: 'Active'
             };
             setCurrentUser(activeUser);
             localStorage.setItem('um_user_session', JSON.stringify(activeUser));
@@ -100,13 +108,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const u = session?.user;
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && u) {
             const meta = u.user_metadata || u.metadata || {};
-            const activeUser = {
+            const activeUser: User = {
               id: u.id,
-              email: u.email,
-              name: u.profile?.name || meta.name || u.email,
-              roleId: meta.roleId || u.profile?.roleId || 'Admin',
-              username: meta.username || u.email?.split('@')[0],
-              roleIds: meta.roleIds || []
+              email: u.email || '',
+              name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
+              roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
+              username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
+              roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
+              status: 'Active'
             };
             setCurrentUser(activeUser);
             localStorage.setItem('um_user_session', JSON.stringify(activeUser));
@@ -202,13 +211,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .single();
 
     if (data && !error) {
-      const empUser = {
+      const empUser: User = {
         id: data.lender_id || data.id,
         email: `${username}@ultramoney.local`,
         name: data.name,
         roleId: data.role === 'Admin' ? 'Admin' : 'Employee',
         isEmployee: true,
-        employeeData: data
+        employeeData: data,
+        status: 'Active'
       };
       localStorage.setItem('employee_session', JSON.stringify(empUser));
       setCurrentUser(empUser);

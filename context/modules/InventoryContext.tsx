@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { InventoryItem } from '../../types';
+import type { InventoryItemDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useAuth } from './AuthContext';
 import { useToast } from '../ToastContext';
@@ -35,7 +36,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
 
       if (data && !error) {
         setInventory(
-          data.map((item: any) => ({
+          (data as InventoryItemDB[]).map((item) => ({
             id: item.id,
             name: item.name,
             category: item.category || 'Teléfono / Celular',
@@ -48,8 +49,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
             storage: item.storage,
             cashPrice: Number(item.cash_price) || 0,
             costPrice: Number(item.cost_price) || 0,
-            status: item.status || 'Disponible',
-            createdAt: item.created_at,
+            status: (item.status || 'Disponible') as InventoryItem['status'],
+            createdAt: item.created_at || new Date().toISOString(),
           }))
         );
       }

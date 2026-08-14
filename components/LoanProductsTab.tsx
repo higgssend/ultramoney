@@ -14,7 +14,7 @@ export const LoanProductsTab: React.FC = () => {
         if (editingProduct?.id) {
             await updateLoanProduct(editingProduct.id, editingProduct);
         } else {
-            await addLoanProduct(editingProduct as Omit<LoanProduct, 'id' | 'createdAt' | 'updatedAt'>);
+            await addLoanProduct(editingProduct as Omit<LoanProduct, 'id' | 'createdAt'>);
         }
         setIsEditing(false);
         setEditingProduct(null);

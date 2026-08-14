@@ -1,9 +1,11 @@
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
+export type MigrationPrimitive = string | number | boolean | null;
+
 export interface ParseResult {
   headers: string[];
-  data: Record<string, string | number | boolean | null>[];
+  data: Record<string, MigrationPrimitive>[];
 }
 
 // Dictionary for smart mapping
@@ -35,7 +37,7 @@ export const parseFile = async (file: File): Promise<ParseResult> => {
         complete: (results) => {
           resolve({
             headers: results.meta.fields || [],
-            data: results.data
+            data: results.data as Record<string, MigrationPrimitive>[]
           });
         },
         error: (err) => reject(err)
@@ -52,7 +54,7 @@ export const parseFile = async (file: File): Promise<ParseResult> => {
           if (json.length > 0) {
             resolve({
               headers: Object.keys(json[0] as object),
-              data: json
+              data: json as Record<string, MigrationPrimitive>[]
             });
           } else {
             resolve({ headers: [], data: [] });

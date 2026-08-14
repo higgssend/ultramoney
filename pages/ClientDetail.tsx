@@ -176,7 +176,7 @@ const ClientDetail: React.FC = () => {
 
   const handleSendStatement = () => {
     if(!client) return;
-    const totalDebt = clientLoans.filter(l => l.status !== 'Completado').reduce((sum, l) => sum + l.remainingBalance, 0);
+    const totalDebt = clientLoans.filter(l => l.status !== LoanStatus.PAID).reduce((sum, l) => sum + l.remainingBalance, 0);
     const message = `🏢 *${companySettings?.name || 'UltraMoney'}*\n👤 *Estado de Cuenta*\nHola ${client.name},\n\nSu balance total pendiente es de *RD$ ${totalDebt.toLocaleString()}*.\n\nPuede revisar el detalle de sus préstamos y descargar sus recibos accediendo a su portal de cliente:\n${window.location.origin}/portal`;
     const url = `https://wa.me/${client.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -480,7 +480,7 @@ const ClientDetail: React.FC = () => {
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          {clientLoans.map(loan => (
                              <div key={loan.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                                 {loan.status === 'Completado' && <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500 text-white font-bold text-[10px] transform rotate-45 flex items-end justify-center pb-2 translate-x-8 -translate-y-8 shadow-sm">PAGADO</div>}
+                                 {loan.status === LoanStatus.PAID && <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500 text-white font-bold text-[10px] transform rotate-45 flex items-end justify-center pb-2 translate-x-8 -translate-y-8 shadow-sm">PAGADO</div>}
                                  <div 
                                       onClick={() => navigate(`/prestamos/${loan.id}`)}
                                       className="flex justify-between items-start mb-4 cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-700/50 p-2 -mx-2 -mt-2 rounded-xl transition-all"
@@ -510,7 +510,7 @@ const ClientDetail: React.FC = () => {
                                       </div>
                                       <div className="flex justify-between">
                                           <span className="text-sm text-slate-500">Cuota</span>
-                                          <span className="text-sm font-bold text-slate-700 dark:text-white">RD${loan.installmentAmount.toLocaleString()} / {loan.frequency}</span>
+                                          <span className="text-sm font-bold text-slate-700 dark:text-white">RD${loan.installmentAmount?.toLocaleString()} / {loan.frequency}</span>
                                       </div>
                                   </div>
                                   <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
@@ -540,7 +540,7 @@ const ClientDetail: React.FC = () => {
                                              <Receipt className="w-4 h-4" /> Pagos
                                          </button>
                                      </div>
-                                     {loan.status !== 'Completado' && (
+                                     {loan.status !== LoanStatus.PAID && (
                                          <button 
                                              onClick={() => handleSendReminder(loan)}
                                              className="w-full py-2 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-1"
@@ -604,7 +604,7 @@ const ClientDetail: React.FC = () => {
                                         <td className="p-4 text-sm text-slate-700 dark:text-slate-300 font-medium">{new Date(trx.date).toLocaleString()}</td>
                                         <td className="p-4 text-sm font-mono text-slate-500 dark:text-slate-400">{trx.id.substring(0,8)}</td>
                                         <td className="p-4 text-sm font-bold text-emerald-600 dark:text-emerald-400">${trx.amount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                                        <td className="p-4 text-sm text-slate-600 dark:text-slate-400">{trx.note}</td>
+                                        <td className="p-4 text-sm text-slate-600 dark:text-slate-400">{trx.description || trx.note || 'Pago'}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -931,7 +931,7 @@ const ClientDetail: React.FC = () => {
                  ) : (
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                          {clientCollaterals.map(({ loanId, loanCategory, loanType, loanStatus, itemPrice, downPayment, downPaymentMode, collateral }, idx) => {
-                             const isFinancing = loanCategory === 'Financiamiento' || (loanType && loanType.includes('Financiamiento'));
+                             const isFinancing = (loanCategory as string) === 'Financiamiento' || (loanType && loanType.includes('Financiamiento'));
                              return (
                              <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all">
                                  <div className="flex justify-between items-start mb-4">

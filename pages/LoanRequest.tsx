@@ -4,7 +4,7 @@ import { useClients, useLoans, useSettings, useAccounting } from '../context/Sto
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
-import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct, Guarantor } from '../types';
+import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct, Guarantor, LoanStatus } from '../types';
 import { CollateralForm } from './features/CollateralForm';
 import { GuarantorForm } from '../components/GuarantorForm';
 import { CustomSelect } from '../components/CustomSelect';
@@ -532,7 +532,7 @@ export const LoanRequest: React.FC = () => {
 
                         {selectedClientId && (
                             (() => {
-                                const activeLoansForClient = loans.filter(l => l.clientId === selectedClientId && (l.status === 'Vigente' || l.status === 'Activo' || l.status === 'Atrasado') && l.remainingBalance > 0);
+                                const activeLoansForClient = loans.filter(l => l.clientId === selectedClientId && (l.status === LoanStatus.ACTIVE || l.status === LoanStatus.OVERDUE || (l.status as string) === 'Vigente') && l.remainingBalance > 0);
                                 if (activeLoansForClient.length === 0) return null;
                                 return (
                                     <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
@@ -968,7 +968,7 @@ export const LoanRequest: React.FC = () => {
                     <CollateralForm 
                         collateral={collateral} 
                         onChange={setCollateral} 
-                        isFinancing={loanType.includes('Financiamiento') || loanCategory === 'Financiamiento'}
+                        isFinancing={loanType.includes('Financiamiento') || (loanCategory as string) === 'Financiamiento'}
                     />
 
                     {/* Solidary Guarantors & Co-debtors Form (Max 2) */}
@@ -1396,9 +1396,10 @@ export const LoanRequest: React.FC = () => {
                       cedula: newClientForm.guarantorCedula
                     }] : [],
                     creditScore: 100,
-                    status: 'Activo'
+                    status: 'Activo',
+                    joinedDate: new Date().toISOString().split('T')[0]
                   });
-                  if (created?.id) {
+                  if (created && 'id' in created) {
                     setSelectedClientId(created.id);
                     toast.success(`Cliente ${created.name} ${created.lastName || ''} creado y seleccionado exitosamente.`);
                   }
@@ -1753,10 +1754,11 @@ export const LoanRequest: React.FC = () => {
                     cedula: newClientForm.guarantorCedula
                   }] : [],
                   creditScore: 100,
-                  status: 'Activo'
+                  status: 'Activo',
+                  joinedDate: new Date().toISOString().split('T')[0]
                 });
                 
-                if (created?.id) {
+                if (created && 'id' in created) {
                   setSelectedClientId(created.id);
                   toast.success(`Cliente ${created.name} ${created.lastName || ''} creado y seleccionado exitosamente.`);
                 }

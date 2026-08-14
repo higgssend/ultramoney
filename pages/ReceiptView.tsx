@@ -18,6 +18,7 @@ export const ReceiptView: React.FC = () => {
     const [client, setClient] = useState<Client | null>(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+    const [isThermalOpen, setIsThermalOpen] = useState(false);
 
     const handlePrint = () => {
         window.print();
@@ -88,11 +89,18 @@ export const ReceiptView: React.FC = () => {
                         const match = data.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId || formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, ''));
                         if (match) {
                             txData = {
-                                ...match,
-                                referenceId: match.referenceid || match.reference_id || match.referenceId,
-                                paymentType: match.paymenttype || match.payment_type || match.paymentType,
-                                paymentMethod: match.paymentmethod || match.payment_method || match.paymentMethod || 'Efectivo',
-                                invoiceDate: match.invoicedate || match.invoice_date || match.invoiceDate
+                                id: match.id,
+                                type: match.type as Transaction['type'],
+                                category: match.category as Transaction['category'],
+                                amount: Number(match.amount) || 0,
+                                date: match.date || match.created_at,
+                                description: match.description,
+                                referenceId: match.reference_id,
+                                paymentType: (match.payment_type || 'Interes') as Transaction['paymentType'],
+                                paymentMethod: (match.payment_method || 'Efectivo') as Transaction['paymentMethod'],
+                                invoiceDate: match.invoice_date,
+                                bankAccountId: match.bank_account_id,
+                                proofUrl: match.proof_url
                             };
                         }
                     }
@@ -111,8 +119,22 @@ export const ReceiptView: React.FC = () => {
                             .maybeSingle();
 
                         if (loanRes) {
-                            setLoan(loanRes);
-                            const clientId = loanRes.clientid || loanRes.client_id || loanRes.clientId;
+                            setLoan({
+                                id: loanRes.id,
+                                clientId: loanRes.client_id || '',
+                                clientName: loanRes.clientname || '',
+                                amount: Number(loanRes.amount) || 0,
+                                interestRate: Number(loanRes.interest_rate) || 0,
+                                durationWeeks: Number(loanRes.duration_weeks) || 12,
+                                frequency: (loanRes.frequency as Loan['frequency']) || 'Mensual',
+                                startDate: loanRes.start_date || '',
+                                status: (loanRes.status as Loan['status']) || 'Activo',
+                                loanType: (loanRes.loan_type as Loan['loanType']) || 'Amortizado',
+                                totalToPay: Number(loanRes.total_to_pay) || 0,
+                                remainingBalance: Number(loanRes.remaining_balance) || 0,
+                                nextPaymentDate: loanRes.next_payment_date || ''
+                            });
+                            const clientId = loanRes.client_id;
 
                             // 3. Fetch associated Client from DB
                             if (clientId) {
@@ -122,7 +144,19 @@ export const ReceiptView: React.FC = () => {
                                     .eq('id', clientId)
                                     .maybeSingle();
                                 if (clientRes) {
-                                    setClient(clientRes);
+                                    setClient({
+                                        id: clientRes.id,
+                                        name: clientRes.name,
+                                        sex: (clientRes.sex as Client['sex']) || 'Masculino',
+                                        occupation: clientRes.occupation || '',
+                                        phone: clientRes.phone || '',
+                                        cedula: clientRes.cedula || '',
+                                        address: clientRes.address || '',
+                                        income: Number(clientRes.income) || 0,
+                                        creditScore: Number(clientRes.credit_score) || 80,
+                                        status: (clientRes.status as Client['status']) || 'Activo',
+                                        joinedDate: clientRes.created_at || new Date().toISOString()
+                                    });
                                 }
                             }
                         }
@@ -237,8 +271,6 @@ export const ReceiptView: React.FC = () => {
         const text = `🏢 *${companySettings.name}*\n📄 *Recibo de Pago*: ${formattedReceiptNo}\n👤 *Cliente*: ${clientName}\n💰 *Monto*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
-
-    const [isThermalOpen, setIsThermalOpen] = useState(false);
 
     const thermalData: ThermalReceiptData | null = transaction ? {
         receiptNo: formattedReceiptNo,

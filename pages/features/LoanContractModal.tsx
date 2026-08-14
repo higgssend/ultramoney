@@ -102,13 +102,13 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
   const effectiveInstallmentAmount = installmentAmount ?? loan?.installmentAmount ?? (effectiveWeeks > 0 ? Math.round(effectiveTotalToPay / effectiveWeeks) : 0);
   const effectiveCurrency = currency ?? loan?.currency ?? activeCompanySettings.currency ?? 'DOP';
   const effectiveContractId = customContractId || (loan ? formatContractId(loan.id) : undefined);
-  const effectiveCollateral = collateral || (loan?.collaterals?.[0] || (loan?.collateralType ? { type: loan.collateralType as Collateral['type'], description: loan.collateralDescription || '', refNumber: loan.collateralRefNumber || '' } : undefined));
+  const effectiveCollateral = collateral || ((loan?.collaterals?.[0] as Collateral | undefined) || (loan?.collateralType ? { type: loan.collateralType as Collateral['type'], description: loan.collateralDescription || '', refNumber: loan.collateralRefNumber || '' } : undefined));
   const effectiveGuarantors: Guarantor[] = (guarantors && guarantors.length > 0)
     ? guarantors
     : (loan?.guarantors && loan.guarantors.length > 0)
       ? loan.guarantors
-      : (loan?.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as Record<string, unknown>).guarantors))
-        ? ((loan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+      : (loan?.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as unknown as Record<string, unknown>).guarantors))
+        ? ((loan.collateral as unknown as Record<string, unknown>).guarantors as Guarantor[])
         : [];
 
   const printRef = useRef<HTMLDivElement>(null);

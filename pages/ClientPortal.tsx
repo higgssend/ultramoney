@@ -111,12 +111,19 @@ export const ClientPortal: React.FC = () => {
                     ...foundClient,
                     id: foundClient.id,
                     name: foundClient.name || 'Cliente',
-                    lastName: foundClient.lastname || foundClient.lastName || '',
+                    lastName: foundClient.lastname || '',
+                    sex: (foundClient.sex || 'Otro') as Client['sex'],
+                    occupation: foundClient.occupation || '',
+                    income: Number(foundClient.income || 0),
+                    creditScore: Number(foundClient.credit_score || 700),
+                    status: (foundClient.status || 'Activo') as Client['status'],
+                    joinedDate: foundClient.joineddate || foundClient.created_at || new Date().toISOString(),
                     cedula: foundClient.cedula || '',
+                    address: foundClient.address || '',
                     phone: foundClient.phone || '',
-                    clientPin: foundClient.clientpin || foundClient.clientPin,
-                    portalAlias: foundClient.portal_alias || foundClient.portalAlias,
-                    portalActive: foundClient.portal_active ?? foundClient.portalActive ?? true
+                    clientPin: foundClient.clientpin,
+                    portalAlias: foundClient.portal_alias,
+                    portalActive: foundClient.portal_active ?? true
                 };
                 
                 setClient(mappedClient);
@@ -178,17 +185,21 @@ export const ClientPortal: React.FC = () => {
                 const mappedLoans: Loan[] = (lData as LoanDB[]).map((l) => ({
                     ...l,
                     id: l.id,
+                    clientId: l.client_id || l.clientid || id,
+                    clientName: l.client_name || l.clientname || 'Cliente',
                     amount: Number(l.amount || 0),
                     remainingBalance: Number(l.remainingbalance ?? l.remaining_balance ?? l.amount ?? 0),
                     totalToPay: Number(l.totaltopay ?? l.total_to_pay ?? l.amount ?? 0),
-                    loanType: (l.loantype || l.loan_type || 'Préstamo Personal') as Loan['loanType'],
-                    loanCategory: l.loancategory || l.loan_category || 'Personal',
+                    loanType: (l.loantype || l.loan_type || 'Amortizado (Cuota Fija)') as Loan['loanType'],
+                    loanCategory: (l.loancategory || l.loan_category || 'Personal') as Loan['loanCategory'],
                     frequency: (l.frequency || 'Mensual') as Loan['frequency'],
                     interestRate: Number(l.interestrate ?? l.interest_rate ?? 0),
                     durationWeeks: Number(l.durationweeks ?? l.duration_weeks ?? l.installments ?? 1),
                     status: (l.status || 'Activo') as LoanStatus,
                     startDate: l.startdate || l.start_date || l.created_at || new Date().toISOString().split('T')[0],
                     nextPaymentDate: l.nextpaymentdate || l.next_payment_date,
+                    collateral: l.collateral as unknown as Loan['collateral'],
+                    guarantors: l.guarantors as unknown as Loan['guarantors'],
                 }));
 
                 setClientLoans(mappedLoans);
@@ -213,6 +224,8 @@ export const ClientPortal: React.FC = () => {
                         const mappedTx: Transaction[] = (tData as TransactionDB[]).map((t) => ({
                             ...t,
                             id: t.id,
+                            type: (t.type === 'Gasto' ? 'Gasto' : 'Ingreso') as 'Ingreso' | 'Gasto',
+                            category: (t.category || 'Pago Préstamo') as Transaction['category'],
                             amount: Number(t.amount || 0),
                             date: t.date || t.created_at || new Date().toISOString(),
                             description: t.description || 'Pago de Préstamo',

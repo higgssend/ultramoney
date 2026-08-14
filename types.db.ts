@@ -225,14 +225,21 @@ export interface CashShiftDB {
 export interface BankAccountDB {
   id: string;
   bank_name?: string;
+  bankname?: string;
   account_name?: string;
+  accountname?: string;
   account_number?: string;
+  accountnumber?: string;
   account_type?: string;
+  accounttype?: string;
   currency?: string;
   status?: string;
   initial_balance?: number;
+  initialbalance?: number;
+  balance?: number;
   client_id?: string;
   holder_name?: string;
+  holdername?: string;
   cedula_or_rnc?: string;
   show_in_payment_link?: boolean;
   bank_logo_url?: string;
@@ -316,4 +323,22 @@ export interface BankDepositDB {
   reconciled_at?: string | null;
   reconciled_by?: string | null;
   created_at?: string | null;
+}
+
+export interface InventoryItemDB {
+  id: string;
+  name: string;
+  category?: string;
+  brand?: string;
+  model?: string;
+  serial_number?: string;
+  imei2?: string;
+  condition?: string;
+  color?: string;
+  storage?: string;
+  cash_price?: number;
+  cost_price?: number;
+  status?: string;
+  lender_id?: string;
+  created_at?: string;
 }
