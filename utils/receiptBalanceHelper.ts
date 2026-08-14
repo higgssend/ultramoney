@@ -1,4 +1,6 @@
 import { Transaction, Loan } from '../types';
+import { LoanEngine } from './LoanEngine';
+import { formatPaymentDateDisplay } from './dateUtils';
 
 export interface CalculatedReceiptBalances {
   totalDebt: number;
@@ -16,6 +18,8 @@ export interface CalculatedReceiptBalances {
   remainingInstallments: number;
   installmentText: string;
   remainingInstallmentsText: string;
+  nextPaymentDate?: string;
+  nextPaymentDateText: string;
 }
 
 export const isOpenLoanType = (loanType?: string): boolean => {
@@ -35,8 +39,120 @@ export const isOpenLoanType = (loanType?: string): boolean => {
 };
 
 /**
+ * Calcula la próxima fecha de pago de un préstamo basándose en su fecha de inicio,
+ * frecuencia, cuotas totales y el historial de pagos efectuados.
+ * Si se pasa upToTransactionId, calcula la próxima fecha de pago al momento exacto de esa transacción.
+ */
+export function calculateLoanNextPaymentDate(
+  loan: Loan | null | undefined,
+  transactions?: Transaction[],
+  upToTransactionId?: string
+): { nextPaymentDate?: string; nextPaymentDateText: string; fullyPaid: boolean; installmentsPaidCount: number } {
+  if (!loan) {
+    return { nextPaymentDate: undefined, nextPaymentDateText: 'No especificado', fullyPaid: false, installmentsPaidCount: 0 };
+  }
+
+  const loanRaw = loan as unknown as Record<string, unknown>;
+  const startDate = loan.startDate || (loanRaw ? String(loanRaw.startdate || loanRaw.start_date || '') : '') || new Date().toISOString().split('T')[0];
+  const frequency = loan.frequency || loan.paymentFrequency || (loanRaw ? String(loanRaw.frequency || loanRaw.payment_frequency || '') : '') || 'Semanal';
+  const rawLoanType = loan.loanType || (loanRaw ? String(loanRaw.loantype || loanRaw.loan_type || '') : '') || '';
+  const isOpen = isOpenLoanType(rawLoanType);
+  const principal = Number(loan.amount ?? (loanRaw ? Number(loanRaw.amount) : 0)) || 0;
+  const totalToPay = Number(loan.totalToPay ?? (loanRaw ? Number(loanRaw.totaltopay ?? loanRaw.total_to_pay) : undefined) ?? principal) || principal;
+  const totalInstallments = Number(loan.durationWeeks ?? (loanRaw ? Number(loanRaw.duration_weeks) : undefined) ?? loan.installments ?? 1) || 1;
+  const interestRate = Number(loan.interestRate ?? (loanRaw ? Number(loanRaw.interestrate ?? loanRaw.interest_rate) : 0)) || 0;
+
+  // Filtrar transacciones relevantes hasta upToTransactionId
+  let relevantTxs: Transaction[] = [];
+  if (transactions && transactions.length > 0) {
+    const sorted = [...transactions]
+      .filter(t => t && t.type === 'Ingreso')
+      .sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime() || String(a.id).localeCompare(String(b.id)));
+
+    if (upToTransactionId) {
+      const idx = sorted.findIndex(t => t.id === upToTransactionId);
+      relevantTxs = idx >= 0 ? sorted.slice(0, idx + 1) : sorted;
+    } else {
+      relevantTxs = sorted;
+    }
+  }
+
+  if (isOpen) {
+    // Para Rédito / Pagaré Abierto / Solo Interés
+    const periodicInterest = Math.round((principal * (interestRate / 100)) * 100) / 100;
+    
+    let totalInterestPaid = 0;
+    let totalCapitalPaid = 0;
+
+    for (const tx of relevantTxs) {
+      const amt = Number(tx.amount || 0);
+      const cap = Number(tx.capitalAmount || 0);
+      const int = Number(tx.interestAmount || 0);
+      if (tx.paymentType === 'Capital' || cap > 0) {
+        totalCapitalPaid += (cap > 0 ? cap : amt);
+      } else if (tx.paymentType === 'Interes' || int > 0) {
+        totalInterestPaid += (int > 0 ? int : amt);
+      } else {
+        // Asignación por defecto en rédito
+        totalInterestPaid += amt;
+      }
+    }
+
+    const remainingCapital = Math.max(0, principal - totalCapitalPaid);
+    if (remainingCapital <= 0.05) {
+      return { nextPaymentDate: undefined, nextPaymentDateText: 'Al Día / Capital Saldado', fullyPaid: true, installmentsPaidCount: 0 };
+    }
+
+    if (periodicInterest <= 0) {
+      const nextDate = LoanEngine.getNextDate(startDate, frequency, 1, startDate);
+      return { nextPaymentDate: nextDate, nextPaymentDateText: formatPaymentDateDisplay(nextDate), fullyPaid: false, installmentsPaidCount: 0 };
+    }
+
+    const periodsCovered = Math.floor((totalInterestPaid + 0.05) / periodicInterest);
+    const nextPeriodIndex = periodsCovered + 1;
+    const nextDate = LoanEngine.getNextDate(startDate, frequency, nextPeriodIndex, startDate);
+
+    return {
+      nextPaymentDate: nextDate,
+      nextPaymentDateText: formatPaymentDateDisplay(nextDate),
+      fullyPaid: false,
+      installmentsPaidCount: periodsCovered
+    };
+  } else {
+    // Para Préstamos Amortizados / Cuotas
+    const totalPaid = relevantTxs.reduce((sum, tx) => {
+      const amt = Number(tx.amount || 0);
+      const mora = Number(tx.lateFeeAmount || 0);
+      return sum + Math.max(0, amt - mora);
+    }, 0);
+
+    const remainingBal = Math.max(0, totalToPay - totalPaid);
+    if (remainingBal <= 0.05) {
+      return { nextPaymentDate: undefined, nextPaymentDateText: 'Al Día / Préstamo Saldado', fullyPaid: true, installmentsPaidCount: totalInstallments };
+    }
+
+    const installmentBase = totalInstallments > 0 ? (totalToPay / totalInstallments) : totalToPay;
+    const fullCuotasPaid = Math.min(totalInstallments, Math.floor((totalPaid + 0.05) / installmentBase));
+    const nextUnpaidCuotaIndex = fullCuotasPaid + 1;
+
+    if (nextUnpaidCuotaIndex > totalInstallments) {
+      return { nextPaymentDate: undefined, nextPaymentDateText: 'Al Día / Préstamo Saldado', fullyPaid: true, installmentsPaidCount: totalInstallments };
+    }
+
+    const nextDate = LoanEngine.getNextDate(startDate, frequency, nextUnpaidCuotaIndex, startDate);
+
+    return {
+      nextPaymentDate: nextDate,
+      nextPaymentDateText: formatPaymentDateDisplay(nextDate),
+      fullyPaid: false,
+      installmentsPaidCount: fullCuotasPaid
+    };
+  }
+}
+
+/**
  * Calcula con precisión contable el balance anterior, nuevo balance,
- * desglose de capital/interés, número de cuota y cuotas restantes
+ * desglose de capital/interés, número de cuota, cuotas restantes y próxima fecha de pago
  * para cualquier recibo, soportando préstamos a cuotas y pagarés abiertos.
  */
 export function calculateReceiptBalances(
@@ -222,6 +338,9 @@ export function calculateReceiptBalances(
     }
   }
 
+  // 4. Cálculo de Próxima Fecha de Pago Exacta para este Recibo
+  const nextPaymentDateCalc = calculateLoanNextPaymentDate(loan, allLoanTransactions, transaction.id);
+
   // Textos formateados
   let installmentText = '';
   let remainingInstallmentsText = '';
@@ -260,6 +379,9 @@ export function calculateReceiptBalances(
     installmentNumber,
     remainingInstallments,
     installmentText,
-    remainingInstallmentsText
+    remainingInstallmentsText,
+    nextPaymentDate: nextPaymentDateCalc.nextPaymentDate,
+    nextPaymentDateText: nextPaymentDateCalc.nextPaymentDateText
   };
 }
+

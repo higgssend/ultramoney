@@ -18,7 +18,8 @@ import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalRe
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { formatExactDateTime, combineDateAndTimeToISO, formatExactTime, formatExactDate, formatPaymentDateDisplay } from '../utils/dateUtils';
-import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
+import { calculateReceiptBalances, calculateLoanNextPaymentDate } from '../utils/receiptBalanceHelper';
+import { LoanEngine } from '../utils/LoanEngine';
 
 // Helper to calculate date strings
 const addDays = (dateStr: string, days: number): string => {
@@ -174,7 +175,7 @@ export const Payments: React.FC = () => {
     const frequencyDays = getFrequencyDays(loan.frequency);
 
     for (let i = 0; i < count; i++) {
-      const date = addDays(loan.startDate, (i + 1) * frequencyDays);
+      const date = LoanEngine.getNextDate(loan.startDate, loan.frequency, i + 1, loan.startDate);
       let status: Installment['status'] = 'Pendiente';
       let paidOnThis = 0;
 
@@ -517,6 +518,11 @@ export const Payments: React.FC = () => {
     const resolvedClientName = selectedLoanClient 
       ? `${selectedLoanClient.name} ${selectedLoanClient.lastName || ''}`.trim() 
       : selectedLoan.clientName;
+    const nextCalc = calculateLoanNextPaymentDate(selectedLoan, [
+      ...transactions.filter(t => t.referenceId === selectedLoan.id || t.reference_id === selectedLoan.id),
+      ...(Array.isArray(insertedTxs) ? insertedTxs : (insertedTxs ? [insertedTxs] : []))
+    ]);
+
     const fullReceipt: FullReceiptData = {
       loanId: formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType),
       amountPaid: effectiveTotal,
@@ -536,7 +542,7 @@ export const Payments: React.FC = () => {
       discountAmount: discVal,
       date: formatExactDate(paymentDate),
       time: exactPayTime,
-      nextPaymentDate: selectedLoan.nextPaymentDate,
+      nextPaymentDate: (newBalance <= 0 || nextCalc.fullyPaid) ? undefined : (nextCalc.nextPaymentDate || selectedLoan.nextPaymentDate),
       collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''}` : 'Sin Garantía',
       overdueAmount: 0, 
       overdueInstallments: 0,
@@ -603,7 +609,7 @@ export const Payments: React.FC = () => {
       paymentMethod: t.paymentMethod || 'Efectivo',
       paymentType: t.paymentType,
       cashierName: currentUser?.name || 'Caja',
-      nextPaymentDate: loan?.nextPaymentDate,
+      nextPaymentDate: calculated.nextPaymentDate || loan?.nextPaymentDate,
       notes: t.description,
       transactionId: t.id,
       clientId: client?.id || loan?.clientId
@@ -623,7 +629,7 @@ export const Payments: React.FC = () => {
     const formattedRecNo = formatReceiptId(t.id);
     const calculated = calculateReceiptBalances(t, loan, transactions);
     const url = `${window.location.origin}/recibo/${t.id}`;
-    const nextPayTxt = loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '';
+    const nextPayTxt = calculated.nextPaymentDateText ? `\n*Próximo Pago*: ${calculated.nextPaymentDateText}` : (loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '');
     
     const text = `*${companySettings.name}*\n*Recibo de Cobro*: ${formattedRecNo}\n*Fecha y Hora*: ${formatExactDateTime(t.date)}\n*Cliente*: ${clientName}\n*Monto Recibido*: RD$ ${Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${Number(calculated.newBalance).toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
     

@@ -417,7 +417,9 @@ export const ReceiptView: React.FC = () => {
 
     const handleShareWhatsApp = () => {
         const url = window.location.href;
-        const nextPayTxt = loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '';
+        const nextPayTxt = calculated?.nextPaymentDateText
+            ? `\n*Próximo Pago*: ${calculated.nextPaymentDateText}`
+            : (loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '');
         const text = `*${companySettings.name}*\n*Recibo de Pago*: ${formattedReceiptNo}\n*Fecha*: ${formattedDate}\n*Hora*: ${formattedTime}\n*Cliente*: ${clientFullName}\n*Monto Pagado*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
@@ -448,7 +450,7 @@ export const ReceiptView: React.FC = () => {
         paymentMethod: transaction.paymentMethod || 'Efectivo',
         paymentType: transaction.paymentType,
         cashierName: 'Administración',
-        nextPaymentDate: loan?.nextPaymentDate,
+        nextPaymentDate: calculated?.nextPaymentDate || loan?.nextPaymentDate,
         notes: transaction.description,
         transactionId: transaction.id,
         clientId: client?.id || loan?.clientId
@@ -730,7 +732,7 @@ export const ReceiptView: React.FC = () => {
                                 <Calendar className="w-4 h-4 text-emerald-600" /> Próxima Fecha de Pago:
                             </span>
                             <span className="font-black text-sm font-mono text-emerald-700">
-                                {loan?.nextPaymentDate ? formatPaymentDateDisplay(loan.nextPaymentDate) : 'Al Día / Sin Deuda Pendiente'}
+                                {calculated?.nextPaymentDateText || (loan?.nextPaymentDate ? formatPaymentDateDisplay(loan.nextPaymentDate) : 'Al Día / Sin Deuda Pendiente')}
                             </span>
                         </div>
 

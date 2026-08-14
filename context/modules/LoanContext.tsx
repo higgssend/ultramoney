@@ -8,6 +8,7 @@ import { useClients } from './ClientContext';
 import { useSettings } from './SettingsContext';
 import { logger } from '../../utils/logger';
 import { combineDateAndTimeToISO } from '../../utils/dateUtils';
+import { calculateLoanNextPaymentDate } from '../../utils/receiptBalanceHelper';
 
 interface LoanContextType {
   loans: Loan[];
@@ -36,6 +37,7 @@ interface LoanContextType {
     capitalAmount?: number, paymentMethod?: PaymentMethod, cashierId?: string,
     bankAccountId?: string, proofUrl?: string
   ) => Promise<Transaction[] | null>;
+  syncAllLoansNextPaymentDates: () => Promise<void>;
   addLoanRequest: (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => void;
   deleteLoanRequest: (requestId: string) => void;
   addLoanProduct: (product: Omit<LoanProduct, 'id' | 'createdAt'>) => Promise<void>;
@@ -257,6 +259,55 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             productInvoicePhoto: r.product_invoice_photo,
           })));
         }
+
+        // Auto self-heal next payment dates for any loans with advance payments
+        void (async () => {
+          try {
+            const { data: allTxsData } = await insforge.database
+              .from('transactions')
+              .select('*')
+              .eq('lender_id', currentUser.id)
+              .eq('type', 'Ingreso');
+
+            if (allTxsData && allTxsData.length > 0 && loansRes.data) {
+              const allMapped = (allTxsData as TransactionDB[]).map(mapTransaction);
+              for (const l of loansRes.data as LoanDB[]) {
+                const txs = allMapped.filter(t => t.referenceId === l.id || t.reference_id === l.id);
+                if (txs.length > 0) {
+                  const loanObj: Partial<Loan> = {
+                    id: l.id,
+                    amount: Number(l.amount) || 0,
+                    interestRate: Number(l.interestrate ?? l.interest_rate) || 0,
+                    installments: l.installments,
+                    frequency: ((l.frequency || l.payment_frequency || 'Mensual') as Loan['frequency']),
+                    paymentFrequency: ((l.frequency || l.payment_frequency || 'Mensual') as Loan['frequency']),
+                    startDate: l.startdate || l.start_date || '',
+                    nextPaymentDate: l.next_payment_date || l.nextpaymentdate || '',
+                    status: l.status as LoanStatus,
+                    loanType: (l.loantype || l.loan_type || 'Amortización') as LoanType,
+                    remainingBalance: Number(l.remainingbalance ?? l.remaining_balance) || 0,
+                    totalToPay: Number(l.totaltopay ?? l.total_to_pay) || 0,
+                    durationWeeks: l.duration_weeks || l.durationweeks,
+                  };
+                  const { nextPaymentDate: calculatedNext, fullyPaid } = calculateLoanNextPaymentDate(loanObj as Loan, txs);
+                  const targetNext = (Number(l.remainingbalance ?? l.remaining_balance) <= 0 || fullyPaid) ? null : (calculatedNext || null);
+                  const currentDbNext = l.next_payment_date || l.nextpaymentdate || null;
+                  if (targetNext && targetNext !== currentDbNext) {
+                    await insforge.database
+                      .from('loans')
+                      .update({ next_payment_date: targetNext })
+                      .eq('id', l.id)
+                      .eq('lender_id', currentUser.id);
+
+                    setLoans(prev => prev.map(item => item.id === l.id ? { ...item, nextPaymentDate: targetNext } : item));
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            logger.error('Error auto-syncing next payment dates:', err);
+          }
+        })();
       } catch (error) {
         logger.error("Error fetching loans:", error);
       }
@@ -520,26 +571,44 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .single();
 
       if (txData && !txError) {
+        const isRedito = (type?: string) => type ? (type.includes('Rédito') || type.includes('Redito') || type.includes('Solo Interé') || type.includes('Pagaré Abierto')) : false;
+
         let newBalance = loan.remainingBalance;
-        // Deduct from balance if payment is Capital or Mixto (or if loan balance needs deduction)
-        if (pType === 'Capital' || pType === 'Mixto') {
+        if (isRedito(loan.loanType)) {
+          if (pType === 'Capital' || pType === 'Mixto') {
+            newBalance = Math.max(0, loan.remainingBalance - paymentData.amount);
+          }
+        } else {
           newBalance = Math.max(0, loan.remainingBalance - paymentData.amount);
         }
 
         const newStatus = newBalance === 0 ? LoanStatus.PAID : loan.status;
+
+        // Fetch all transactions including this historical one to calculate exact nextPaymentDate
+        const { data: histTxsRes } = await insforge.database
+          .from('transactions')
+          .select('*')
+          .eq('lender_id', currentUser.id)
+          .eq('type', 'Ingreso')
+          .or(`referenceid.eq.${loan.id},reference_id.eq.${loan.id}`);
+
+        const allHistLoanTxs = (histTxsRes || []).map(mapTransaction);
+        const { nextPaymentDate: calculatedNextDate, fullyPaid } = calculateLoanNextPaymentDate(loan, allHistLoanTxs);
+        const finalHistNextDate = (newBalance <= 0 || fullyPaid) ? null : (calculatedNextDate || null);
 
         await insforge.database
           .from('loans')
           .update({
             remainingbalance: newBalance,
             status: newStatus,
+            next_payment_date: finalHistNextDate
           })
           .eq('id', loan.id)
           .eq('lender_id', currentUser.id);
 
         setLoans(prev =>
           prev.map(l =>
-            l.id === loan.id ? { ...l, remainingBalance: newBalance, status: newStatus } : l
+            l.id === loan.id ? { ...l, remainingBalance: newBalance, status: newStatus, nextPaymentDate: finalHistNextDate || undefined } : l
           )
         );
 
@@ -576,22 +645,24 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const { data, error } = await insforge.database.from('loans').insert([{
       lender_id: currentUser.id,
-      clientid: newLoanData.clientId,
-      clientname: clientName,
+      client_id: newLoanData.clientId,
+      client_name: clientName,
       amount: newLoanData.amount,
-      interestrate: newLoanData.interestRate,
-      installments: installments,
-      durationweeks: installments,
-      installmentamount: instAmtRef,
+      interest_rate: newLoanData.interestRate,
+      installments,
+      duration_weeks: installments,
+      current_installment: 0,
       frequency: paymentFrequency,
-      startdate: newLoanData.startDate,
-      next_payment_date: newLoanData.nextPaymentDate || null,
+      payment_frequency: paymentFrequency,
+      start_date: newLoanData.startDate,
+      next_payment_date: newLoanData.nextPaymentDate,
       status: LoanStatus.ACTIVE,
-      remainingbalance: ttp,
-      totaltopay: ttp,
-      loantype: newLoanData.loanType,
-      collateralref: newLoanData.guarantorId || null,
-      collateraldescription: `Refinanciamiento del préstamo ${oldLoanId}`
+      remaining_balance: ttp,
+      total_to_pay: ttp,
+      installment_amount: instAmtRef,
+      loan_type: newLoanData.loanType,
+      collateral_ref: newLoanData.guarantorId,
+      collateral_description: newLoanData.note
     }]).select().single();
 
     if (data && !error) {
@@ -673,13 +744,11 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const isRedito = (type?: string) => type ? (type.includes('Rédito') || type.includes('Redito') || type.includes('Solo Interé') || type.includes('Pagaré Abierto')) : false;
 
-    let newNextDate = loan.nextPaymentDate;
-
     if (isRedito(loan.loanType)) {
       const currentInterestDue = Math.round((loan.remainingBalance * (loan.interestRate / 100)) * 100) / 100;
 
       if (paymentType === 'Capital') {
-        newBalance -= amount;
+        newBalance = Math.max(0, newBalance - amount);
         transactionsToInsert.push({ 
           ...baseTx, 
           amount, 
@@ -693,7 +762,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (paymentType === 'Mixto') {
         const capitalPart = (capitalAmount && capitalAmount > 0) ? capitalAmount : 0;
         const interestPart = Math.max(0, amount - capitalPart);
-        newBalance -= capitalPart;
+        newBalance = Math.max(0, newBalance - capitalPart);
         if (capitalPart > 0) {
           transactionsToInsert.push({ 
             ...baseTx, 
@@ -719,7 +788,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
         }
       } else {
-        // Solo Intereses (Rédito): Si el pago supera el interés del periodo, el excedente abona automáticamente al capital!
+        // Solo Intereses (Rédito): Si el pago supera el interés del periodo, el excedente abona automáticamente al capital
         if (amount > currentInterestDue && currentInterestDue > 0) {
           const excessCapital = Math.round((amount - currentInterestDue) * 100) / 100;
           newBalance = Math.max(0, loan.remainingBalance - excessCapital);
@@ -758,26 +827,9 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
 
-      // Avanzar fecha de próximo pago al pagar intereses
-      if (paymentType !== 'Capital' && loan.nextPaymentDate) {
-        const currentNext = new Date(loan.nextPaymentDate.includes('T') ? loan.nextPaymentDate : loan.nextPaymentDate + 'T00:00:00');
-        if (!isNaN(currentNext.getTime())) {
-          if (loan.frequency === 'Mensual') {
-            currentNext.setMonth(currentNext.getMonth() + 1);
-          } else if (loan.frequency === 'Quincenal') {
-            currentNext.setDate(currentNext.getDate() + 15);
-          } else if (loan.frequency === 'Diario') {
-            currentNext.setDate(currentNext.getDate() + 1);
-          } else {
-            currentNext.setDate(currentNext.getDate() + 7);
-          }
-          newNextDate = currentNext.toISOString().split('T')[0];
-        }
-      }
-
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
     } else {
-      newBalance -= amount;
+      newBalance = Math.max(0, newBalance - amount);
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
       transactionsToInsert.push({ 
         ...baseTx, 
@@ -791,31 +843,92 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
     }
 
-    const { error: loanError } = await insforge.database.from('loans').update({
-      remainingbalance: newBalance, status: newStatus, next_payment_date: newNextDate
-    }).eq('id', loanId).eq('lender_id', currentUser.id);
-    if (loanError) { addToast("Error al actualizar balance", 'error'); return; }
-
     const { data: insertedTxs, error: trxError } = await insforge.database.from('transactions').insert(transactionsToInsert).select();
-    if (!trxError && insertedTxs) {
-      setLoans(prev => prev.map(l => l.id === loanId ? { ...l, remainingBalance: newBalance, status: newStatus, nextPaymentDate: newNextDate } : l));
-      addAuditLog('payment_registered', `Registró pago de RD$ ${amount} para el préstamo ${loanId}`);
-      addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
-      
-      const client = clients.find(c => c.id === loan.clientId);
-      if (client && client.phone) {
-        insforge.functions.invoke('whatsapp-notifier', {
-          body: {
-            phone: client.phone,
-            clientName: client.name,
-            message: `Hola ${client.name.split(' ')[0]},\n\nHemos recibido un pago de ${amount} por concepto de: ${note}. Su nuevo balance es: ${newBalance}. ¡Gracias por preferirnos!`
-          }
-        }).catch(err => logger.error("Error enviando WhatsApp:", err));
-      }
-    } else {
+    if (trxError || !insertedTxs) {
       addToast("Error al guardar transacción", 'error');
+      return null;
     }
+
+    // Fetch all current transactions to accurately calculate the advanced next payment date
+    const { data: allCurrentTxsData } = await insforge.database
+      .from('transactions')
+      .select('*')
+      .eq('lender_id', currentUser.id)
+      .eq('type', 'Ingreso')
+      .or(`referenceid.eq.${loanId},reference_id.eq.${loanId}`);
+
+    const allLoanTxs = (allCurrentTxsData || []).map(mapTransaction);
+    const { nextPaymentDate: calculatedNextDate, fullyPaid } = calculateLoanNextPaymentDate(loan, allLoanTxs);
+    const finalNextPaymentDate = (newBalance <= 0 || fullyPaid) ? null : (calculatedNextDate || null);
+
+    const { error: loanError } = await insforge.database.from('loans').update({
+      remainingbalance: newBalance,
+      status: newStatus,
+      next_payment_date: finalNextPaymentDate
+    }).eq('id', loanId).eq('lender_id', currentUser.id);
+
+    if (loanError) {
+      addToast("Error al actualizar balance del préstamo", 'error');
+      return (insertedTxs || []).map(mapTransaction);
+    }
+
+    setLoans(prev => prev.map(l => l.id === loanId ? {
+      ...l,
+      remainingBalance: newBalance,
+      status: newStatus,
+      nextPaymentDate: finalNextPaymentDate || undefined
+    } : l));
+
+    addAuditLog('payment_registered', `Registró pago de RD$ ${amount} para el préstamo ${loanId}`);
+    addToast(newBalance === 0 ? "¡Préstamo Saldado Por Completo!" : "Pago registrado correctamente", 'success');
+    
+    const client = clients.find(c => c.id === loan.clientId);
+    if (client && client.phone) {
+      insforge.functions.invoke('whatsapp-notifier', {
+        body: {
+          phone: client.phone,
+          clientName: client.name,
+          message: `Hola ${client.name.split(' ')[0]},\n\nHemos recibido un pago de ${amount} por concepto de: ${note}. Su nuevo balance es: ${newBalance}. ¡Gracias por preferirnos!`
+        }
+      }).catch(err => logger.error("Error enviando WhatsApp:", err));
+    }
+
     return (insertedTxs || []).map(mapTransaction);
+  };
+
+  /**
+   * Sincroniza y recalcula automáticamente la próxima fecha de pago de todos los préstamos activos
+   * corrigiendo cualquier pago adelantado pasado o desfase en la base de datos.
+   */
+  const syncAllLoansNextPaymentDates = async () => {
+    if (!currentUser) return;
+    try {
+      const { data: allTxsData } = await insforge.database
+        .from('transactions')
+        .select('*')
+        .eq('lender_id', currentUser.id)
+        .eq('type', 'Ingreso');
+
+      const allMappedTxs = (allTxsData || []).map(mapTransaction);
+
+      for (const loan of loans) {
+        const loanTxs = allMappedTxs.filter(t => t.referenceId === loan.id || t.reference_id === loan.id);
+        const { nextPaymentDate: calculatedNextDate, fullyPaid } = calculateLoanNextPaymentDate(loan, loanTxs);
+        const targetNext = (loan.remainingBalance <= 0 || fullyPaid) ? null : (calculatedNextDate || null);
+
+        if (targetNext !== (loan.nextPaymentDate || null)) {
+          await insforge.database
+            .from('loans')
+            .update({ next_payment_date: targetNext })
+            .eq('id', loan.id)
+            .eq('lender_id', currentUser.id);
+
+          setLoans(prev => prev.map(l => l.id === loan.id ? { ...l, nextPaymentDate: targetNext || undefined } : l));
+        }
+      }
+    } catch (err) {
+      logger.error('Error in syncAllLoansNextPaymentDates:', err);
+    }
   };
 
   const addLoanRequest = async (request: Omit<LoanRequest, 'id' | 'status' | 'requestDate'>) => {
@@ -974,7 +1087,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <LoanContext.Provider value={{
       loans, loanProducts, loanRequests,
-      createLoan, updateLoan, deleteLoan, addHistoricalPayment, refinanceLoan, forgiveDebt, registerPayment, addLoanRequest, deleteLoanRequest,
+      createLoan, updateLoan, deleteLoan, addHistoricalPayment, refinanceLoan, forgiveDebt, registerPayment, syncAllLoansNextPaymentDates, addLoanRequest, deleteLoanRequest,
       addLoanProduct, updateLoanProduct, deleteLoanProduct
     }}>
       {children}
