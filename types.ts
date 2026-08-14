@@ -679,6 +679,8 @@ export interface Transaction {
   invoiceDate?: string;
   description: string;
   referenceId?: string; // ID of loan or client related
+  reference_id?: string;
+  referenceid?: string;
   paymentType?: 'Interes' | 'Capital' | 'Mixto' | 'Mora' | 'Cierre' | 'Comisión' | 'Honorarios' | 'Otro';
   paymentMethod?: PaymentMethod;
   bankAccountId?: string;
