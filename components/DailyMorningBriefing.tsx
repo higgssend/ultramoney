@@ -1,16 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Sun, Moon, Sunset, Calendar, AlertTriangle, CheckCircle2, 
-  MapPin, DollarSign, ChevronRight, ChevronDown, ChevronUp, 
-  ArrowUpRight, Sparkles, Navigation, Clock, ShieldAlert, Users
+  ChevronDown, ChevronUp, ArrowRight, Sparkles, Navigation, ShieldAlert,
+  Wallet
 } from 'lucide-react';
-import { useLoans, useClients, useAuth, useAccounting } from '../context/StoreContext';
+import { useLoans, useAuth, useAccounting } from '../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { LoanStatus } from '../types';
 
 export const DailyMorningBriefing: React.FC = () => {
   const { loans } = useLoans();
-  const { clients } = useClients();
   const { currentUser } = useAuth();
   const { transactions } = useAccounting();
   const navigate = useNavigate();
@@ -31,12 +30,12 @@ export const DailyMorningBriefing: React.FC = () => {
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
-      return { text: '¡Buenos días', icon: Sun, color: 'text-amber-500 bg-amber-100 dark:bg-amber-950/50' };
+      return { text: 'Buenos días', icon: Sun, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/40 border-amber-200/60 dark:border-amber-900/40' };
     }
     if (hour >= 12 && hour < 18) {
-      return { text: '¡Buenas tardes', icon: Sunset, color: 'text-orange-500 bg-orange-100 dark:bg-orange-950/50' };
+      return { text: 'Buenas tardes', icon: Sunset, color: 'text-orange-500 bg-orange-50 dark:bg-orange-950/40 border-orange-200/60 dark:border-orange-900/40' };
     }
-    return { text: '¡Buenas noches', icon: Moon, color: 'text-indigo-400 bg-indigo-950/50' };
+    return { text: 'Buenas noches', icon: Moon, color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/60 dark:border-indigo-900/40' };
   }, []);
 
   const todayStr = useMemo(() => {
@@ -55,7 +54,7 @@ export const DailyMorningBriefing: React.FC = () => {
     return todayDueLoans.reduce((sum, l) => sum + (Number(l.installmentAmount) || 0), 0);
   }, [todayDueLoans]);
 
-  // Critical overdue loans (> 3 days overdue)
+  // Critical overdue loans
   const overdueLoans = useMemo(() => {
     return loans.filter(l => l.status === LoanStatus.OVERDUE && l.remainingBalance > 0);
   }, [loans]);
@@ -74,144 +73,164 @@ export const DailyMorningBriefing: React.FC = () => {
   const GreetingIcon = greeting.icon;
 
   return (
-    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-indigo-900/50 relative overflow-hidden animate-fade-in transition-all">
+    <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 shadow-sm border border-slate-200/80 dark:border-slate-800 transition-all text-slate-800 dark:text-slate-100">
       
-      {/* Background glow effects */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-      <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
-
-      {/* Header Banner Row */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 relative z-10">
-        <div className="flex items-center gap-3.5">
-          <div className={`p-3 rounded-2xl ${greeting.color} shadow-sm shrink-0`}>
-            <GreetingIcon className="w-6 h-6" />
+      {/* Header Compact Row */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <div className={`p-1.5 rounded-xl border ${greeting.color} shrink-0`}>
+            <GreetingIcon className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                Resumen Ejecutivo del Día
-              </span>
-              <span className="text-xs text-slate-400 font-medium">
-                {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">
+                {greeting.text}, <span className="text-indigo-600 dark:text-indigo-400">{currentUser?.name || 'Administrador'}</span>
+              </h3>
+              <span className="hidden md:inline-block text-[11px] text-slate-400 font-medium border-l border-slate-200 dark:border-slate-700 pl-2">
+                {new Date().toLocaleDateString('es-DO', { weekday: 'short', day: 'numeric', month: 'short' })}
               </span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
-              {greeting.text}, {currentUser?.name || 'Administrador'} 👋
-            </h3>
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        {/* Quick horizontal mini-stats or toggle */}
+        <div className="flex items-center gap-2 text-xs">
+          {isCollapsed && (
+            <div className="hidden sm:flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300 font-medium">
+              <span>Hoy: <strong className="text-indigo-600 dark:text-indigo-400">RD$ {todayDueAmount.toLocaleString()}</strong></span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <span>Atrasado: <strong className="text-rose-500">RD$ {overdueTotalAmount.toLocaleString()}</strong></span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <span>Recaudado: <strong className="text-emerald-500">RD$ {collectedToday.toLocaleString()}</strong></span>
+            </div>
+          )}
+
           <button
             onClick={toggleCollapse}
-            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-indigo-200 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-white/10"
-            title={isCollapsed ? 'Expandir resumen' : 'Minimizar resumen'}
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
+            title={isCollapsed ? 'Mostrar resumen detallado' : 'Minimizar resumen'}
           >
-            <span>{isCollapsed ? 'Mostrar Métricas' : 'Ocultar'}</span>
-            {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            <span>{isCollapsed ? 'Ver Resumen' : 'Ocultar'}</span>
+            {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
-      {/* Expandable Content Area */}
+      {/* Expandable Light Metrics Grid */}
       {!isCollapsed && (
-        <div className="mt-5 pt-5 border-t border-white/10 space-y-4 relative z-10 animate-fade-in">
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5 animate-fade-in">
           
-          {/* Quick Metrics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             
-            {/* Today Due Card */}
-            <div className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-sm transition-all flex items-center justify-between">
+            {/* Por Cobrar Hoy */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-700/50 flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-1.5 text-xs text-indigo-300 font-bold uppercase tracking-wider">
-                  <Calendar className="w-4 h-4 text-indigo-400" />
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Por Cobrar Hoy</span>
                 </div>
-                <h4 className="text-2xl font-black text-white mt-1">
-                  RD$ {todayDueAmount.toLocaleString()}
-                </h4>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                  {todayDueLoans.length} cuota{todayDueLoans.length !== 1 ? 's' : ''} programada{todayDueLoans.length !== 1 ? 's' : ''}
-                </p>
+                <div className="flex items-baseline gap-1.5 mt-0.5">
+                  <span className="text-base font-extrabold text-slate-900 dark:text-white">
+                    RD$ {todayDueAmount.toLocaleString()}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    ({todayDueLoans.length} cuota{todayDueLoans.length !== 1 ? 's' : ''})
+                  </span>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-indigo-600/30 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-black text-sm">
-                {todayDueLoans.length}
-              </div>
+              <button 
+                onClick={() => navigate('/pagos')} 
+                title="Ir a Pagos"
+                className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Overdue Card */}
-            <div className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-sm transition-all flex items-center justify-between">
+            {/* Mora / Atrasados */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-700/50 flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-1.5 text-xs text-rose-300 font-bold uppercase tracking-wider">
-                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
                   <span>Mora / Atrasados</span>
                 </div>
-                <h4 className="text-2xl font-black text-rose-300 mt-1">
-                  RD$ {overdueTotalAmount.toLocaleString()}
-                </h4>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                  {overdueLoans.length} cliente{overdueLoans.length !== 1 ? 's' : ''} requieren gestión
-                </p>
+                <div className="flex items-baseline gap-1.5 mt-0.5">
+                  <span className="text-base font-extrabold text-rose-600 dark:text-rose-400">
+                    RD$ {overdueTotalAmount.toLocaleString()}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    ({overdueLoans.length} cliente{overdueLoans.length !== 1 ? 's' : ''})
+                  </span>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-rose-600/30 border border-rose-400/30 flex items-center justify-center text-rose-300 font-black text-sm">
-                {overdueLoans.length}
-              </div>
+              <button 
+                onClick={() => navigate('/atrasos')} 
+                title="Ver Atrasados"
+                className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Collected Today Card */}
-            <div className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-sm transition-all flex items-center justify-between">
+            {/* Recaudado Hoy */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-700/50 flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-bold uppercase tracking-wider">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Recaudado Hoy</span>
                 </div>
-                <h4 className="text-2xl font-black text-emerald-300 mt-1">
-                  RD$ {collectedToday.toLocaleString()}
-                </h4>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                  Ingresos en caja registrados hoy
-                </p>
+                <div className="flex items-baseline gap-1.5 mt-0.5">
+                  <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+                    RD$ {collectedToday.toLocaleString()}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    (En caja)
+                  </span>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600/30 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black text-sm">
-                <ArrowUpRight className="w-5 h-5" />
-              </div>
+              <button 
+                onClick={() => navigate('/caja')} 
+                title="Ir a Caja"
+                className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
 
           </div>
 
-          {/* Quick Action Navigation Bar */}
-          <div className="flex items-center gap-2.5 flex-wrap pt-2">
+          {/* Quick Action Navigation Bar - Light and Compact */}
+          <div className="flex items-center gap-2 flex-wrap pt-1">
             <button
               onClick={() => navigate('/pagos')}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/30 active:scale-95"
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
             >
-              <DollarSign className="w-4 h-4" />
+              <Wallet className="w-3.5 h-3.5" />
               <span>Registrar Cobro</span>
             </button>
 
             <button
               onClick={() => navigate('/rutas')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-white/15 active:scale-95"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 active:scale-95 cursor-pointer"
             >
-              <Navigation className="w-4 h-4 text-emerald-400" />
-              <span>Abrir Ruta de Cobranza</span>
+              <Navigation className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Rutas GPS</span>
             </button>
 
             <button
               onClick={() => navigate('/atrasos')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-white/15 active:scale-95"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 active:scale-95 cursor-pointer"
             >
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              <span>Ver Atrasados ({overdueLoans.length})</span>
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+              <span>Mora ({overdueLoans.length})</span>
             </button>
 
             <button
               onClick={() => navigate('/caja')}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-white/15 active:scale-95 ml-auto"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 active:scale-95 ml-auto cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Ir a Caja</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Caja</span>
             </button>
           </div>
 
