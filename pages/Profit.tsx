@@ -463,7 +463,7 @@ export const Profit: React.FC = () => {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
                   <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `RD$${val.toLocaleString()}`} tick={{fill: '#94a3b8', fontSize: 11}} />
                   <Tooltip 
-                    formatter={(value: unknown) => [`RD$ ${Number(value || 0).toLocaleString()}`, '']}
+                    formatter={(value: number | string | undefined) => [`RD$ ${Number(value || 0).toLocaleString()}`, '']}
                     contentStyle={{backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'}} 
                   />
                   <Legend />
@@ -712,7 +712,7 @@ export const Profit: React.FC = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(val: unknown) => [`RD$ ${Number(val || 0).toLocaleString()}`, 'Monto']} />
+                  <Tooltip formatter={(val: number | string | undefined) => [`RD$ ${Number(val || 0).toLocaleString()}`, 'Monto']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

@@ -7,20 +7,22 @@ import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import html2canvas from 'html2canvas';
 
-interface ExportColumn<T = unknown> {
+type ExportableValue = string | number | boolean | null | undefined;
+
+interface ExportColumn {
   header: string;
   key: string;
-  format?: (value: T) => string;
+  format?: (value: ExportableValue) => string;
 }
 
-interface DataExportToolbarProps<T extends Record<string, unknown> = Record<string, unknown>> {
+interface DataExportToolbarProps<T extends Record<string, ExportableValue | Record<string, ExportableValue>>> {
   data: T[];
   columns: ExportColumn[];
   filename: string;
   title: string;
 }
 
-export const DataExportToolbar = <T extends Record<string, unknown>>({ 
+export const DataExportToolbar = <T extends Record<string, ExportableValue | Record<string, ExportableValue>>>({ 
   data, 
   columns, 
   filename, 
@@ -32,13 +34,14 @@ export const DataExportToolbar = <T extends Record<string, unknown>>({
     return data.map(item => {
       const row: Record<string, string | number | boolean | null> = {};
       columns.forEach(col => {
-        const val = col.key.split('.').reduce<unknown>((o, i) => {
+        const val = col.key.split('.').reduce<ExportableValue | Record<string, ExportableValue>>((o, i) => {
           if (o && typeof o === 'object' && i in o) {
-            return (o as Record<string, unknown>)[i];
+            return (o as Record<string, ExportableValue>)[i];
           }
           return null;
         }, item);
-        row[col.header] = col.format ? col.format(val) : ((val as string | number | boolean | null) ?? '');
+        const resolvedVal = (typeof val === 'object' && val !== null) ? null : val;
+        row[col.header] = col.format ? col.format(resolvedVal) : (resolvedVal ?? '');
       });
       return row;
     });

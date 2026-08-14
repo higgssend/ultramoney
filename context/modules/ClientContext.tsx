@@ -350,7 +350,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       fileUrl = data.publicUrl;
     }
 
-    const payload: Partial<ClientDocumentDB> & Record<string, unknown> = {};
+    const payload: Partial<ClientDocumentDB> = {};
     if (updates.title !== undefined) {
       payload.title = updates.title;
       payload.name = updates.title;

@@ -108,8 +108,10 @@ export interface ClientDocumentDB {
   id: string;
   client_id: string;
   title: string;
+  name?: string;
   type: string;
   file_url: string;
+  url?: string;
   file_type?: string;
   upload_date: string;
   tags?: string[];
