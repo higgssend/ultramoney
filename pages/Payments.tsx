@@ -502,9 +502,13 @@ export const Payments: React.FC = () => {
   };
 
   const handleOpenThermalReceipt = (t: Transaction) => {
-    const loan = loans.find(l => l.id === t.referenceId);
+    const loan = loans.find(l => 
+      l.id === t.referenceId || 
+      formatLoanId(l.id) === t.referenceId || 
+      formatLoanId(l.id).replace(/\s+/g, '') === (t.referenceId || '').replace(/\s+/g, '')
+    );
     const client = loan ? clients.find(c => c.id === loan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
-    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? loan.clientName : (t.description?.split('-')[1]?.trim() || 'Cliente'));
+    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? (loan.clientName || loan.clientname) : (t.description?.split('-')[1]?.trim() || 'Cliente'));
 
     const formattedRecNo = formatReceiptId(t.id);
     const parsedDate = t.date ? new Date(t.date) : new Date();
@@ -541,9 +545,13 @@ export const Payments: React.FC = () => {
   };
 
   const handleShareWhatsApp = (t: Transaction) => {
-    const loan = loans.find(l => l.id === t.referenceId);
+    const loan = loans.find(l => 
+      l.id === t.referenceId || 
+      formatLoanId(l.id) === t.referenceId || 
+      formatLoanId(l.id).replace(/\s+/g, '') === (t.referenceId || '').replace(/\s+/g, '')
+    );
     const client = loan ? clients.find(c => c.id === loan.clientId) : undefined;
-    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? loan.clientName : 'Cliente');
+    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? (loan.clientName || loan.clientname) : 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
     const url = `${window.location.origin}/recibo/${t.id}`;
     

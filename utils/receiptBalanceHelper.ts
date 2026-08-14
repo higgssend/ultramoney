@@ -39,10 +39,13 @@ export function calculateReceiptBalances(
   allLoanTransactions?: Transaction[]
 ): CalculatedReceiptBalances {
   const amountPaid = Number(transaction.amount) || 0;
-  const isOpen = loan ? isOpenLoanType(loan.loanType) : false;
+  const isOpen = loan ? isOpenLoanType(loan.loanType || loan.loantype) : false;
+  
+  const loanPrincipal = Number(loan?.amount || 0);
+  const loanTotalToPay = Number(loan?.totaltopay ?? loan?.totalToPay ?? loanPrincipal);
   const totalDebt = loan 
-    ? (isOpen ? Number(loan.amount || 0) : Number(loan.totalToPay || loan.amount || 0))
-    : (transaction.totalDebt !== undefined ? Number(transaction.totalDebt) : amountPaid);
+    ? (isOpen ? loanPrincipal : (loanTotalToPay || loanPrincipal))
+    : (transaction.totalDebt !== undefined && Number(transaction.totalDebt) > 0 ? Number(transaction.totalDebt) : amountPaid);
 
   // 1. Desglose del pago
   let capitalPaid = 0;
@@ -50,7 +53,10 @@ export function calculateReceiptBalances(
   let lateFeePaid = 0;
   let discountPaid = Number(transaction.discountAmount || 0);
 
-  if (transaction.capitalAmount !== undefined || transaction.interestAmount !== undefined) {
+  if (
+    (transaction.capitalAmount !== undefined && Number(transaction.capitalAmount) > 0) || 
+    (transaction.interestAmount !== undefined && Number(transaction.interestAmount) > 0)
+  ) {
     capitalPaid = Number(transaction.capitalAmount || 0);
     interestPaid = Number(transaction.interestAmount || 0);
     lateFeePaid = Number(transaction.lateFeeAmount || 0);
@@ -58,19 +64,31 @@ export function calculateReceiptBalances(
     capitalPaid = amountPaid;
   } else if (transaction.paymentType === 'Interes') {
     interestPaid = amountPaid;
-  } else if (transaction.description?.toLowerCase().includes('mora')) {
+  } else if (transaction.description?.toLowerCase().includes('mora') || transaction.paymentType === 'Mora') {
     lateFeePaid = amountPaid;
   } else {
-    // Si es préstamo amortizado tradicional, se asume cuota completa o interés según tipo
+    // Si no está desglosado explícitamente:
     if (isOpen) {
       interestPaid = amountPaid;
     } else {
-      capitalPaid = amountPaid;
+      if (loan && (loan.interestRate || loan.interestrate)) {
+        const rate = Number(loan.interestRate || loan.interestrate || 0);
+        const approxMonthlyInterest = Math.round(loanPrincipal * (rate / 100));
+        interestPaid = Math.min(amountPaid, Math.max(0, approxMonthlyInterest));
+        capitalPaid = Math.max(0, amountPaid - interestPaid);
+      } else {
+        capitalPaid = amountPaid;
+      }
     }
   }
 
-  // 2. Si la transacción ya tiene guardados los balances calculados en base de datos
-  if (transaction.previousBalance !== undefined && transaction.newBalance !== undefined) {
+  // 2. Si la transacción ya tiene guardados los balances calculados en base de datos (> 0)
+  const hasValidStoredBalances = 
+    transaction.previousBalance !== undefined && 
+    transaction.newBalance !== undefined && 
+    (Number(transaction.previousBalance) > 0 || Number(transaction.newBalance) > 0);
+
+  if (hasValidStoredBalances) {
     return {
       totalDebt: Number(transaction.totalDebt ?? totalDebt),
       previousBalance: Number(transaction.previousBalance),
@@ -90,16 +108,13 @@ export function calculateReceiptBalances(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    let runningBalance = isOpen 
-      ? Number(loan.amount || 0) 
-      : Number(loan.totalToPay || loan.amount || 0);
-
+    let runningBalance = isOpen ? loanPrincipal : (loanTotalToPay || loanPrincipal);
     let foundPrev = runningBalance;
     let foundNew = runningBalance;
 
     for (const tx of sortedTxs) {
       const txAmount = Number(tx.amount) || 0;
-      const txIsCap = tx.paymentType === 'Capital' || (tx.capitalAmount && tx.capitalAmount > 0);
+      const txIsCap = tx.paymentType === 'Capital' || (tx.capitalAmount && Number(tx.capitalAmount) > 0);
       const prev = runningBalance;
 
       if (isOpen) {
@@ -119,7 +134,7 @@ export function calculateReceiptBalances(
     }
 
     return {
-      totalDebt,
+      totalDebt: totalDebt || foundPrev,
       previousBalance: foundPrev,
       amountPaid,
       capitalPaid,
@@ -134,16 +149,18 @@ export function calculateReceiptBalances(
   // 4. Fallback directo con el balance actual del préstamo
   if (loan) {
     const currentBal = Number(loan.remainingbalance ?? loan.remainingBalance ?? 0);
+    const effectiveTotal = totalDebt || (currentBal + amountPaid);
+
     let prevBal = currentBal;
     let newBal = currentBal;
 
     if (isOpen) {
-      if (transaction.paymentType === 'Capital') {
-        prevBal = currentBal + amountPaid;
+      if (transaction.paymentType === 'Capital' || capitalPaid > 0) {
+        prevBal = currentBal + (capitalPaid || amountPaid);
         newBal = currentBal;
       } else {
-        prevBal = currentBal;
-        newBal = currentBal;
+        prevBal = currentBal > 0 ? currentBal : loanPrincipal;
+        newBal = currentBal > 0 ? currentBal : loanPrincipal;
       }
     } else {
       prevBal = currentBal + amountPaid;
@@ -151,8 +168,8 @@ export function calculateReceiptBalances(
     }
 
     return {
-      totalDebt,
-      previousBalance: prevBal,
+      totalDebt: effectiveTotal || prevBal,
+      previousBalance: prevBal > 0 ? prevBal : effectiveTotal,
       amountPaid,
       capitalPaid,
       interestPaid,

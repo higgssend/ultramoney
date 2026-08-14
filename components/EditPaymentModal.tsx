@@ -54,9 +54,19 @@ export const EditPaymentModal: React.FC<EditPaymentModalProps> = ({
 
   if (!isOpen || !transaction) return null;
 
-  const linkedLoan = transaction.referenceId ? loans.find(l => l.id === transaction.referenceId) : undefined;
-  const linkedClient = linkedLoan ? clients.find(c => c.id === linkedLoan.clientId) : (transaction.referenceId ? clients.find(c => c.id === transaction.referenceId) : undefined);
-  const clientName = linkedClient ? `${linkedClient.name} ${linkedClient.lastName || ''}`.trim() : (linkedLoan ? linkedLoan.clientName : 'Cliente');
+  const linkedLoan = transaction.referenceId 
+    ? loans.find(l => 
+        l.id === transaction.referenceId || 
+        formatLoanId(l.id) === transaction.referenceId || 
+        formatLoanId(l.id).replace(/\s+/g, '') === transaction.referenceId.replace(/\s+/g, '')
+      ) 
+    : undefined;
+  const linkedClient = linkedLoan 
+    ? clients.find(c => c.id === linkedLoan.clientId) 
+    : (transaction.referenceId ? clients.find(c => c.id === transaction.referenceId) : undefined);
+  const clientName = linkedClient 
+    ? `${linkedClient.name} ${linkedClient.lastName || ''}`.trim() 
+    : (linkedLoan ? (linkedLoan.clientName || linkedLoan.clientname || 'Cliente') : 'Cliente');
 
   const oldAmount = Number(transaction.amount) || 0;
   const newAmount = Number(amount) || 0;

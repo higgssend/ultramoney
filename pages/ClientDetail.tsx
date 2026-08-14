@@ -266,7 +266,16 @@ const ClientDetail: React.FC = () => {
   };
 
   const handleOpenThermalReceipt = (trx: Transaction) => {
-    const matchedLoan = clientLoans.find(l => l.id === trx.referenceId) || loans.find(l => l.id === trx.referenceId);
+    const matchedLoan = clientLoans.find(l => 
+      l.id === trx.referenceId || 
+      formatLoanId(l.id) === trx.referenceId || 
+      formatLoanId(l.id).replace(/\s+/g, '') === (trx.referenceId || '').replace(/\s+/g, '')
+    ) || loans.find(l => 
+      l.id === trx.referenceId || 
+      formatLoanId(l.id) === trx.referenceId || 
+      formatLoanId(l.id).replace(/\s+/g, '') === (trx.referenceId || '').replace(/\s+/g, '')
+    );
+    const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : 'Cliente';
     const formattedRecNo = formatReceiptId(trx.id);
     const parsedDate = trx.date ? new Date(trx.date) : new Date();
     const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
@@ -275,7 +284,7 @@ const ClientDetail: React.FC = () => {
       receiptNo: formattedRecNo,
       date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
       time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
-      clientName: client?.name || 'Cliente',
+      clientName: clientFullName,
       clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
       loanId: matchedLoan ? matchedLoan.id : (trx.referenceId || ''),
@@ -302,11 +311,20 @@ const ClientDetail: React.FC = () => {
   };
 
   const handleSharePaymentWhatsApp = (trx: Transaction) => {
-    const matchedLoan = clientLoans.find(l => l.id === trx.referenceId) || loans.find(l => l.id === trx.referenceId);
+    const matchedLoan = clientLoans.find(l => 
+      l.id === trx.referenceId || 
+      formatLoanId(l.id) === trx.referenceId || 
+      formatLoanId(l.id).replace(/\s+/g, '') === (trx.referenceId || '').replace(/\s+/g, '')
+    ) || loans.find(l => 
+      l.id === trx.referenceId || 
+      formatLoanId(l.id) === trx.referenceId || 
+      formatLoanId(l.id).replace(/\s+/g, '') === (trx.referenceId || '').replace(/\s+/g, '')
+    );
+    const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : 'Cliente';
     const formattedRecNo = formatReceiptId(trx.id);
     const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
     const receiptWebLink = `${window.location.origin}/recibo/${trx.id}`;
-    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${client?.name || 'Cliente'}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
+    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${clientFullName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 

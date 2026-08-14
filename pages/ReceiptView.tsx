@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAccounting, useSettings, useAuth } from '../context/StoreContext';
+import { useAccounting, useSettings, useAuth, useLoans, useClients } from '../context/StoreContext';
 import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer, Edit3 } from 'lucide-react';
 import { Transaction, Loan, Client, LoanStatus, LoanType, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
@@ -15,6 +15,8 @@ import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
     const { transactions } = useAccounting();
+    const { loans } = useLoans();
+    const { clients } = useClients();
     const { companySettings } = useSettings();
     const { currentUser } = useAuth();
     
@@ -46,6 +48,19 @@ export const ReceiptView: React.FC = () => {
         }
     };
 
+    // Generate validation QR code
+    useEffect(() => {
+        if (transactionId || transaction?.id) {
+            const recId = transaction?.id || transactionId || '';
+            const receiptLink = `${window.location.origin}/recibo/${recId}`;
+            QRCode.toDataURL(receiptLink, {
+                width: 240,
+                margin: 1,
+                color: { dark: '#0f172a', light: '#ffffff' }
+            }).then(setQrDataUrl).catch(e => console.error("Error generating QR:", e));
+        }
+    }, [transactionId, transaction?.id]);
+
     useEffect(() => {
         const fetchReceiptDetails = async () => {
             if (!transactionId) {
@@ -56,8 +71,12 @@ export const ReceiptView: React.FC = () => {
             try {
                 const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(transactionId as string);
                 
-                // 1. Fetch transaction directly from DB if not in local store
-                let txData: Transaction | null = transactions.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId) || null;
+                // 1. Fetch transaction from memory store first, otherwise fetch from DB
+                let txData: Transaction | null = transactions.find(t => 
+                    t.id === transactionId || 
+                    formatReceiptId(t.id) === transactionId ||
+                    formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, '')
+                ) || null;
                 
                 if (!txData && isUuid) {
                     const { data, error } = await insforge.database
@@ -79,7 +98,14 @@ export const ReceiptView: React.FC = () => {
                             paymentMethod: (data.payment_method || data.paymentmethod || 'Efectivo') as Transaction['paymentMethod'],
                             invoiceDate: data.invoice_date || data.invoicedate,
                             bankAccountId: data.bank_account_id,
-                            proofUrl: data.proof_url
+                            proofUrl: data.proof_url,
+                            previousBalance: data.previous_balance ? Number(data.previous_balance) : undefined,
+                            newBalance: data.new_balance ? Number(data.new_balance) : undefined,
+                            totalDebt: data.total_debt ? Number(data.total_debt) : undefined,
+                            capitalAmount: data.capital_amount ? Number(data.capital_amount) : undefined,
+                            interestAmount: data.interest_amount ? Number(data.interest_amount) : undefined,
+                            lateFeeAmount: data.late_fee_amount ? Number(data.late_fee_amount) : undefined,
+                            discountAmount: data.discount_amount ? Number(data.discount_amount) : undefined
                         };
                     }
                 }
@@ -93,7 +119,11 @@ export const ReceiptView: React.FC = () => {
                         .limit(200);
 
                     if (data) {
-                        const match = data.find(t => t.id === transactionId || formatReceiptId(t.id) === transactionId || formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, ''));
+                        const match = data.find(t => 
+                            t.id === transactionId || 
+                            formatReceiptId(t.id) === transactionId || 
+                            formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, '')
+                        );
                         if (match) {
                             txData = {
                                 id: match.id,
@@ -102,71 +132,106 @@ export const ReceiptView: React.FC = () => {
                                 amount: Number(match.amount) || 0,
                                 date: match.date || match.created_at,
                                 description: match.description,
-                                referenceId: match.reference_id,
-                                paymentType: (match.payment_type || 'Interes') as Transaction['paymentType'],
-                                paymentMethod: (match.payment_method || 'Efectivo') as Transaction['paymentMethod'],
-                                invoiceDate: match.invoice_date,
+                                referenceId: match.reference_id || match.referenceid,
+                                paymentType: (match.payment_type || match.paymenttype || 'Interes') as Transaction['paymentType'],
+                                paymentMethod: (match.payment_method || match.paymentmethod || 'Efectivo') as Transaction['paymentMethod'],
+                                invoiceDate: match.invoice_date || match.invoicedate,
                                 bankAccountId: match.bank_account_id,
-                                proofUrl: match.proof_url
+                                proofUrl: match.proof_url,
+                                previousBalance: match.previous_balance ? Number(match.previous_balance) : undefined,
+                                newBalance: match.new_balance ? Number(match.new_balance) : undefined,
+                                totalDebt: match.total_debt ? Number(match.total_debt) : undefined,
+                                capitalAmount: match.capital_amount ? Number(match.capital_amount) : undefined,
+                                interestAmount: match.interest_amount ? Number(match.interest_amount) : undefined,
+                                lateFeeAmount: match.late_fee_amount ? Number(match.late_fee_amount) : undefined,
+                                discountAmount: match.discount_amount ? Number(match.discount_amount) : undefined
                             };
                         }
                     }
                 }
 
                 if (txData) {
-                    setTransaction(txData as Transaction);
+                    setTransaction(txData);
                     const refId = txData.referenceId;
 
-                    // 2. Fetch associated Loan from DB
+                    // 2. Resolve Loan: find in memory store first, otherwise fetch from DB
+                    let resolvedLoan: Loan | null = null;
                     if (refId) {
-                        const { data: loanRes } = await insforge.database
-                            .from('loans')
-                            .select('*')
-                            .eq('id', refId)
-                            .maybeSingle();
+                        resolvedLoan = loans.find(l => 
+                            l.id === refId || 
+                            formatLoanId(l.id) === refId ||
+                            formatLoanId(l.id).replace(/\s+/g, '') === refId.replace(/\s+/g, '')
+                        ) || null;
 
-                        if (loanRes) {
-                            setLoan({
-                                id: loanRes.id,
-                                clientId: loanRes.client_id || '',
-                                clientName: loanRes.clientname || '',
-                                amount: Number(loanRes.amount) || 0,
-                                interestRate: Number(loanRes.interest_rate) || 0,
-                                durationWeeks: Number(loanRes.duration_weeks) || 12,
-                                frequency: (loanRes.frequency as Loan['frequency']) || 'Mensual',
-                                startDate: loanRes.start_date || '',
-                                status: (loanRes.status as LoanStatus) || LoanStatus.ACTIVE,
-                                loanType: (loanRes.loan_type as LoanType) || 'Amortizado (Cuota Fija)',
-                                totalToPay: Number(loanRes.total_to_pay) || 0,
-                                remainingBalance: Number(loanRes.remaining_balance) || 0,
-                                nextPaymentDate: loanRes.next_payment_date || ''
-                            });
-                            const clientId = loanRes.client_id;
+                        if (!resolvedLoan) {
+                            const { data: loanRes } = await insforge.database
+                                .from('loans')
+                                .select('*')
+                                .or(`id.eq.${refId},clientid.eq.${refId},client_id.eq.${refId}`)
+                                .maybeSingle();
 
-                            // 3. Fetch associated Client from DB
-                            if (clientId) {
-                                const { data: clientRes } = await insforge.database
-                                    .from('clients')
-                                    .select('*')
-                                    .eq('id', clientId)
-                                    .maybeSingle();
-                                if (clientRes) {
-                                    setClient({
-                                        id: clientRes.id,
-                                        name: clientRes.name,
-                                        sex: (clientRes.sex as Client['sex']) || 'Masculino',
-                                        occupation: clientRes.occupation || '',
-                                        phone: clientRes.phone || '',
-                                        cedula: clientRes.cedula || '',
-                                        address: clientRes.address || '',
-                                        income: Number(clientRes.income) || 0,
-                                        creditScore: Number(clientRes.credit_score) || 80,
-                                        status: (clientRes.status as Client['status']) || 'Activo',
-                                        joinedDate: clientRes.created_at || new Date().toISOString()
-                                    });
-                                }
+                            if (loanRes) {
+                                resolvedLoan = {
+                                    id: loanRes.id,
+                                    clientId: loanRes.clientid || loanRes.client_id || '',
+                                    clientName: loanRes.clientname || loanRes.client_name || '',
+                                    amount: Number(loanRes.amount) || 0,
+                                    interestRate: Number(loanRes.interestrate ?? loanRes.interest_rate ?? 0),
+                                    durationWeeks: Number(loanRes.durationweeks ?? loanRes.duration_weeks ?? loanRes.installments ?? 12),
+                                    installments: Number(loanRes.installments ?? loanRes.durationweeks ?? loanRes.duration_weeks ?? 12),
+                                    frequency: (loanRes.frequency as Loan['frequency']) || 'Mensual',
+                                    startDate: loanRes.startdate || loanRes.start_date || '',
+                                    status: (loanRes.status as LoanStatus) || LoanStatus.ACTIVE,
+                                    loanType: (loanRes.loantype || loanRes.loan_type || 'Amortizado (Cuota Fija)') as LoanType,
+                                    totalToPay: Number(loanRes.totaltopay ?? loanRes.total_to_pay ?? loanRes.amount ?? 0),
+                                    remainingBalance: Number(loanRes.remainingbalance ?? loanRes.remaining_balance ?? 0),
+                                    nextPaymentDate: loanRes.next_payment_date || loanRes.nextpaymentdate || '',
+                                    collateral: loanRes.collateral || undefined
+                                };
                             }
                         }
+                    }
+
+                    if (resolvedLoan) {
+                        setLoan(resolvedLoan);
+                    }
+
+                    // 3. Resolve Client: find in memory store first, otherwise fetch from DB
+                    const targetClientId = resolvedLoan?.clientId || (refId && clients.some(c => c.id === refId) ? refId : '');
+                    let resolvedClient: Client | null = null;
+
+                    if (targetClientId) {
+                        resolvedClient = clients.find(c => c.id === targetClientId) || null;
+                    }
+
+                    if (!resolvedClient && targetClientId) {
+                        const { data: clientRes } = await insforge.database
+                            .from('clients')
+                            .select('*')
+                            .eq('id', targetClientId)
+                            .maybeSingle();
+
+                        if (clientRes) {
+                            resolvedClient = {
+                                id: clientRes.id,
+                                name: clientRes.name,
+                                lastName: clientRes.lastname || clientRes.last_name || '',
+                                sex: (clientRes.sex as Client['sex']) || 'Masculino',
+                                occupation: clientRes.occupation || '',
+                                phone: clientRes.phone || '',
+                                cedula: clientRes.cedula || '',
+                                address: clientRes.address || '',
+                                income: Number(clientRes.income) || 0,
+                                creditScore: Number(clientRes.credit_score || clientRes.creditscore) || 80,
+                                status: (clientRes.status as Client['status']) || 'Activo',
+                                joinedDate: clientRes.created_at || new Date().toISOString(),
+                                avatarUrl: clientRes.avatarurl || clientRes.avatar_url || ''
+                            };
+                        }
+                    }
+
+                    if (resolvedClient) {
+                        setClient(resolvedClient);
                     }
                 }
             } catch (e) {
@@ -177,7 +242,7 @@ export const ReceiptView: React.FC = () => {
         };
 
         fetchReceiptDetails();
-    }, [transactionId, transactions]);
+    }, [transactionId, transactions, loans, clients]);
 
     if (loading) {
         return (
@@ -199,8 +264,18 @@ export const ReceiptView: React.FC = () => {
     }
 
     // Financial balance and breakdown calculations
-    const calculated = transaction ? calculateReceiptBalances(transaction, loan, transactions) : null;
-    const paymentAmount = calculated ? calculated.amountPaid : 0;
+    const clientFullName = client 
+        ? `${client.name} ${client.lastName || ''}`.trim() 
+        : (loan?.clientName || loan?.clientname || 'Cliente');
+
+    // Filter relevant transactions for this loan to build chronological history if needed
+    const relevantLoanTransactions = transactions.filter(t => 
+        (loan?.id && (t.referenceId === loan.id || t.reference_id === loan.id)) ||
+        (transaction.referenceId && (t.referenceId === transaction.referenceId || t.reference_id === transaction.referenceId))
+    );
+
+    const calculated = transaction ? calculateReceiptBalances(transaction, loan, relevantLoanTransactions) : null;
+    const paymentAmount = calculated ? calculated.amountPaid : (Number(transaction.amount) || 0);
     const previousBalance = calculated ? calculated.previousBalance : 0;
     const currentBalance = calculated ? calculated.newBalance : 0;
     const totalDebt = calculated ? calculated.totalDebt : 0;
@@ -264,9 +339,8 @@ export const ReceiptView: React.FC = () => {
     };
 
     const handleShareWhatsApp = () => {
-        const clientName = client?.name || loan?.clientname || 'Cliente';
         const url = window.location.href;
-        const text = `🏢 *${companySettings.name}*\n📄 *Recibo de Pago*: ${formattedReceiptNo}\n👤 *Cliente*: ${clientName}\n💰 *Monto*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+        const text = `🏢 *${companySettings.name}*\n📄 *Recibo de Pago*: ${formattedReceiptNo}\n👤 *Cliente*: ${clientFullName}\n💰 *Monto*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
@@ -274,7 +348,7 @@ export const ReceiptView: React.FC = () => {
         receiptNo: formattedReceiptNo,
         date: formattedDate,
         time: formattedTime,
-        clientName: client?.name || loan?.clientname || loan?.clientName || 'Cliente',
+        clientName: clientFullName,
         clientCedula: client?.cedula || client?.documentId || client?.clientCode,
         clientPhone: client?.phone,
         loanId: loan?.id || transaction.referenceId || '',
@@ -419,7 +493,21 @@ export const ReceiptView: React.FC = () => {
                             <span className="text-slate-500 font-bold flex items-center gap-1.5">
                                 <User className="w-4 h-4 text-indigo-600" /> Nombre del Cliente
                             </span>
-                            <span className="font-black text-slate-900 text-sm">{client?.name || loan?.clientname || loan?.clientName || 'Cliente General'}</span>
+                            <div className="flex items-center gap-2">
+                                {client?.avatarUrl ? (
+                                    <img 
+                                        src={client.avatarUrl} 
+                                        alt={clientFullName} 
+                                        className="w-7 h-7 rounded-full object-cover border border-indigo-200 shadow-sm"
+                                        crossOrigin="anonymous"
+                                    />
+                                ) : (
+                                    <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                                        {clientFullName.charAt(0)}
+                                    </div>
+                                )}
+                                <span className="font-black text-slate-900 text-sm">{clientFullName}</span>
+                            </div>
                         </div>
                         {(client?.cedula || client?.documentId) && (
                             <div className="flex justify-between items-center px-1">

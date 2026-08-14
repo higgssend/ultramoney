@@ -250,12 +250,13 @@ export const LoanDetail: React.FC = () => {
     const formattedRecNo = formatReceiptId(t.id);
     const parsedDate = t.date ? new Date(t.date) : new Date();
     const calculated = calculateReceiptBalances(t, loan, allLoanTransactions);
+    const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan.clientName || loan.clientname || 'Cliente');
 
     const thermalData: ThermalReceiptData = {
       receiptNo: formattedRecNo,
       date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
       time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
-      clientName: client?.name || loan.clientName || 'Cliente',
+      clientName: clientFullName,
       clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
       loanId: loan.id,
@@ -283,11 +284,11 @@ export const LoanDetail: React.FC = () => {
   };
 
   const handleShareWhatsApp = (t: Transaction) => {
-    const clientName = client?.name || loan.clientName || 'Cliente';
+    const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan.clientName || loan.clientname || 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
     const calculated = calculateReceiptBalances(t, loan, allLoanTransactions);
     const receiptWebLink = `${window.location.origin}/recibo/${t.id}`;
-    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${clientName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
+    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${clientFullName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
