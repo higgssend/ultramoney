@@ -58,9 +58,38 @@ export interface InstallmentPreview {
 export class LoanEngine {
     
     /**
+     * Calcula la simulación financiera completa con desglose de cuotas y gráficos.
+     */
+    static calculateSimulation(config: {
+        amount: number;
+        interestRate: number;
+        durationWeeks?: number;
+        installments?: number;
+        frequency: string;
+        startDate: string;
+        loanType: string;
+        expenses?: ExpenseConfig[];
+        arrears?: ArrearsConfig;
+        extraPayments?: ExtraordinaryPayment[];
+        restructurings?: Restructuring[];
+    }): SimulationResult {
+        return this.calcular({
+            amount: config.amount,
+            interestRate: config.interestRate,
+            installments: config.durationWeeks || config.installments || 1,
+            frequency: config.frequency,
+            startDate: config.startDate,
+            loanType: config.loanType,
+            expenses: config.expenses,
+            arrears: config.arrears,
+            extraPayments: config.extraPayments,
+            restructurings: config.restructurings
+        });
+    }
+
+    /**
      * Calcula la tasa de interés base adaptada a la frecuencia de pago.
      */
-    
     static calcular(config: {
         amount: number;
         interestRate: number;
