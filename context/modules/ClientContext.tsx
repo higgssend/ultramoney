@@ -100,7 +100,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         })));
       }
       try {
-        const routesRes = await insforge.database.from('routes').select('*').order('created_at', { ascending: false });
+        const routesRes = await insforge.database.from('routes').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false });
         if (routesRes.data) {
           setRoutes((routesRes.data as RouteDB[]).map((r) => ({
             id: r.id, name: r.name, description: r.description,
@@ -402,12 +402,13 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const updateRoute = async (id: string, updates: Partial<Route>) => {
+    if (!currentUser) return;
     const dbUpdates: Partial<RouteDB> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.collectorId !== undefined) dbUpdates.collector_id = updates.collectorId;
 
-    const { error } = await insforge.database.from('routes').update(dbUpdates).eq('id', id);
+    const { error } = await insforge.database.from('routes').update(dbUpdates).eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
       setRoutes(routes.map(r => r.id === id ? { ...r, ...updates } : r));
       addToast("Ruta actualizada exitosamente", "success");
@@ -415,7 +416,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const deleteRoute = async (id: string) => {
-    const { error } = await insforge.database.from('routes').delete().eq('id', id);
+    if (!currentUser) return;
+    const { error } = await insforge.database.from('routes').delete().eq('id', id).eq('lender_id', currentUser.id);
     if (!error) {
       setRoutes(routes.filter(r => r.id !== id));
       addToast("Ruta eliminada exitosamente", "success");
