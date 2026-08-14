@@ -307,7 +307,7 @@ const ClientDetail: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto min-h-screen relative pb-20 space-y-8 animate-fade-in">
+    <div className="w-full min-h-screen relative pb-20 space-y-8 animate-fade-in">
       
       {/* Header */}
       <div className="flex items-center justify-between">

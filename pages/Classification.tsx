@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const Classification: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6 animate-fade-in pb-12">
       <div className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600" />

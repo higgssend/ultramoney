@@ -317,7 +317,7 @@ export const DocumentPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16 animate-fade-in">
+    <div className="w-full space-y-6 pb-16 animate-fade-in">
       
       {/* Top Page Header Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">

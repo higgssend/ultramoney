@@ -161,7 +161,7 @@ const NewClient: React.FC = () => {
   const labelClass = "block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2";
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-24 px-4">
+    <div className="w-full pb-24 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8 pt-2">
         <button

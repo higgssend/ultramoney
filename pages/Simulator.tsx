@@ -179,7 +179,7 @@ const Simulator: React.FC = () => {
   }, [type]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto animate-fade-in pb-10">
+    <div className="w-full space-y-6 animate-fade-in pb-10">
       {/* Top Bar */}
       <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
         <div className="flex items-center gap-3">

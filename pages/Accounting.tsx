@@ -441,7 +441,7 @@ const Accounting: React.FC = () => {
 
       {/* ─── TAB 2: CASH SHIFT & ARQUEO DE BILLETES ─── */}
       {activeTab === 'shift' && (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="w-full space-y-6">
           {!activeCashShift ? (
             <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl space-y-6">
               <div className="flex items-center gap-3 border-b border-slate-100 pb-4">

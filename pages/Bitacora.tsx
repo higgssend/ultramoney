@@ -26,7 +26,7 @@ const Bitacora: React.FC = () => {
   const uniqueActions = ['Todas', ...new Set(auditLogs.map(log => (log.action || '').split(' ')[0]))];
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+    <div className="w-full space-y-6 animate-fade-in pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">

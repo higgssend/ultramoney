@@ -99,7 +99,7 @@ export const InventoryPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-20 animate-fade-in">
+    <div className="w-full space-y-6 pb-20 animate-fade-in">
       
       {/* Header Bar */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">

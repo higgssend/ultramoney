@@ -196,7 +196,7 @@ export const CreditBureauExport: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto animate-fade-in pb-10 space-y-6">
+    <div className="w-full animate-fade-in pb-10 space-y-6">
       
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
