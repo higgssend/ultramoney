@@ -1,0 +1,25 @@
+-- Migration: Guarantors, Solidary Co-debtors, and Loan Request fields
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS guarantors JSONB;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS guarantor JSONB;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS guarantor_id TEXT;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS collateralref TEXT;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS closing_cost NUMERIC(15,2) DEFAULT 0;
+ALTER TABLE loans ADD COLUMN IF NOT EXISTS closing_cost_mode TEXT DEFAULT 'Descontado';
+
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS guarantor_name TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS guarantor_phone TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS guarantor_cedula TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS "references" JSONB;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS photo_url TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS seniority_years NUMERIC;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS marital_status TEXT;
+
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS guarantors JSONB;
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS guarantor JSONB;
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS item_price NUMERIC(15,2);
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS down_payment NUMERIC(15,2) DEFAULT 0;
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS down_payment_mode TEXT;
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS financed_amount NUMERIC(15,2);
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS closing_cost NUMERIC(15,2) DEFAULT 0;
+ALTER TABLE loan_requests ADD COLUMN IF NOT EXISTS closing_cost_mode TEXT DEFAULT 'Descontado';
