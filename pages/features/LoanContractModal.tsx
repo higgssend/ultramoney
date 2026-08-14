@@ -1,7 +1,7 @@
 import React, { useRef, useCallback } from 'react';
 import { X, Printer, Download, Share2, Image as ImageIcon, Building2, Phone, Mail, MapPin } from 'lucide-react';
 import { LoanEngine, InstallmentPreview } from '../../utils/LoanEngine';
-import { LoanType, ClosingCostMode, CompanySettings, Client, Collateral, Loan, formatContractId } from '../../types';
+import { LoanType, ClosingCostMode, CompanySettings, Client, Collateral, Loan, formatContractId, Guarantor } from '../../types';
 import { useSettings } from '../../context/StoreContext';
 
 export interface LoanContractModalProps {
@@ -34,6 +34,7 @@ export interface LoanContractModalProps {
   financedAmount?: number;
   customContractId?: string;
   collateral?: Collateral;
+  guarantors?: Guarantor[];
 }
 
 const fmt = (n: number, cur = 'DOP') =>
@@ -52,7 +53,7 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
   closingCost, closingCostMode, startDate, firstPaymentDate, schedulePreview,
   netDisbursement, totalToPay, installmentAmount, currency, companySettings,
   itemPrice, downPayment, downPaymentMode, financedAmount, customContractId,
-  collateral
+  collateral, guarantors
 }) => {
   const settingsCtx = useSettings();
   const activeCompanySettings = companySettings || settingsCtx.companySettings;
@@ -102,6 +103,13 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
   const effectiveCurrency = currency ?? loan?.currency ?? activeCompanySettings.currency ?? 'DOP';
   const effectiveContractId = customContractId || (loan ? formatContractId(loan.id) : undefined);
   const effectiveCollateral = collateral || (loan?.collaterals?.[0] || (loan?.collateralType ? { type: loan.collateralType as Collateral['type'], description: loan.collateralDescription || '', refNumber: loan.collateralRefNumber || '' } : undefined));
+  const effectiveGuarantors: Guarantor[] = (guarantors && guarantors.length > 0)
+    ? guarantors
+    : (loan?.guarantors && loan.guarantors.length > 0)
+      ? loan.guarantors
+      : (loan?.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as Record<string, unknown>).guarantors))
+        ? ((loan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+        : [];
 
   const printRef = useRef<HTMLDivElement>(null);
   const contractIdRef = useRef(RECEIPT_ID());
@@ -440,6 +448,45 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
               </div>
             )}
 
+            {/* Solidary Guarantors Section if present */}
+            {effectiveGuarantors.length > 0 && (
+              <div className="bg-indigo-50/50 rounded-2xl p-5 mb-6 border border-indigo-200/70">
+                <h3 className="text-xs font-black uppercase tracking-wider text-indigo-700 mb-3 flex items-center gap-1.5">
+                  <span>🤝 Garantes y Codeudores Solidarios ({effectiveGuarantors.length})</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  {effectiveGuarantors.map((g, idx) => (
+                    <div key={idx} className="bg-white p-3.5 rounded-xl border border-indigo-100 shadow-sm space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black text-slate-900 text-sm">{g.name} {g.lastName || ''}</span>
+                        {g.relationship && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                            {g.relationship}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-slate-600 pt-1">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">Cédula</span>
+                          <span className="font-mono font-bold text-slate-800">{g.cedula || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">Teléfono</span>
+                          <span className="font-semibold text-slate-800">{g.phone || 'N/A'}</span>
+                        </div>
+                        {g.workplace && (
+                          <div className="col-span-2">
+                            <span className="text-[10px] text-slate-400 block font-medium">Lugar de Trabajo</span>
+                            <span className="text-slate-800">{g.workplace} {g.jobPosition ? `(${g.jobPosition})` : ''}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Highlighted Total Banner */}
             <div className="bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-800 rounded-2xl p-6 mb-8 text-center text-white shadow-lg">
               <p className="text-xs font-black uppercase tracking-widest text-indigo-200 mb-1">
@@ -512,13 +559,23 @@ export const LoanContractModal: React.FC<LoanContractModalProps> = ({
             )}
 
             {/* Signatures Block */}
-            <div className="grid grid-cols-2 gap-12 mt-12 pt-8 border-t-2 border-slate-200">
+            <div className={`grid ${effectiveGuarantors.length > 0 ? (effectiveGuarantors.length === 1 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 md:grid-cols-4') : 'grid-cols-2'} gap-8 mt-12 pt-8 border-t-2 border-slate-200`}>
               <div className="text-center">
                 <div className="border-b-2 border-slate-400 pb-2 mb-2 h-14" />
                 <p className="text-xs font-black text-slate-800">Firma del Prestatario</p>
                 <p className="text-xs text-slate-600">{effectiveClient?.name} {effectiveClient?.lastName || ''}</p>
                 <p className="text-xs text-slate-400 font-mono">{effectiveClient?.cedula || ''}</p>
               </div>
+
+              {effectiveGuarantors.map((g, idx) => (
+                <div key={idx} className="text-center">
+                  <div className="border-b-2 border-slate-400 pb-2 mb-2 h-14" />
+                  <p className="text-xs font-black text-indigo-900">Garante Solidario #{idx + 1}</p>
+                  <p className="text-xs text-slate-700 font-bold">{g.name} {g.lastName || ''}</p>
+                  <p className="text-xs text-slate-400 font-mono">{g.cedula || ''}</p>
+                </div>
+              ))}
+
               <div className="text-center">
                 <div className="border-b-2 border-slate-400 pb-2 mb-2 h-14" />
                 <p className="text-xs font-black text-slate-800">Firma del Prestamista / Autorizado</p>

@@ -41,6 +41,8 @@ export interface LoanDB {
   payment_day?: number;
   lender_id?: string;
   guarantor_id?: string;
+  guarantors?: Record<string, unknown>[] | unknown;
+  guarantor?: Record<string, unknown> | unknown;
   collateralref?: string;
   collateral?: Record<string, unknown>;
   item_price?: number;

@@ -149,7 +149,13 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             durationWeeks: l.duration_weeks || l.durationweeks,
             lateFeePercentage: l.late_fee_percentage,
             graceDays: l.grace_days,
-            collateral: l.collateral as Loan['collateral'],
+            collateral: l.collateral as unknown as Loan['collateral'],
+            guarantors: (Array.isArray(l.guarantors) 
+              ? (l.guarantors as Loan['guarantors']) 
+              : (l.collateral && typeof l.collateral === 'object' && Array.isArray((l.collateral as Record<string, unknown>).guarantors))
+                ? ((l.collateral as Record<string, unknown>).guarantors as Loan['guarantors'])
+                : undefined),
+            guarantor: (l.guarantor && typeof l.guarantor === 'object') ? (l.guarantor as Loan['guarantor']) : undefined,
             itemPrice: l.item_price ? Number(l.item_price) : undefined,
             downPayment: l.down_payment ? Number(l.down_payment) : undefined,
             downPaymentMode: l.down_payment_mode as Loan['downPaymentMode'],
@@ -195,7 +201,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             purpose: r.purpose || r.loan_destination,
             notes: r.notes || r.observations,
             observations: r.observations || r.notes,
-            collateral: r.collateral as LoanRequest['collateral'],
+            collateral: r.collateral as unknown as LoanRequest['collateral'],
           })));
         }
       } catch (error) {
@@ -248,12 +254,16 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       remainingbalance: ttp,
       totaltopay: ttp,
       loantype: loanData.loanType,
-      collateral: loanData.collateral || null,
+      collateral: loanData.collateral 
+        ? { ...loanData.collateral, guarantors: loanData.guarantors || [] }
+        : loanData.guarantors && loanData.guarantors.length > 0 
+          ? { type: 'Sin Garantía', description: 'Garante Solidario', refNumber: '', guarantors: loanData.guarantors }
+          : null,
       item_price: loanData.itemPrice || null,
       down_payment: loanData.downPayment || 0,
       down_payment_mode: loanData.downPaymentMode || 'Efectivo',
       financed_amount: loanData.financedAmount || loanData.amount,
-      collateralref: loanData.guarantorId || null,
+      collateralref: loanData.guarantorId || loanData.guarantors?.[0]?.cedula || null,
       note: loanData.note || null,
       currency: loanData.currency || 'DOP'
     }]).select().single();
@@ -321,11 +331,13 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         startDate: data.startdate || data.start_date, nextPaymentDate: data.next_payment_date,
         status: data.status, remainingBalance: data.remainingbalance, totalToPay: data.totaltopay,
         loanType: data.loantype, collateral: data.collateral || loanData.collateral,
+        guarantors: loanData.guarantors,
+        guarantor: loanData.guarantor,
         itemPrice: data.item_price || loanData.itemPrice,
         downPayment: data.down_payment || loanData.downPayment,
         downPaymentMode: data.down_payment_mode || loanData.downPaymentMode,
         financedAmount: data.financed_amount || loanData.financedAmount,
-        guarantorId: data.collateralref, note: data.note || loanData.note,
+        guarantorId: data.collateralref || loanData.guarantorId, note: data.note || loanData.note,
         currency: data.currency || loanData.currency || 'DOP'
       };
       setLoans(prev => [newLoan, ...prev]);
@@ -356,12 +368,16 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           remainingbalance: updatedLoan.remainingBalance,
           totaltopay: updatedLoan.totalToPay,
           loantype: updatedLoan.loanType,
-          collateral: updatedLoan.collateral || null,
+          collateral: updatedLoan.collateral 
+            ? { ...updatedLoan.collateral, guarantors: updatedLoan.guarantors || [] }
+            : updatedLoan.guarantors && updatedLoan.guarantors.length > 0
+              ? { type: 'Sin Garantía', description: 'Garante Solidario', refNumber: '', guarantors: updatedLoan.guarantors }
+              : null,
           item_price: updatedLoan.itemPrice || null,
           down_payment: updatedLoan.downPayment || 0,
           down_payment_mode: updatedLoan.downPaymentMode || 'Efectivo',
           financed_amount: updatedLoan.financedAmount || updatedLoan.amount,
-          collateralref: updatedLoan.guarantorId || null,
+          collateralref: updatedLoan.guarantorId || updatedLoan.guarantors?.[0]?.cedula || null,
           note: updatedLoan.note || null,
           currency: updatedLoan.currency || 'DOP'
         })

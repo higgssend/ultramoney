@@ -4,8 +4,9 @@ import { useClients, useLoans, useSettings, useAccounting } from '../context/Sto
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
-import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct } from '../types';
+import { LoanType, ClosingCostMode, LoanRequest as ILoanRequest, Collateral, Loan, LoanProduct, Guarantor } from '../types';
 import { CollateralForm } from './features/CollateralForm';
+import { GuarantorForm } from '../components/GuarantorForm';
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 import { LoanContractModal } from './features/LoanContractModal';
@@ -94,6 +95,9 @@ export const LoanRequest: React.FC = () => {
 
   // Collateral State
   const [collateral, setCollateral] = useState<Collateral | undefined>(undefined);
+
+  // Solidary Guarantors State (Max 2)
+  const [guarantors, setGuarantors] = useState<Guarantor[]>([]);
 
   // PRD Category, Destination and Observations
   const [loanCategory, setLoanCategory] = useState<Loan['loanCategory']>('Personal');
@@ -369,6 +373,7 @@ export const LoanRequest: React.FC = () => {
                 startDate: startDate || new Date().toISOString().split('T')[0],
                 nextPaymentDate: firstPaymentDate || initialNextDate.toISOString().split('T')[0],
                 collateral,
+                guarantors: guarantors.length > 0 ? guarantors : undefined,
                 loanCategory,
                 note: observations || `Refinanciamiento del préstamo ${selectedLoanToRefinance}`,
                 lateFeePercentage,
@@ -393,6 +398,7 @@ export const LoanRequest: React.FC = () => {
                 startDate: startDate || new Date().toISOString().split('T')[0],
                 nextPaymentDate: firstPaymentDate || initialNextDate.toISOString().split('T')[0],
                 collateral,
+                guarantors: guarantors.length > 0 ? guarantors : undefined,
                 loanCategory,
                 note: observations,
                 lateFeePercentage,
@@ -434,6 +440,7 @@ export const LoanRequest: React.FC = () => {
             closingCostMode,
             paymentDay: frequency === 'Mensual' ? paymentDay : undefined,
             collateral,
+            guarantors: guarantors.length > 0 ? guarantors : undefined,
             loanDestination,
             observations,
             lateFeePercentage,
@@ -955,6 +962,13 @@ export const LoanRequest: React.FC = () => {
                         isFinancing={loanType.includes('Financiamiento') || loanCategory === 'Financiamiento'}
                     />
 
+                    {/* Solidary Guarantors & Co-debtors Form (Max 2) */}
+                    <GuarantorForm
+                        guarantors={guarantors}
+                        onChange={setGuarantors}
+                        maxGuarantors={2}
+                    />
+
                     {/* Arrears Config (Moras) */}
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
@@ -1307,6 +1321,7 @@ export const LoanRequest: React.FC = () => {
                     downPaymentMode={downPaymentMode}
                     financedAmount={loanType.includes('Financiamiento') ? amount - (hasInitialPayment ? (downPayment || 0) : 0) : undefined}
                     collateral={collateral}
+                    guarantors={guarantors}
                 />
 
               {/* LoanCreatedSharingModal — needed in create view too */}

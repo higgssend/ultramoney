@@ -7,8 +7,9 @@ import {
   Edit3, Trash2, Save, X, AlertCircle, Copy, Link
 } from 'lucide-react';
 import { useLoans, useClients, useSettings, useAccounting } from '../context/StoreContext';
-import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod, LoanStatus } from '../types';
+import { Loan, Client, formatLoanId, formatReceiptId, Transaction, PaymentMethod, LoanStatus, Guarantor } from '../types';
 import { toast } from 'sonner';
+import { Phone, Users, MapPin, Briefcase } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
@@ -533,6 +534,21 @@ export const LoanDetail: React.FC = () => {
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleContactGuarantorWhatsApp = (guarantor: Guarantor) => {
+    if (!loan) return;
+    const cleanPhone = guarantor.phone.replace(/\D/g, '');
+    let msg = `Hola *${guarantor.name}*,\n\n`;
+    msg += `Le contactamos de *${company.name || 'UltraMoney'}* en relación al crédito solidario de *${loan.clientName}* (Préstamo #${formatLoanId(loan.id)}).\n\n`;
+    if (isLoanOverdue) {
+      msg += `⚠️ Le informamos que el crédito presenta cuotas vencidas por un balance pendiente de *RD$ ${loan.remainingBalance.toLocaleString()}*.\n`;
+      msg += `Como Garante Solidario y Mancomunado, solicitamos su intervención para la regularización del pago a la brevedad.\n\n`;
+    } else {
+      msg += `El crédito se encuentra al día con balance residual de *RD$ ${loan.remainingBalance.toLocaleString()}* y próximo vencimiento el *${loan.nextPaymentDate || 'programado'}*.\n\n`;
+    }
+    msg += `Quedamos a su disposición para cualquier consulta.`;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   return (
     <div className="w-full space-y-6 pb-20 animate-fade-in">
       
@@ -803,21 +819,114 @@ export const LoanDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Garantes Info if present */}
-            {(client?.guarantorName || client?.coGuarantorName) && (
-              <div className="pt-2 flex flex-wrap gap-4 text-xs text-slate-600 dark:text-slate-400">
-                {client?.guarantorName && (
-                  <span className="bg-indigo-50/60 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 font-medium">
-                    Garante Principal: <strong className="text-slate-900 dark:text-white">{client.guarantorName}</strong> ({client.guarantorPhone || 'Sin tel.'})
-                  </span>
-                )}
-                {client?.coGuarantorName && (
-                  <span className="bg-indigo-50/60 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 font-medium">
-                    Garante Solidario: <strong className="text-slate-900 dark:text-white">{client.coGuarantorName}</strong> ({client.coGuarantorPhone || 'Sin tel.'})
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Garantes & Codeudores Solidarios Section */}
+            {(() => {
+              const guarantorsList: Guarantor[] = (loan.guarantors && loan.guarantors.length > 0)
+                ? loan.guarantors
+                : (loan.collateral && typeof loan.collateral === 'object' && Array.isArray((loan.collateral as Record<string, unknown>).guarantors))
+                  ? ((loan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+                  : (client?.guarantorName || client?.coGuarantorName)
+                    ? [
+                        ...(client.guarantorName ? [{
+                          id: 'legacy-1',
+                          name: client.guarantorName,
+                          cedula: client.guarantorCedula || 'N/A',
+                          phone: client.guarantorPhone || '',
+                          relationship: 'Garante Principal'
+                        }] : []),
+                        ...(client.coGuarantorName ? [{
+                          id: 'legacy-2',
+                          name: client.coGuarantorName,
+                          cedula: client.coGuarantorCedula || 'N/A',
+                          phone: client.coGuarantorPhone || '',
+                          relationship: 'Garante Solidario'
+                        }] : [])
+                      ]
+                    : [];
+
+              if (guarantorsList.length === 0) return null;
+
+              return (
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+                      <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      Garantes y Codeudores Solidarios ({guarantorsList.length})
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-full border border-indigo-100 dark:border-indigo-900/40 flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Pagaré Notarial Mancomunado
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {guarantorsList.map((g, idx) => (
+                      <div 
+                        key={g.id || idx}
+                        className="p-3.5 bg-indigo-50/40 dark:bg-indigo-950/20 rounded-2xl border border-indigo-100/80 dark:border-indigo-900/40 flex flex-col justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-slate-900 dark:text-white text-sm">
+                              {g.name} {g.lastName || ''}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg font-bold">
+                              {g.relationship || (idx === 0 ? 'Garante Principal' : 'Codeudor Solidario')}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                            <div>
+                              <span className="text-slate-400 block text-[10px] font-bold">CÉDULA / ID</span>
+                              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{g.cedula || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[10px] font-bold">TELÉFONO</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">{g.phone || 'Sin tel.'}</span>
+                            </div>
+                          </div>
+
+                          {(g.workplace || g.jobPosition || (g.monthlyIncome && g.monthlyIncome > 0)) && (
+                            <div className="pt-1.5 border-t border-indigo-100/50 dark:border-indigo-900/30 text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                              {g.workplace && (
+                                <span className="flex items-center gap-1">
+                                  <Briefcase className="w-3 h-3 text-indigo-500" /> {g.workplace} {g.jobPosition ? `(${g.jobPosition})` : ''}
+                                </span>
+                              )}
+                              {g.monthlyIncome && g.monthlyIncome > 0 && (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                  RD$ {g.monthlyIncome.toLocaleString()}/mes
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        {g.phone && (
+                          <div className="flex items-center gap-2 pt-1 border-t border-indigo-100/60 dark:border-indigo-900/40">
+                            <button
+                              type="button"
+                              onClick={() => handleContactGuarantorWhatsApp(g)}
+                              className="flex-1 py-1.5 px-2.5 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1eaf53] dark:text-[#25D366] rounded-xl font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>{isLoanOverdue ? 'Notificar Mora WhatsApp' : 'Contactar WhatsApp'}</span>
+                            </button>
+                            <a
+                              href={`tel:${g.phone.replace(/[^0-9]/g, '')}`}
+                              className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-colors"
+                              title="Llamar al garante"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Secondary Details Grid */}

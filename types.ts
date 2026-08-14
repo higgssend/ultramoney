@@ -70,6 +70,23 @@ export interface ClientReference {
   type: 'Familiar' | 'Personal' | 'Comercial';
 }
 
+export interface Guarantor {
+  id: string;
+  name: string;
+  lastName?: string;
+  cedula: string;
+  phone: string;
+  relationship?: string; // Familiar, Amigo, Cónyuge, Socio, Compañero de Trabajo, Vecino, Otro
+  address?: string;
+  workplace?: string; // Empresa o negocio
+  jobPosition?: string; // Cargo u ocupación
+  monthlyIncome?: number; // Ingreso mensual estimado
+  photoUrl?: string; // Foto de cédula o documento
+  documentType?: 'Cedula' | 'Pasaporte' | 'Licencia' | 'Otro';
+  notes?: string;
+}
+
+
 
 export interface Route {
   id: string;
@@ -211,8 +228,10 @@ export interface Loan {
   remainingBalance: number;
   installmentAmount?: number;
   nextPaymentDate: string;
-  // Garantía
+  // Garantía & Garantes Solidarios
   collateral?: Collateral;
+  guarantors?: Guarantor[]; // Hasta 2 garantes o codeudores solidarios
+  guarantor?: Guarantor;    // Retrocompatibilidad para garante principal
   guarantorId?: string;
   note?: string;
   currency?: 'DOP' | 'USD';

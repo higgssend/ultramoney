@@ -5,7 +5,7 @@ import {
   CloudUpload, MessageCircle, CreditCard, Car, Home, FileCode, FileImage, 
   Eye, Sparkles, RefreshCw, AlertTriangle, Smartphone
 } from 'lucide-react';
-import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId } from '../types';
+import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId, Guarantor } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
@@ -145,6 +145,30 @@ export const DocumentPage: React.FC = () => {
   const collateralText = collateralDescription 
     ? `${collateralType} - ${collateralDescription} ${collateralRefNumber ? `(${collateralRefNumber})` : ''}` 
     : 'Garantía Personal / Sin Garantía Específica Declarada';
+
+  // Resolved Guarantors for legal document
+  const docGuarantors: Guarantor[] = (currentLoan?.guarantors && currentLoan.guarantors.length > 0)
+    ? currentLoan.guarantors
+    : (currentLoan?.collateral && typeof currentLoan.collateral === 'object' && Array.isArray((currentLoan.collateral as Record<string, unknown>).guarantors))
+      ? ((currentLoan.collateral as Record<string, unknown>).guarantors as Guarantor[])
+      : (client?.guarantorName || client?.coGuarantorName)
+        ? [
+            ...(client.guarantorName ? [{
+              id: 'legacy-1',
+              name: client.guarantorName,
+              cedula: client.guarantorCedula || 'N/A',
+              phone: client.guarantorPhone || '',
+              relationship: 'Garante Principal'
+            }] : []),
+            ...(client.coGuarantorName ? [{
+              id: 'legacy-2',
+              name: client.coGuarantorName,
+              cedula: client.coGuarantorCedula || 'N/A',
+              phone: client.coGuarantorPhone || '',
+              relationship: 'Garante Solidario'
+            }] : [])
+          ]
+        : [];
 
   // EXPORT HANDLERS
   const handlePrint = () => {
@@ -528,7 +552,7 @@ export const DocumentPage: React.FC = () => {
           {docType === 'pagare' && (
             <div>
               <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline font-sans text-slate-900">
-                PAGARÉ NOTARIAL A LA ORDEN Y CONSTITUCIÓN DE {collateralHeading}
+                PAGARÉ NOTARIAL A LA ORDEN {docGuarantors.length > 0 ? 'MANCOMUNADO Y SOLIDARIO' : ''} Y CONSTITUCIÓN DE {collateralHeading}
               </h2>
               <div className="text-right text-xs font-sans font-bold text-indigo-950 mb-4">
                 Préstamo Ref. No.: <span className="font-mono">{formatLoanId(currentLoan?.id)}</span>
@@ -538,9 +562,19 @@ export const DocumentPage: React.FC = () => {
                 <p>
                   POR ANTE MÍ, Notario Público de los del Número para el Distrito Nacional, República Dominicana, matrícula del Colegio Dominicano de Notarios No. ____________, COMPARECE libre y voluntariamente el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, de nacionalidad dominicana, mayor de edad, estado civil {client.civilStatus || 'Soltero/a'}, profesión u ocupación {client.occupation || 'Comerciante'}, portador(a) de la Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) y residente en <strong>{client.address || 'República Dominicana'}</strong>, quien en lo adelante del presente acto se denominará <strong>EL DEUDOR</strong>.
                 </p>
+
+                {docGuarantors.length > 0 && (
+                  <p>
+                    Y de igual modo COMPARECEN en calidad de <strong>GARANTES SOLIDARIOS Y CODEUDORES MANCOMUNADOS</strong>: {docGuarantors.map((g, idx) => (
+                      <span key={g.id || idx}>
+                        {idx > 0 ? ', y ' : ''}el señor(a) <strong>{g.name} {g.lastName || ''}</strong>, dominicano/a, mayor de edad, Cédula de Identidad No. <strong>{g.cedula || 'N/A'}</strong>, domiciliado(a) en <strong>{g.address || 'República Dominicana'}</strong>{g.workplace ? ` (empleado/a o titular en ${g.workplace})` : ''}
+                      </span>
+                    ))}, quienes libremente declaran constituirse en deudores principales y garantes solidarios del presente crédito.
+                  </p>
+                )}
                 
                 <p>
-                  <strong>PRIMERO (DECLARACIÓN DE DEUDA):</strong> EL DEUDOR reconoce mediante el presente acto formal e irrevocable que DEBE y PAGARÁ de manera incondicional a la orden de <strong>{company.name}</strong>, sociedad legalmente constituida bajo RNC No. <strong>{company.rnc || 'N/A'}</strong>, o a su cesionario o legítimo tenedor, la suma total de <strong>RD$ {currentLoan ? (currentLoan.totalToPay || currentLoan.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 }) : '0.00'}</strong> pesos dominicanos, moneda de curso legal en la República Dominicana.
+                  <strong>PRIMERO (DECLARACIÓN DE DEUDA):</strong> EL DEUDOR {docGuarantors.length > 0 ? 'y LOS GARANTES SOLIDARIOS reconocen' : 'reconoce'} mediante el presente acto formal e irrevocable que DEBEN y PAGARÁN de manera incondicional a la orden de <strong>{company.name}</strong>, sociedad legalmente constituida bajo RNC No. <strong>{company.rnc || 'N/A'}</strong>, o a su cesionario o legítimo tenedor, la suma total de <strong>RD$ {currentLoan ? (currentLoan.totalToPay || currentLoan.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 }) : '0.00'}</strong> pesos dominicanos, moneda de curso legal en la República Dominicana.
                 </p>
                 
                 <p>
@@ -550,6 +584,12 @@ export const DocumentPage: React.FC = () => {
                 <p>
                   <strong>TERCERO (DETALLE ESPECÍFICO DE LA GARANTÍA OTORGADA):</strong> Como garantía real y especial del fiel, puntual e íntegro cumplimiento de la obligación asumida en este Pagaré Notarial relativo al Préstamo No. <strong>#{formatLoanId(currentLoan?.id)}</strong>, {collateralLegalClause}
                 </p>
+
+                {docGuarantors.length > 0 && (
+                  <p>
+                    <strong>TERCERO-BIS (CLÁUSULA DE SOLIDARIDAD Y MANCOMUNIDAD):</strong> LOS GARANTES SOLIDARIOS declaran y aceptan de forma expresa que quedan obligados(as) de manera solidaria, principal e indivisible al pago total del capital, intereses, moras y accesorios de este crédito. Renuncian formalmente a los beneficios de excusión y división de bienes que acuerdan los Artículos 2021 y siguientes del Código Civil dominicano, pudiendo EL ACREEDOR perseguir y exigir la totalidad de la deuda a cualquiera de los firmantes indistintamente.
+                  </p>
+                )}
                 
                 <p>
                   <strong>CUARTO (MORA Y VENCIMIENTO ANTICIPADO):</strong> Queda expresamente pactado que la falta de pago de una sola de las cuotas acordadas a su vencimiento producirá la caducidad del término y el vencimiento anticipado de la totalidad del saldo adeudado de pleno derecho, sin necesidad de puesta en mora ni requerimiento judicial previo, autorizando al Acreedor a ejecutar la garantía otorgada. Se aplicará un recargo por mora moratoria pactada del 5% mensual sobre el saldo en atraso.
@@ -565,22 +605,30 @@ export const DocumentPage: React.FC = () => {
               </div>
 
               {/* Firmas */}
-              <div className="signatures flex justify-between mt-16 pt-8 font-sans">
-                <div className="sig-block text-center w-5/12">
+              <div className="signatures grid grid-cols-2 gap-8 mt-16 pt-8 font-sans">
+                <div className="sig-block text-center">
                   <div className="sig-line border-t border-slate-900 pt-2 font-bold">{client.name} {client.lastName || ''}</div>
                   <div className="text-xs text-slate-600">EL DEUDOR (FIRMA Y HUELLA)</div>
                 </div>
-                <div className="sig-block text-center w-5/12">
+                <div className="sig-block text-center">
                   <div className="sig-line border-t border-slate-900 pt-2 font-bold">{company.name}</div>
                   <div className="text-xs text-slate-600">POR EL ACREEDOR</div>
                 </div>
+
+                {docGuarantors.map((g, i) => (
+                  <div key={g.id || i} className="sig-block text-center mt-6">
+                    <div className="sig-line border-t border-slate-900 pt-2 font-bold">{g.name} {g.lastName || ''}</div>
+                    <div className="text-xs text-slate-600">GARANTE SOLIDARIO {i + 1} (FIRMA Y HUELLA)</div>
+                    <div className="text-[10px] text-slate-500 font-mono">Céd: {g.cedula || 'N/A'}</div>
+                  </div>
+                ))}
               </div>
 
               {/* Acto de Legalización Notarial */}
               <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-400 font-serif text-xs leading-relaxed">
                 <h3 className="font-bold uppercase text-center font-sans text-xs mb-3 text-slate-900">ACTO DE LEGALIZACIÓN DE FIRMAS NOTARIAL</h3>
                 <p className="text-justify">
-                  YO, _____________________________________, Notario Público de los del Número para el Distrito Nacional, Matrícula del Colegio Dominicano de Notarios No. ________, CERTIFICO Y DOY FE: Que las firmas que anteceden fueron puestas en mi presencia de manera libre y voluntaria por los señores <strong>{client.name} {client.lastName || ''}</strong> y el representante legal de <strong>{company.name}</strong>, cuyas generales constan en el presente acto, quienes me declararon bajo la fe del juramento que esas son las firmas que acostumbran a usar en todos los actos de sus vidas públicas y privadas.
+                  YO, _____________________________________, Notario Público de los del Número para el Distrito Nacional, Matrícula del Colegio Dominicano de Notarios No. ________, CERTIFICO Y DOY FE: Que las firmas que anteceden fueron puestas en mi presencia de manera libre y voluntaria por los señores <strong>{client.name} {client.lastName || ''}</strong>{docGuarantors.length > 0 ? `, los garantes solidarios ${docGuarantors.map(g => `${g.name} ${g.lastName || ''}`).join(', ')}` : ''} y el representante legal de <strong>{company.name}</strong>, cuyas generales constan en el presente acto, quienes me declararon bajo la fe del juramento que esas son las firmas que acostumbran a usar en todos los actos de sus vidas públicas y privadas.
                 </p>
                 <p className="mt-2 text-justify">
                   Dada y firmada en mi estudio notarial en la ciudad de Santo Domingo, República Dominicana, a los <strong>{todayStr}</strong>.
@@ -600,7 +648,7 @@ export const DocumentPage: React.FC = () => {
           {docType === 'contrato' && (
             <div>
               <h2 className="title text-center text-lg font-bold uppercase my-6 tracking-wide underline font-sans text-slate-900">
-                CONTRATO DE PRÉSTAMO Y FINANCIAMIENTO CON {collateralHeading}
+                CONTRATO DE PRÉSTAMO Y FINANCIAMIENTO {docGuarantors.length > 0 ? 'MANCOMUNADO' : ''} CON {collateralHeading}
               </h2>
               <div className="text-right text-xs font-sans font-bold text-indigo-950 mb-4">
                 Préstamo Ref. No.: <span className="font-mono">{formatLoanId(currentLoan?.id)}</span>
@@ -613,6 +661,16 @@ export const DocumentPage: React.FC = () => {
                 <p>
                   Y de la otra parte, el señor(a) <strong>{client.name} {client.lastName || ''}</strong>, dominicano/a, mayor de edad, Cédula de Identidad y Electoral No. <strong>{client.cedula || 'N/A'}</strong>, domiciliado(a) en <strong>{client.address || 'República Dominicana'}</strong>, denominado(a) en lo adelante <strong>EL DEUDOR</strong>.
                 </p>
+
+                {docGuarantors.length > 0 && (
+                  <p>
+                    Y de una tercera parte, comparece(n) como <strong>GARANTE(S) SOLIDARIO(S)</strong>: {docGuarantors.map((g, idx) => (
+                      <span key={g.id || idx}>
+                        {idx > 0 ? ', y ' : ''}el señor(a) <strong>{g.name} {g.lastName || ''}</strong>, portador(a) de la Cédula No. <strong>{g.cedula || 'N/A'}</strong>, domiciliado(a) en <strong>{g.address || 'República Dominicana'}</strong>
+                      </span>
+                    ))}.
+                  </p>
+                )}
                 
                 <p className="text-center font-bold uppercase my-4 font-sans text-xs">
                   SE HA CONVENIDO Y PACTADO LO SIGUIENTE:
@@ -629,9 +687,15 @@ export const DocumentPage: React.FC = () => {
                 <p>
                   <strong>ARTÍCULO 3 (RÉGIMEN Y ESPECIFICACIÓN DE LA GARANTÍA):</strong> {collateralLegalClause}
                 </p>
+
+                {docGuarantors.length > 0 && (
+                  <p>
+                    <strong>ARTÍCULO 3-BIS (CODEUDOR Y OBLIGACIÓN SOLIDARIA):</strong> LOS GARANTES SOLIDARIOS se obligan conjuntamente con EL DEUDOR al pago íntegro de cuotas, capital e intereses, respondiendo con sus bienes presentes y futuros en caso de mora o incumplimiento.
+                  </p>
+                )}
                 
                 <p>
-                  <strong>ARTÍCULO 4 (CLÁUSULA DE MORA Y GASTOS DE COBRANZA):</strong> El retraso en el cumplimiento de las fechas fijadas para el pago de las cuotas generará un recargo por mora del 5% mensual. Asimismo, en caso de cobro judicial o extrajudicial, EL DEUDOR se compromete a cubrir los honorarios profesionales de abogacía equivalente al 20% del valor adeudado.
+                  <strong>ARTÍCULO 4 (CLÁUSULA DE MORA Y GASTOS DE COBRANZA):</strong> El retraso en el cumplimiento de las fechas fijadas para el pago de las cuotas generará un recargo por mora del 5% mensual. Asimismo, en caso de cobro judicial o extrajudicial, EL DEUDOR y LOS GARANTES se comprometen a cubrir los honorarios profesionales de abogacía equivalente al 20% del valor adeudado.
                 </p>
                 
                 <p>
@@ -643,15 +707,23 @@ export const DocumentPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="signatures flex justify-between mt-20 pt-8 font-sans border-t border-slate-300">
-                <div className="sig-block text-center w-5/12">
+              <div className="signatures grid grid-cols-2 gap-8 mt-20 pt-8 font-sans border-t border-slate-300">
+                <div className="sig-block text-center">
                   <div className="sig-line border-t border-slate-900 pt-2 font-bold">{client.name} {client.lastName || ''}</div>
                   <div className="text-xs text-slate-600">EL DEUDOR</div>
                 </div>
-                <div className="sig-block text-center w-5/12">
+                <div className="sig-block text-center">
                   <div className="sig-line border-t border-slate-900 pt-2 font-bold">{company.name}</div>
                   <div className="text-xs text-slate-600">EL ACREEDOR</div>
                 </div>
+
+                {docGuarantors.map((g, i) => (
+                  <div key={g.id || i} className="sig-block text-center mt-6">
+                    <div className="sig-line border-t border-slate-900 pt-2 font-bold">{g.name} {g.lastName || ''}</div>
+                    <div className="text-xs text-slate-600">GARANTE SOLIDARIO {i + 1}</div>
+                    <div className="text-[10px] text-slate-500 font-mono">Céd: {g.cedula || 'N/A'}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
