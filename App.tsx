@@ -164,7 +164,7 @@ const AppContent: React.FC = () => {
                   {/* Public Routes */}
                   <Route path="/" element={("__TAURI__" in window || "__TAURI_INTERNALS__" in window || window.navigator.userAgent.includes('Tauri')) ? <Navigate to="/login" replace /> : <LandingPage />} />
                   <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-                  <Route path="/login/:slug" element={<PublicOnlyRoute><CompanyLogin /></PublicOnlyRoute>} />
+                  <Route path="/login/:slug" element={<CompanyLogin />} />
                   <Route path="/login-staff" element={<PublicOnlyRoute><EmployeeLogin /></PublicOnlyRoute>} />
                   <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
                   <Route path="/portal/:clientId" element={<ClientPortal />} />
