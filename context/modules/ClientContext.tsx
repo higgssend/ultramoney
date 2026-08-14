@@ -6,6 +6,7 @@ import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
 import { logger } from '../../utils/logger';
+import { uploadToBucketHelper } from '../../utils/storage';
 
 interface ClientContextType {
   clients: Client[];
