@@ -1,13 +1,13 @@
 import { Client, Loan, LoanStatus } from '../types';
 
-export type CreditRiskCategory = 'Platino' | 'Bueno' | 'Regular' | 'Alto Riesgo';
+export type CreditRiskCategory = 'Platino' | 'Bueno' | 'Regular' | 'Alto Riesgo' | 'Crítico';
 
 export interface CreditScoreResult {
   score: number;             // 300 to 850 (FICO / Datacrédito scale)
   points100: number;         // 0 to 100 normalized points
   category: CreditRiskCategory;
-  grade: 'A' | 'B' | 'C' | 'D';
-  label: string;             // e.g. "Cliente Platino", "Cliente Confiable", "Cliente Regular", "Alto Riesgo"
+  grade: 'A' | 'B' | 'C' | 'D' | 'E';
+  label: string;             // e.g. "Cliente Platino", "Cliente Confiable", "Cliente Regular", "Alto Riesgo", "Riesgo Crítico"
   badgeColor: string;
   badgeBg: string;
   badgeBorder: string;
@@ -113,7 +113,7 @@ export class CreditScoreEngine {
 
     // Determine category, grade, colors, and semáforo recommendation
     let category: CreditRiskCategory;
-    let grade: 'A' | 'B' | 'C' | 'D';
+    let grade: 'A' | 'B' | 'C' | 'D' | 'E';
     let label: string;
     let badgeColor: string;
     let badgeBg: string;
@@ -123,7 +123,7 @@ export class CreditScoreEngine {
     let riskBanner: CreditScoreResult['riskBanner'];
 
     if (points100 >= 90 || finalScore >= 750) {
-      // 🟢 PLATINO (90-100 pts / 750-850)
+      // PLATINO (90-100 pts / 750-850) - GRADO A
       category = 'Platino';
       grade = 'A';
       label = 'Cliente Platino';
@@ -134,14 +134,14 @@ export class CreditScoreEngine {
       recommendation = 'Cliente AAA con historial intachable. Califica para desembolso inmediato y tasas preferenciales.';
       riskBanner = {
         type: 'platino',
-        title: '🟢 Cliente Platino (Calificación Excelente)',
+        title: 'Cliente Platino (Calificación Excelente)',
         description: 'Califica para desembolso inmediato y condiciones preferenciales.',
         suggestGuarantor: false,
         suggestCollateral: false,
         allowImmediateDisbursement: true
       };
     } else if (points100 >= 75 || finalScore >= 670) {
-      // 🔵 BUENO / CONFIABLE (75-89 pts / 670-749)
+      // BUENO / CONFIABLE (75-89 pts / 670-749) - GRADO B
       category = 'Bueno';
       grade = 'B';
       label = 'Cliente Confiable';
@@ -149,17 +149,17 @@ export class CreditScoreEngine {
       badgeBg = 'bg-indigo-50 dark:bg-indigo-950/50';
       badgeBorder = 'border-indigo-200 dark:border-indigo-800';
       dotColor = 'bg-indigo-600';
-      recommendation = 'Perfil solvente y de bajo riesgo. Aprobación estándar recomendada según ingresos.';
+      recommendation = 'Perfil solvente y de bajo riesgo. Aprobación estándar recomendada según capacidad de pago.';
       riskBanner = {
         type: 'bueno',
-        title: '🔵 Cliente Confiable (Buen Historial)',
+        title: 'Cliente Confiable (Buen Historial)',
         description: 'Capacidad de pago demostrada. Aprobación estándar recomendada.',
         suggestGuarantor: false,
         suggestCollateral: false,
         allowImmediateDisbursement: true
       };
     } else if (points100 >= 60 || finalScore >= 580) {
-      // 🟡 REGULAR / PRECAUCIÓN (60-74 pts / 580-669)
+      // REGULAR / PRECAUCIÓN (60-74 pts / 580-669) - GRADO C
       category = 'Regular';
       grade = 'C';
       label = 'Cliente Regular';
@@ -170,14 +170,14 @@ export class CreditScoreEngine {
       recommendation = 'Perfil moderado. Se sugiere requerir garantía prendaria o garante solidario.';
       riskBanner = {
         type: 'regular',
-        title: '🟡 Cliente Regular (Aprobación Condicionada)',
+        title: 'Cliente Regular (Aprobación Condicionada)',
         description: 'Se sugiere exigir garantía prendaria o garante solidario para mitigar riesgo de crédito.',
         suggestGuarantor: true,
         suggestCollateral: true,
         allowImmediateDisbursement: false
       };
-    } else {
-      // 🔴 ALTO RIESGO (< 60 pts / < 580)
+    } else if (finalScore >= 450) {
+      // ALTO RIESGO (450-579) - GRADO D
       category = 'Alto Riesgo';
       grade = 'D';
       label = 'Alto Riesgo';
@@ -185,11 +185,29 @@ export class CreditScoreEngine {
       badgeBg = 'bg-rose-50 dark:bg-rose-950/50';
       badgeBorder = 'border-rose-200 dark:border-rose-800';
       dotColor = 'bg-rose-500';
-      recommendation = '⚠️ Alerta: Historial con atrasos o sobreendeudamiento. Exigir aval solidario o garantía y aprobación gerencial.';
+      recommendation = 'Alerta: Historial con atrasos reiterados o sobreendeudamiento. Exigir aval solidario o garantía prendaria.';
       riskBanner = {
         type: 'danger',
-        title: '🔴 Alto Riesgo (Alerta de Morosidad)',
+        title: 'Alto Riesgo (Alerta de Morosidad)',
         description: 'El cliente presenta atrasos o deudas elevadas. Se recomienda exigir garantía o garante solidario.',
+        suggestGuarantor: true,
+        suggestCollateral: true,
+        allowImmediateDisbursement: false
+      };
+    } else {
+      // CRÍTICO (< 450) - GRADO E
+      category = 'Crítico';
+      grade = 'E';
+      label = 'Riesgo Crítico';
+      badgeColor = 'text-red-800 dark:text-red-200';
+      badgeBg = 'bg-red-100 dark:bg-red-950/80';
+      badgeBorder = 'border-red-300 dark:border-red-800';
+      dotColor = 'bg-red-700';
+      recommendation = 'Crítico: Morosidad severa o incobrable. No califica para nuevos desembolsos. Requiere gestión de cobro judicial.';
+      riskBanner = {
+        type: 'danger',
+        title: 'Riesgo Crítico (Bloqueo de Crédito)',
+        description: 'Historial altamente moroso. Operaciones restringidas y sujeto a cobro especial.',
         suggestGuarantor: true,
         suggestCollateral: true,
         allowImmediateDisbursement: false

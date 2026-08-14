@@ -77,14 +77,14 @@ export const CreditRiskSemaphore: React.FC<CreditRiskSemaphoreProps> = ({
       {riskBanner.suggestGuarantor && (
         <div className="mt-3 py-2 px-3 bg-amber-100/70 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/80 rounded-xl text-xs text-amber-900 dark:text-amber-200 font-semibold flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>💡 <strong>Recomendación del Sistema:</strong> Se sugiere adjuntar 1 o 2 <strong>Garantes Solidarios</strong> o garantía prendaria para respaldar la operación.</span>
+          <span><strong>Recomendación del Sistema:</strong> Se sugiere adjuntar 1 o 2 <strong>Garantes Solidarios</strong> o garantía prendaria para respaldar la operación.</span>
         </div>
       )}
 
       {riskBanner.allowImmediateDisbursement && (
         <div className="mt-3 py-2 px-3 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300/80 dark:border-emerald-800/80 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 font-semibold flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>✅ <strong>Aprobación Prioritaria:</strong> Cliente con excelente calificación. Califica para desembolso inmediato.</span>
+          <span><strong>Aprobación Prioritaria:</strong> Cliente con excelente calificación. Califica para desembolso inmediato.</span>
         </div>
       )}
 
