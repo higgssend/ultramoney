@@ -78,7 +78,7 @@ const Payments: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'registrar' | 'historial' | 'rutas'>('registrar');
+  const [activeTab, setActiveTab] = useState<'registrar' | 'monitor' | 'historial' | 'rutas'>('registrar');
   
   // Form State
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
