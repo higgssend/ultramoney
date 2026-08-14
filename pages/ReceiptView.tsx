@@ -99,7 +99,7 @@ export const ReceiptView: React.FC = () => {
 
                 if (txData) {
                     setTransaction(txData as Transaction);
-                    const refId = txData.referenceId || txData.referenceid;
+                    const refId = txData.referenceId;
 
                     // 2. Fetch associated Loan from DB
                     if (refId) {
