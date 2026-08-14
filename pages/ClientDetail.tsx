@@ -265,10 +265,11 @@ const ClientDetail: React.FC = () => {
       installmentInfo: t.description || t.note || 'Pago de Cuota / Abono',
       amountPaid: Number(t.amount || 0),
       paymentMethod: (t.paymentMethod as PaymentMethod) || 'Efectivo',
-      remainingBalance: matchedLoan?.remainingBalance,
-      currency: 'RD$',
-      collectorName: 'Cajero / Oficial',
-      transactionId: t.id
+      previousBalance: (matchedLoan?.remainingBalance || 0) + Number(t.amount || 0),
+      newBalance: matchedLoan?.remainingBalance || 0,
+      cashierName: 'Cajero / Oficial',
+      transactionId: t.id,
+      clientId: client?.id
     });
   };
 
@@ -733,13 +734,13 @@ const ClientDetail: React.FC = () => {
                             title={`Historial de Pagos de ${client.name}`}
                             filename={`pagos_${client.cedula}`}
                             columns={[
-                                { header: 'ID Recibo', key: 'id', format: (v) => formatReceiptId(v) },
+                                { header: 'ID Recibo', key: 'id', format: (v) => formatReceiptId(String(v || '')) },
                                 { header: 'Fecha', key: 'date' },
                                 { header: 'Monto', key: 'amount', format: (v) => `$${Number(v)?.toLocaleString()}` },
                                 { header: 'Método', key: 'paymentMethod' },
                                 { header: 'Tipo', key: 'type' },
                                 { header: 'Concepto', key: 'description' },
-                                { header: 'Préstamo (Ref)', key: 'referenceId', format: (v) => v ? formatLoanId(v) : '-' }
+                                { header: 'Préstamo (Ref)', key: 'referenceId', format: (v) => v ? formatLoanId(String(v)) : '-' }
                             ]}
                         />
                     </div>

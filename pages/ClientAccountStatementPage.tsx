@@ -6,13 +6,23 @@ import {
   CreditCard, AlertTriangle, FileText, Phone, MapPin, Mail, Sparkles, TrendingUp
 } from 'lucide-react';
 import { useClients, useLoans, useSettings, useAccounting } from '../context/StoreContext';
-import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId, LoanStatus, Installment } from '../types';
+import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId, LoanStatus } from '../types';
 import { insforge } from '../lib/insforge';
-import { LoanEngine } from '../utils/LoanEngine';
+import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+interface StatementInstallment {
+  number: number;
+  date: string;
+  amount: number;
+  capital: number;
+  interest: number;
+  paidAmount: number;
+  status: string;
+}
 
 export const ClientAccountStatementPage: React.FC = () => {
   const { clientId, id } = useParams<{ clientId?: string; id?: string }>();
@@ -56,8 +66,9 @@ export const ClientAccountStatementPage: React.FC = () => {
               email: dbSettings.email || '',
               address: dbSettings.address || '',
               logoUrl: dbSettings.logourl || dbSettings.logo_url || dbSettings.logoUrl || '',
-              lateFeeRate: Number(dbSettings.late_fee_rate || dbSettings.latefeerate) || 5,
-              gracePeriodDays: Number(dbSettings.grace_period_days || dbSettings.graceperioddays) || 3
+              logourl: dbSettings.logourl || dbSettings.logo_url || dbSettings.logoUrl || '',
+              currency: 'DOP',
+              termsAndConditions: dbSettings.terms_and_conditions || ''
             });
           }
         } catch (e) {
@@ -119,10 +130,10 @@ export const ClientAccountStatementPage: React.FC = () => {
                 interestRate: Number(l.interestrate || l.interest_rate) || 0,
                 durationWeeks: Number(l.durationweeks || l.installments) || 12,
                 installments: Number(l.installments) || 12,
-                frequency: l.frequency || 'Semanal',
+                frequency: ((l.frequency || 'Semanal') as Loan['frequency']),
                 startDate: l.startdate || l.start_date || '',
                 nextPaymentDate: l.next_payment_date || l.nextpaymentdate || '',
-                status: (l.status as Loan['status']) || 'Activo',
+                status: ((l.status as LoanStatus) || LoanStatus.ACTIVE),
                 loanType: (l.loantype || l.loan_type || 'Amortizado') as Loan['loanType'],
                 loanCategory: (l.loancategory || l.loan_category) as Loan['loanCategory'],
                 totalToPay: Number(l.totaltopay || l.total_to_pay || l.amount) || 0,
@@ -198,12 +209,12 @@ export const ClientAccountStatementPage: React.FC = () => {
 
   // 3. Upcoming Active Installments
   const upcomingInstallments = useMemo(() => {
-    const list: { loan: Loan; installment: Installment }[] = [];
+    const list: { loan: Loan; installment: StatementInstallment }[] = [];
     clientLoans
       .filter(l => l.status === LoanStatus.ACTIVE || l.status === LoanStatus.OVERDUE)
       .forEach(loan => {
         try {
-          const schedule = LoanEngine.generateAmortizationSchedule(
+          const schedule: InstallmentPreview[] = LoanEngine.generateAmortizationSchedule(
             loan.amount || 0,
             loan.interestRate || 0,
             loan.installments || loan.durationWeeks || 12,
@@ -219,7 +230,7 @@ export const ClientAccountStatementPage: React.FC = () => {
               installment: {
                 number: s.installmentNumber,
                 date: s.date,
-                amount: s.installmentAmount,
+                amount: s.total,
                 capital: s.principal,
                 interest: s.interest,
                 paidAmount: 0,
@@ -319,7 +330,16 @@ export const ClientAccountStatementPage: React.FC = () => {
   const issueDate = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' });
   const issueTime = new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  const effectiveCompany = companySettings?.name ? companySettings : (dbCompanySettings || companySettings || { name: 'UltraMoney Financial' });
+  const fallbackCompany: CompanySettings = {
+    name: 'UltraMoney Financial',
+    rnc: '',
+    phone: '',
+    email: '',
+    address: '',
+    currency: 'DOP',
+    termsAndConditions: ''
+  };
+  const effectiveCompany: CompanySettings = companySettings?.name ? companySettings : (dbCompanySettings || fallbackCompany);
   const effectiveLogo = effectiveCompany.logoUrl || effectiveCompany.logourl;
 
   return (
