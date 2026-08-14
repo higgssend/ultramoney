@@ -1,16 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Printer, X, Smartphone, Copy, Check, Download, Share2, 
-  QrCode, Sliders, Receipt, RefreshCw, FileText
+  QrCode, Sliders, Receipt, RefreshCw, FileText, ExternalLink, Maximize2
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useSettings, useClients } from '../context/StoreContext';
 import { formatLoanId, formatReceiptId, PaymentMethod } from '../types';
 import { formatExactTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 import QRCode from 'qrcode';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import { WhatsAppIcon } from './WhatsAppIcon';
+import { exportThermalReceiptToPNG, exportThermalReceiptToPDF, printThermalReceiptDirect } from '../utils/thermalExportHelper';
 
 export interface ThermalReceiptData {
   receiptNo: string;
@@ -59,6 +59,7 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
 }) => {
   const { companySettings } = useSettings();
   const { clients = [] } = useClients();
+  const navigate = useNavigate();
   const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('58mm');
   const [copiedText, setCopiedText] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
@@ -275,30 +276,8 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
     setIsExportingPDF(true);
     try {
       toast.info('Generando PDF del ticket térmico...');
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        scrollY: -window.scrollY,
-        scrollX: -window.scrollX,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidthMm = paperWidth === '58mm' ? 58 : 80;
-      const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: [imgWidthMm, Math.max(imgHeightMm + 8, 100)]
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 4, imgWidthMm, imgHeightMm);
-      pdf.save(`Ticket_Termico_${data.receiptNo}.pdf`);
-      toast.success('Ticket PDF descargado exitosamente');
+      await exportThermalReceiptToPDF(element, `Ticket_Termico_${data.receiptNo}.pdf`, paperWidth);
+      toast.success('Ticket PDF continuo descargado exitosamente');
     } catch (e) {
       console.error('Error generando PDF térmico:', e);
       toast.error('Error al generar PDF del ticket');
@@ -313,37 +292,8 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
     setIsExportingImage(true);
     try {
       toast.info('Generando imagen completa del ticket...');
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        scrollY: -window.scrollY,
-        scrollX: -window.scrollX,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight
-      });
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          const image = canvas.toDataURL('image/png');
-          const link = document.createElement('a');
-          link.href = image;
-          link.download = `Ticket_${data.receiptNo}.png`;
-          link.click();
-          toast.success('Imagen de ticket descargada');
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Ticket_${data.receiptNo}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast.success('Imagen completa del ticket descargada');
-      }, 'image/png');
+      await exportThermalReceiptToPNG(element, `Ticket_${data.receiptNo}.png`, paperWidth);
+      toast.success('Imagen completa del ticket descargada');
     } catch (e) {
       console.error('Error al exportar imagen:', e);
       toast.error('Error al exportar imagen');
@@ -403,6 +353,19 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
                 80 mm (POS)
               </button>
             </div>
+
+            {data.transactionId && (
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate(`/recibo-termico/${data.transactionId}`);
+                }}
+                className="p-2 text-slate-400 hover:text-indigo-400 rounded-full hover:bg-slate-800 transition-colors"
+                title="Abrir página dedicada / Modo pantalla completa"
+              >
+                <Maximize2 className="w-5 h-5" />
+              </button>
+            )}
 
             <button
               onClick={onClose}

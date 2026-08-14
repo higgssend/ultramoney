@@ -489,13 +489,14 @@ export const ReceiptView: React.FC = () => {
                                 <span>Editar Pago</span>
                             </button>
                         )}
-                        <button 
-                            onClick={() => setIsThermalOpen(true)}
+                        <Link 
+                            to={`/recibo-termico/${transaction?.id}`}
                             className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 transition-all active:scale-95"
+                            title="Abrir estación de impresión térmica en página dedicada completa"
                         >
                             <Printer className="w-4 h-4" />
                             <span>Impresión Térmica (58/80mm)</span>
-                        </button>
+                        </Link>
                         <button 
                             onClick={handleCopyReceiptLink}
                             className="px-3.5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-colors"

@@ -41,6 +41,7 @@ const CompanyLogin = React.lazy(() => import('./pages/CompanyLogin').then(m => (
 const ClientPortals = React.lazy(() => import('./pages/ClientPortals'));
 const ClientPortal = React.lazy(() => import('./pages/ClientPortal').then(m => ({ default: m.ClientPortal })));
 const ReceiptView = React.lazy(() => import('./pages/ReceiptView').then(m => ({ default: m.ReceiptView })));
+const ThermalReceiptPage = React.lazy(() => import('./pages/ThermalReceiptPage').then(m => ({ default: m.ThermalReceiptPage })));
 const PublicDocumentView = React.lazy(() => import('./pages/PublicDocumentView').then(m => ({ default: m.PublicDocumentView })));
 const ClientAccountStatementPage = React.lazy(() => import('./pages/ClientAccountStatementPage').then(m => ({ default: m.ClientAccountStatementPage })));
 const Register = React.lazy(() => import('./pages/Register'));
@@ -179,6 +180,9 @@ const AppContent: React.FC = () => {
                   <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
                   <Route path="/portal/:clientId" element={<ClientPortal />} />
                   <Route path="/recibo/:transactionId" element={<ReceiptView />} />
+                  <Route path="/recibo-termico/:transactionId" element={<ThermalReceiptPage />} />
+                  <Route path="/termal/:transactionId" element={<ThermalReceiptPage />} />
+                  <Route path="/ticket/:transactionId" element={<ThermalReceiptPage />} />
                   <Route path="/documento/estado-cliente/:clientId" element={<ClientAccountStatementPage />} />
                   <Route path="/estado-cuenta/:clientId" element={<ClientAccountStatementPage />} />
                   <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
