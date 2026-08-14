@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Loan, Client, formatLoanId } from '../types';
 import { toast } from 'sonner';
+import { WhatsAppIcon } from './WhatsAppIcon';
 
 interface LoanCreatedSharingModalProps {
   loan: Loan;
@@ -156,9 +157,9 @@ export const LoanCreatedSharingModal: React.FC<LoanCreatedSharingModalProps> = (
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <button
             onClick={handleSendWhatsApp}
-            className="w-full sm:w-auto flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all"
+            className="w-full sm:w-auto flex-1 py-3 px-4 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 transition-all hover:scale-[1.01]"
           >
-            <MessageCircle className="w-4 h-4" /> Enviar por WhatsApp al Cliente
+            <WhatsAppIcon className="w-4 h-4 text-white" /> Enviar por WhatsApp al Cliente
           </button>
 
           {onNavigateToDetail && (

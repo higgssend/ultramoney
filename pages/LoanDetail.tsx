@@ -15,9 +15,9 @@ import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
 import { LoanEngine } from '../utils/LoanEngine';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
-import { LoanContractModal } from './features/LoanContractModal';
 import { RefinanceModal } from '../components/RefinanceModal';
 import { CreditScoreEngine } from '../utils/CreditScoreEngine';
+import { WhatsAppIcon } from '../components/WhatsAppIcon';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -798,9 +798,9 @@ export const LoanDetail: React.FC = () => {
                     href={`https://wa.me/${(loan.clientPhone || client?.phone || '').replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2.5 bg-[#25D366]/10 text-[#1eaf53] hover:bg-[#25D366]/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                    className="px-4 py-2.5 bg-[#25D366] text-white hover:bg-[#20ba5a] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hover:scale-[1.02]"
                   >
-                    <MessageCircle className="w-4 h-4" /> WhatsApp
+                    <WhatsAppIcon className="w-4 h-4 text-white" /> WhatsApp
                   </a>
                 )}
                 <button
@@ -1191,8 +1191,8 @@ export const LoanDetail: React.FC = () => {
                 <button onClick={handleCloudSave} disabled={isUploading} className="px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md flex items-center gap-1.5 disabled:opacity-50">
                   <CloudUpload className="w-4 h-4" /> {isUploading ? 'Guardando...' : 'Nube'}
                 </button>
-                <button onClick={handleWhatsAppShare} className="px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md flex items-center gap-1.5">
-                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                <button onClick={handleWhatsAppShare} className="px-3.5 py-2 bg-[#25D366] text-white rounded-xl text-xs font-bold hover:bg-[#20ba5a] shadow-md flex items-center gap-1.5 transition-all">
+                  <WhatsAppIcon className="w-4 h-4 text-white" /> WhatsApp
                 </button>
                 <button onClick={handleCopyDocumentLink} className="px-3.5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 shadow-md flex items-center gap-1.5" title="Copiar enlace web único de este documento">
                   <Copy className="w-4 h-4" /> Copiar Link
