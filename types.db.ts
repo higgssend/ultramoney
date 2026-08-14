@@ -355,3 +355,25 @@ export interface NotificationDB {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface AccountingPeriodDB {
+  id: string;
+  lender_id: string;
+  period_type: string;
+  year: number;
+  month?: number | null;
+  start_date: string;
+  end_date: string;
+  status: string;
+  total_income?: number;
+  total_expense?: number;
+  net_income?: number;
+  closing_entry_id?: string | null;
+  closed_at?: string | null;
+  closed_by?: string | null;
+  reopened_at?: string | null;
+  reopened_by?: string | null;
+  reopen_reason?: string | null;
+  notes?: string | null;
+  created_at?: string;
+}

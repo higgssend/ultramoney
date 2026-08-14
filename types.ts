@@ -566,6 +566,29 @@ export interface CompanySettings {
   customLink?: string; // e.g. mi-empresa
   defaultLateFeePercent?: number;
   numberSeries?: NumberSeriesSettings;
+  lockedUntilDate?: string; // e.g. '2026-06-30'
+}
+
+export interface AccountingPeriod {
+  id: string;
+  lenderId: string;
+  periodType: 'Mensual' | 'Anual';
+  year: number;
+  month?: number; // 1-12 or undefined for annual
+  startDate: string;
+  endDate: string;
+  status: 'Cerrado' | 'Abierto';
+  totalIncome: number;
+  totalExpense: number;
+  netIncome: number;
+  closingEntryId?: string;
+  closedAt?: string;
+  closedBy?: string;
+  reopenedAt?: string;
+  reopenedBy?: string;
+  reopenReason?: string;
+  notes?: string;
+  createdAt: string;
 }
 
 export interface AuditLog {

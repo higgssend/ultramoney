@@ -1,12 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod, BankDeposit } from '../../types';
-import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB, BankDepositDB } from '../../types.db';
+import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod, BankDeposit, AccountingPeriod } from '../../types';
+import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB, BankDepositDB, AccountingPeriodDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
 import { logger } from '../../utils/logger';
 import { uploadToBucketHelper } from '../../utils/storage';
+
+export interface ClosePeriodParams {
+  periodType: 'Mensual' | 'Anual';
+  year: number;
+  month?: number;
+  startDate: string;
+  endDate: string;
+  totalIncome: number;
+  totalExpense: number;
+  netIncome: number;
+  notes?: string;
+}
 
 interface AccountingContextType {
   transactions: Transaction[];
@@ -17,6 +29,15 @@ interface AccountingContextType {
   collectorVisits: CollectorVisit[];
   bankDeposits: BankDeposit[];
   isLoadingDeposits: boolean;
+  
+  // Period Locking & Closings
+  accountingPeriods: AccountingPeriod[];
+  lockedUntilDate: string | null;
+  isDateInLockedPeriod: (dateStr: string) => { isLocked: boolean; reason?: string };
+  setLockedUntilDate: (date: string | null) => Promise<void>;
+  closeAccountingPeriod: (params: ClosePeriodParams) => Promise<void>;
+  reopenAccountingPeriod: (periodId: string, reason: string) => Promise<void>;
+  refreshAccountingPeriods: () => Promise<void>;
   
   openCashShift: (initialAmount: number, notes?: string) => void;
   closeCashShift: (finalCashCount: number, notes?: string) => void;
@@ -98,24 +119,24 @@ const DEFAULT_PAYMENT_METHODS: CustomPaymentMethod[] = [
     description: 'Voucher o pasarela digital de tarjetas',
     requiresReference: true,
     isActive: true,
-    isDefault: true
+    isDefault: false
   },
   {
     id: 'pm-cheque',
     name: 'Cheque',
     category: 'Cheque',
-    description: 'Cheques de gerencia o comerciales',
+    description: 'Cheque de gerencia o personal depositado',
     requiresReference: true,
     isActive: true,
-    isDefault: true
+    isDefault: false
   }
 ];
 
 const mapTransaction = (t: TransactionDB): Transaction => ({
   id: t.id,
   type: t.type as Transaction['type'],
-  category: (t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')) as Transaction['category'],
-  amount: Number(t.amount) || 0,
+  category: t.category,
+  amount: t.amount,
   date: t.date,
   description: t.description,
   referenceId: t.referenceid || t.reference_id || undefined,
@@ -148,6 +169,28 @@ const mapBankDeposit = (d: BankDepositDB): BankDeposit => ({
   createdAt: d.created_at || undefined,
 });
 
+const mapAccountingPeriod = (p: AccountingPeriodDB): AccountingPeriod => ({
+  id: p.id,
+  lenderId: p.lender_id,
+  periodType: (p.period_type || 'Mensual') as AccountingPeriod['periodType'],
+  year: p.year,
+  month: p.month || undefined,
+  startDate: p.start_date,
+  endDate: p.end_date,
+  status: (p.status || 'Cerrado') as AccountingPeriod['status'],
+  totalIncome: Number(p.total_income) || 0,
+  totalExpense: Number(p.total_expense) || 0,
+  netIncome: Number(p.net_income) || 0,
+  closingEntryId: p.closing_entry_id || undefined,
+  closedAt: p.closed_at || undefined,
+  closedBy: p.closed_by || undefined,
+  reopenedAt: p.reopened_at || undefined,
+  reopenedBy: p.reopened_by || undefined,
+  reopenReason: p.reopen_reason || undefined,
+  notes: p.notes || undefined,
+  createdAt: p.created_at || new Date().toISOString()
+});
+
 export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
   const { currentUser } = useAuth();
@@ -155,12 +198,74 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
+  const [paymentMethods, setPaymentMethods] = useState<CustomPaymentMethod[]>(() => {
+    const saved = localStorage.getItem('um_payment_methods');
+    return saved ? JSON.parse(saved) : DEFAULT_PAYMENT_METHODS;
+  });
   const [cashShifts, setCashShifts] = useState<CashShift[]>([]);
   const [collectorVisits, setCollectorVisits] = useState<CollectorVisit[]>([]);
   const [bankDeposits, setBankDeposits] = useState<BankDeposit[]>([]);
   const [isLoadingDeposits, setIsLoadingDeposits] = useState(false);
 
+  // Period Locking State
+  const [accountingPeriods, setAccountingPeriods] = useState<AccountingPeriod[]>([]);
+  const [lockedUntilDate, setLockedUntilDateState] = useState<string | null>(null);
+
   const activeCashShift = cashShifts.find(s => s.status === 'Abierta' && s.userId === currentUser?.id) || null;
+
+  // Check if a given date falls within a closed/locked period
+  const isDateInLockedPeriod = (dateStr: string): { isLocked: boolean; reason?: string } => {
+    if (!dateStr) return { isLocked: false };
+    const targetDate = dateStr.split('T')[0];
+
+    // 1. Check global locked_until_date
+    if (lockedUntilDate && targetDate <= lockedUntilDate) {
+      return {
+        isLocked: true,
+        reason: `Los libros contables se encuentran cerrados y auditados hasta el ${lockedUntilDate}. No es posible registrar ni modificar transacciones con fecha igual o anterior al cierre.`
+      };
+    }
+
+    // 2. Check active closed periods
+    const closedPeriod = accountingPeriods.find(
+      p => p.status === 'Cerrado' && targetDate >= p.startDate && targetDate <= p.endDate
+    );
+    if (closedPeriod) {
+      return {
+        isLocked: true,
+        reason: `El período contable ${closedPeriod.periodType === 'Anual' ? `Año ${closedPeriod.year}` : `Mes ${closedPeriod.month}/${closedPeriod.year}`} (${closedPeriod.startDate} al ${closedPeriod.endDate}) se encuentra cerrado y auditado.`
+      };
+    }
+
+    return { isLocked: false };
+  };
+
+  const refreshAccountingPeriods = async () => {
+    if (!currentUser) { setAccountingPeriods([]); setLockedUntilDateState(null); return; }
+    try {
+      const [periodsRes, settingsRes] = await Promise.all([
+        insforge.database
+          .from('accounting_periods')
+          .select('*')
+          .eq('lender_id', currentUser.id)
+          .order('start_date', { ascending: false }),
+        insforge.database
+          .from('company_settings')
+          .select('locked_until_date')
+          .eq('lender_id', currentUser.id)
+          .maybeSingle()
+      ]);
+
+      if (periodsRes.data) {
+        setAccountingPeriods((periodsRes.data as AccountingPeriodDB[]).map(mapAccountingPeriod));
+      }
+      if (settingsRes.data && settingsRes.data.locked_until_date) {
+        setLockedUntilDateState(settingsRes.data.locked_until_date);
+      }
+    } catch (err) {
+      logger.error('Error fetching accounting periods:', err);
+    }
+  };
 
   const refreshBankDeposits = async () => {
     if (!currentUser) { setBankDeposits([]); return; }
@@ -183,60 +288,42 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   useEffect(() => {
     if (!currentUser) {
-      setTransactions([]); setBankAccounts(DEFAULT_BANK_ACCOUNTS); setCashShifts([]); setCollectorVisits([]);
+      setTransactions([]); setBankAccounts(DEFAULT_BANK_ACCOUNTS); setCashShifts([]); setCollectorVisits([]); setAccountingPeriods([]); setLockedUntilDateState(null);
       return;
     }
 
     const fetchData = async () => {
       try {
-        const [trxRes, banksRes, shiftsRes, visitsRes, depositsRes] = await Promise.all([
+        const [trxRes, banksRes, shiftsRes, visitsRes, depositsRes, periodsRes, settingsRes] = await Promise.all([
           insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('bank_accounts').select('*').or(`lender_id.eq.${currentUser.id},lender_id.is.null`).order('created_at', { ascending: false }),
           insforge.database.from('cash_shifts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('collector_visits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
-          insforge.database.from('bank_deposits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false })
+          insforge.database.from('bank_deposits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
+          insforge.database.from('accounting_periods').select('*').eq('lender_id', currentUser.id).order('start_date', { ascending: false }),
+          insforge.database.from('company_settings').select('locked_until_date').eq('lender_id', currentUser.id).maybeSingle()
         ]);
 
         if (trxRes.data) setTransactions(trxRes.data.map(mapTransaction));
-        if (depositsRes.data) setBankDeposits((depositsRes.data as BankDepositDB[]).map(mapBankDeposit));
+        if (periodsRes.data) setAccountingPeriods((periodsRes.data as AccountingPeriodDB[]).map(mapAccountingPeriod));
+        if (settingsRes.data && settingsRes.data.locked_until_date) setLockedUntilDateState(settingsRes.data.locked_until_date);
+
         if (banksRes.data && banksRes.data.length > 0) {
-          const fetchedAccounts = (banksRes.data as BankAccountDB[]).map((b) => ({
+          setBankAccounts((banksRes.data as BankAccountDB[]).map((b) => ({
             id: b.id,
             bankName: b.bank_name || b.bankname || '',
             accountName: b.account_name || b.accountname || '',
-            holderName: b.holder_name || b.holdername || b.account_name || b.accountname || '',
             accountNumber: b.account_number || b.accountnumber || '',
-            accountType: (b.account_type || b.accounttype || 'Corriente') as BankAccount['accountType'],
+            accountType: (b.account_type || b.accounttype || 'Ahorro') as BankAccount['accountType'],
             currency: (b.currency || 'DOP') as BankAccount['currency'],
-            balance: Number(b.initial_balance) || Number(b.balance) || Number(b.initialbalance) || 0,
-            isActive: b.status !== 'Inactiva',
+            balance: Number(b.initial_balance || b.initialbalance || b.balance) || 0,
+            isActive: b.status === 'Activa',
+            holderName: b.holder_name || b.holdername || '',
             cedulaOrRnc: b.cedula_or_rnc || '',
             showInPaymentLink: b.show_in_payment_link !== false,
             bankLogoUrl: b.bank_logo_url || ''
-          }));
-
-          const hasCashBox = fetchedAccounts.some(a => a.accountType === 'Caja Chica / Efectivo' || a.bankName.toLowerCase().includes('caja'));
-          if (!hasCashBox) {
-            setBankAccounts([DEFAULT_BANK_ACCOUNTS[0], ...fetchedAccounts]);
-            void (async () => {
-              await insforge.database.from('bank_accounts').insert([{
-                lender_id: currentUser.id,
-                bank_name: DEFAULT_BANK_ACCOUNTS[0].bankName,
-                account_name: DEFAULT_BANK_ACCOUNTS[0].accountName,
-                holder_name: DEFAULT_BANK_ACCOUNTS[0].accountName,
-                account_number: DEFAULT_BANK_ACCOUNTS[0].accountNumber,
-                account_type: DEFAULT_BANK_ACCOUNTS[0].accountType,
-                currency: 'DOP',
-                status: 'Activa',
-                initial_balance: 0,
-                show_in_payment_link: false
-              }]);
-            })();
-          } else {
-            setBankAccounts(fetchedAccounts);
-          }
+          })));
         } else {
-          setBankAccounts(DEFAULT_BANK_ACCOUNTS);
           void (async () => {
             await insforge.database.from('bank_accounts').insert([{
               lender_id: currentUser.id,
@@ -268,12 +355,153 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
             location: v.location ?? undefined, promisedDate: v.promised_date,
           })));
         }
+        if (depositsRes.data) {
+          setBankDeposits((depositsRes.data as BankDepositDB[]).map(mapBankDeposit));
+        }
       } catch (error) {
         logger.error("Error fetching accounting data:", error);
       }
     };
     fetchData();
   }, [currentUser]);
+
+  // Set / Update global locked until date
+  const setLockedUntilDate = async (date: string | null) => {
+    if (!currentUser) return;
+    try {
+      await insforge.database
+        .from('company_settings')
+        .update({ locked_until_date: date })
+        .eq('lender_id', currentUser.id);
+
+      setLockedUntilDateState(date);
+      addAuditLog('period_lock_updated', date ? `Fijó bloqueo de períodos contables hasta el ${date}` : 'Desactivó bloqueo de períodos contables');
+      addToast(date ? `Libros contables bloqueados hasta el ${date}` : 'Bloqueo contable desactivado', 'success');
+    } catch (err) {
+      logger.error('Error updating locked_until_date:', err);
+      addToast('Error al actualizar bloqueo contable', 'error');
+    }
+  };
+
+  // Close an Accounting Period (Monthly / Annual) and generate closing entry
+  const closeAccountingPeriod = async (params: ClosePeriodParams) => {
+    if (!currentUser) return;
+    const periodId = `period-${params.periodType.toLowerCase()}-${params.year}${params.month ? `-${params.month}` : ''}-${Date.now()}`;
+    const closingTxId = `TX-CIERRE-${params.year}${params.month ? `-${params.month}` : ''}-${Date.now()}`;
+
+    try {
+      // 1. Insert Period Record in accounting_periods
+      const { data: insertedPeriod, error: periodErr } = await insforge.database
+        .from('accounting_periods')
+        .insert([{
+          id: periodId,
+          lender_id: currentUser.id,
+          period_type: params.periodType,
+          year: params.year,
+          month: params.month || null,
+          start_date: params.startDate,
+          end_date: params.endDate,
+          status: 'Cerrado',
+          total_income: params.totalIncome,
+          total_expense: params.totalExpense,
+          net_income: params.netIncome,
+          closing_entry_id: closingTxId,
+          closed_at: new Date().toISOString(),
+          closed_by: currentUser.name || currentUser.email || 'Administrador',
+          notes: params.notes || null
+        }])
+        .select()
+        .single();
+
+      if (periodErr) {
+        logger.error('Error inserting accounting_period:', periodErr);
+        addToast(`Error al registrar cierre: ${periodErr.message}`, 'error');
+        return;
+      }
+
+      // 2. Generate closing transaction / equity adjustment record
+      const closingTx: Transaction = {
+        id: closingTxId,
+        type: params.netIncome >= 0 ? 'Ingreso' : 'Gasto',
+        category: 'Cierre de Ejercicio Contable',
+        amount: Math.abs(params.netIncome),
+        date: params.endDate,
+        description: `Asiento Automático de Cierre (${params.periodType} ${params.year}${params.month ? `-${params.month}` : ''}) -> Traslado a Utilidades Acumuladas / Patrimonio Neto`,
+        paymentType: 'Capital',
+        paymentMethod: 'Transferencia'
+      };
+
+      await insforge.database.from('transactions').insert([{
+        id: closingTx.id,
+        lender_id: currentUser.id,
+        type: closingTx.type,
+        category: closingTx.category,
+        amount: closingTx.amount,
+        date: closingTx.date,
+        description: closingTx.description,
+        payment_type: closingTx.paymentType,
+        payment_method: closingTx.paymentMethod
+      }]);
+
+      // 3. Extend global locked_until_date to period endDate if needed
+      if (!lockedUntilDate || params.endDate > lockedUntilDate) {
+        await insforge.database
+          .from('company_settings')
+          .update({ locked_until_date: params.endDate })
+          .eq('lender_id', currentUser.id);
+        setLockedUntilDateState(params.endDate);
+      }
+
+      if (insertedPeriod) {
+        setAccountingPeriods(prev => [mapAccountingPeriod(insertedPeriod as AccountingPeriodDB), ...prev]);
+      }
+      setTransactions(prev => [closingTx, ...prev]);
+
+      addAuditLog('accounting_period_closed', `Cerró el período contable ${params.periodType} ${params.year} con resultado neto de RD$ ${params.netIncome.toLocaleString()}`);
+      addToast(`Período ${params.periodType} ${params.year} cerrado y bloqueado con éxito`, 'success');
+    } catch (err) {
+      logger.error('Error closing accounting period:', err);
+      addToast('Error al procesar el cierre contable', 'error');
+    }
+  };
+
+  // Reopen a closed accounting period
+  const reopenAccountingPeriod = async (periodId: string, reason: string) => {
+    if (!currentUser) return;
+    const targetPeriod = accountingPeriods.find(p => p.id === periodId);
+    if (!targetPeriod) return;
+
+    try {
+      const { error } = await insforge.database
+        .from('accounting_periods')
+        .update({
+          status: 'Abierto',
+          reopened_at: new Date().toISOString(),
+          reopened_by: currentUser.name || currentUser.email || 'Administrador',
+          reopen_reason: reason
+        })
+        .eq('id', periodId)
+        .eq('lender_id', currentUser.id);
+
+      if (!error) {
+        setAccountingPeriods(prev => prev.map(p => p.id === periodId ? {
+          ...p,
+          status: 'Abierto',
+          reopenedAt: new Date().toISOString(),
+          reopenedBy: currentUser.name || currentUser.email || 'Administrador',
+          reopenReason: reason
+        } : p));
+
+        addAuditLog('accounting_period_reopened', `Reabrió el período contable ${targetPeriod.periodType} ${targetPeriod.year}. Motivo: ${reason}`);
+        addToast(`Período ${targetPeriod.periodType} ${targetPeriod.year} reabierto`, 'info');
+      } else {
+        addToast(`Error al reabrir período: ${error.message}`, 'error');
+      }
+    } catch (err) {
+      logger.error('Error reopening accounting period:', err);
+      addToast('Error al reabrir período', 'error');
+    }
+  };
 
   const openCashShift = async (initialAmount: number, notes?: string) => {
     if (!currentUser) return;
@@ -299,21 +527,41 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const getCashShiftSummary = () => {
     if (!activeCashShift) return { initialAmount: 0, cashCollected: 0, cashExpenses: 0, expectedAmount: 0 };
-    const shiftTxs = transactions.filter(t => 
-      t.date >= activeCashShift.openedAt.split('T')[0] && t.paymentMethod === 'Efectivo'
-    );
-    const initialAmount = activeCashShift.initialAmount;
-    const cashCollected = shiftTxs.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
-    const cashExpenses = shiftTxs.filter(t => t.type === 'Gasto').reduce((sum, t) => sum + Number(t.amount), 0);
-    const expectedAmount = initialAmount + cashCollected - cashExpenses;
-    return { initialAmount, cashCollected, cashExpenses, expectedAmount };
+    const shiftStart = new Date(activeCashShift.openedAt).getTime();
+    
+    const shiftTransactions = transactions.filter(t => {
+      const tTime = new Date(t.date).getTime();
+      return tTime >= shiftStart && (t.paymentMethod === 'Efectivo' || !t.paymentMethod);
+    });
+
+    const cashCollected = shiftTransactions
+      .filter(t => t.type === 'Ingreso')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const cashExpenses = shiftTransactions
+      .filter(t => t.type === 'Gasto')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const expectedAmount = activeCashShift.initialAmount + cashCollected - cashExpenses;
+
+    return {
+      initialAmount: activeCashShift.initialAmount,
+      cashCollected,
+      cashExpenses,
+      expectedAmount
+    };
   };
 
   const closeCashShift = async (finalCashCount: number, notes?: string) => {
-    if (!currentUser || !activeCashShift) { addToast("No hay caja abierta", 'error'); return; }
+    if (!activeCashShift) { addToast("No hay una caja abierta para cerrar", 'error'); return; }
     const summary = getCashShiftSummary();
     const difference = finalCashCount - summary.expectedAmount;
-    const combinedNotes = notes ? `${activeCashShift.notes || ''} | Cierre: ${notes}` : activeCashShift.notes;
+
+    let combinedNotes = notes || '';
+    if (difference !== 0) {
+      const diffText = `[Descuadre de RD$ ${difference > 0 ? '+' : ''}${difference.toLocaleString()}]`;
+      combinedNotes = combinedNotes ? `${diffText} ${combinedNotes}` : diffText;
+    }
 
     const { error } = await insforge.database.from('cash_shifts').update({
       closed_at: new Date().toISOString(), expected_amount: summary.expectedAmount,
@@ -333,6 +581,14 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     if (!currentUser) return;
+
+    // Check if date is in locked period
+    const lockCheck = isDateInLockedPeriod(transaction.date);
+    if (lockCheck.isLocked) {
+      addToast(lockCheck.reason || "Período contable cerrado y auditado", 'error');
+      return;
+    }
+
     const payload = { ...transaction, lender_id: currentUser.id };
     const { error } = await insforge.database.from('transactions').insert([payload]);
     if (error) {
@@ -378,147 +634,109 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
         accountType: (inserted.account_type || account.accountType) as BankAccount['accountType'],
         currency: (inserted.currency || account.currency || 'DOP') as BankAccount['currency'],
         balance: Number(inserted.initial_balance) || account.balance || 0,
-        isActive: inserted.status !== 'Inactiva',
-        cedulaOrRnc: inserted.cedula_or_rnc || account.cedulaOrRnc || '',
+        isActive: inserted.status === 'Activa',
+        createdAt: inserted.created_at || new Date().toISOString(),
+        cedulaOrRnc: inserted.cedula_or_rnc || '',
         showInPaymentLink: inserted.show_in_payment_link !== false,
-        bankLogoUrl: inserted.bank_logo_url || account.bankLogoUrl || ''
+        bankLogoUrl: inserted.bank_logo_url || ''
       };
-      setBankAccounts(prev => [realAccount, ...prev]);
-      addToast("Cuenta registrada en la base de datos", "success");
-      return realAccount;
+      setBankAccounts(prev => [...prev, realAccount]);
+      addAuditLog('bank_account_created', `Creó la cuenta ${account.bankName} - ${account.accountNumber}`);
+      addToast("Cuenta bancaria agregada exitosamente", 'success');
     } else {
-      if (error) logger.error("Error inserting bank_account to DB:", error);
-      setBankAccounts(prev => [account, ...prev]);
-      addToast("Cuenta registrada en la base de datos", "success");
-      return account;
+      addToast("Error al guardar cuenta bancaria en base de datos", 'error');
     }
   };
 
   const updateBankAccount = async (id: string, updates: Partial<BankAccount>) => {
-    setBankAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
-    if (currentUser) {
-      const updateData: Record<string, string | number | boolean> = {};
-      if (updates.balance !== undefined) updateData.initial_balance = updates.balance;
-      if (updates.isActive !== undefined) updateData.status = updates.isActive ? 'Activa' : 'Inactiva';
-      if (updates.accountName !== undefined) updateData.account_name = updates.accountName;
-      if (updates.holderName !== undefined) updateData.holder_name = updates.holderName;
-      if (updates.accountNumber !== undefined) updateData.account_number = updates.accountNumber;
-      if (updates.bankName !== undefined) updateData.bank_name = updates.bankName;
-      if (updates.accountType !== undefined) updateData.account_type = updates.accountType;
-      if (updates.cedulaOrRnc !== undefined) updateData.cedula_or_rnc = updates.cedulaOrRnc;
-      if (updates.showInPaymentLink !== undefined) updateData.show_in_payment_link = updates.showInPaymentLink;
-      if (updates.bankLogoUrl !== undefined) updateData.bank_logo_url = updates.bankLogoUrl;
+    const dbPayload: Partial<BankAccountDB> = {};
+    if (updates.bankName !== undefined) dbPayload.bank_name = updates.bankName;
+    if (updates.accountName !== undefined) dbPayload.account_name = updates.accountName;
+    if (updates.accountNumber !== undefined) dbPayload.account_number = updates.accountNumber;
+    if (updates.accountType !== undefined) dbPayload.account_type = updates.accountType;
+    if (updates.currency !== undefined) dbPayload.currency = updates.currency;
+    if (updates.balance !== undefined) dbPayload.initial_balance = updates.balance;
+    if (updates.isActive !== undefined) dbPayload.status = updates.isActive ? 'Activa' : 'Inactiva';
+    if (updates.holderName !== undefined) dbPayload.holder_name = updates.holderName;
+    if (updates.cedulaOrRnc !== undefined) dbPayload.cedula_or_rnc = updates.cedulaOrRnc;
+    if (updates.showInPaymentLink !== undefined) dbPayload.show_in_payment_link = updates.showInPaymentLink;
+    if (updates.bankLogoUrl !== undefined) dbPayload.bank_logo_url = updates.bankLogoUrl;
 
-      if (Object.keys(updateData).length > 0) {
-        await insforge.database.from('bank_accounts').update(updateData).eq('id', id).eq('lender_id', currentUser.id);
-      }
+    const { error } = await insforge.database
+      .from('bank_accounts')
+      .update(dbPayload)
+      .eq('id', id);
+
+    if (!error) {
+      setBankAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
+      addToast("Cuenta bancaria actualizada", 'success');
+    } else {
+      addToast("Error al actualizar cuenta bancaria", 'error');
     }
-    addToast("Cuenta actualizada en la base de datos", "success");
   };
 
   const removeBankAccount = async (id: string) => {
-    setBankAccounts(prev => prev.filter(b => b.id !== id));
-    if (currentUser) {
-      const { error } = await insforge.database.from('bank_accounts').delete().eq('id', id).eq('lender_id', currentUser.id);
-      if (error) {
-        await insforge.database.from('bank_accounts').delete().eq('id', id);
+    const { error } = await insforge.database
+      .from('bank_accounts')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setBankAccounts(prev => prev.filter(acc => acc.id !== id));
+      addToast("Cuenta bancaria eliminada", 'success');
+    } else {
+      addToast("Error al eliminar cuenta bancaria", 'error');
+    }
+  };
+
+  const processBankDeposit = (bankAccountId: string | undefined, amount: number) => {
+    if (!bankAccountId) return;
+    setBankAccounts(prev => prev.map(acc => {
+      if (acc.id === bankAccountId) {
+        const newBal = (acc.balance || 0) + amount;
+        void (async () => {
+          await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', bankAccountId);
+        })();
+        return { ...acc, balance: newBal };
       }
-    }
-    addToast("Cuenta eliminada", "info");
+      return acc;
+    }));
   };
 
-  const processBankDeposit = async (bankAccountId: string | undefined, amount: number) => {
-    if (amount <= 0) return;
-    const target = bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null;
-    if (!target) return;
-
-    const currentBal = Number(target.balance) || 0;
-    const newBal = currentBal + amount;
-    setBankAccounts(prev => prev.map(acc => acc.id === target.id ? { ...acc, balance: newBal } : acc));
-    if (currentUser) {
-      await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', target.id).eq('lender_id', currentUser.id);
-    }
-  };
-
-  const processBankDisbursement = async (bankAccountId: string | undefined, amount: number) => {
-    if (amount <= 0) return;
-    const target = bankAccountId ? bankAccounts.find(a => a.id === bankAccountId) : null;
-    if (!target) return;
-
-    const currentBal = Number(target.balance) || 0;
-    // If target account balance is 0 or less, retain at 0 to avoid driving balance negative or blocking operational disbursements
-    const finalBal = currentBal > 0 ? Math.max(0, currentBal - amount) : 0;
-
-    setBankAccounts(prev => prev.map(acc => acc.id === target.id ? { ...acc, balance: finalBal } : acc));
-    if (currentUser) {
-      await insforge.database.from('bank_accounts').update({ initial_balance: finalBal }).eq('id', target.id).eq('lender_id', currentUser.id);
-    }
-  };
-
-  const addCollectorVisit = async (visit: Omit<CollectorVisit, 'id'>) => {
-    if (!currentUser) return;
-    const payload = {
-      lender_id: currentUser.id, collector_id: visit.collectorId, client_id: visit.clientId,
-      loan_id: visit.loanId, date: visit.date, status: visit.status, notes: visit.notes,
-      amount_collected: visit.amountCollected, location: visit.location, promised_date: visit.promisedDate
-    };
-    const { error } = await insforge.database.from('collector_visits').insert([payload]);
-    if (!error) addToast("Visita registrada", "success");
-  };
-
-  const getFinancialStats = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const incomeToday = transactions.filter(t => t.type === 'Ingreso' && t.date === today).reduce((sum, t) => sum + Number(t.amount), 0);
-    const expenseToday = transactions.filter(t => t.type === 'Gasto' && t.date === today).reduce((sum, t) => sum + Number(t.amount), 0);
-    const balance = incomeToday - expenseToday;
-    return { balance, incomeToday, expenseToday };
-  };
-
-  const [paymentMethods, setPaymentMethods] = useState<CustomPaymentMethod[]>(() => {
-    try {
-      const saved = localStorage.getItem('ultramoney_payment_methods');
-      return saved ? JSON.parse(saved) : DEFAULT_PAYMENT_METHODS;
-    } catch (e) {
-      return DEFAULT_PAYMENT_METHODS;
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('ultramoney_payment_methods', JSON.stringify(paymentMethods));
-  }, [paymentMethods]);
-
-  const addPaymentMethod = (pm: CustomPaymentMethod) => {
-    setPaymentMethods(prev => [pm, ...prev]);
-    addToast(`Método de pago "${pm.name}" agregado`, 'success');
-  };
-
-  const updatePaymentMethod = (id: string, updates: Partial<CustomPaymentMethod>) => {
-    setPaymentMethods(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-    addToast('Método de pago actualizado', 'success');
-  };
-
-  const removePaymentMethod = (id: string) => {
-    setPaymentMethods(prev => prev.filter(p => p.id !== id));
-    addToast('Método de pago eliminado', 'info');
-  };
-
-  const togglePaymentMethodStatus = (id: string) => {
-    setPaymentMethods(prev => prev.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p));
-    addToast('Estado del método de pago modificado', 'success');
+  const processBankDisbursement = (bankAccountId: string | undefined, amount: number) => {
+    if (!bankAccountId) return;
+    setBankAccounts(prev => prev.map(acc => {
+      if (acc.id === bankAccountId) {
+        const newBal = (acc.balance || 0) - amount;
+        void (async () => {
+          await insforge.database.from('bank_accounts').update({ initial_balance: newBal }).eq('id', bankAccountId);
+        })();
+        return { ...acc, balance: newBal };
+      }
+      return acc;
+    }));
   };
 
   const addBankDeposit = async (deposit: Omit<BankDeposit, 'id'>, voucherFile?: File | string): Promise<BankDeposit | void> => {
     if (!currentUser) return;
     try {
-      let finalVoucherUrl = deposit.voucherUrl;
+      let finalVoucherUrl = deposit.voucherUrl || null;
       if (voucherFile) {
-        const uploadedUrl = await uploadToBucketHelper(voucherFile, 'documents', 'vouchers');
-        if (uploadedUrl) {
-          finalVoucherUrl = uploadedUrl;
+        if (typeof voucherFile === 'string' && voucherFile.startsWith('data:')) {
+          const uploaded = await uploadToBucketHelper(voucherFile, 'bank-vouchers', 'receipts');
+          if (uploaded) finalVoucherUrl = uploaded;
+        } else if (typeof voucherFile !== 'string') {
+          const ext = voucherFile.name.split('.').pop() || 'jpg';
+          const path = `deposits/${currentUser.id}_${Date.now()}.${ext}`;
+          const { error: upErr } = await insforge.storage.from('bank-vouchers').upload(path, voucherFile);
+          if (!upErr) {
+            const { data } = insforge.storage.from('bank-vouchers').getPublicUrl(path);
+            finalVoucherUrl = data.publicUrl;
+          }
         }
       }
 
-      const insertPayload: Record<string, string | number | null> = {
+      const payload = {
         lender_id: currentUser.id,
         bank_name: deposit.bankName,
         bank_account_id: deposit.bankAccountId || null,
@@ -527,79 +745,63 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
         currency: deposit.currency || 'DOP',
         sender_name: deposit.senderName || null,
         deposit_date: deposit.depositDate || new Date().toISOString().split('T')[0],
-        voucher_url: finalVoucherUrl || null,
+        voucher_url: finalVoucherUrl,
         notes: deposit.notes || null,
-        status: deposit.status || 'Pendiente',
-        matched_loan_id: deposit.matchedLoanId || null,
-        matched_client_id: deposit.matchedClientId || null,
-        matched_receipt_id: deposit.matchedReceiptId || null,
-        matched_transaction_id: deposit.matchedTransactionId || null,
-        reconciled_at: deposit.reconciledAt || null,
-        reconciled_by: deposit.reconciledBy || null
+        status: deposit.status || 'Pendiente'
       };
 
       const { data, error } = await insforge.database
         .from('bank_deposits')
-        .insert([insertPayload])
-        .select('*');
+        .insert([payload])
+        .select()
+        .single();
 
       if (error) {
-        logger.error('Error inserting bank deposit:', error);
-        addToast('Error al registrar depósito bancario', 'error');
+        logger.error('Error inserting bank_deposit:', error);
+        addToast(`Error al registrar depósito: ${error.message}`, 'error');
         return;
       }
 
-      if (data && data.length > 0) {
-        const created = mapBankDeposit(data[0] as BankDepositDB);
-        setBankDeposits(prev => [created, ...prev]);
-        addAuditLog('bank_deposit_registered', `Registró depósito/transferencia de ${deposit.bankName} por RD$ ${deposit.amount} Ref: ${deposit.referenceNumber}`);
-        addToast('Depósito bancario registrado correctamente', 'success');
-        return created;
-      }
+      const newDeposit = mapBankDeposit(data as BankDepositDB);
+      setBankDeposits(prev => [newDeposit, ...prev]);
+      addAuditLog('bank_deposit_created', `Registró depósito bancario de RD$ ${deposit.amount.toLocaleString()} en ${deposit.bankName} Ref: ${deposit.referenceNumber}`);
+      addToast('Depósito bancario registrado exitosamente', 'success');
+      return newDeposit;
     } catch (err) {
-      logger.error('Exception adding bank deposit:', err);
-      addToast('Error inesperado al registrar depósito', 'error');
+      logger.error('Error in addBankDeposit:', err);
+      addToast('Error inesperado al guardar depósito', 'error');
     }
   };
 
   const updateBankDeposit = async (id: string, updates: Partial<BankDeposit>) => {
-    setBankDeposits(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
     if (!currentUser) return;
     try {
-      const updateData: Record<string, string | number | null> = {};
-      if (updates.bankName !== undefined) updateData.bank_name = updates.bankName;
-      if (updates.bankAccountId !== undefined) updateData.bank_account_id = updates.bankAccountId || null;
-      if (updates.referenceNumber !== undefined) updateData.reference_number = updates.referenceNumber;
-      if (updates.amount !== undefined) updateData.amount = updates.amount;
-      if (updates.currency !== undefined) updateData.currency = updates.currency;
-      if (updates.senderName !== undefined) updateData.sender_name = updates.senderName || null;
-      if (updates.depositDate !== undefined) updateData.deposit_date = updates.depositDate;
-      if (updates.voucherUrl !== undefined) updateData.voucher_url = updates.voucherUrl || null;
-      if (updates.notes !== undefined) updateData.notes = updates.notes || null;
-      if (updates.status !== undefined) updateData.status = updates.status;
-      if (updates.matchedLoanId !== undefined) updateData.matched_loan_id = updates.matchedLoanId || null;
-      if (updates.matchedClientId !== undefined) updateData.matched_client_id = updates.matchedClientId || null;
-      if (updates.matchedReceiptId !== undefined) updateData.matched_receipt_id = updates.matchedReceiptId || null;
-      if (updates.matchedTransactionId !== undefined) updateData.matched_transaction_id = updates.matchedTransactionId || null;
-      if (updates.reconciledAt !== undefined) updateData.reconciled_at = updates.reconciledAt || null;
-      if (updates.reconciledBy !== undefined) updateData.reconciled_by = updates.reconciledBy || null;
+      const dbPayload: Partial<BankDepositDB> = {};
+      if (updates.bankName !== undefined) dbPayload.bank_name = updates.bankName;
+      if (updates.referenceNumber !== undefined) dbPayload.reference_number = updates.referenceNumber;
+      if (updates.amount !== undefined) dbPayload.amount = updates.amount;
+      if (updates.senderName !== undefined) dbPayload.sender_name = updates.senderName;
+      if (updates.notes !== undefined) dbPayload.notes = updates.notes;
+      if (updates.status !== undefined) dbPayload.status = updates.status;
 
-      if (Object.keys(updateData).length > 0) {
-        await insforge.database
-          .from('bank_deposits')
-          .update(updateData)
-          .eq('id', id)
-          .eq('lender_id', currentUser.id);
+      const { error } = await insforge.database
+        .from('bank_deposits')
+        .update(dbPayload)
+        .eq('id', id)
+        .eq('lender_id', currentUser.id);
+
+      if (!error) {
+        setBankDeposits(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+        addToast('Depósito actualizado', 'success');
+      } else {
+        addToast('Error al actualizar depósito', 'error');
       }
-      addToast('Depósito actualizado', 'success');
     } catch (err) {
-      logger.error('Error updating bank deposit:', err);
-      addToast('Error al actualizar depósito', 'error');
+      logger.error('Error in updateBankDeposit:', err);
     }
   };
 
   const deleteBankDeposit = async (id: string) => {
-    setBankDeposits(prev => prev.filter(d => d.id !== id));
     if (!currentUser) return;
     try {
       const { error } = await insforge.database
@@ -607,45 +809,28 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
         .delete()
         .eq('id', id)
         .eq('lender_id', currentUser.id);
-      if (error) {
-        logger.error('Error deleting bank deposit:', error);
-        addToast('Error al eliminar depósito de la base de datos', 'error');
+
+      if (!error) {
+        setBankDeposits(prev => prev.filter(d => d.id !== id));
+        addToast('Depósito eliminado', 'success');
       } else {
-        addToast('Depósito eliminado', 'info');
+        addToast('Error al eliminar depósito', 'error');
       }
     } catch (err) {
-      logger.error('Error deleting bank deposit:', err);
+      logger.error('Error in deleteBankDeposit:', err);
     }
   };
 
   const reconcileDepositWithLoan = async (
-    depositId: string,
-    matchedData: {
-      loanId: string;
-      clientId?: string;
-      receiptId?: string;
-      transactionId?: string;
-      reconciledBy?: string;
-    }
+    depositId: string, 
+    matchedData: { loanId: string; clientId?: string; receiptId?: string; transactionId?: string; reconciledBy?: string }
   ) => {
     if (!currentUser) return;
-    const nowIso = new Date().toISOString();
-    const adminName = matchedData.reconciledBy || currentUser.name || currentUser.email || 'Administrador';
-
-    const updates: Partial<BankDeposit> = {
-      status: 'Conciliado',
-      matchedLoanId: matchedData.loanId,
-      matchedClientId: matchedData.clientId,
-      matchedReceiptId: matchedData.receiptId,
-      matchedTransactionId: matchedData.transactionId,
-      reconciledAt: nowIso,
-      reconciledBy: adminName
-    };
-
-    setBankDeposits(prev => prev.map(d => d.id === depositId ? { ...d, ...updates } : d));
-
     try {
-      await insforge.database
+      const reconciledAt = new Date().toISOString();
+      const reconciledBy = matchedData.reconciledBy || currentUser.name || currentUser.email || 'Sistema';
+
+      const { error } = await insforge.database
         .from('bank_deposits')
         .update({
           status: 'Conciliado',
@@ -653,28 +838,41 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
           matched_client_id: matchedData.clientId || null,
           matched_receipt_id: matchedData.receiptId || null,
           matched_transaction_id: matchedData.transactionId || null,
-          reconciled_at: nowIso,
-          reconciled_by: adminName
+          reconciled_at: reconciledAt,
+          reconciled_by: reconciledBy
         })
         .eq('id', depositId)
         .eq('lender_id', currentUser.id);
 
-      addAuditLog('bank_deposit_reconciled', `Concilió depósito con préstamo #${matchedData.loanId.slice(-6)}`);
-      addToast('Depósito conciliado y vinculado exitosamente al préstamo', 'success');
+      if (!error) {
+        setBankDeposits(prev => prev.map(d => d.id === depositId ? {
+          ...d,
+          status: 'Conciliado',
+          matchedLoanId: matchedData.loanId,
+          matchedClientId: matchedData.clientId,
+          matchedReceiptId: matchedData.receiptId,
+          matchedTransactionId: matchedData.transactionId,
+          reconciledAt,
+          reconciledBy
+        } : d));
+
+        addAuditLog('bank_deposit_reconciled', `Concilió depósito ID #${depositId.slice(-6)} con el Préstamo #${matchedData.loanId}`);
+        addToast('Depósito conciliado exitosamente', 'success');
+      } else {
+        addToast('Error al conciliar depósito', 'error');
+      }
     } catch (err) {
       logger.error('Error reconciling deposit:', err);
-      addToast('Error al actualizar estado de conciliación', 'error');
+      addToast('Error en la conciliación', 'error');
     }
   };
 
   const rejectBankDeposit = async (depositId: string, notes?: string) => {
     if (!currentUser) return;
-    const target = bankDeposits.find(d => d.id === depositId);
-    const updatedNotes = notes ? (target?.notes ? `${target.notes} | Motivo rechazo: ${notes}` : `Motivo rechazo: ${notes}`) : target?.notes;
-
-    setBankDeposits(prev => prev.map(d => d.id === depositId ? { ...d, status: 'Rechazado', notes: updatedNotes } : d));
-
     try {
+      const current = bankDeposits.find(d => d.id === depositId);
+      const updatedNotes = notes ? (current?.notes ? `${current.notes} | ${notes}` : notes) : current?.notes;
+
       await insforge.database
         .from('bank_deposits')
         .update({
@@ -684,6 +882,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
         .eq('id', depositId)
         .eq('lender_id', currentUser.id);
 
+      setBankDeposits(prev => prev.map(d => d.id === depositId ? { ...d, status: 'Rechazado', notes: updatedNotes } : d));
       addAuditLog('bank_deposit_rejected', `Rechazó depósito bancario ID #${depositId.slice(-6)}`);
       addToast('Depósito marcado como rechazado', 'info');
     } catch (err) {
@@ -692,10 +891,88 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
+  const addPaymentMethod = (pm: CustomPaymentMethod) => {
+    const updated = [...paymentMethods, pm];
+    setPaymentMethods(updated);
+    localStorage.setItem('um_payment_methods', JSON.stringify(updated));
+    addToast("Método de pago agregado", 'success');
+  };
+
+  const updatePaymentMethod = (id: string, updates: Partial<CustomPaymentMethod>) => {
+    const updated = paymentMethods.map(pm => pm.id === id ? { ...pm, ...updates } : pm);
+    setPaymentMethods(updated);
+    localStorage.setItem('um_payment_methods', JSON.stringify(updated));
+    addToast("Método de pago actualizado", 'success');
+  };
+
+  const removePaymentMethod = (id: string) => {
+    const updated = paymentMethods.filter(pm => pm.id !== id);
+    setPaymentMethods(updated);
+    localStorage.setItem('um_payment_methods', JSON.stringify(updated));
+    addToast("Método de pago eliminado", 'success');
+  };
+
+  const togglePaymentMethodStatus = (id: string) => {
+    const updated = paymentMethods.map(pm => pm.id === id ? { ...pm, isActive: !pm.isActive } : pm);
+    setPaymentMethods(updated);
+    localStorage.setItem('um_payment_methods', JSON.stringify(updated));
+  };
+
+  const addCollectorVisit = async (visit: Omit<CollectorVisit, 'id'>) => {
+    if (!currentUser) return;
+    const { data, error } = await insforge.database.from('collector_visits').insert([{
+      lender_id: currentUser.id,
+      collector_id: visit.collectorId,
+      client_id: visit.clientId,
+      loan_id: visit.loanId,
+      date: visit.date,
+      status: visit.status,
+      promised_date: visit.promisedDate,
+      amount_collected: visit.amountCollected,
+      notes: visit.notes,
+      location: visit.location || visit.coordinates
+    }]).select();
+
+    if (!error && data && data[0]) {
+      setCollectorVisits([...collectorVisits, {
+        id: data[0].id,
+        collectorId: data[0].collector_id,
+        clientId: data[0].client_id,
+        loanId: data[0].loan_id,
+        date: data[0].date,
+        status: data[0].status,
+        promisedDate: data[0].promised_date,
+        amountCollected: data[0].amount_collected,
+        notes: data[0].notes,
+        location: data[0].location
+      }]);
+    }
+  };
+
+  const getFinancialStats = () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const balance = transactions.reduce((acc, curr) => {
+      return curr.type === 'Ingreso' ? acc + curr.amount : acc - curr.amount;
+    }, 0);
+
+    const incomeToday = transactions
+      .filter(t => t.date === today && t.type === 'Ingreso')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const expenseToday = transactions
+      .filter(t => t.date === today && t.type === 'Gasto')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return { balance, incomeToday, expenseToday };
+  };
+
   return (
     <AccountingContext.Provider value={{
       transactions, bankAccounts, paymentMethods, cashShifts, activeCashShift, collectorVisits,
       bankDeposits, isLoadingDeposits,
+      accountingPeriods, lockedUntilDate, isDateInLockedPeriod, setLockedUntilDate,
+      closeAccountingPeriod, reopenAccountingPeriod, refreshAccountingPeriods,
       openCashShift, closeCashShift, getCashShiftSummary, addTransaction, addBankAccount,
       updateBankAccount, removeBankAccount, processBankDeposit, processBankDisbursement,
       addBankDeposit, updateBankDeposit, deleteBankDeposit, reconcileDepositWithLoan, rejectBankDeposit, refreshBankDeposits,

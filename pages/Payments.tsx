@@ -68,7 +68,7 @@ interface FullReceiptData {
 export const Payments: React.FC = () => {
   const { loans = [], registerPayment } = useLoans();
   const { clients = [] } = useClients();
-  const { transactions = [], bankAccounts = [], processBankDeposit, paymentMethods = [], bankDeposits = [] } = useAccounting();
+  const { transactions = [], bankAccounts = [], processBankDeposit, paymentMethods = [], bankDeposits = [], isDateInLockedPeriod } = useAccounting();
   const { companySettings, addNotification } = useSettings();
   const { currentUser, roles = [] } = useAuth();
   const location = useLocation();
@@ -392,6 +392,15 @@ export const Payments: React.FC = () => {
     const discVal = Number(discountAmount) || 0;
     const effectiveTotal = amountVal + lateVal - discVal;
     const capitalAmountVal = paymentType === 'Mixto' ? Number(capitalAmount) : undefined;
+
+    // Check if the payment date falls into a locked/closed accounting period
+    const targetCheckDate = paymentDate || invoiceDate || new Date().toISOString().split('T')[0];
+    const lockCheck = isDateInLockedPeriod(targetCheckDate);
+    if (lockCheck.isLocked) {
+      toast.error(lockCheck.reason || 'Período contable cerrado y auditado. No se pueden registrar pagos en esta fecha.');
+      setIsProcessing(false);
+      return;
+    }
 
     // Register the payment
     const insertedTxs = await registerPayment(
