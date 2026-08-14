@@ -4,7 +4,7 @@ import {
   CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, 
   Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft, 
   Image, ArrowLeftRight, TrendingUp, Sparkles, Clock, Share2, 
-  Copy, ExternalLink, ShieldAlert, Check, RefreshCw, Zap
+  Copy, ExternalLink, ShieldAlert, Check, RefreshCw, Zap, Navigation
 } from 'lucide-react';
 import { useClients, useAuth, useSettings, useLoans, useAccounting } from '../context/StoreContext';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -317,11 +317,12 @@ export const Payments: React.FC = () => {
       const rawId = (t.id || '').toLowerCase();
       const refId = (t.referenceId || '').toLowerCase();
       const matchedLoan = loans.find(l => l.id === t.referenceId);
-      const clientName = (matchedLoan?.clientName || '').toLowerCase();
+      const matchedClient = matchedLoan ? clients.find(c => c.id === matchedLoan.clientId) : (t.clientId ? clients.find(c => c.id === t.clientId) : undefined);
+      const clientName = (matchedClient ? `${matchedClient.name} ${matchedClient.lastName || ''}`.trim() : (matchedLoan?.clientName || '')).toLowerCase();
 
       return desc.includes(term) || recId.includes(term) || rawId.includes(term) || refId.includes(term) || clientName.includes(term);
     });
-  }, [paymentTransactions, mainFeedFilter, historySearch, todayStr, now, loans]);
+  }, [paymentTransactions, mainFeedFilter, historySearch, todayStr, now, loans, clients]);
 
   // --- Handlers ---
   const handleToggleInstallment = (inst: Installment) => {
@@ -459,8 +460,8 @@ export const Payments: React.FC = () => {
 
   const handleOpenThermalReceipt = (t: Transaction) => {
     const loan = loans.find(l => l.id === t.referenceId);
-    const client = loan ? clients.find(c => c.id === loan.clientId) : undefined;
-    const clientName = loan ? loan.clientName : (t.description?.split('-')[1]?.trim() || 'Cliente');
+    const client = loan ? clients.find(c => c.id === loan.clientId) : (t.clientId ? clients.find(c => c.id === t.clientId) : undefined);
+    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? loan.clientName : (t.description?.split('-')[1]?.trim() || 'Cliente'));
 
     const formattedRecNo = formatReceiptId(t.id);
     const parsedDate = t.date ? new Date(t.date) : new Date();
@@ -492,8 +493,8 @@ export const Payments: React.FC = () => {
 
   const handleShareWhatsApp = (t: Transaction) => {
     const loan = loans.find(l => l.id === t.referenceId);
-    const client = loan ? clients.find(c => c.id === loan.clientId) : undefined;
-    const clientName = loan ? loan.clientName : 'Cliente';
+    const client = loan ? clients.find(c => c.id === loan.clientId) : (t.clientId ? clients.find(c => c.id === t.clientId) : undefined);
+    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? loan.clientName : 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
     const url = `${window.location.origin}/recibo/${t.id}`;
     
@@ -519,8 +520,9 @@ export const Payments: React.FC = () => {
     const term = searchTerm.toLowerCase().trim();
     return loans.filter(l => {
       const client = clients.find(c => c.id === l.clientId);
+      const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim().toLowerCase() : (l.clientName || '').toLowerCase();
       const matchesLoan = l.id.toLowerCase().includes(term);
-      const matchesName = (l.clientName || '').toLowerCase().includes(term);
+      const matchesName = clientFullName.includes(term) || (l.clientName || '').toLowerCase().includes(term);
       const matchesCedula = client ? client.cedula.replace(/[^0-9]/g, '').includes(term.replace(/[^0-9]/g, '')) : false;
       return (matchesLoan || matchesName || matchesCedula) && l.remainingBalance > 0;
     }).slice(0, 10);
@@ -539,9 +541,12 @@ export const Payments: React.FC = () => {
       const insts = generateInstallments(loan).filter(i => i.status !== 'Pagado');
       if (insts.length === 0) return;
 
+      const client = clients.find(c => c.id === loan.clientId);
+      const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : loan.clientName;
+
       if (!groups[loan.clientId]) {
         groups[loan.clientId] = {
-          clientName: loan.clientName,
+          clientName: clientFullName,
           clientId: loan.clientId,
           totalPending: 0,
           loans: []
@@ -554,7 +559,7 @@ export const Payments: React.FC = () => {
     });
 
     return Object.values(groups);
-  }, [loans]);
+  }, [loans, clients]);
 
   return (
     <div className="space-y-6 animate-fade-in relative pb-12">
@@ -735,6 +740,7 @@ export const Payments: React.FC = () => {
                     </div>
                     {filteredLoans.map(loan => {
                       const client = clients.find(c => c.id === loan.clientId);
+                      const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : loan.clientName;
                       return (
                         <div 
                           key={loan.id} 
@@ -743,11 +749,11 @@ export const Payments: React.FC = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-sm shrink-0">
-                              {(loan.clientName || 'C').charAt(0)}
+                              {(clientFullName || 'C').charAt(0)}
                             </div>
                             <div>
                               <p className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 text-sm">
-                                {loan.clientName}
+                                {clientFullName}
                               </p>
                               <div className="flex items-center gap-2 text-xs text-slate-400">
                                 <span className="font-mono font-semibold text-indigo-500">#{formatLoanId(loan.id, loan.loanCategory, loan.loanType)}</span>
@@ -824,19 +830,23 @@ export const Payments: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-indigo-100 dark:border-slate-800 shadow-xl shadow-indigo-500/5 space-y-6 animate-fadeIn">
               
               {/* Header Profile of Selected Loan */}
-              <div className="bg-gradient-to-r from-indigo-50 via-slate-50 to-indigo-50/50 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-800 p-5 rounded-2xl border border-indigo-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-black flex items-center justify-center text-lg shadow-md shadow-indigo-600/30">
-                    {(selectedLoan.clientName || 'C').charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white">
-                      {selectedLoan.clientName}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                        Préstamo #{formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType)}
-                      </span>
+              {(() => {
+                const loanClient = clients.find(c => c.id === selectedLoan.clientId);
+                const loanClientFullName = loanClient ? `${loanClient.name} ${loanClient.lastName || ''}`.trim() : selectedLoan.clientName;
+                return (
+                  <div className="bg-gradient-to-r from-indigo-50 via-slate-50 to-indigo-50/50 dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-800 p-5 rounded-2xl border border-indigo-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-black flex items-center justify-center text-lg shadow-md shadow-indigo-600/30">
+                        {(loanClientFullName || 'C').charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white">
+                          {loanClientFullName}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
+                          <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            Préstamo #{formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType)}
+                          </span>
                       <span>•</span>
                       <span className="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md font-semibold">
                         {selectedLoan.frequency}
@@ -863,6 +873,8 @@ export const Payments: React.FC = () => {
                   </button>
                 </div>
               </div>
+            );
+          })()}
 
               {/* Mode Toggle & Suggested Actions */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -1280,15 +1292,17 @@ export const Payments: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button 
                       onClick={() => navigate('/rutas')}
-                      className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-center transition-colors"
+                      className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-center transition-colors"
                     >
-                      🗺️ Rutas GPS
+                      <Navigation className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Rutas GPS</span>
                     </button>
                     <button 
                       onClick={() => setActiveTab('monitor')}
-                      className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold text-center transition-colors"
+                      className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-center transition-colors"
                     >
-                      📊 Monitor Cuotas
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Monitor Cuotas</span>
                     </button>
                   </div>
                 </div>
@@ -1514,7 +1528,8 @@ export const Payments: React.FC = () => {
                   ) : (
                     displayedMainFeedPayments.map((t) => {
                       const loan = loans.find(l => l.id === t.referenceId);
-                      const clientName = loan ? loan.clientName : 'Cliente';
+                      const client = loan ? clients.find(c => c.id === loan.clientId) : (t.clientId ? clients.find(c => c.id === t.clientId) : undefined);
+                      const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? loan.clientName : 'Cliente');
                       const parsedDate = t.date ? new Date(t.date) : new Date();
 
                       return (

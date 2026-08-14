@@ -235,7 +235,7 @@ export const RoutesPage: React.FC = () => {
                 }}
                 className="px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white"
               >
-                <option value="">🗺️ Todas las Rutas / Zonas</option>
+                <option value="">Todas las Rutas / Zonas</option>
                 {routes.map(r => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
