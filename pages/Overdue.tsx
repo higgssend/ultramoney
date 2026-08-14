@@ -65,6 +65,7 @@ const Overdue: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {overdueList.map((loan) => {
               const client = clients.find(c => c.id === loan.clientId);
+              const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : loan.clientName;
               const daysLate = Math.max(1, Math.floor((new Date().getTime() - new Date(loan.nextPaymentDate).getTime()) / (1000 * 3600 * 24)));
 
               // Resolve guarantors

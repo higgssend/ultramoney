@@ -214,7 +214,7 @@ export const DeepAccounting: React.FC = () => {
     const today = new Date().toISOString().split('T')[0];
     await addTransaction({
       type: debitAcc?.type === 'Gasto' ? 'Gasto' : 'Ingreso',
-      category: 'Asiento Diario Contable',
+      category: 'Cierre',
       amount,
       date: today,
       description: `[Asiento Manual] Débito: ${debitAcc?.code} (${debitAcc?.name}) | Crédito: ${creditAcc?.code} (${creditAcc?.name}) - ${manualEntryConcept}`,
@@ -355,6 +355,13 @@ export const DeepAccounting: React.FC = () => {
           <div className="flex items-center gap-3">
             <DataExportToolbar
               title="Reporte Contable Maestro"
+              columns={[
+                { header: 'Código', key: 'Código' },
+                { header: 'Nombre de Cuenta', key: 'Cuenta' },
+                { header: 'Tipo', key: 'Tipo' },
+                { header: 'Categoría', key: 'Categoría' },
+                { header: 'Saldo (RD$)', key: 'Saldo (RD$)' }
+              ]}
               data={liveChartOfAccounts.map(a => ({
                 'Código': a.code,
                 'Cuenta': a.name,

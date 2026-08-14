@@ -398,7 +398,6 @@ export const Payments: React.FC = () => {
     const lockCheck = isDateInLockedPeriod(targetCheckDate);
     if (lockCheck.isLocked) {
       toast.error(lockCheck.reason || 'Período contable cerrado y auditado. No se pueden registrar pagos en esta fecha.');
-      setIsProcessing(false);
       return;
     }
 
