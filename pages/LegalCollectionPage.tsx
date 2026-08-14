@@ -8,7 +8,7 @@ import {
 import { useLegal, useLoans, useClients, useSettings } from '../context/StoreContext';
 import { 
   LegalCase, LegalLawyer, LegalEvent, LegalAgreement, 
-  LegalCaseStage, LegalCaseStatus, Loan, formatLoanId 
+  LegalCaseStage, LegalCaseStatus, Loan, LoanStatus, formatLoanId 
 } from '../types';
 import StatCard from '../components/StatCard';
 import { CustomSelect } from '../components/CustomSelect';
@@ -79,7 +79,11 @@ export const LegalCollectionPage: React.FC = () => {
 
   // Available Overdue Loans to Move to Legal
   const availableOverdueLoans = useMemo(() => {
-    return loans.filter(l => (l.status === 'Atrasado' || l.status === 'Cobro Legal' || l.remainingBalance > 0));
+    return loans.filter(l => (
+      l.status === LoanStatus.OVERDUE || 
+      l.status === LoanStatus.LEGAL || 
+      (l.remainingBalance > 0 && l.status !== LoanStatus.PAID)
+    ));
   }, [loans]);
 
   // Financial Metrics

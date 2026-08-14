@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   LegalLawyer, LegalCase, LegalEvent, LegalAgreement, 
-  LegalCaseStage, LegalCaseStatus, Loan, formatLoanId 
+  LegalCaseStage, LegalCaseStatus, Loan, LoanStatus, formatLoanId 
 } from '../../types';
 import type { 
   LegalLawyerDB, LegalCaseDB, LegalEventDB, LegalAgreementDB, LoanDB 
@@ -240,7 +240,7 @@ export const LegalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     await updateLoan({
       ...targetLoan,
-      status: 'Cobro Legal' as Loan['status'],
+      status: LoanStatus.LEGAL,
       isInLegalCollection: true,
       legalCaseId: caseId,
       legalFeesAdded: initialCost,
@@ -495,7 +495,7 @@ export const LegalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (associatedLoan && resolution === 'Recuperado') {
           void updateLoan({
             ...associatedLoan,
-            status: 'Pagado',
+            status: LoanStatus.PAID,
             remainingBalance: 0,
             isInLegalCollection: false
           });

@@ -4,7 +4,8 @@ export enum LoanStatus {
   PAID = 'Pagado',
   OVERDUE = 'Atrasado',
   REJECTED = 'Rechazado',
-  REFINANCED = 'Refinanciado'
+  REFINANCED = 'Refinanciado',
+  LEGAL = 'Cobro Legal'
 }
 
 export type LoanType = 
@@ -522,13 +523,13 @@ export interface CustomPaymentMethod {
 export interface Transaction {
   id: string;
   type: 'Ingreso' | 'Gasto';
-  category: 'Pago Préstamo' | 'Desembolso' | 'Operativo' | 'Nómina' | 'Capital' | 'Cierre' | 'Combustible' | 'Papelería' | 'Servicios' | 'Mantenimiento' | 'Otro';
+  category: 'Pago Préstamo' | 'Desembolso' | 'Operativo' | 'Nómina' | 'Capital' | 'Cierre' | 'Combustible' | 'Papelería' | 'Servicios' | 'Mantenimiento' | 'Legal y Notarial' | 'Otro';
   amount: number;
   date: string;
   invoiceDate?: string;
   description: string;
   referenceId?: string; // ID of loan or client related
-  paymentType?: 'Interes' | 'Capital' | 'Mixto' | 'Mora' | 'Cierre' | 'Otro';
+  paymentType?: 'Interes' | 'Capital' | 'Mixto' | 'Mora' | 'Cierre' | 'Comisión' | 'Honorarios' | 'Otro';
   paymentMethod?: PaymentMethod;
   bankAccountId?: string;
   proofUrl?: string;
