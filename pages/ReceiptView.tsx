@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
 
+import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
+
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
     const { transactions } = useAccounting();
@@ -196,37 +198,17 @@ export const ReceiptView: React.FC = () => {
         );
     }
 
-    // Financial breakdown values
-    const isOpenLoan = Boolean(
-        loan?.loanType && (
-            loan.loanType.includes('Rédito') ||
-            loan.loanType.includes('Redito') ||
-            loan.loanType.includes('Solo Interé') ||
-            loan.loanType.includes('Pagaré Abierto')
-        )
-    );
-
-    const paymentAmount = Number(transaction.amount || 0);
-    const isCapitalPayment = transaction.paymentType === 'Capital';
-
-    let capitalPaid = 0;
-    let interestPaid = 0;
-    let lateFeePaid = 0;
-
-    if (isCapitalPayment) {
-        capitalPaid = paymentAmount;
-    } else if (transaction.paymentType === 'Interes') {
-        interestPaid = paymentAmount;
-    } else if (transaction.description?.toLowerCase().includes('mora')) {
-        lateFeePaid = paymentAmount;
-    } else {
-        interestPaid = paymentAmount;
-    }
-
-    const currentBalance = loan ? Number(loan.remainingbalance ?? loan.remainingBalance ?? 0) : 0;
-    const previousBalance = loan 
-        ? (isOpenLoan && !isCapitalPayment ? currentBalance : currentBalance + capitalPaid) 
-        : paymentAmount;
+    // Financial balance and breakdown calculations
+    const calculated = transaction ? calculateReceiptBalances(transaction, loan, transactions) : null;
+    const paymentAmount = calculated ? calculated.amountPaid : 0;
+    const previousBalance = calculated ? calculated.previousBalance : 0;
+    const currentBalance = calculated ? calculated.newBalance : 0;
+    const totalDebt = calculated ? calculated.totalDebt : 0;
+    const capitalPaid = calculated ? calculated.capitalPaid : 0;
+    const interestPaid = calculated ? calculated.interestPaid : 0;
+    const lateFeePaid = calculated ? calculated.lateFeePaid : 0;
+    const discountPaid = calculated ? calculated.discountPaid : 0;
+    const isOpenLoan = Boolean(calculated ? calculated.isOpenLoan : false);
 
     // Overdue calculation
     let daysOverdue = 0;
@@ -298,6 +280,7 @@ export const ReceiptView: React.FC = () => {
         loanId: loan?.id || transaction.referenceId || '',
         loanType: loan?.loanType || (isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
         loanAmount: loan?.amount,
+        totalDebt: totalDebt,
         installmentInfo: loan ? `Cuota ${loan.frequency || 'Mensual'}` : undefined,
         amountPaid: paymentAmount,
         capitalAmount: capitalPaid,
@@ -471,20 +454,30 @@ export const ReceiptView: React.FC = () => {
                         <span className="font-black text-slate-700 uppercase text-[10px] block mb-2 tracking-wider border-b border-slate-200 pb-1">
                             Desglose de Pago & Estado del Préstamo
                         </span>
+
+                        <div className="flex justify-between text-slate-700 font-bold bg-white p-2.5 rounded-xl border border-slate-200/80">
+                            <span>Total de la Deuda Original:</span>
+                            <span className="font-black text-slate-900">RD$ {totalDebt.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                        </div>
+
+                        <div className="flex justify-between text-slate-600 px-1">
+                            <span>Balance Anterior al Pago:</span>
+                            <span className="font-bold text-slate-800">RD$ {previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                        </div>
                         
                         {/* Open Loans specific vs Amortized Breakdown */}
                         {isOpenLoan ? (
                             <>
-                                <div className="flex justify-between text-slate-600">
+                                <div className="flex justify-between text-slate-600 px-1">
                                     <span>Capital Prestado a la Fecha:</span>
                                     <span className="font-bold text-slate-800">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
+                                <div className="flex justify-between text-slate-600 px-1">
                                     <span>Intereses Cubiertos del Período:</span>
                                     <span className="font-bold text-emerald-700">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 {capitalPaid > 0 && (
-                                    <div className="flex justify-between text-slate-600">
+                                    <div className="flex justify-between text-slate-600 px-1">
                                         <span>Abono Directo a Capital:</span>
                                         <span className="font-bold text-slate-800">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                     </div>
@@ -492,11 +485,11 @@ export const ReceiptView: React.FC = () => {
                             </>
                         ) : (
                             <>
-                                <div className="flex justify-between text-slate-600">
+                                <div className="flex justify-between text-slate-600 px-1">
                                     <span>Abono a Capital:</span>
                                     <span className="font-bold text-slate-800">RD$ {capitalPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between text-slate-600">
+                                <div className="flex justify-between text-slate-600 px-1">
                                     <span>Interés Pagado:</span>
                                     <span className="font-bold text-slate-800">RD$ {interestPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                                 </div>
@@ -504,7 +497,7 @@ export const ReceiptView: React.FC = () => {
                         )}
 
                         {lateFeePaid > 0 && (
-                            <div className="flex justify-between text-slate-600">
+                            <div className="flex justify-between text-slate-600 px-1">
                                 <span>Mora / Recargo por Atraso:</span>
                                 <span className="font-bold text-rose-600 font-black">
                                     RD$ {lateFeePaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
@@ -512,20 +505,24 @@ export const ReceiptView: React.FC = () => {
                             </div>
                         )}
 
-                        <div className="flex justify-between text-slate-600 pt-1 border-t border-slate-200">
+                        {discountPaid > 0 && (
+                            <div className="flex justify-between text-emerald-700 font-semibold px-1">
+                                <span>Descuento Otorgado:</span>
+                                <span className="font-black">
+                                    -RD$ {discountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between text-slate-600 pt-1 border-t border-slate-200 px-1">
                             <span>Estado de Atraso:</span>
                             <span className={`font-bold ${daysOverdue > 0 ? 'text-rose-600 font-black' : 'text-emerald-700 font-bold'}`}>
                                 {daysOverdue > 0 ? `En Atraso (${daysOverdue} días de mora)` : 'Sin Atraso (Al día)'}
                             </span>
                         </div>
 
-                        <div className="flex justify-between text-slate-600">
-                            <span>Balance Anterior:</span>
-                            <span className="font-bold text-slate-800">RD$ {previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
-                        </div>
-
-                        <div className="flex justify-between text-slate-900 font-black pt-2 border-t border-slate-300 text-sm bg-indigo-50/60 p-2.5 rounded-xl">
-                            <span>(=) Balance Restante Pendiente:</span>
+                        <div className="flex justify-between text-slate-900 font-black pt-2 border-t border-slate-300 text-sm bg-indigo-50/70 p-3 rounded-xl border border-indigo-100">
+                            <span>(=) Balance Restante a la Fecha:</span>
                             <span className="text-indigo-700 font-black text-base">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
                         </div>
 

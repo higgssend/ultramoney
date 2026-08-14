@@ -20,6 +20,7 @@ export interface ThermalReceiptData {
   loanId: string;
   loanType?: string;
   loanAmount?: number;
+  totalDebt?: number;
   installmentInfo?: string;
   amountPaid: number;
   capitalAmount?: number;
@@ -390,12 +391,10 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
                     <span className="font-semibold">{data.loanType}</span>
                   </div>
                 )}
-                {data.loanAmount !== undefined && data.loanAmount > 0 && (
-                  <div className="flex justify-between text-[10px]">
-                    <span>CAPITAL PRESTADO:</span>
-                    <span className="font-bold">RD$ {data.loanAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-[10px]">
+                  <span>TOTAL DE LA DEUDA:</span>
+                  <span className="font-bold">RD$ {(data.totalDebt || data.loanAmount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                </div>
                 {data.installmentInfo && (
                   <div className="flex justify-between text-[10px]">
                     <span>CUOTA:</span>

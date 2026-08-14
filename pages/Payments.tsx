@@ -18,6 +18,7 @@ import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalRe
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { formatExactDateTime, combineDateAndTimeToISO } from '../utils/dateUtils';
+import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
 
 // Helper to calculate date strings
 const addDays = (dateStr: string, days: number): string => {
@@ -49,6 +50,12 @@ interface FullReceiptData {
   amountPaid: number;
   clientName: string;
   clientId?: string;
+  clientCedula?: string;
+  clientPhone?: string;
+  loanType?: string;
+  totalDebt?: number;
+  capitalAmount?: number;
+  interestAmount?: number;
   previousBalance: number;
   newBalance: number;
   transactionId: string;
@@ -449,11 +456,18 @@ export const Payments: React.FC = () => {
       .filter(l => l.clientId === selectedLoan.clientId && l.id !== selectedLoanId && l.status !== LoanStatus.PAID)
       .map(l => ({ id: l.id, balance: l.remainingBalance }));
 
+    const selectedLoanClient = clients.find(c => c.id === selectedLoan.clientId);
     const fullReceipt: FullReceiptData = {
       loanId: formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType),
       amountPaid: effectiveTotal,
       clientName: selectedLoan.clientName,
       clientId: selectedLoan.clientId,
+      clientCedula: selectedLoanClient?.cedula || selectedLoanClient?.documentId || selectedLoanClient?.clientCode,
+      clientPhone: selectedLoanClient?.phone,
+      loanType: selectedLoan.loanType,
+      totalDebt: Number(selectedLoan.totalToPay || selectedLoan.amount) || 0,
+      capitalAmount: paymentType === 'Capital' ? effectiveTotal : undefined,
+      interestAmount: paymentType !== 'Capital' ? effectiveTotal : undefined,
       previousBalance: previousBalance,
       newBalance: newBalance,
       transactionId: actualTxId,
@@ -489,33 +503,12 @@ export const Payments: React.FC = () => {
 
   const handleOpenThermalReceipt = (t: Transaction) => {
     const loan = loans.find(l => l.id === t.referenceId);
-    const client = loan ? clients.find(c => c.id === loan.clientId) : undefined;
+    const client = loan ? clients.find(c => c.id === loan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
     const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? loan.clientName : (t.description?.split('-')[1]?.trim() || 'Cliente'));
 
     const formattedRecNo = formatReceiptId(t.id);
     const parsedDate = t.date ? new Date(t.date) : new Date();
-
-    const isRedito = Boolean(loan?.loanType && (
-      loan.loanType.includes('Rédito') || 
-      loan.loanType.includes('Redito') || 
-      loan.loanType.includes('Solo Interé') || 
-      loan.loanType.includes('Pagaré Abierto')
-    ));
-
-    const paymentAmount = Number(t.amount) || 0;
-    const isCapitalPayment = t.paymentType === 'Capital';
-
-    let capitalAmt = 0;
-    let interestAmt = 0;
-    if (isCapitalPayment) {
-      capitalAmt = paymentAmount;
-    } else {
-      interestAmt = paymentAmount;
-    }
-
-    const previousBalance = loan 
-      ? (isRedito && !isCapitalPayment ? loan.remainingBalance : loan.remainingBalance + capitalAmt)
-      : paymentAmount;
+    const calculated = calculateReceiptBalances(t, loan, transactions);
 
     const data: ThermalReceiptData = {
       receiptNo: formattedRecNo,
@@ -525,16 +518,17 @@ export const Payments: React.FC = () => {
       clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
       loanId: loan ? loan.id : (t.referenceId || ''),
-      loanType: loan?.loanType || (isRedito ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
+      loanType: loan?.loanType || (calculated.isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
       loanAmount: loan?.amount,
+      totalDebt: calculated.totalDebt,
       installmentInfo: loan ? `Cuota ${loan.frequency}` : undefined,
-      amountPaid: paymentAmount,
-      capitalAmount: capitalAmt,
-      interestAmount: interestAmt,
-      lateFeeAmount: 0,
-      discountAmount: 0,
-      previousBalance: previousBalance,
-      newBalance: loan ? loan.remainingBalance : 0,
+      amountPaid: calculated.amountPaid,
+      capitalAmount: calculated.capitalPaid,
+      interestAmount: calculated.interestPaid,
+      lateFeeAmount: calculated.lateFeePaid,
+      discountAmount: calculated.discountPaid,
+      previousBalance: calculated.previousBalance,
+      newBalance: calculated.newBalance,
       paymentMethod: t.paymentMethod || 'Efectivo',
       paymentType: t.paymentType,
       cashierName: currentUser?.name || 'Caja',
@@ -1757,11 +1751,16 @@ const PaymentSuccessModal: React.FC<{
     receiptNo: data.receiptNo || formatReceiptId(data.transactionId),
     date: data.date,
     clientName: data.clientName,
+    clientCedula: data.clientCedula,
+    clientPhone: data.clientPhone,
     clientId: data.clientId,
     loanId: data.loanId,
+    loanType: data.loanType,
+    totalDebt: data.totalDebt,
     installmentInfo: data.paidInstallments && data.totalInstallments ? `Cuota ${data.paidInstallments} de ${data.totalInstallments}` : undefined,
     amountPaid: data.amountPaid,
-    capitalAmount: data.amountPaid > (data.lateFeeAmount || 0) ? (data.amountPaid - (data.lateFeeAmount || 0)) : data.amountPaid,
+    capitalAmount: data.capitalAmount ?? (data.amountPaid > (data.lateFeeAmount || 0) ? (data.amountPaid - (data.lateFeeAmount || 0)) : data.amountPaid),
+    interestAmount: data.interestAmount,
     lateFeeAmount: data.lateFeeAmount,
     discountAmount: data.discountAmount,
     previousBalance: data.previousBalance,
@@ -1830,6 +1829,14 @@ const PaymentSuccessModal: React.FC<{
               <span className="text-right text-slate-700 dark:text-slate-300 font-medium">{data.date}</span>
               <span className="text-slate-500">Método:</span>
               <span className="text-right font-bold text-slate-800 dark:text-slate-200">{data.paymentMethod || 'Efectivo'}</span>
+              {data.totalDebt !== undefined && data.totalDebt > 0 && (
+                <>
+                  <span className="text-slate-500 font-bold">Total Deuda:</span>
+                  <span className="text-right font-black text-slate-800 dark:text-slate-200">RD$ {data.totalDebt.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                </>
+              )}
+              <span className="text-slate-500 font-bold">Balance Anterior:</span>
+              <span className="text-right font-bold text-slate-800 dark:text-slate-200">RD$ {data.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
             </div>
 
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/60 flex justify-between items-center">
@@ -1859,7 +1866,7 @@ const PaymentSuccessModal: React.FC<{
             onClick={() => setIsThermalOpen(true)}
             className="col-span-2 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-black rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 hover:from-emerald-500"
           >
-            <Printer className="w-4 h-4" /> 🖨️ Impresión Térmica POS (58/80mm)
+            <Printer className="w-4 h-4" /> Impresión Térmica POS (58/80mm)
           </button>
           <button 
             onClick={() => window.open(receiptWebLink, '_blank')}

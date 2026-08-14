@@ -21,6 +21,8 @@ import { CreditScoreEngine } from '../utils/CreditScoreEngine';
 import { CreditRiskSemaphore } from '../components/CreditRiskSemaphore';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
+import { EditPaymentModal } from '../components/EditPaymentModal';
+import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
 import { insforge } from '../lib/insforge';
 
 const ClientDetail: React.FC = () => {
@@ -96,6 +98,8 @@ const ClientDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'loans' | 'payments' | 'documents' | 'notes' | 'banks' | 'collateral'>('general');
   const [thermalModalData, setThermalModalData] = useState<ThermalReceiptData | null>(null);
   const [statementLoanModalOpen, setStatementLoanModalOpen] = useState(false);
+  const [selectedTransactionToEdit, setSelectedTransactionToEdit] = useState<Transaction | null>(null);
+  const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
   
   // State for Documents & Camera
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -246,76 +250,6 @@ const ClientDetail: React.FC = () => {
     }
   };
 
-  const handleOpenAccountStatement = () => {
-    if (!client) return;
-    window.open(`/documento/estado-cliente/${client.id}`, '_blank');
-  };
-
-  const handleOpenThermalReceipt = (t: Transaction) => {
-    const matchedLoan = clientLoans.find(l => l.id === t.referenceId) || loans.find(l => l.id === t.referenceId);
-    const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (matchedLoan?.clientName || 'Cliente');
-    const formattedRecNo = formatReceiptId(t.id);
-    const tDate = t.date ? new Date(t.date) : new Date();
-
-    const isRedito = Boolean(matchedLoan?.loanType && (
-      matchedLoan.loanType.includes('Rédito') || 
-      matchedLoan.loanType.includes('Redito') || 
-      matchedLoan.loanType.includes('Solo Interé') || 
-      matchedLoan.loanType.includes('Pagaré Abierto')
-    ));
-
-    const paymentAmount = Number(t.amount || 0);
-    const isCapitalPayment = t.paymentType === 'Capital';
-
-    let capitalAmt = 0;
-    let interestAmt = 0;
-    if (isCapitalPayment) {
-      capitalAmt = paymentAmount;
-    } else {
-      interestAmt = paymentAmount;
-    }
-
-    const previousBalance = matchedLoan 
-      ? (isRedito && !isCapitalPayment ? matchedLoan.remainingBalance : matchedLoan.remainingBalance + capitalAmt)
-      : paymentAmount;
-
-    setThermalModalData({
-      receiptNo: formattedRecNo,
-      date: tDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
-      time: tDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
-      clientName,
-      clientCedula: client?.cedula || client?.documentId,
-      clientPhone: client?.phone,
-      loanId: matchedLoan?.id || t.referenceId || '',
-      loanType: matchedLoan?.loanType || (isRedito ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
-      loanAmount: matchedLoan?.amount,
-      installmentInfo: t.description || t.note || (matchedLoan ? `Cuota ${matchedLoan.frequency}` : 'Pago'),
-      amountPaid: paymentAmount,
-      capitalAmount: capitalAmt,
-      interestAmount: interestAmt,
-      lateFeeAmount: 0,
-      discountAmount: 0,
-      paymentMethod: (t.paymentMethod as PaymentMethod) || 'Efectivo',
-      paymentType: t.paymentType,
-      previousBalance: previousBalance,
-      newBalance: matchedLoan?.remainingBalance || 0,
-      cashierName: 'Cajero / Oficial',
-      transactionId: t.id,
-      clientId: client?.id || matchedLoan?.clientId
-    });
-  };
-
-  const handleSharePaymentWhatsApp = (t: Transaction) => {
-    const formattedRecNo = formatReceiptId(t.id);
-    const url = `${window.location.origin}/recibo/${t.id}`;
-    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Cobro*: ${formattedRecNo}\n*Cliente*: ${client?.name}\n*Monto Recibido*: RD$ ${Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aqui:\n${url}`;
-    const targetPhone = client?.phone ? client.phone.replace(/[^0-9]/g, '') : '';
-    const waUrl = targetPhone 
-      ? `https://wa.me/${targetPhone.length === 10 ? '1' + targetPhone : targetPhone}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(waUrl, '_blank');
-  };
-
   const handleSendStatement = () => {
     if(!client) return;
     const totalDebt = clientLoans.filter(l => l.status !== LoanStatus.PAID).reduce((sum, l) => sum + l.remainingBalance, 0);
@@ -329,6 +263,59 @@ const ClientDetail: React.FC = () => {
     const message = `*${companySettings?.name || 'UltraMoney'}*\n*Recordatorio de Pago*\nHola ${client.name},\n\nLe recordamos que su préstamo *${loan.id}* tiene una cuota de *RD$ ${loan.installmentAmount.toLocaleString()}* con fecha de pago ${loan.nextPaymentDate}.\n\nBalance Restante: RD$ ${loan.remainingBalance.toLocaleString()}\n\nPuede ver más detalles en su portal de cliente:\n${window.location.origin}/portal`;
     const url = `https://wa.me/${client.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
+  };
+
+  const handleOpenThermalReceipt = (trx: Transaction) => {
+    const matchedLoan = clientLoans.find(l => l.id === trx.referenceId) || loans.find(l => l.id === trx.referenceId);
+    const formattedRecNo = formatReceiptId(trx.id);
+    const parsedDate = trx.date ? new Date(trx.date) : new Date();
+    const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
+
+    const data: ThermalReceiptData = {
+      receiptNo: formattedRecNo,
+      date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
+      time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      clientName: client?.name || 'Cliente',
+      clientCedula: client?.cedula || client?.documentId || client?.clientCode,
+      clientPhone: client?.phone,
+      loanId: matchedLoan ? matchedLoan.id : (trx.referenceId || ''),
+      loanType: matchedLoan?.loanType || (calculated.isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
+      loanAmount: matchedLoan?.amount,
+      totalDebt: calculated.totalDebt,
+      installmentInfo: matchedLoan ? `Cuota ${matchedLoan.frequency || 'Mensual'}` : undefined,
+      amountPaid: calculated.amountPaid,
+      capitalAmount: calculated.capitalPaid,
+      interestAmount: calculated.interestPaid,
+      lateFeeAmount: calculated.lateFeePaid,
+      discountAmount: calculated.discountPaid,
+      previousBalance: calculated.previousBalance,
+      newBalance: calculated.newBalance,
+      paymentMethod: trx.paymentMethod || 'Efectivo',
+      paymentType: trx.paymentType,
+      cashierName: 'Caja',
+      notes: trx.description,
+      transactionId: trx.id,
+      clientId: client?.id
+    };
+
+    setThermalModalData(data);
+  };
+
+  const handleSharePaymentWhatsApp = (trx: Transaction) => {
+    const matchedLoan = clientLoans.find(l => l.id === trx.referenceId) || loans.find(l => l.id === trx.referenceId);
+    const formattedRecNo = formatReceiptId(trx.id);
+    const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
+    const receiptWebLink = `${window.location.origin}/recibo/${trx.id}`;
+    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${client?.name || 'Cliente'}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleOpenAccountStatement = () => {
+    if (clientLoans.length > 0) {
+      navigate(`/documentos/${client.id}?type=estado_cuenta`);
+    } else {
+      addToast("El cliente no posee préstamos registrados para emitir un estado de cuenta", "warning");
+    }
   };
 
 
@@ -788,8 +775,10 @@ const ClientDetail: React.FC = () => {
                                         <th className="p-4 font-bold">Fecha / Hora</th>
                                         <th className="p-4 font-bold">Préstamo</th>
                                         <th className="p-4 font-bold">Método</th>
-                                        <th className="p-4 font-bold">Concepto / Desglose</th>
-                                        <th className="p-4 font-bold text-right">Monto</th>
+                                        <th className="p-4 font-bold">Concepto / Detalle</th>
+                                        <th className="p-4 font-bold text-right">Balance Anterior</th>
+                                        <th className="p-4 font-bold text-right text-emerald-600">Monto Pagado</th>
+                                        <th className="p-4 font-bold text-right">Saldo a la Fecha</th>
                                         <th className="p-4 font-bold text-center">Acciones</th>
                                     </tr>
                                 </thead>
@@ -797,19 +786,19 @@ const ClientDetail: React.FC = () => {
                                     {clientPayments.map(trx => {
                                         const matchedLoan = clientLoans.find(l => l.id === trx.referenceId) || loans.find(l => l.id === trx.referenceId);
                                         const parsedDate = trx.date ? new Date(trx.date) : new Date();
+                                        const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
 
                                         return (
                                             <tr 
                                                 key={trx.id} 
-                                                onClick={() => navigate(`/recibo/${trx.id}`)}
                                                 className="hover:bg-indigo-50/50 dark:hover:bg-slate-700/40 transition-colors cursor-pointer group"
                                             >
-                                                <td className="p-4">
+                                                <td className="p-4" onClick={() => navigate(`/recibo/${trx.id}`)}>
                                                     <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 px-2.5 py-1 rounded-lg group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/60 transition-colors">
                                                         {formatReceiptId(trx.id)}
                                                     </span>
                                                 </td>
-                                                <td className="p-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                                <td className="p-4 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap" onClick={() => navigate(`/recibo/${trx.id}`)}>
                                                     {parsedDate.toLocaleString('es-DO', { 
                                                         month: 'short', 
                                                         day: 'numeric', 
@@ -819,7 +808,7 @@ const ClientDetail: React.FC = () => {
                                                         hour12: true 
                                                     })}
                                                 </td>
-                                                <td className="p-4">
+                                                <td className="p-4" onClick={() => navigate(`/recibo/${trx.id}`)}>
                                                     {matchedLoan ? (
                                                         <span className="text-xs font-mono font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-md">
                                                             {formatLoanId(matchedLoan.id, matchedLoan.loanCategory, matchedLoan.loanType)}
@@ -828,19 +817,36 @@ const ClientDetail: React.FC = () => {
                                                         <span className="text-xs text-slate-400 font-mono">{trx.referenceId ? formatLoanId(trx.referenceId) : '-'}</span>
                                                     )}
                                                 </td>
-                                                <td className="p-4">
+                                                <td className="p-4" onClick={() => navigate(`/recibo/${trx.id}`)}>
                                                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-2.5 py-1 rounded-md">
                                                         {trx.paymentMethod || 'Efectivo'}
                                                     </span>
                                                 </td>
-                                                <td className="p-4 text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate font-medium">
+                                                <td className="p-4 text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate font-medium" onClick={() => navigate(`/recibo/${trx.id}`)}>
                                                     {trx.description || trx.note || 'Abono / Pago de Cuota'}
                                                 </td>
+                                                <td className="p-4 text-right font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                                    RD$ {calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                                </td>
                                                 <td className="p-4 text-right font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                                                    +RD$ {Number(trx.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                                    +RD$ {calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="p-4 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                                                    RD$ {calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="p-4 text-center" onClick={e => e.stopPropagation()}>
                                                     <div className="flex items-center justify-center gap-1.5">
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedTransactionToEdit(trx);
+                                                                setIsEditPaymentModalOpen(true);
+                                                            }}
+                                                            className="p-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
+                                                            title="Editar Pago Completamente"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </button>
                                                         <button 
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -1618,6 +1624,17 @@ const ClientDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Payment Modal */}
+      <EditPaymentModal
+        isOpen={isEditPaymentModalOpen}
+        onClose={() => {
+          setIsEditPaymentModalOpen(false);
+          setSelectedTransactionToEdit(null);
+        }}
+        transaction={selectedTransactionToEdit}
+      />
+
     </div>
   );
 };

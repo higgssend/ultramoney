@@ -56,6 +56,15 @@ const mapTransaction = (t: TransactionDB): Transaction => ({
   paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
   paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
   invoiceDate: t.invoicedate || t.invoice_date || undefined,
+  bankAccountId: t.bank_account_id || undefined,
+  proofUrl: t.proof_url || undefined,
+  previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : (t.previousbalance !== undefined ? Number(t.previousbalance) : undefined),
+  newBalance: t.new_balance !== undefined ? Number(t.new_balance) : (t.newbalance !== undefined ? Number(t.newbalance) : undefined),
+  totalDebt: t.total_debt !== undefined ? Number(t.total_debt) : (t.totaldebt !== undefined ? Number(t.totaldebt) : undefined),
+  capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : (t.capitalamount !== undefined ? Number(t.capitalamount) : undefined),
+  interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : (t.interestamount !== undefined ? Number(t.interestamount) : undefined),
+  lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : (t.latefeeamount !== undefined ? Number(t.latefeeamount) : undefined),
+  discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : (t.discountamount !== undefined ? Number(t.discountamount) : undefined),
 });
 
 export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -612,15 +621,21 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const txDate = paymentDate ? (paymentDate.includes('T') ? paymentDate : combineDateAndTimeToISO(paymentDate)) : new Date().toISOString();
 
+    const initialPrevBalance = Number(loan.remainingBalance) || 0;
+    const initialTotalDebt = Number(loan.totalToPay || loan.amount) || 0;
+
     const baseTx = {
       lender_id: currentUser.id, 
       date: txDate,
-      type: 'Ingreso', 
+      type: 'Ingreso' as const, 
       description: note, 
       referenceid: loanId,
+      reference_id: loanId,
       payment_method: paymentMethod,
       bank_account_id: bankAccountId || null,
-      proof_url: proofUrl || null
+      proof_url: proofUrl || null,
+      previous_balance: initialPrevBalance,
+      total_debt: initialTotalDebt
     };
 
     let transactionsToInsert: Partial<TransactionDB>[] = [];
@@ -634,13 +649,44 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (paymentType === 'Capital') {
         newBalance -= amount;
-        transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Capital', description: `${note} (Abono Directo a Capital)` });
+        transactionsToInsert.push({ 
+          ...baseTx, 
+          amount, 
+          paymenttype: 'Capital', 
+          description: `${note} (Abono Directo a Capital)`,
+          capital_amount: amount,
+          interest_amount: 0,
+          previous_balance: initialPrevBalance,
+          new_balance: newBalance
+        });
       } else if (paymentType === 'Mixto') {
         const capitalPart = (capitalAmount && capitalAmount > 0) ? capitalAmount : 0;
         const interestPart = Math.max(0, amount - capitalPart);
         newBalance -= capitalPart;
-        if (capitalPart > 0) transactionsToInsert.push({ ...baseTx, amount: capitalPart, paymenttype: 'Capital', description: `${note} (Abono a Capital)` });
-        if (interestPart > 0) transactionsToInsert.push({ ...baseTx, amount: interestPart, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
+        if (capitalPart > 0) {
+          transactionsToInsert.push({ 
+            ...baseTx, 
+            amount: capitalPart, 
+            paymenttype: 'Capital', 
+            description: `${note} (Abono a Capital)`,
+            capital_amount: capitalPart,
+            interest_amount: 0,
+            previous_balance: initialPrevBalance,
+            new_balance: newBalance
+          });
+        }
+        if (interestPart > 0) {
+          transactionsToInsert.push({ 
+            ...baseTx, 
+            amount: interestPart, 
+            paymenttype: 'Interes', 
+            description: `${note} (Pago de Interés/Rédito)`,
+            capital_amount: 0,
+            interest_amount: interestPart,
+            previous_balance: initialPrevBalance,
+            new_balance: newBalance
+          });
+        }
       } else {
         // Solo Intereses (Rédito): Si el pago supera el interés del periodo, el excedente abona automáticamente al capital!
         if (amount > currentInterestDue && currentInterestDue > 0) {
@@ -650,17 +696,34 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...baseTx, 
             amount: currentInterestDue, 
             paymenttype: 'Interes', 
-            description: `${note} (Pago Rédito/Interés)` 
+            description: `${note} (Pago Rédito/Interés)`,
+            capital_amount: 0,
+            interest_amount: currentInterestDue,
+            previous_balance: initialPrevBalance,
+            new_balance: newBalance
           });
           transactionsToInsert.push({ 
             ...baseTx, 
             amount: excessCapital, 
             paymenttype: 'Capital', 
-            description: `${note} (Abono a Capital por Excedente)` 
+            description: `${note} (Abono a Capital por Excedente)`,
+            capital_amount: excessCapital,
+            interest_amount: 0,
+            previous_balance: initialPrevBalance,
+            new_balance: newBalance
           });
         } else {
           newBalance = loan.remainingBalance;
-          transactionsToInsert.push({ ...baseTx, amount, paymenttype: 'Interes', description: `${note} (Pago de Interés/Rédito)` });
+          transactionsToInsert.push({ 
+            ...baseTx, 
+            amount, 
+            paymenttype: 'Interes', 
+            description: `${note} (Pago de Interés/Rédito)`,
+            capital_amount: 0,
+            interest_amount: amount,
+            previous_balance: initialPrevBalance,
+            new_balance: newBalance
+          });
         }
       }
 
@@ -685,7 +748,16 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
       newBalance -= amount;
       if (newBalance <= 0) { newBalance = 0; newStatus = LoanStatus.PAID; }
-      transactionsToInsert.push({ ...baseTx, amount, paymenttype: paymentType || 'Interes' });
+      transactionsToInsert.push({ 
+        ...baseTx, 
+        amount, 
+        paymenttype: paymentType || 'Interes',
+        previous_balance: initialPrevBalance,
+        new_balance: newBalance,
+        total_debt: initialTotalDebt,
+        capital_amount: paymentType === 'Capital' ? amount : undefined,
+        interest_amount: paymentType !== 'Capital' ? amount : undefined
+      });
     }
 
     const { error: loanError } = await insforge.database.from('loans').update({

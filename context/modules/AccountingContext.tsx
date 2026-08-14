@@ -148,6 +148,13 @@ const mapTransaction = (t: TransactionDB): Transaction => ({
   invoiceDate: t.invoicedate || t.invoice_date || undefined,
   bankAccountId: t.bank_account_id || undefined,
   proofUrl: t.proof_url || undefined,
+  previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : (t.previousbalance !== undefined ? Number(t.previousbalance) : undefined),
+  newBalance: t.new_balance !== undefined ? Number(t.new_balance) : (t.newbalance !== undefined ? Number(t.newbalance) : undefined),
+  totalDebt: t.total_debt !== undefined ? Number(t.total_debt) : (t.totaldebt !== undefined ? Number(t.totaldebt) : undefined),
+  capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : (t.capitalamount !== undefined ? Number(t.capitalamount) : undefined),
+  interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : (t.interestamount !== undefined ? Number(t.interestamount) : undefined),
+  lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : (t.latefeeamount !== undefined ? Number(t.latefeeamount) : undefined),
+  discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : (t.discountamount !== undefined ? Number(t.discountamount) : undefined),
 });
 
 const mapBankDeposit = (d: BankDepositDB): BankDeposit => ({

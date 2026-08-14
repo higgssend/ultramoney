@@ -658,6 +658,13 @@ export interface Transaction {
   proofUrl?: string;
   currency?: 'DOP' | 'USD';
   note?: string;
+  previousBalance?: number;
+  newBalance?: number;
+  totalDebt?: number;
+  capitalAmount?: number;
+  interestAmount?: number;
+  lateFeeAmount?: number;
+  discountAmount?: number;
 }
 
 export interface CashShift {

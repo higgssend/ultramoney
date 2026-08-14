@@ -131,10 +131,10 @@ export const generatePaymentReceipt = (payment: PaymentData, loan: Loan, client:
         startY: finalY1 + 5,
         theme: 'plain',
         body: [
-            ['Capital Original', `RD$ ${payment.originalCapital.toLocaleString()}`],
-            ['Capital Pendiente', `RD$ ${payment.pendingCapital.toLocaleString()}`],
-            ['Intereses Pendientes', `RD$ ${payment.pendingInterest.toLocaleString()}`],
-            ['Total Pendiente', `RD$ ${payment.totalPending.toLocaleString()}`]
+            ['Total de la Deuda', `RD$ ${payment.originalCapital.toLocaleString()}`],
+            ['Balance Anterior', `RD$ ${(payment.totalPending + payment.capital).toLocaleString()}`],
+            ['Monto Cobrado', `RD$ ${payment.amountReceived.toLocaleString()}`],
+            ['Balance a la Fecha', `RD$ ${payment.totalPending.toLocaleString()}`]
         ],
         columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'right' } },
         margin: { right: 110 } // Mitad izquierda

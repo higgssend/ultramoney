@@ -20,6 +20,8 @@ import { RefinanceModal } from '../components/RefinanceModal';
 import { CreditScoreEngine } from '../utils/CreditScoreEngine';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { EditPaymentModal } from '../components/EditPaymentModal';
+import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
+import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
 import { formatExactDateTime } from '../utils/dateUtils';
 
 export const LoanDetail: React.FC = () => {
@@ -59,6 +61,10 @@ export const LoanDetail: React.FC = () => {
   // Edit Payment Modal State
   const [selectedTransactionToEdit, setSelectedTransactionToEdit] = useState<Transaction | null>(null);
   const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
+
+  // Thermal Receipt State
+  const [thermalReceiptData, setThermalReceiptData] = useState<ThermalReceiptData | null>(null);
+  const [isThermalModalOpen, setIsThermalModalOpen] = useState(false);
 
   // Edit Loan Modal State - Complete Edition
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -239,6 +245,51 @@ export const LoanDetail: React.FC = () => {
   );
 
   const totalCollectedOnLoan = allLoanTransactions.reduce((acc, t) => acc + (t.amount || 0), 0);
+
+  const handleOpenThermalReceipt = (t: Transaction) => {
+    const formattedRecNo = formatReceiptId(t.id);
+    const parsedDate = t.date ? new Date(t.date) : new Date();
+    const calculated = calculateReceiptBalances(t, loan, allLoanTransactions);
+
+    const thermalData: ThermalReceiptData = {
+      receiptNo: formattedRecNo,
+      date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
+      time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      clientName: client?.name || loan.clientName || 'Cliente',
+      clientCedula: client?.cedula || client?.documentId || client?.clientCode,
+      clientPhone: client?.phone,
+      loanId: loan.id,
+      loanType: loan.loanType || (calculated.isOpenLoan ? 'Pagaré Abierto / Solo Interés' : 'Amortizado'),
+      loanAmount: loan.amount,
+      totalDebt: calculated.totalDebt,
+      installmentInfo: `Cuota ${loan.frequency || 'Mensual'}`,
+      amountPaid: calculated.amountPaid,
+      capitalAmount: calculated.capitalPaid,
+      interestAmount: calculated.interestPaid,
+      lateFeeAmount: calculated.lateFeePaid,
+      discountAmount: calculated.discountPaid,
+      previousBalance: calculated.previousBalance,
+      newBalance: calculated.newBalance,
+      paymentMethod: t.paymentMethod || 'Efectivo',
+      paymentType: t.paymentType,
+      cashierName: 'Caja',
+      notes: t.description,
+      transactionId: t.id,
+      clientId: client?.id || loan.clientId
+    };
+
+    setThermalReceiptData(thermalData);
+    setIsThermalModalOpen(true);
+  };
+
+  const handleShareWhatsApp = (t: Transaction) => {
+    const clientName = client?.name || loan.clientName || 'Cliente';
+    const formattedRecNo = formatReceiptId(t.id);
+    const calculated = calculateReceiptBalances(t, loan, allLoanTransactions);
+    const receiptWebLink = `${window.location.origin}/recibo/${t.id}`;
+    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${clientName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
 
   const company = companySettings || { name: 'UltraMoney Financial', address: 'Santo Domingo, R.D.', phone: '809-000-0000', rnc: '101-00000-1' };
   const todayStr = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -1126,57 +1177,82 @@ export const LoanDetail: React.FC = () => {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">No. Recibo</th>
-                      <th className="px-6 py-4">Fecha y Hora</th>
-                      <th className="px-6 py-4">Concepto / Descripción</th>
-                      <th className="px-6 py-4 text-center">Método de Pago</th>
-                      <th className="px-6 py-4 text-right">Monto Pagado</th>
-                      <th className="px-6 py-4 text-center">Acciones</th>
+                      <th className="px-5 py-4">No. Recibo</th>
+                      <th className="px-5 py-4">Fecha y Hora</th>
+                      <th className="px-5 py-4">Concepto / Detalle</th>
+                      <th className="px-5 py-4 text-center">Método</th>
+                      <th className="px-5 py-4 text-right">Balance Anterior</th>
+                      <th className="px-5 py-4 text-right text-emerald-600">Monto Pagado</th>
+                      <th className="px-5 py-4 text-right">Saldo Restante</th>
+                      <th className="px-5 py-4 text-center">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {allLoanTransactions.map(tx => (
-                      <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                          {formatReceiptId(tx.id)}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">
-                          {formatExactDateTime(tx.date)}
-                        </td>
-                        <td className="px-6 py-4 text-slate-800 dark:text-slate-200 font-bold">
-                          {tx.description || 'Abono a Préstamo'}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[10px] uppercase">
-                            {tx.paymentMethod || 'Efectivo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                          RD$ {(tx.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedTransactionToEdit(tx);
-                                setIsEditPaymentModalOpen(true);
-                              }}
-                              className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 rounded-lg font-bold hover:bg-amber-100 text-[11px] inline-flex items-center gap-1 transition-colors"
-                              title="Editar Pago Completamente"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" /> Editar
-                            </button>
-                            <button
-                              onClick={() => navigate(`/recibo/${tx.id}`)}
-                              className="px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg font-bold hover:bg-indigo-100 text-[11px] inline-flex items-center gap-1 transition-colors"
-                              title="Ver Recibo Oficial"
-                            >
-                              <Eye className="w-3.5 h-3.5" /> Recibo
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {allLoanTransactions.map(tx => {
+                      const calculated = calculateReceiptBalances(tx, loan, allLoanTransactions);
+                      return (
+                        <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-5 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            {formatReceiptId(tx.id)}
+                          </td>
+                          <td className="px-5 py-4 font-medium text-slate-700 dark:text-slate-300">
+                            {formatExactDateTime(tx.date)}
+                          </td>
+                          <td className="px-5 py-4 text-slate-800 dark:text-slate-200 font-bold">
+                            {tx.description || 'Abono a Préstamo'}
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[10px] uppercase">
+                              {tx.paymentMethod || 'Efectivo'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-right font-medium text-slate-500 dark:text-slate-400">
+                            RD$ {calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-5 py-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                            +RD$ {calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-5 py-4 text-right font-black text-slate-900 dark:text-white">
+                            RD$ {calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedTransactionToEdit(tx);
+                                  setIsEditPaymentModalOpen(true);
+                                }}
+                                className="p-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 rounded-lg hover:bg-amber-100 transition-colors"
+                                title="Editar Pago Completamente"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenThermalReceipt(tx)}
+                                className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 transition-colors"
+                                title="Imprimir Ticket Térmico POS (58/80mm)"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleShareWhatsApp(tx)}
+                                className="p-1.5 text-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors"
+                                title="Enviar Recibo por WhatsApp"
+                              >
+                                <WhatsAppIcon className="w-3.5 h-3.5 text-[#25D366]" colored={false} />
+                              </button>
+                              <button
+                                onClick={() => navigate(`/recibo/${tx.id}`)}
+                                className="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 transition-colors"
+                                title="Ver Recibo Oficial Digital"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1963,6 +2039,18 @@ export const LoanDetail: React.FC = () => {
         }}
         transaction={selectedTransactionToEdit}
       />
+
+      {/* Direct Thermal Receipt Modal */}
+      {isThermalModalOpen && thermalReceiptData && (
+        <ThermalReceiptModal
+          isOpen={isThermalModalOpen}
+          onClose={() => {
+            setIsThermalModalOpen(false);
+            setThermalReceiptData(null);
+          }}
+          data={thermalReceiptData}
+        />
+      )}
 
     </div>
   );

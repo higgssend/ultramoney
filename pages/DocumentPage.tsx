@@ -11,6 +11,7 @@ import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
 import { useToast } from '../context/ToastContext';
 import { useStore, useSettings, useAccounting } from '../context/StoreContext';
+import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
 
 export type DocumentType = 'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo';
 
@@ -846,12 +847,17 @@ export const DocumentPage: React.FC = () => {
                     <strong>Préstamo Asociado:</strong> {currentLoan.loanType} (Ref. #{formatLoanId(currentLoan.id)}) — Garantía: {collateralText}
                   </p>
                 )}
-                {currentLoan && (
-                  <div className="mt-6 border border-slate-200 rounded-2xl p-5 bg-slate-50 font-sans text-xs space-y-2">
-                    <p><strong>Saldo Anterior:</strong> RD$ {((currentLoan.remainingBalance || 0) + (activeTransaction?.amount || 0)).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
-                    <p className="font-black text-base text-indigo-700 pt-1"><strong>(=) Nuevo Saldo Pendiente:</strong> RD$ {(currentLoan.remainingBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
-                  </div>
-                )}
+                {currentLoan && activeTransaction && (() => {
+                  const receiptBalances = calculateReceiptBalances(activeTransaction, currentLoan, loanTransactions);
+                  return (
+                    <div className="mt-6 border border-slate-200 rounded-2xl p-5 bg-slate-50 font-sans text-xs space-y-2">
+                      <p><strong>Total de la Deuda Original:</strong> RD$ {receiptBalances.totalDebt.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                      <p><strong>Balance Anterior al Pago:</strong> RD$ {receiptBalances.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                      <p><strong>Monto Pagado:</strong> RD$ {receiptBalances.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                      <p className="font-black text-base text-indigo-700 pt-1"><strong>(=) Balance Restante a la Fecha:</strong> RD$ {receiptBalances.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="signatures flex justify-center mt-16 font-sans">
