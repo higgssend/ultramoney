@@ -6,6 +6,7 @@ import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
 import { PaymentMethod } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
+import { CashCounterModal } from '../components/CashCounterModal';
 import { toast } from 'sonner';
 
 // Chart of Accounts Structure
@@ -48,6 +49,7 @@ const Accounting: React.FC = () => {
   const shiftSummary = getCashShiftSummary();
   
   const [activeTab, setActiveTab] = useState<'overview' | 'shift' | 'chart' | 'journal' | 'trial' | 'financials'>('overview');
+  const [isCashCounterOpen, setIsCashCounterOpen] = useState(false);
 
   // Expense Form State
   const [expenseCategory, setExpenseCategory] = useState<'Combustible' | 'Papelería' | 'Nómina' | 'Operativo' | 'Servicios' | 'Mantenimiento' | 'Otros'>('Operativo');
@@ -215,44 +217,54 @@ const Accounting: React.FC = () => {
           </div>
         </div>
 
-        {/* Accounting Module Navigation Tabs */}
-        <div className="flex bg-white dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto text-xs font-bold">
+        {/* Accounting Module Navigation Tabs & Quick Tools */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button 
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'overview' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            onClick={() => setIsCashCounterOpen(true)}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-2xl font-black text-xs flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all border border-emerald-500"
+            title="Abrir calculadora rápida de billetes (Opcional - sin necesidad de abrir turno)"
           >
-            <PieChart className="w-4 h-4" /> Resumen & Caja
+            <Calculator className="w-4 h-4" /> Cuadre Rápido
           </button>
-          <button 
-            onClick={() => setActiveTab('shift')}
-            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shift' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-          >
-            <Wallet className="w-4 h-4" /> {activeCashShift ? 'Arqueo de Turno' : 'Apertura de Caja'}
-          </button>
-          <button 
-            onClick={() => setActiveTab('chart')}
-            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'chart' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-          >
-            <BookOpen className="w-4 h-4" /> Catálogo de Cuentas
-          </button>
-          <button 
-            onClick={() => setActiveTab('journal')}
-            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'journal' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-          >
-            <FileText className="w-4 h-4" /> Libro Diario
-          </button>
-          <button 
-            onClick={() => setActiveTab('trial')}
-            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'trial' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-          >
-            <Scale className="w-4 h-4" /> Balanza Comprobación
-          </button>
-          <button 
-            onClick={() => setActiveTab('financials')}
-            className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'financials' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-          >
-            <TrendingUp className="w-4 h-4" /> Estado de Resultados (P&L)
-          </button>
+
+          <div className="flex bg-white dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto text-xs font-bold">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'overview' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            >
+              <PieChart className="w-4 h-4" /> Resumen & Caja
+            </button>
+            <button 
+              onClick={() => setActiveTab('shift')}
+              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shift' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            >
+              <Wallet className="w-4 h-4" /> {activeCashShift ? 'Arqueo de Turno' : 'Apertura de Caja'}
+            </button>
+            <button 
+              onClick={() => setActiveTab('chart')}
+              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'chart' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            >
+              <BookOpen className="w-4 h-4" /> Catálogo de Cuentas
+            </button>
+            <button 
+              onClick={() => setActiveTab('journal')}
+              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'journal' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            >
+              <FileText className="w-4 h-4" /> Libro Diario
+            </button>
+            <button 
+              onClick={() => setActiveTab('trial')}
+              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'trial' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            >
+              <Scale className="w-4 h-4" /> Balanza Comprobación
+            </button>
+            <button 
+              onClick={() => setActiveTab('financials')}
+              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'financials' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+            >
+              <TrendingUp className="w-4 h-4" /> Estado de Resultados (P&L)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -794,6 +806,14 @@ const Accounting: React.FC = () => {
 
         </div>
       )}
+
+      {/* Optional Cash Bill Counter Modal */}
+      <CashCounterModal 
+        isOpen={isCashCounterOpen}
+        onClose={() => setIsCashCounterOpen(false)}
+        systemBalance={stats.balance}
+        cashBoxName="Caja General"
+      />
 
     </div>
   );

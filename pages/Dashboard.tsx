@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import StatCard from '../components/StatCard';
+import { DailyMorningBriefing } from '../components/DailyMorningBriefing';
 import { useSettings, useClients, useLoans, useAccounting } from '../context/StoreContext';
 import { LoanStatus } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -364,6 +365,9 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Daily Morning Executive Briefing Card */}
+      <DailyMorningBriefing />
 
       {/* 4 Cards Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
