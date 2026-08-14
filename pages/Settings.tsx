@@ -126,12 +126,17 @@ const Settings: React.FC = () => {
   });
 
   const fetchCloudBackups = async () => {
+    if (!currentUser) return;
     setIsLoadingCloudBackups(true);
     try {
       const files = await listBucketFiles('backups');
-      setCloudBackups(files.map(f => ({
+      // Filter backups strictly by current user's folder prefix or user id in name
+      const userPrefix = `${currentUser.id}/`;
+      const userFiles = files.filter(f => f.key.startsWith(userPrefix) || f.key.includes(currentUser.id));
+      
+      setCloudBackups(userFiles.map(f => ({
         key: f.key,
-        name: f.name,
+        name: f.name.replace(userPrefix, ''),
         size: f.size,
         lastModified: f.lastModified
       })));
@@ -146,43 +151,66 @@ const Settings: React.FC = () => {
     if (activeTab === 'backup') {
       fetchCloudBackups();
     }
-  }, [activeTab]);
+  }, [activeTab, currentUser]);
 
   const toggleWeeklyBackup = (enabled: boolean) => {
     setWeeklyBackupEnabled(enabled);
     localStorage.setItem('weekly_backup_enabled', enabled ? 'true' : 'false');
-    toast.success(enabled ? 'Respaldo automático semanal ACTIVADO en el bucket backups' : 'Respaldo automático semanal DESACTIVADO');
+    toast.success(enabled ? 'Respaldo automático semanal ACTIVADO para su cuenta' : 'Respaldo automático semanal DESACTIVADO');
   };
 
   const createFullBackup = async (uploadToBucket = false) => {
+    if (!currentUser) {
+      toast.error('Debe iniciar sesión para generar una copia de seguridad');
+      return;
+    }
     setIsCreatingBackup(true);
     try {
-      const [clientsRes, loansRes, txRes, productsRes] = await Promise.all([
-        insforge.database.from('clients').select('*'),
-        insforge.database.from('loans').select('*'),
-        insforge.database.from('transactions').select('*'),
-        insforge.database.from('loan_products').select('*')
+      // Strictly filter all records by the authenticated user / lender ID
+      const [
+        clientsRes, loansRes, txRes, productsRes, 
+        routesRes, vaultRes, relsRes, legalRes
+      ] = await Promise.all([
+        insforge.database.from('clients').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('loans').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('loan_products').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('routes').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('vault_collaterals').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('client_relationships').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('legal_cases').select('*').eq('lender_id', currentUser.id)
       ]);
 
       const backupData = {
-        version: '2.0.0',
+        version: '2.1.0',
         platform: 'UltraMoney',
         timestamp: new Date().toISOString(),
+        account: {
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userEmail: currentUser.email,
+          role: currentUser.role
+        },
         company: companySettings,
         clients: clientsRes.data || [],
         loans: loansRes.data || [],
         transactions: txRes.data || [],
-        products: productsRes.data || []
+        products: productsRes.data || [],
+        routes: routesRes.data || [],
+        vaultCollaterals: vaultRes.data || [],
+        clientRelationships: relsRes.data || [],
+        legalCases: legalRes.data || []
       };
 
       const jsonString = JSON.stringify(backupData, null, 2);
-      const fileName = `ultramoney_backup_${new Date().toISOString().split('T')[0]}_${Date.now().toString().slice(-4)}.json`;
+      const fileNameOnly = `ultramoney_backup_${new Date().toISOString().split('T')[0]}_${Date.now().toString().slice(-4)}.json`;
+      const cloudStorageKey = `${currentUser.id}/${fileNameOnly}`;
 
       if (uploadToBucket) {
         const blob = new Blob([jsonString], { type: 'application/json' });
-        const { error } = await insforge.storage.from('backups').upload(fileName, blob);
+        const { error } = await insforge.storage.from('backups').upload(cloudStorageKey, blob);
         if (!error) {
-          toast.success('¡Copia de seguridad guardada con éxito en el bucket InsForge!');
+          toast.success('¡Copia de seguridad privada guardada con éxito en su carpeta de la nube!');
           fetchCloudBackups();
         } else {
           toast.error(`Error al guardar en bucket: ${error.message}`);
@@ -192,12 +220,12 @@ const Settings: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = fileName;
+        link.download = fileNameOnly;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        toast.success('Copia de seguridad descargada exitosamente en formato JSON');
+        toast.success('Copia de seguridad privada de su cuenta descargada exitosamente en formato JSON');
       }
     } catch (err) {
       toast.error('Error al generar la copia de seguridad');
@@ -208,19 +236,35 @@ const Settings: React.FC = () => {
   };
 
   const createZipBackup = async () => {
+    if (!currentUser) {
+      toast.error('Debe iniciar sesión para generar una copia de seguridad');
+      return;
+    }
     setIsCreatingBackup(true);
     try {
-      const [clientsRes, loansRes, txRes, productsRes] = await Promise.all([
-        insforge.database.from('clients').select('*'),
-        insforge.database.from('loans').select('*'),
-        insforge.database.from('transactions').select('*'),
-        insforge.database.from('loan_products').select('*')
+      // Strictly filter all records by the authenticated user / lender ID
+      const [
+        clientsRes, loansRes, txRes, productsRes, 
+        routesRes, vaultRes, relsRes, legalRes
+      ] = await Promise.all([
+        insforge.database.from('clients').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('loans').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('loan_products').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('routes').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('vault_collaterals').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('client_relationships').select('*').eq('lender_id', currentUser.id),
+        insforge.database.from('legal_cases').select('*').eq('lender_id', currentUser.id)
       ]);
 
-      const clientsData = clientsRes.data || [];
-      const loansData = loansRes.data || [];
-      const txData = txRes.data || [];
-      const productsData = productsRes.data || [];
+      const clientsData = (clientsRes.data || []) as Record<string, unknown>[];
+      const loansData = (loansRes.data || []) as Record<string, unknown>[];
+      const txData = (txRes.data || []) as Record<string, unknown>[];
+      const productsData = (productsRes.data || []) as Record<string, unknown>[];
+      const routesData = (routesRes.data || []) as Record<string, unknown>[];
+      const vaultData = (vaultRes.data || []) as Record<string, unknown>[];
+      const relsData = (relsRes.data || []) as Record<string, unknown>[];
+      const legalData = (legalRes.data || []) as Record<string, unknown>[];
 
       const arrayToCsv = (data: Record<string, unknown>[]) => {
         if (!data || data.length === 0) return '';
@@ -240,56 +284,70 @@ const Settings: React.FC = () => {
       const timestamp = new Date().toISOString();
       const dateStr = timestamp.split('T')[0];
 
-      // 1. JSON database dump
+      // 1. JSON database dump strictly for current user
       const jsonBackupData = {
-        version: '2.0.0',
+        version: '2.1.0',
         platform: 'UltraMoney',
         timestamp,
+        account: {
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userEmail: currentUser.email,
+          role: currentUser.role
+        },
         company: companySettings,
         clients: clientsData,
         loans: loansData,
         transactions: txData,
-        products: productsData
+        products: productsData,
+        routes: routesData,
+        vaultCollaterals: vaultData,
+        clientRelationships: relsData,
+        legalCases: legalData
       };
       zip.file('database_dump.json', JSON.stringify(jsonBackupData, null, 2));
 
       // 2. CSV files for Excel
-      zip.file('clientes.csv', arrayToCsv(clientsData as unknown as Record<string, unknown>[]));
-      zip.file('prestamos.csv', arrayToCsv(loansData as unknown as Record<string, unknown>[]));
-      zip.file('transacciones_pagos.csv', arrayToCsv(txData as unknown as Record<string, unknown>[]));
-      zip.file('productos_prestamo.csv', arrayToCsv(productsData as unknown as Record<string, unknown>[]));
+      zip.file('clientes.csv', arrayToCsv(clientsData));
+      zip.file('prestamos.csv', arrayToCsv(loansData));
+      zip.file('transacciones_pagos.csv', arrayToCsv(txData));
+      zip.file('productos_prestamo.csv', arrayToCsv(productsData));
+      if (vaultData.length > 0) zip.file('boveda_garantias.csv', arrayToCsv(vaultData));
+      if (legalData.length > 0) zip.file('casos_legales.csv', arrayToCsv(legalData));
 
       // 3. Manifesto text file
-      zip.file('LEAME_RESPALDO.txt', `ULTRAMONEY - PAQUETE COMPLETO DE RESPALDO DE SEGURIDAD
+      zip.file('LEAME_RESPALDO.txt', `ULTRAMONEY - PAQUETE PRIVADO DE RESPALDO DE SEGURIDAD
 ============================================================
 Fecha de Generación: ${timestamp}
+Usuario Propietario: ${currentUser.name} (${currentUser.email})
 Empresa: ${companySettings?.name || 'UltraMoney'}
 
-CONTENIDO DEL PAQUETE (.ZIP):
-- database_dump.json: Respaldo estructurado en JSON para restauración en la plataforma.
-- clientes.csv: Tabla de clientes exportada para Microsoft Excel (${clientsData.length} registros).
-- prestamos.csv: Tabla de cartera de préstamos exportada para Excel (${loansData.length} registros).
+CONTENIDO DEL PAQUETE (.ZIP PRIVADO DE SU CUENTA):
+- database_dump.json: Respaldo estructurado en JSON para restauración en su cuenta.
+- clientes.csv: Sus clientes exportados para Microsoft Excel (${clientsData.length} registros).
+- prestamos.csv: Su cartera de préstamos exportada para Excel (${loansData.length} registros).
 - transacciones_pagos.csv: Historial de transacciones y pagos en CSV (${txData.length} registros).
 - productos_prestamo.csv: Productos de crédito configurados (${productsData.length} registros).
 ============================================================`);
 
       const zipContent = await zip.generateAsync({ type: 'blob' });
-      const zipFileName = `ultramoney_backup_COMPLETO_${dateStr}_${Date.now().toString().slice(-4)}.zip`;
+      const zipFileNameOnly = `ultramoney_backup_COMPLETO_${dateStr}_${Date.now().toString().slice(-4)}.zip`;
+      const cloudZipStorageKey = `${currentUser.id}/${zipFileNameOnly}`;
 
       // Trigger local download
       const url = URL.createObjectURL(zipContent);
       const link = document.createElement('a');
       link.href = url;
-      link.download = zipFileName;
+      link.download = zipFileNameOnly;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      // Upload copy to InsForge backups storage bucket
-      const { error } = await insforge.storage.from('backups').upload(zipFileName, zipContent);
+      // Upload copy to InsForge backups storage bucket strictly under user folder
+      const { error } = await insforge.storage.from('backups').upload(cloudZipStorageKey, zipContent);
       if (!error) {
-        toast.success('¡Paquete ZIP de respaldo descargado y subido a la nube!');
+        toast.success('¡Paquete ZIP de respaldo privado descargado y subido a su carpeta en la nube!');
         fetchCloudBackups();
       } else {
         toast.success('Paquete de respaldo ZIP descargado en tu equipo.');
@@ -304,9 +362,9 @@ CONTENIDO DEL PAQUETE (.ZIP):
 
   const handleRestoreFromFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !currentUser) return;
 
-    if (!window.confirm('¿Estás seguro de restaurar esta copia de seguridad? Se sincronizarán los registros almacenados en el archivo con tu base de datos.')) {
+    if (!window.confirm('¿Estás seguro de restaurar esta copia de seguridad en tu cuenta? Se importarán y sincronizarán los registros almacenados en el archivo con tu base de datos privada.')) {
       if (event.target) event.target.value = '';
       return;
     }
@@ -324,17 +382,26 @@ CONTENIDO DEL PAQUETE (.ZIP):
       let restoredClients = 0;
       let restoredLoans = 0;
 
+      // Ensure every record is strictly assigned to the current user (lender_id)
       if (parsed.clients && parsed.clients.length > 0) {
-        const { error: cErr } = await insforge.database.from('clients').upsert(parsed.clients);
-        if (!cErr) restoredClients = parsed.clients.length;
+        const scopedClients = (parsed.clients as Record<string, unknown>[]).map(c => ({
+          ...c,
+          lender_id: currentUser.id
+        }));
+        const { error: cErr } = await insforge.database.from('clients').upsert(scopedClients);
+        if (!cErr) restoredClients = scopedClients.length;
       }
 
       if (parsed.loans && parsed.loans.length > 0) {
-        const { error: lErr } = await insforge.database.from('loans').upsert(parsed.loans);
-        if (!lErr) restoredLoans = parsed.loans.length;
+        const scopedLoans = (parsed.loans as Record<string, unknown>[]).map(l => ({
+          ...l,
+          lender_id: currentUser.id
+        }));
+        const { error: lErr } = await insforge.database.from('loans').upsert(scopedLoans);
+        if (!lErr) restoredLoans = scopedLoans.length;
       }
 
-      toast.success(`¡Restauración exitosa! (${restoredClients} clientes y ${restoredLoans} préstamos importados/actualizados).`);
+      toast.success(`¡Restauración exitosa! (${restoredClients} clientes y ${restoredLoans} préstamos importados en su cuenta).`);
     } catch (err) {
       toast.error('Error al procesar o importar el archivo JSON');
       console.error(err);
