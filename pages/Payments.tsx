@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { LoanEngine } from '../utils/LoanEngine';
-import { Loan, CompanySettings, PaymentMethod, formatLoanId, formatReceiptId } from '../types';
+import { Loan, CompanySettings, PaymentMethod, formatLoanId, formatReceiptId, LoanStatus } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
