@@ -13,7 +13,7 @@ import { logger } from '../../utils/logger';
 interface MerchantContextType {
   merchants: MerchantPartner[];
   isLoadingMerchants: boolean;
-  addMerchant: (data: Omit<MerchantPartner, 'id' | 'createdAt' | 'totalFinanced' | 'totalApplications'>) => Promise<MerchantPartner | void>;
+  addMerchant: (data: Omit<MerchantPartner, 'id' | 'createdAt' | 'totalFinanced' | 'totalApplications' | 'lenderId'>) => Promise<MerchantPartner | void>;
   updateMerchant: (id: string, updates: Partial<MerchantPartner>) => Promise<void>;
   deleteMerchant: (id: string) => Promise<void>;
   refreshMerchants: () => Promise<void>;
@@ -86,7 +86,7 @@ export const MerchantProvider: React.FC<{ children: ReactNode }> = ({ children }
     refreshMerchants();
   }, [currentUser]);
 
-  const addMerchant = async (data: Omit<MerchantPartner, 'id' | 'createdAt' | 'totalFinanced' | 'totalApplications'>): Promise<MerchantPartner | void> => {
+  const addMerchant = async (data: Omit<MerchantPartner, 'id' | 'createdAt' | 'totalFinanced' | 'totalApplications' | 'lenderId'>): Promise<MerchantPartner | void> => {
     if (!currentUser) return;
     const merchantId = `merch-${Date.now()}`;
     const slug = (data.portalSlug || data.name.toLowerCase().replace(/[^a-z0-9]/g, '-')).replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -271,37 +271,19 @@ export const MerchantProvider: React.FC<{ children: ReactNode }> = ({ children }
           targetClientId = existingClient.id;
         } else {
           // Create new client record automatically
-          const newClientId = `client-pos-${Date.now()}`;
-          const newClientPayload: Partial<ClientDB> = {
-            id: newClientId,
-            lender_id: currentUser.id,
+          const createdClient = await addClient({
             name: request.clientName,
             cedula: request.buyerCedula || 'S/N',
             phone: request.clientPhone || 'S/N',
-            email: request.clientEmail || null,
+            email: request.clientEmail,
             status: 'Activo',
             income: 25000,
-            creditscore: 720,
-            joineddate: new Date().toISOString().split('T')[0]
-          };
+            creditScore: 720,
+            joinedDate: new Date().toISOString().split('T')[0]
+          });
 
-          const { error: clientErr } = await insforge.database
-            .from('clients')
-            .insert([newClientPayload]);
-
-          if (!clientErr) {
-            targetClientId = newClientId;
-            addClient({
-              id: newClientId,
-              name: request.clientName,
-              cedula: request.buyerCedula || 'S/N',
-              phone: request.clientPhone || 'S/N',
-              email: request.clientEmail,
-              status: 'Activo',
-              income: 25000,
-              creditScore: 720,
-              joinedDate: new Date().toISOString().split('T')[0]
-            });
+          if (createdClient) {
+            targetClientId = createdClient.id;
           }
         }
       }
@@ -372,6 +354,7 @@ export const MerchantProvider: React.FC<{ children: ReactNode }> = ({ children }
       addNotification({
         title: 'Solicitud POS Aprobada',
         message: `Se aprobó crédito de RD$ ${financedPrincipal.toLocaleString()} para ${request.clientName} en ${request.merchantName || 'Comercio'}.`,
+        type: 'success',
         link: `/prestamos`
       });
 

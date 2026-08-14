@@ -11,6 +11,7 @@ import type { MerchantPartnerDB, LoanRequestDB, CompanySettingsDB } from '../typ
 import { insforge } from '../lib/insforge';
 import { useMerchants } from '../context/StoreContext';
 import { toast } from 'sonner';
+import { logger } from '../utils/logger';
 
 export const MerchantPosPortal: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();

@@ -418,3 +418,15 @@ export interface AccountingPeriodDB {
   notes?: string | null;
   created_at?: string;
 }
+
+export interface CompanySettingsDB {
+  id?: string;
+  lender_id?: string;
+  name?: string;
+  logourl?: string;
+  logo_url?: string;
+  phone?: string;
+  currency?: string;
+  locked_until_date?: string | null;
+}
+
