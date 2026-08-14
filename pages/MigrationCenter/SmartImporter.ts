@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 
 export interface ParseResult {
   headers: string[];
-  data: any[];
+  data: Record<string, string | number | boolean | null>[];
 }
 
 // Dictionary for smart mapping

@@ -22,7 +22,7 @@ export type MigrationTargetEntity =
   | 'garantias' 
   | 'cobradores' 
   | 'usuarios' 
-    | 'caja' 
+  | 'caja' 
   | 'gastos' 
   | 'documentos' 
   | 'contratos' 
@@ -58,12 +58,14 @@ export interface FieldMapping {
 
 export type DuplicateStrategy = 'ignore' | 'update' | 'merge' | 'create_new' | 'ask';
 
+export type MigrationPrimitive = string | number | boolean | null | undefined;
+
 export interface ValidationIssue {
   id: string;
   rowIndex: number;
   entity: string;
   field: string;
-  value: any;
+  value: MigrationPrimitive;
   severity: 'error' | 'warning';
   code: string;
   message: string;
@@ -73,8 +75,8 @@ export interface PreviewRecord {
   id: string;
   rowIndex: number;
   entity: MigrationTargetEntity;
-  sourceData: Record<string, any>;
-  mappedData: Record<string, any>;
+  sourceData: Record<string, MigrationPrimitive>;
+  mappedData: Record<string, MigrationPrimitive>;
   status: 'valid' | 'warning' | 'error';
   issues: ValidationIssue[];
   isSelected: boolean;

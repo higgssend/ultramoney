@@ -7,22 +7,39 @@ import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import html2canvas from 'html2canvas';
 
-type ExportableValue = string | number | boolean | null | undefined;
+export type ExportableValue = string | number | boolean | null | undefined;
 
-interface ExportColumn {
+export interface ExportColumn {
   header: string;
   key: string;
   format?: (value: ExportableValue) => string;
 }
 
-interface DataExportToolbarProps<T extends Record<string, ExportableValue | Record<string, ExportableValue>>> {
+export interface DataExportToolbarProps<T extends object> {
   data: T[];
   columns: ExportColumn[];
   filename: string;
   title: string;
 }
 
-export const DataExportToolbar = <T extends Record<string, ExportableValue | Record<string, ExportableValue>>>({ 
+// Deep key extractor helper
+const extractNestedValue = (obj: object, path: string): ExportableValue => {
+  const keys = path.split('.');
+  let current: unknown = obj;
+  for (const k of keys) {
+    if (current && typeof current === 'object' && k in current) {
+      current = (current as Record<string, unknown>)[k];
+    } else {
+      return null;
+    }
+  }
+  if (typeof current === 'string' || typeof current === 'number' || typeof current === 'boolean') {
+    return current;
+  }
+  return null;
+};
+
+export const DataExportToolbar = <T extends object>({ 
   data, 
   columns, 
   filename, 
@@ -30,18 +47,12 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
 }: DataExportToolbarProps<T>): React.ReactElement => {
   const { addToast } = useToast();
 
-  const getExportData = () => {
+  const getExportData = (): Record<string, string | number | boolean | null>[] => {
     return data.map(item => {
       const row: Record<string, string | number | boolean | null> = {};
       columns.forEach(col => {
-        const val = col.key.split('.').reduce<ExportableValue | Record<string, ExportableValue>>((o, i) => {
-          if (o && typeof o === 'object' && i in o) {
-            return (o as Record<string, ExportableValue>)[i];
-          }
-          return null;
-        }, item);
-        const resolvedVal = (typeof val === 'object' && val !== null) ? null : val;
-        row[col.header] = col.format ? col.format(resolvedVal) : (resolvedVal ?? '');
+        const val = extractNestedValue(item, col.key);
+        row[col.header] = col.format ? col.format(val) : (val ?? '');
       });
       return row;
     });
@@ -55,7 +66,7 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
       XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 31)); // max 31 chars
       XLSX.writeFile(wb, `${filename}.xlsx`);
       addToast('Archivo Excel generado', 'success');
-    } catch (error) {
+    } catch {
       addToast('Error al exportar a Excel', 'error');
     }
   };
@@ -72,7 +83,7 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
       link.click();
       document.body.removeChild(link);
       addToast('Archivo CSV generado', 'success');
-    } catch (error) {
+    } catch {
       addToast('Error al exportar a CSV', 'error');
     }
   };
@@ -90,10 +101,16 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
       doc.setTextColor(100);
       doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 30);
 
-      const tableData = data.map(item => {
+      const tableData: (string | number)[][] = data.map(item => {
         return columns.map(col => {
-          const val = col.key.split('.').reduce((o, i) => (o ? o[i] : null), item);
-          return col.format ? col.format(val) : (val ?? '');
+          const val = extractNestedValue(item, col.key);
+          if (col.format) {
+            return col.format(val);
+          }
+          if (val === null || val === undefined) {
+            return '';
+          }
+          return typeof val === 'boolean' ? (val ? 'Sí' : 'No') : val;
         });
       });
 
@@ -108,7 +125,7 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
 
       doc.save(`${filename}.pdf`);
       addToast('Archivo PDF generado', 'success');
-    } catch (error) {
+    } catch {
       addToast('Error al exportar a PDF', 'error');
     }
   };
@@ -150,8 +167,7 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
         printWindow.print();
         printWindow.close();
       }, 250);
-    } catch (error) {
-      addToast('Error al imprimir', 'error');
+    } catch {
       addToast('Error al imprimir', 'error');
     }
   };
@@ -259,3 +275,5 @@ export const DataExportToolbar = <T extends Record<string, ExportableValue | Rec
     </div>
   );
 };
+
+export default DataExportToolbar;

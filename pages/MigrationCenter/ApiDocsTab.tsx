@@ -48,8 +48,9 @@ export const ApiDocsTab: React.FC = () => {
         await generateApiKey(newKeyName.trim());
         setIsModalOpen(false);
         setNewKeyName('');
-    } catch (err: any) {
-        addToast('Error generando API Key: ' + err.message, 'error');
+    } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
+        addToast('Error generando API Key: ' + errorMsg, 'error');
     } finally {
         setIsGenerating(false);
     }

@@ -120,8 +120,9 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
         });
         if(autoMappings.length > 0) setMappings(autoMappings);
 
-      } catch (err: any) {
-        addToast(`Error al procesar archivo: ${err.message}`, 'error');
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
+        addToast(`Error al procesar archivo: ${errorMsg}`, 'error');
       }
     }
   };
@@ -435,7 +436,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onComplete, on
       // Generate mapped data before preview
       if(sourceData.length > 0) {
         const finalPreviews = sourceData.slice(0, 500).map((row, idx) => {
-          const newMappedData: any = {};
+          const newMappedData: Record<string, MigrationPrimitive> = {};
           mappings.forEach(m => {
             if (m.targetField && m.targetField !== '') {
                let val = row[m.sourceField];
