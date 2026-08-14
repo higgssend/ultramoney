@@ -27,11 +27,12 @@ export const ClientAccountStatementPage: React.FC = () => {
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoans, setClientLoans] = useState<Loan[]>([]);
   const [clientTransactions, setClientTransactions] = useState<Transaction[]>([]);
+  const [dbCompanySettings, setDbCompanySettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
-  // 1. Resolve Client, Loans and Transactions (from Store or Direct Database Fetch)
+  // 1. Resolve Client, Loans, Transactions and Company Settings
   useEffect(() => {
     const fetchFullAccountStatementData = async () => {
       if (!effectiveClientId) {
@@ -40,6 +41,28 @@ export const ClientAccountStatementPage: React.FC = () => {
       }
 
       try {
+        // Fetch company settings from DB as robust fallback
+        try {
+          const { data: dbSettings } = await insforge.database
+            .from('company_settings')
+            .select('*')
+            .maybeSingle();
+
+          if (dbSettings) {
+            setDbCompanySettings({
+              name: dbSettings.name || 'UltraMoney Financial',
+              rnc: dbSettings.rnc || '',
+              phone: dbSettings.phone || '',
+              email: dbSettings.email || '',
+              address: dbSettings.address || '',
+              logoUrl: dbSettings.logourl || dbSettings.logo_url || dbSettings.logoUrl || '',
+              lateFeeRate: Number(dbSettings.late_fee_rate || dbSettings.latefeerate) || 5,
+              gracePeriodDays: Number(dbSettings.grace_period_days || dbSettings.graceperioddays) || 3
+            });
+          }
+        } catch (e) {
+          console.error("Error fetching company settings:", e);
+        }
         // Find in local memory store first
         let currentClient = clients.find(c => c.id === effectiveClientId);
         
@@ -296,6 +319,9 @@ export const ClientAccountStatementPage: React.FC = () => {
   const issueDate = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' });
   const issueTime = new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+  const effectiveCompany = companySettings?.name ? companySettings : (dbCompanySettings || companySettings || { name: 'UltraMoney Financial' });
+  const effectiveLogo = effectiveCompany.logoUrl || effectiveCompany.logourl;
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 p-3 sm:p-6 lg:p-8 font-sans pb-20">
       
@@ -366,12 +392,21 @@ export const ClientAccountStatementPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-6 gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-md">
-                U
-              </div>
+              {effectiveLogo ? (
+                <img 
+                  src={effectiveLogo} 
+                  alt={effectiveCompany.name || 'Logo Empresa'} 
+                  className="h-14 w-auto max-w-[190px] max-h-16 object-contain rounded-xl"
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <div className="w-11 h-11 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-md">
+                  {effectiveCompany.name ? effectiveCompany.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
               <div>
                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-                  {companySettings.name || 'UltraMoney Financial'}
+                  {effectiveCompany.name || 'UltraMoney Financial'}
                 </h2>
                 <p className="text-xs text-slate-500 font-semibold">
                   Soluciones Financieras & Gestión de Cartera
@@ -381,15 +416,15 @@ export const ClientAccountStatementPage: React.FC = () => {
             <div className="pt-2 text-xs text-slate-600 space-y-0.5">
               <p className="flex items-center gap-1.5 font-medium">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                {companySettings.address || 'Santo Domingo, República Dominicana'}
+                {effectiveCompany.address || 'Santo Domingo, República Dominicana'}
               </p>
               <p className="flex items-center gap-1.5 font-medium">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
-                Tel: {companySettings.phone || '(809) 555-0199'} | RNC: {companySettings.rnc || '1-32-45678-9'}
+                Tel: {effectiveCompany.phone || '(809) 555-0199'} | RNC: {effectiveCompany.rnc || '1-32-45678-9'}
               </p>
               <p className="flex items-center gap-1.5 font-medium">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                {companySettings.email || 'cobranzas@ultramoney.do'}
+                {effectiveCompany.email || 'cobranzas@ultramoney.do'}
               </p>
             </div>
           </div>
@@ -727,7 +762,7 @@ export const ClientAccountStatementPage: React.FC = () => {
         <div className="pt-6 border-t border-slate-200 space-y-6">
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-[11px] text-slate-500 leading-relaxed text-justify">
             <p>
-              <strong>Certificación Oficial:</strong> El presente documento refleja de manera fehaciente el historial completo de operaciones, créditos y recaudaciones asociadas al cliente <strong>{clientFullName}</strong> en los registros contables de <strong>{companySettings.name}</strong> hasta la fecha de corte <strong>{issueDate}</strong>. Este estado de cuenta es emitido para fines informativos y legales correspondientes.
+              <strong>Certificación Oficial:</strong> El presente documento refleja de manera fehaciente el historial completo de operaciones, créditos y recaudaciones asociadas al cliente <strong>{clientFullName}</strong> en los registros contables de <strong>{effectiveCompany.name || 'UltraMoney'}</strong> hasta la fecha de corte <strong>{issueDate}</strong>. Este estado de cuenta es emitido para fines informativos y legales correspondientes.
             </p>
           </div>
 
@@ -741,9 +776,9 @@ export const ClientAccountStatementPage: React.FC = () => {
 
             <div className="text-center space-y-2">
               <div className="border-b-2 border-slate-900 w-4/5 mx-auto h-12"></div>
-              <p className="text-xs font-black text-slate-900 uppercase">{companySettings.name || 'UltraMoney'}</p>
+              <p className="text-xs font-black text-slate-900 uppercase">{effectiveCompany.name || 'UltraMoney'}</p>
               <p className="text-[10px] text-slate-500 font-semibold">Firma Autorizada & Sello Oficial</p>
-              <p className="text-[10px] text-slate-400 font-mono">RNC: {companySettings.rnc || '1-32-45678-9'}</p>
+              <p className="text-[10px] text-slate-400 font-mono">RNC: {effectiveCompany.rnc || '1-32-45678-9'}</p>
             </div>
           </div>
 
