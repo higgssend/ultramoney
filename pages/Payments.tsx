@@ -10,6 +10,7 @@ import { LoanEngine } from '../utils/LoanEngine';
 import { Loan, CompanySettings, PaymentMethod, formatLoanId, formatReceiptId } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
+import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 
 // WhatsApp Official Icon SVG
 const WhatsAppIcon = () => (
@@ -1148,12 +1149,28 @@ const PaymentSuccessModal: React.FC<{
 💰 *Monto Pagado*: RD$ ${data.amountPaid.toLocaleString()}
 
 Link web para descargar o imprimir su recibo:
-${receiptWebLink}
+lto:?subject=Recibo de Pago ${data.transactionId}&body=${encodedMessage}`;
 
-Gracias por su pago.`;
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappLink = `https://wa.me/?text=${encodedMessage}`;
-    const mailLink = `mailto:?subject=Recibo de Pago ${data.transactionId}&body=${encodedMessage}`;
+    const [isThermalOpen, setIsThermalOpen] = useState(false);
+
+    const thermalData: ThermalReceiptData = {
+        receiptNo: data.receiptNo || formatReceiptId(data.transactionId),
+        date: data.date,
+        clientName: data.clientName,
+        clientId: data.clientId,
+        loanId: data.loanId,
+        installmentInfo: data.paidInstallments && data.totalInstallments ? `Cuota ${data.paidInstallments} de ${data.totalInstallments}` : undefined,
+        amountPaid: data.amountPaid,
+        capitalAmount: data.amountPaid > (data.lateFeeAmount || 0) ? (data.amountPaid - (data.lateFeeAmount || 0)) : data.amountPaid,
+        lateFeeAmount: data.lateFeeAmount,
+        discountAmount: data.discountAmount,
+        previousBalance: data.previousBalance,
+        newBalance: data.newBalance,
+        paymentMethod: data.paymentMethod || 'Efectivo',
+        cashierName: data.cashierName || 'Cajero',
+        notes: data.paymentNote,
+        transactionId: data.transactionId
+    };
 
     const handlePrint = () => {
         const printContent = document.getElementById('printable-receipt');
@@ -1268,7 +1285,16 @@ Gracias por su pago.`;
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+            {/* Direct Thermal POS Modal */}
+            {isThermalOpen && (
+                <ThermalReceiptModal
+                    isOpen={isThermalOpen}
+                    onClose={() => setIsThermalOpen(false)}
+                    data={thermalData}
+                />
+            )}
+
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
                 <div className="bg-slate-900 p-4 text-white flex justify-between items-center">
@@ -1406,6 +1432,12 @@ Gracias por su pago.`;
                 
                 {/* Actions Footer */}
                 <div className="p-4 border-t border-slate-200 bg-white grid grid-cols-2 gap-3">
+                    <button 
+                        onClick={() => setIsThermalOpen(true)}
+                        className="col-span-2 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-md shadow-emerald-600/25 active:scale-95"
+                    >
+                        <Printer className="w-5 h-5" /> 🖨️ Ticket Térmico Directo (58mm / 80mm)
+                    </button>
                     <button 
                         onClick={handleDownloadImage}
                         className="col-span-2 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-emerald-600/20"

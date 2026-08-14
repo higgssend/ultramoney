@@ -6,7 +6,7 @@ import {
   TrendingDown, TrendingUp, UserCog, Tags, 
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
   Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2,
-  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon, ArrowLeftRight
+  LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon, ArrowLeftRight, LineChart
 } from 'lucide-react';
 import { useAuth, useSettings, useAccounting } from '../context/StoreContext';
 
@@ -75,6 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Cartera', path: '/cartera', icon: Briefcase },
     { name: 'Gastos', path: '/gastos', icon: TrendingDown },
     { name: 'Ganancias', path: '/ganancias', icon: TrendingUp },
+    { name: 'Flujo de Caja', path: '/flujo-caja', icon: LineChart },
     { name: 'Empleados', path: '/empleados', icon: UserCog },
     { name: 'Clasificación', path: '/clasificacion', icon: Tags },
     { name: 'Cont. Profunda', path: '/contabilidad', icon: BookOpen },

@@ -4,7 +4,8 @@ import { Route, Client } from '../types';
 import { 
   Map as MapIcon, Plus, Edit2, Trash2, Search, ArrowRight, User, 
   Hash, Save, AlertCircle, X, AlertTriangle, Navigation, MapPin, 
-  Share2, CheckCircle2, Calendar, Phone, DollarSign, Filter, ListOrdered
+  Share2, CheckCircle2, Calendar, Phone, DollarSign, Filter, ListOrdered,
+  Printer, Receipt
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CustomSelect } from '../components/CustomSelect';
@@ -331,6 +332,17 @@ export const RoutesPage: React.FC = () => {
                         onBlur={(e) => updateClientSequence(c.id, e.target.value)}
                       />
                     </div>
+
+                    {clientLoans[0] && (
+                      <button
+                        onClick={() => navigate('/pagos', { state: { loanId: clientLoans[0].id } })}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                        title="Cobrar cuota e imprimir ticket térmico Bluetooth"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Cobrar</span>
+                      </button>
+                    )}
 
                     {c.lat && c.lng && (
                       <a

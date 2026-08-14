@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounting, useSettings } from '../context/StoreContext';
-import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check } from 'lucide-react';
+import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer } from 'lucide-react';
 import { Transaction, Loan, Client, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
+import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
@@ -237,8 +238,42 @@ export const ReceiptView: React.FC = () => {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
+    const [isThermalOpen, setIsThermalOpen] = useState(false);
+
+    const thermalData: ThermalReceiptData | null = transaction ? {
+        receiptNo: formattedReceiptNo,
+        date: formattedDate,
+        time: formattedTime,
+        clientName: client?.name || loan?.clientname || 'Cliente',
+        clientCedula: client?.cedula || client?.documentId,
+        clientPhone: client?.phone,
+        loanId: loan?.id || transaction.referenceId || '',
+        installmentInfo: loan ? `Cuota de ${loan.frequency || 'Mensual'}` : undefined,
+        amountPaid: paymentAmount,
+        capitalAmount: capitalPaid,
+        interestAmount: interestPaid,
+        lateFeeAmount: lateFeePaid,
+        previousBalance: previousBalance,
+        newBalance: currentBalance,
+        paymentMethod: transaction.paymentMethod || 'Efectivo',
+        cashierName: 'Administración',
+        nextPaymentDate: loan?.nextPaymentDate,
+        notes: transaction.description,
+        transactionId: transaction.id,
+        clientId: client?.id || loan?.clientId
+    } : null;
+
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col py-8 sm:px-6 lg:px-8 relative overflow-hidden print:bg-white print:py-0 print:px-0">
+            {/* Direct Thermal POS Modal */}
+            {isThermalOpen && thermalData && (
+                <ThermalReceiptModal
+                    isOpen={isThermalOpen}
+                    onClose={() => setIsThermalOpen(false)}
+                    data={thermalData}
+                />
+            )}
+
             {/* Background glowing effects */}
             <div className="absolute -top-40 -right-40 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob print:hidden"></div>
             <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob print:hidden"></div>
@@ -252,11 +287,18 @@ export const ReceiptView: React.FC = () => {
                     </Link>
                     <div className="flex flex-wrap items-center gap-2">
                         <button 
+                            onClick={() => setIsThermalOpen(true)}
+                            className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 transition-all active:scale-95"
+                        >
+                            <Printer className="w-4 h-4" />
+                            <span>Impresión Térmica (58/80mm)</span>
+                        </button>
+                        <button 
                             onClick={handleCopyReceiptLink}
                             className="px-3.5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-colors"
                         >
                             {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                            {copied ? '¡Copiado!' : 'Copiar Link del Recibo'}
+                            {copied ? '¡Copiado!' : 'Copiar Link'}
                         </button>
                         <button 
                             onClick={handleShareWhatsApp}
@@ -277,7 +319,7 @@ export const ReceiptView: React.FC = () => {
                             className="px-3.5 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md hover:bg-slate-700 transition-colors"
                         >
                             <Download className="w-4 h-4" />
-                            Imprimir Ticket
+                            Imprimir Carta
                         </button>
                     </div>
                 </div>

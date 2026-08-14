@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, TrendingDown, DollarSign, PieChart as PieIcon, ChevronLeft, 
   Download, FileSpreadsheet, Percent, Calendar, Filter, ArrowUpRight, ArrowDownRight,
-  ShieldAlert, Sparkles, Building2, CheckCircle2, Clock, Calculator, BarChart3, Printer
+  ShieldAlert, Sparkles, Building2, CheckCircle2, Clock, Calculator, BarChart3, Printer, LineChart
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -274,6 +274,14 @@ export const Profit: React.FC = () => {
               </button>
             ))}
           </div>
+
+          <button 
+            onClick={() => navigate('/flujo-caja')}
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-black flex items-center gap-2 shadow-md shadow-blue-600/20 transition-all active:scale-95"
+            title="Abrir Proyección Detallada de Flujo de Caja (30/60/90 días)"
+          >
+            <LineChart className="w-4 h-4 text-blue-200" /> Flujo de Caja (30/60/90d)
+          </button>
 
           <button 
             onClick={exportPLReport} 
