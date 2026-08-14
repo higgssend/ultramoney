@@ -13,6 +13,7 @@ import { Phone, Users, MapPin, Briefcase } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { insforge } from '../lib/insforge';
+import { LoanEngine } from '../utils/LoanEngine';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 import { LoanContractModal } from './features/LoanContractModal';
 import { RefinanceModal } from '../components/RefinanceModal';
