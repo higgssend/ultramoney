@@ -45,27 +45,41 @@ interface LoanContextType {
 
 const LoanContext = createContext<LoanContextType | undefined>(undefined);
 
-const mapTransaction = (t: TransactionDB): Transaction => ({
-  id: t.id,
-  type: (t.type || 'Ingreso') as 'Ingreso' | 'Gasto',
-  category: (t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')) as Transaction['category'],
-  amount: Number(t.amount) || 0,
-  date: t.date,
-  description: t.description,
-  referenceId: t.referenceid || t.reference_id || undefined,
-  paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
-  paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
-  invoiceDate: t.invoicedate || t.invoice_date || undefined,
-  bankAccountId: t.bank_account_id || undefined,
-  proofUrl: t.proof_url || undefined,
-  previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : (t.previousbalance !== undefined ? Number(t.previousbalance) : undefined),
-  newBalance: t.new_balance !== undefined ? Number(t.new_balance) : (t.newbalance !== undefined ? Number(t.newbalance) : undefined),
-  totalDebt: t.total_debt !== undefined ? Number(t.total_debt) : (t.totaldebt !== undefined ? Number(t.totaldebt) : undefined),
-  capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : (t.capitalamount !== undefined ? Number(t.capitalamount) : undefined),
-  interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : (t.interestamount !== undefined ? Number(t.interestamount) : undefined),
-  lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : (t.latefeeamount !== undefined ? Number(t.latefeeamount) : undefined),
-  discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : (t.discountamount !== undefined ? Number(t.discountamount) : undefined),
-});
+const resolveExactTxDate = (dateStr?: string, createdAtStr?: string): string => {
+  if (!dateStr && !createdAtStr) return new Date().toISOString();
+  if (dateStr && !dateStr.includes('T00:00:00') && !dateStr.endsWith('T00:00:00.000Z') && dateStr.includes('T')) {
+    return dateStr;
+  }
+  if (createdAtStr) return createdAtStr;
+  return dateStr || new Date().toISOString();
+};
+
+const mapTransaction = (t: TransactionDB): Transaction => {
+  const resolvedDate = resolveExactTxDate(t.date, t.created_at);
+  return {
+    id: t.id,
+    type: (t.type || 'Ingreso') as 'Ingreso' | 'Gasto',
+    category: (t.category || (t.referenceid ? 'Pago Préstamo' : 'Otro')) as Transaction['category'],
+    amount: Number(t.amount) || 0,
+    date: resolvedDate,
+    createdAt: t.created_at || resolvedDate,
+    created_at: t.created_at || resolvedDate,
+    description: t.description,
+    referenceId: t.referenceid || t.reference_id || undefined,
+    paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
+    paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
+    invoiceDate: t.invoicedate || t.invoice_date || undefined,
+    bankAccountId: t.bank_account_id || undefined,
+    proofUrl: t.proof_url || undefined,
+    previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : (t.previousbalance !== undefined ? Number(t.previousbalance) : undefined),
+    newBalance: t.new_balance !== undefined ? Number(t.new_balance) : (t.newbalance !== undefined ? Number(t.newbalance) : undefined),
+    totalDebt: t.total_debt !== undefined ? Number(t.total_debt) : (t.totaldebt !== undefined ? Number(t.totaldebt) : undefined),
+    capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : (t.capitalamount !== undefined ? Number(t.capitalamount) : undefined),
+    interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : (t.interestamount !== undefined ? Number(t.interestamount) : undefined),
+    lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : (t.latefeeamount !== undefined ? Number(t.latefeeamount) : undefined),
+    discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : (t.discountamount !== undefined ? Number(t.discountamount) : undefined),
+  };
+};
 
 export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
@@ -83,7 +97,10 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoans(prevLoans => {
         let changed = false;
         const updated = prevLoans.map(loan => {
-          const matchingClient = clients.find(c => c.id === loan.clientId);
+          const matchingClient = clients.find(c => 
+            c.id === loan.clientId || 
+            (loan.clientId && c.cedula && c.cedula.replace(/[^0-9]/g, '') === loan.clientId.replace(/[^0-9]/g, ''))
+          );
           if (matchingClient) {
             const freshName = `${matchingClient.name} ${matchingClient.lastName || ''}`.trim();
             if (freshName && freshName !== loan.clientName) {

@@ -694,6 +694,8 @@ export interface Transaction {
   discountAmount?: number;
   installmentNumber?: number;
   installment_number?: number;
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface CashShift {

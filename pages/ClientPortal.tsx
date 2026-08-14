@@ -229,7 +229,11 @@ export const ClientPortal: React.FC = () => {
                             type: (t.type === 'Gasto' ? 'Gasto' : 'Ingreso') as 'Ingreso' | 'Gasto',
                             category: (t.category || 'Pago Préstamo') as Transaction['category'],
                             amount: Number(t.amount || 0),
-                            date: t.date || t.created_at || new Date().toISOString(),
+                            date: (t.date && !t.date.includes('T00:00:00') && !t.date.endsWith('T00:00:00.000Z') && t.date.includes('T')) 
+                                ? t.date 
+                                : (t.created_at || t.date || new Date().toISOString()),
+                            createdAt: t.created_at,
+                            created_at: t.created_at,
                             description: t.description || 'Pago de Préstamo',
                             paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
                             paymentType: (t.paymenttype || t.payment_type || 'Ingreso') as Transaction['paymentType'],

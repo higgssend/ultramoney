@@ -135,27 +135,41 @@ const DEFAULT_PAYMENT_METHODS: CustomPaymentMethod[] = [
   }
 ];
 
-const mapTransaction = (t: TransactionDB): Transaction => ({
-  id: t.id,
-  type: t.type as Transaction['type'],
-  category: (t.category || 'Otro') as Transaction['category'],
-  amount: t.amount,
-  date: t.date,
-  description: t.description,
-  referenceId: t.referenceid || t.reference_id || undefined,
-  paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
-  paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
-  invoiceDate: t.invoicedate || t.invoice_date || undefined,
-  bankAccountId: t.bank_account_id || undefined,
-  proofUrl: t.proof_url || undefined,
-  previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : (t.previousbalance !== undefined ? Number(t.previousbalance) : undefined),
-  newBalance: t.new_balance !== undefined ? Number(t.new_balance) : (t.newbalance !== undefined ? Number(t.newbalance) : undefined),
-  totalDebt: t.total_debt !== undefined ? Number(t.total_debt) : (t.totaldebt !== undefined ? Number(t.totaldebt) : undefined),
-  capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : (t.capitalamount !== undefined ? Number(t.capitalamount) : undefined),
-  interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : (t.interestamount !== undefined ? Number(t.interestamount) : undefined),
-  lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : (t.latefeeamount !== undefined ? Number(t.latefeeamount) : undefined),
-  discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : (t.discountamount !== undefined ? Number(t.discountamount) : undefined),
-});
+const resolveExactTxDate = (dateStr?: string, createdAtStr?: string): string => {
+  if (!dateStr && !createdAtStr) return new Date().toISOString();
+  if (dateStr && !dateStr.includes('T00:00:00') && !dateStr.endsWith('T00:00:00.000Z') && dateStr.includes('T')) {
+    return dateStr;
+  }
+  if (createdAtStr) return createdAtStr;
+  return dateStr || new Date().toISOString();
+};
+
+const mapTransaction = (t: TransactionDB): Transaction => {
+  const resolvedDate = resolveExactTxDate(t.date, t.created_at);
+  return {
+    id: t.id,
+    type: t.type as Transaction['type'],
+    category: (t.category || 'Otro') as Transaction['category'],
+    amount: t.amount,
+    date: resolvedDate,
+    createdAt: t.created_at || resolvedDate,
+    created_at: t.created_at || resolvedDate,
+    description: t.description,
+    referenceId: t.referenceid || t.reference_id || undefined,
+    paymentType: (t.paymenttype || t.payment_type || undefined) as Transaction['paymentType'],
+    paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
+    invoiceDate: t.invoicedate || t.invoice_date || undefined,
+    bankAccountId: t.bank_account_id || undefined,
+    proofUrl: t.proof_url || undefined,
+    previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : (t.previousbalance !== undefined ? Number(t.previousbalance) : undefined),
+    newBalance: t.new_balance !== undefined ? Number(t.new_balance) : (t.newbalance !== undefined ? Number(t.newbalance) : undefined),
+    totalDebt: t.total_debt !== undefined ? Number(t.total_debt) : (t.totaldebt !== undefined ? Number(t.totaldebt) : undefined),
+    capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : (t.capitalamount !== undefined ? Number(t.capitalamount) : undefined),
+    interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : (t.interestamount !== undefined ? Number(t.interestamount) : undefined),
+    lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : (t.latefeeamount !== undefined ? Number(t.latefeeamount) : undefined),
+    discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : (t.discountamount !== undefined ? Number(t.discountamount) : undefined),
+  };
+};
 
 const mapBankDeposit = (d: BankDepositDB): BankDeposit => ({
   id: d.id,

@@ -245,6 +245,28 @@ export const ReceiptView: React.FC = () => {
         fetchReceiptDetails();
     }, [transactionId, transactions, loans, clients]);
 
+    // Keep client and loan reactively synced with live context store
+    useEffect(() => {
+        const targetClientId = loan?.clientId || client?.id || transaction?.referenceId;
+        if (targetClientId && clients.length > 0) {
+            const liveClient = clients.find(c => c.id === targetClientId);
+            if (liveClient) {
+                setClient(liveClient);
+            }
+        }
+        const targetLoanId = transaction?.referenceId || loan?.id;
+        if (targetLoanId && loans.length > 0) {
+            const liveLoan = loans.find(l => 
+                l.id === targetLoanId || 
+                formatLoanId(l.id) === targetLoanId ||
+                formatLoanId(l.id).replace(/\s+/g, '') === (targetLoanId || '').replace(/\s+/g, '')
+            );
+            if (liveLoan) {
+                setLoan(liveLoan);
+            }
+        }
+    }, [clients, loans, loan?.clientId, transaction?.referenceId, client?.id, loan?.id]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">

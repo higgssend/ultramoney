@@ -166,7 +166,11 @@ export const ClientAccountStatementPage: React.FC = () => {
                 type: t.type as Transaction['type'],
                 category: t.category as Transaction['category'],
                 amount: Number(t.amount) || 0,
-                date: t.date || t.created_at,
+                date: (t.date && !t.date.includes('T00:00:00') && !t.date.endsWith('T00:00:00.000Z') && t.date.includes('T')) 
+                  ? t.date 
+                  : (t.created_at || t.date || new Date().toISOString()),
+                createdAt: t.created_at,
+                created_at: t.created_at,
                 description: t.description || 'Cobro de Cuota',
                 referenceId: t.referenceid || t.reference_id,
                 paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],

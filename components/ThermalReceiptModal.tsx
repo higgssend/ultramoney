@@ -3,7 +3,7 @@ import {
   Printer, X, Smartphone, Copy, Check, Download, Share2, 
   QrCode, Sliders, Receipt, RefreshCw, FileText
 } from 'lucide-react';
-import { useSettings } from '../context/StoreContext';
+import { useSettings, useClients } from '../context/StoreContext';
 import { formatLoanId, formatReceiptId, PaymentMethod } from '../types';
 import { formatExactTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 import QRCode from 'qrcode';
@@ -57,10 +57,24 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
   data
 }) => {
   const { companySettings } = useSettings();
+  const { clients = [] } = useClients();
   const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('58mm');
   const [copiedText, setCopiedText] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+
+  const matchedClient = useMemo(() => {
+    if (data.clientId) {
+      return clients.find(c => c.id === data.clientId);
+    }
+    return clients.find(c => c.name.toLowerCase().trim() === (data.clientName || '').toLowerCase().trim());
+  }, [clients, data.clientId, data.clientName]);
+
+  const liveClientName = matchedClient 
+    ? `${matchedClient.name} ${matchedClient.lastName || ''}`.trim() 
+    : data.clientName;
+  const liveClientCedula = matchedClient?.cedula || matchedClient?.documentId || data.clientCedula;
+  const liveClientPhone = matchedClient?.phone || data.clientPhone;
 
   // Digital verification URL for the QR code
   const verificationUrl = useMemo(() => {
@@ -191,9 +205,9 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
       `HORA:   ${displayTime}`,
       `CAJERO: ${data.cashierName}`,
       sep,
-      `CLIENTE:  ${data.clientName}`,
-      data.clientCedula ? `DOC/CED:  ${data.clientCedula}` : '',
-      data.clientPhone ? `TEL:      ${data.clientPhone}` : '',
+      `CLIENTE:  ${liveClientName}`,
+      liveClientCedula ? `DOC/CED:  ${liveClientCedula}` : '',
+      liveClientPhone ? `TEL:      ${liveClientPhone}` : '',
       `PRESTAMO: #${formatLoanId(cleanLoanId)}`,
       data.loanType ? `TIPO:     ${data.loanType}` : '',
       data.loanAmount ? `CAPITAL:  RD$ ${data.loanAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}` : '',
@@ -245,8 +259,8 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
   const handleShareWhatsApp = () => {
     const url = verificationUrl;
     const nextPayTxt = displayNextDate ? `\n*Próximo Pago*: ${displayNextDate}` : '';
-    const text = `*${companySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Cobro*: #${data.receiptNo}\n*Fecha*: ${data.date}\n*Hora*: ${displayTime}\n*Cliente*: ${data.clientName}\n*Total Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver su comprobante digital oficial aquí:\n${url}`;
-    const targetPhone = data.clientPhone ? data.clientPhone.replace(/[^0-9]/g, '') : '';
+    const text = `*${companySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Cobro*: #${data.receiptNo}\n*Fecha*: ${data.date}\n*Hora*: ${displayTime}\n*Cliente*: ${liveClientName}\n*Total Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver su comprobante digital oficial aquí:\n${url}`;
+    const targetPhone = liveClientPhone ? liveClientPhone.replace(/[^0-9]/g, '') : '';
     const waUrl = targetPhone 
       ? `https://wa.me/${targetPhone.length === 10 ? '1' + targetPhone : targetPhone}?text=${encodeURIComponent(text)}`
       : `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -377,18 +391,18 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
               <div className="space-y-0.5 text-[11px]">
                 <div className="flex justify-between">
                   <span className="font-bold">CLIENTE:</span>
-                  <span className="font-black text-right truncate max-w-[170px]">{data.clientName}</span>
+                  <span className="font-black text-right truncate max-w-[170px]">{liveClientName}</span>
                 </div>
-                {data.clientCedula && (
+                {liveClientCedula && (
                   <div className="flex justify-between text-[10px]">
                     <span>DOC/CED:</span>
-                    <span className="font-mono font-bold">{data.clientCedula}</span>
+                    <span className="font-mono font-bold">{liveClientCedula}</span>
                   </div>
                 )}
-                {data.clientPhone && (
+                {liveClientPhone && (
                   <div className="flex justify-between text-[10px]">
                     <span>TELÉFONO:</span>
-                    <span>{data.clientPhone}</span>
+                    <span>{liveClientPhone}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[10px]">

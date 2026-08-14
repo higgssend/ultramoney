@@ -460,10 +460,13 @@ export const Payments: React.FC = () => {
 
     const selectedLoanClient = clients.find(c => c.id === selectedLoan.clientId);
     const exactPayTime = paymentTime ? `${paymentTime}:00` : formatExactTime(null, true);
+    const resolvedClientName = selectedLoanClient 
+      ? `${selectedLoanClient.name} ${selectedLoanClient.lastName || ''}`.trim() 
+      : selectedLoan.clientName;
     const fullReceipt: FullReceiptData = {
       loanId: formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType),
       amountPaid: effectiveTotal,
-      clientName: selectedLoan.clientName,
+      clientName: resolvedClientName,
       clientId: selectedLoan.clientId,
       clientCedula: selectedLoanClient?.cedula || selectedLoanClient?.documentId || selectedLoanClient?.clientCode,
       clientPhone: selectedLoanClient?.phone,
@@ -559,7 +562,7 @@ export const Payments: React.FC = () => {
       formatLoanId(l.id) === t.referenceId || 
       formatLoanId(l.id).replace(/\s+/g, '') === (t.referenceId || '').replace(/\s+/g, '')
     );
-    const client = loan ? clients.find(c => c.id === loan.clientId) : undefined;
+    const client = loan ? clients.find(c => c.id === loan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
     const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? (loan.clientName || loan.clientname) : 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
     const calculated = calculateReceiptBalances(t, loan, transactions);
