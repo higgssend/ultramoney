@@ -129,7 +129,7 @@ export interface Client {
   routeId?: string;
   routeSequence?: number;
 
-  creditScore: number; // 0 - 100
+  creditScore: number; // 300 - 850 (FICO / Datacrédito scale)
   status: 'Activo' | 'Bloqueado' | 'Al Día';
   email?: string;
   joinedDate: string;

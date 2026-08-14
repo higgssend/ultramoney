@@ -36,7 +36,7 @@ const NewClient: React.FC = () => {
     name: '', lastName: '', sex: 'Masculino', phone: '', whatsapp: '', phoneHome: '',
     cedula: '', documentType: 'Cedula', email: '', address: '', province: '', sector: '',
     municipality: '', referenceAddress: '', companyName: '', jobPosition: '', occupation: '',
-    income: 0, routeId: '', routeSequence: 0, creditScore: 100, avatarUrl: ''
+    income: 0, routeId: '', routeSequence: 0, creditScore: 650, avatarUrl: ''
   });
 
   const [docFile, setDocFile] = useState<string>('');
@@ -591,23 +591,27 @@ const NewClient: React.FC = () => {
               )}
 
               <div>
-                <label className={labelClass}>Score de Crédito Inicial (0–100 pts / 300–850)</label>
+                <label className={labelClass}>Score de Crédito Inicial (300 a 850)</label>
                 <div className="space-y-2">
                   {(() => {
-                    const pts = currentClient.creditScore ?? 100;
-                    const fico = Math.round(300 + (pts / 100) * 550);
+                    let scoreVal = currentClient.creditScore ?? 650;
+                    if (scoreVal <= 100) {
+                      scoreVal = Math.round(300 + (scoreVal / 100) * 550);
+                    }
+                    scoreVal = Math.max(300, Math.min(850, scoreVal));
+
                     let cat = 'Platino';
                     let col = 'text-emerald-600 dark:text-emerald-400';
                     let bg = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200';
-                    if (pts < 60) {
+                    if (scoreVal < 580) {
                       cat = 'Alto Riesgo';
                       col = 'text-rose-600 dark:text-rose-400';
                       bg = 'bg-rose-50 dark:bg-rose-950/40 border-rose-200';
-                    } else if (pts < 75) {
+                    } else if (scoreVal < 670) {
                       cat = 'Regular';
                       col = 'text-amber-600 dark:text-amber-400';
                       bg = 'bg-amber-50 dark:bg-amber-950/40 border-amber-200';
-                    } else if (pts < 90) {
+                    } else if (scoreVal < 750) {
                       cat = 'Confiable';
                       col = 'text-indigo-600 dark:text-indigo-400';
                       bg = 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200';
@@ -616,16 +620,22 @@ const NewClient: React.FC = () => {
                       <>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-slate-500">Puntuación y Semáforo:</span>
-                          <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${bg} ${col}`}>
-                            {pts} pts • {fico} / 850 ({cat})
+                          <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${bg} ${col}`}>
+                            {scoreVal} / 850 ({cat})
                           </span>
                         </div>
                         <input
-                          type="range" min="0" max="100" step="5"
-                          value={pts}
+                          type="range" min="300" max="850" step="10"
+                          value={scoreVal}
                           onChange={e => set('creditScore', Number(e.target.value))}
                           className="w-full accent-indigo-600 cursor-pointer"
                         />
+                        <div className="flex justify-between text-[10px] text-slate-400 font-bold px-0.5">
+                          <span className="text-rose-500">300 (Riesgo)</span>
+                          <span className="text-amber-500">580 (Regular)</span>
+                          <span className="text-indigo-500">670 (Confiable)</span>
+                          <span className="text-emerald-500">750 (Platino)</span>
+                        </div>
                       </>
                     );
                   })()}

@@ -277,7 +277,7 @@ const Clients: React.FC = () => {
                             <div className="w-16 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                               <div className={`h-1.5 rounded-full ${scoreResult.dotColor} transition-all`} style={{ width: `${scoreResult.points100}%` }} />
                             </div>
-                            <span className="text-[10px] text-slate-500 font-mono font-bold">{scoreResult.score} <span className="text-slate-400 font-normal">({scoreResult.points100} pts)</span></span>
+                            <span className="text-[10px] text-slate-500 font-mono font-bold">{scoreResult.score} / 850</span>
                           </div>
                         </div>
                       </td>
@@ -359,7 +359,7 @@ const Clients: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <p className="text-[10px] text-slate-400 uppercase font-semibold">Score</p>
-                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 font-mono">{scoreResult.score} <span className="text-[10px] text-slate-400 font-normal">({scoreResult.points100}p)</span></p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 font-mono">{scoreResult.score} / 850</p>
                       </div>
                       <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg border text-sm font-bold ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
                         {scoreResult.grade}

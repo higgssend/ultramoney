@@ -34,7 +34,7 @@ export const CreditRiskSemaphore: React.FC<CreditRiskSemaphoreProps> = ({
       <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold ${badgeBg} ${badgeBorder}`}>
         <span className={`w-2.5 h-2.5 rounded-full ${dotColor} animate-pulse`} />
         <span className={badgeColor}>{label}</span>
-        <span className="text-slate-400 font-mono">({score} / 850 • {points100} pts)</span>
+        <span className="text-slate-400 font-mono font-bold">({score} / 850)</span>
       </div>
     );
   }
@@ -64,11 +64,10 @@ export const CreditRiskSemaphore: React.FC<CreditRiskSemaphoreProps> = ({
 
         <div className="flex items-center gap-2 bg-white dark:bg-slate-900/90 px-3.5 py-2 rounded-xl border border-black/5 dark:border-white/10 shrink-0 shadow-xs">
           <div className="text-right">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">Score / Puntos</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">Score Crediticio</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-lg font-black text-slate-900 dark:text-white font-mono">{score}</span>
+              <span className="text-xl font-black text-slate-900 dark:text-white font-mono">{score}</span>
               <span className="text-xs font-bold text-slate-400">/ 850</span>
-              <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 ml-1">({points100} pts)</span>
             </div>
           </div>
         </div>

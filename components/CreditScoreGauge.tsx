@@ -122,11 +122,11 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
             SCORE CREDITICIO
           </span>
-          <div className="flex items-baseline gap-1.5 my-0.5">
+          <div className="flex items-baseline gap-1 my-0.5">
             <span className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               {clampedScore}
             </span>
-            <span className="text-xs font-bold text-slate-400">/ 850 ({normalizedPoints} pts)</span>
+            <span className="text-xs font-bold text-slate-400">/ 850</span>
           </div>
           
           <span 

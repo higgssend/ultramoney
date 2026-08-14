@@ -437,14 +437,14 @@ const ClientDetail: React.FC = () => {
                      <DetailGroup icon={Briefcase} title="Financiero">
                          <DetailRow label="Ingresos" value={`$${(client.income || 0).toLocaleString()}`} />
                          <DetailRow label="Score Crediticio" value={
-                             <div className="flex items-center gap-2">
-                                 <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-lg border text-xs font-bold ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
-                                     {scoreResult.score} / 850
-                                 </span>
-                                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                     ({scoreResult.points100} pts • Grado {scoreResult.grade})
-                                 </span>
-                             </div>
+                              <div className="flex items-center gap-2">
+                                  <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-lg border text-xs font-bold ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
+                                      {scoreResult.score} / 850
+                                  </span>
+                                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                      Grado {scoreResult.grade} • {scoreResult.label}
+                                  </span>
+                              </div>
                          } />
                          <DetailRow label="Registro" value={client.joinedDate} />
                      </DetailGroup>

@@ -1168,7 +1168,7 @@ export const LoanRequest: React.FC = () => {
                                             <span className={`w-2 h-2 rounded-full ${scoreResult.dotColor}`} />
                                             <span className="text-xs font-black text-white">{scoreResult.score} / 850</span>
                                         </div>
-                                        <p className="text-[10px] text-indigo-200 font-medium">{scoreResult.label} ({scoreResult.points100} pts)</p>
+                                        <p className="text-[10px] text-indigo-200 font-medium">{scoreResult.label}</p>
                                     </div>
                                 </div>
                             );
