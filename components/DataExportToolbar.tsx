@@ -7,28 +7,38 @@ import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import html2canvas from 'html2canvas';
 
-interface ExportColumn {
+interface ExportColumn<T = unknown> {
   header: string;
   key: string;
-  format?: (value: any) => string;
+  format?: (value: T) => string;
 }
 
-interface DataExportToolbarProps {
-  data: any[];
+interface DataExportToolbarProps<T extends Record<string, unknown> = Record<string, unknown>> {
+  data: T[];
   columns: ExportColumn[];
   filename: string;
   title: string;
 }
 
-export const DataExportToolbar: React.FC<DataExportToolbarProps> = ({ data, columns, filename, title }) => {
+export const DataExportToolbar = <T extends Record<string, unknown>>({ 
+  data, 
+  columns, 
+  filename, 
+  title 
+}: DataExportToolbarProps<T>): React.ReactElement => {
   const { addToast } = useToast();
 
   const getExportData = () => {
     return data.map(item => {
-      const row: any = {};
+      const row: Record<string, string | number | boolean | null> = {};
       columns.forEach(col => {
-        const val = col.key.split('.').reduce((o, i) => (o ? o[i] : null), item);
-        row[col.header] = col.format ? col.format(val) : (val ?? '');
+        const val = col.key.split('.').reduce<unknown>((o, i) => {
+          if (o && typeof o === 'object' && i in o) {
+            return (o as Record<string, unknown>)[i];
+          }
+          return null;
+        }, item);
+        row[col.header] = col.format ? col.format(val) : ((val as string | number | boolean | null) ?? '');
       });
       return row;
     });

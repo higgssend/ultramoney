@@ -33,10 +33,9 @@ export const HiddenDocumentRenderer: React.FC = () => {
           
           const fileName = `${job.client.id}_${job.type}_${Date.now()}.pdf`;
           
-          const { error } = await (insforge.storage.from('client-documents').upload as any)(
+          const { error } = await insforge.storage.from('client-documents').upload(
             fileName, 
-            pdfBlob, 
-            { contentType: 'application/pdf', upsert: true }
+            pdfBlob
           );
 
           if (error) throw error;

@@ -24,7 +24,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
-    (this as any).setState({
+    this.setState({
       error,
       errorInfo
     });
@@ -58,6 +58,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    return (this as any).props.children;
+    return this.props.children;
   }
 }
