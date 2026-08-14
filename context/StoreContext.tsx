@@ -6,8 +6,9 @@ import { LoanProvider, useLoans } from './modules/LoanContext';
 import { AccountingProvider, useAccounting } from './modules/AccountingContext';
 import { InventoryProvider, useInventory } from './modules/InventoryContext';
 import { MerchantProvider, useMerchants } from './modules/MerchantContext';
+import { LegalProvider, useLegal } from './modules/LegalContext';
 
-export { useAuth, useSettings, useClients, useLoans, useAccounting, useInventory, useMerchants };
+export { useAuth, useSettings, useClients, useLoans, useAccounting, useInventory, useMerchants, useLegal };
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
@@ -18,7 +19,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             <AccountingProvider>
               <InventoryProvider>
                 <MerchantProvider>
-                  {children}
+                  <LegalProvider>
+                    {children}
+                  </LegalProvider>
                 </MerchantProvider>
               </InventoryProvider>
             </AccountingProvider>

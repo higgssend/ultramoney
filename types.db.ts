@@ -51,6 +51,9 @@ export interface LoanDB {
   financed_amount?: number;
   note?: string;
   currency?: string;
+  is_in_legal_collection?: boolean;
+  legal_case_id?: string;
+  legal_fees_added?: number;
   created_at?: string;
 }
 
@@ -429,4 +432,81 @@ export interface CompanySettingsDB {
   currency?: string;
   locked_until_date?: string | null;
 }
+
+export interface LegalLawyerDB {
+  id: string;
+  lender_id: string;
+  name: string;
+  firm_name?: string | null;
+  rnc_or_cedula?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  address?: string | null;
+  fee_percentage?: number;
+  fixed_fee?: number;
+  status: string;
+  created_at?: string;
+}
+
+export interface LegalCaseDB {
+  id: string;
+  lender_id: string;
+  loan_id: string;
+  client_id: string;
+  client_name: string;
+  expediente_number: string;
+  court_jurisdiction?: string | null;
+  lawyer_id?: string | null;
+  lawyer_name?: string | null;
+  lawyer_firm?: string | null;
+  stage: string;
+  status: string;
+  initial_debt: number;
+  legal_fees?: number;
+  court_costs?: number;
+  total_legal_debt: number;
+  recovered_amount?: number;
+  start_date: string;
+  closed_date?: string | null;
+  notes?: string | null;
+  created_at?: string;
+}
+
+export interface LegalEventDB {
+  id: string;
+  lender_id: string;
+  case_id: string;
+  event_type: string;
+  title: string;
+  description?: string | null;
+  event_date: string;
+  cost?: number;
+  add_to_debt?: boolean;
+  notary_or_bailiff_name?: string | null;
+  document_number?: string | null;
+  document_url?: string | null;
+  status?: string;
+  created_at?: string;
+}
+
+export interface LegalAgreementDB {
+  id: string;
+  lender_id: string;
+  case_id: string;
+  loan_id: string;
+  client_id: string;
+  agreement_date: string;
+  agreed_total: number;
+  down_payment?: number;
+  installments_count: number;
+  installment_amount: number;
+  frequency: string;
+  homologated_by_court?: boolean;
+  court_reference?: string | null;
+  status: string;
+  notes?: string | null;
+  created_at?: string;
+}
+
 

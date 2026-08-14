@@ -286,6 +286,9 @@ export interface Loan {
   guarantorId?: string;
   note?: string;
   currency?: 'DOP' | 'USD';
+  isInLegalCollection?: boolean;
+  legalCaseId?: string;
+  legalFeesAdded?: number;
 }
 
 export interface LoanRequest {
@@ -360,6 +363,103 @@ export interface MerchantPartner {
   logoUrl?: string;
   totalFinanced: number;
   totalApplications: number;
+  createdAt: string;
+}
+
+export type LegalCaseStage = 
+  | 'Intimación Extrajudicial'
+  | 'Demanda Principal'
+  | 'Embargo en Trámite'
+  | 'Audiencia / Juicio'
+  | 'Sentencia Obtenida'
+  | 'Acuerdo de Pago'
+  | 'Cerrado / Recuperado'
+  | 'Incobrable Definitivo';
+
+export type LegalCaseStatus = 'En Trámite' | 'Acuerdo Vigente' | 'Recuperado' | 'Suspendido' | 'Cerrado';
+
+export interface LegalLawyer {
+  id: string;
+  lenderId: string;
+  name: string;
+  firmName?: string;
+  rncOrCedula?: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  address?: string;
+  feePercentage: number;
+  fixedFee: number;
+  status: 'Activo' | 'Inactivo';
+  createdAt: string;
+}
+
+export interface LegalCase {
+  id: string;
+  lenderId: string;
+  loanId: string;
+  clientId: string;
+  clientName: string;
+  expedienteNumber: string;
+  courtJurisdiction?: string;
+  lawyerId?: string;
+  lawyerName?: string;
+  lawyerFirm?: string;
+  stage: LegalCaseStage;
+  status: LegalCaseStatus;
+  initialDebt: number;
+  legalFees: number;
+  courtCosts: number;
+  totalLegalDebt: number;
+  recoveredAmount: number;
+  startDate: string;
+  closedDate?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface LegalEvent {
+  id: string;
+  lenderId: string;
+  caseId: string;
+  eventType: 
+    | 'Intimación Notarial'
+    | 'Acto de Alguacil'
+    | 'Audiencia'
+    | 'Embargo Retentivo'
+    | 'Embargo Ejecutivo'
+    | 'Sentencia'
+    | 'Acuerdo Homologado'
+    | 'Aviso WhatsApp Abogado'
+    | 'Otro';
+  title: string;
+  description?: string;
+  eventDate: string;
+  cost: number;
+  addToDebt: boolean;
+  notaryOrBailiffName?: string;
+  documentNumber?: string;
+  documentUrl?: string;
+  status: 'Completado' | 'Pendiente' | 'Cancelado';
+  createdAt: string;
+}
+
+export interface LegalAgreement {
+  id: string;
+  lenderId: string;
+  caseId: string;
+  loanId: string;
+  clientId: string;
+  agreementDate: string;
+  agreedTotal: number;
+  downPayment: number;
+  installmentsCount: number;
+  installmentAmount: number;
+  frequency: 'Semanal' | 'Quincenal' | 'Mensual';
+  homologatedByCourt: boolean;
+  courtReference?: string;
+  status: 'Cumpliendo' | 'Incumplido' | 'Finalizado';
+  notes?: string;
   createdAt: string;
 }
 

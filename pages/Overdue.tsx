@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Phone, AlertTriangle, Clock, ChevronLeft, FileText, Send, Users, ShieldAlert } from 'lucide-react';
+import { Phone, AlertTriangle, Clock, ChevronLeft, FileText, Send, Users, ShieldAlert, Scale, Gavel } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { DocumentGenerator } from '../components/DocumentGenerator';
@@ -47,9 +47,17 @@ const Overdue: React.FC = () => {
                 <p className="text-slate-500 dark:text-slate-400">Gestión de cuotas vencidas y avisos de cobro por WhatsApp a deudores y garantes.</p>
             </div>
         </div>
-        <div className="bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-5 py-3 rounded-2xl font-bold flex items-center gap-3 border border-rose-100 dark:border-rose-900/60 shadow-sm">
-            <div className="p-1 bg-rose-200 dark:bg-rose-900/80 rounded-full"><AlertTriangle className="w-5 h-5 text-rose-700 dark:text-rose-300" /></div>
-            Total Mora: RD$ {totalOverdueAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/legal')}
+            className="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-2xl font-bold text-xs border border-indigo-200 dark:border-indigo-800 flex items-center gap-2 shadow-xs transition-all"
+          >
+            <Scale className="w-4 h-4" /> Expedientes Cobranza Legal
+          </button>
+          <div className="bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-5 py-3 rounded-2xl font-bold flex items-center gap-3 border border-rose-100 dark:border-rose-900/60 shadow-sm">
+              <div className="p-1 bg-rose-200 dark:bg-rose-900/80 rounded-full"><AlertTriangle className="w-5 h-5 text-rose-700 dark:text-rose-300" /></div>
+              Total Mora: RD$ {totalOverdueAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+          </div>
         </div>
       </div>
 
@@ -147,6 +155,15 @@ const Overdue: React.FC = () => {
                         >
                             <FileText className="w-4 h-4" /> Carta Cobro
                         </button>
+                    </div>
+
+                    <div className="pt-1">
+                      <button
+                        onClick={() => navigate('/legal')}
+                        className="w-full py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-[11px] rounded-xl border border-rose-200 dark:border-rose-900/80 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Scale className="w-3.5 h-3.5" /> Pasar a Cobranza Legal / Cobro Compulsivo
+                      </button>
                     </div>
                 </div>
               );

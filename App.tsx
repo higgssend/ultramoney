@@ -53,6 +53,7 @@ const MigrationCenter = React.lazy(() => import('./pages/MigrationCenter'));
 const CreditBureauExport = React.lazy(() => import('./pages/CreditBureauExport'));
 const MerchantPosPortal = React.lazy(() => import('./pages/MerchantPosPortal'));
 const MerchantsPage = React.lazy(() => import('./pages/MerchantsPage'));
+const LegalCollectionPage = React.lazy(() => import('./pages/LegalCollectionPage'));
 
 // Feature Pages Dynamic Imports
 const CreditFeature = React.lazy(() => import('./pages/features/CreditFeature'));
@@ -214,6 +215,8 @@ const AppContent: React.FC = () => {
                   <Route path="/prestamos/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
                   <Route path="/pagos" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                   <Route path="/atrasos" element={<ProtectedRoute><Overdue /></ProtectedRoute>} />
+                  <Route path="/legal" element={<ProtectedRoute><LegalCollectionPage /></ProtectedRoute>} />
+                  <Route path="/cobranza-legal" element={<ProtectedRoute><LegalCollectionPage /></ProtectedRoute>} />
                   <Route path="/cartera" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
                   <Route path="/rutas" element={<ProtectedRoute><RoutesPage /></ProtectedRoute>} />
                   <Route path="/empleados" element={<ProtectedRoute><Employees /></ProtectedRoute>} />

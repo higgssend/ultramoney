@@ -163,6 +163,9 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             guarantorId: l.guarantor_id || l.collateralref,
             note: l.note,
             currency: (l.currency as 'DOP' | 'USD') || 'DOP',
+            isInLegalCollection: Boolean(l.is_in_legal_collection),
+            legalCaseId: l.legal_case_id,
+            legalFeesAdded: Number(l.legal_fees_added) || 0,
           };
         }));
         }
