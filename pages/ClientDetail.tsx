@@ -16,6 +16,8 @@ import { DocumentGenerator, DocumentType } from '../components/DocumentGenerator
 import { DataExportToolbar } from '../components/DataExportToolbar';
 import { CustomSelect } from '../components/CustomSelect';
 import { ImageCropperModal } from '../components/ImageCropperModal';
+import { CreditScoreEngine } from '../utils/CreditScoreEngine';
+import { CreditRiskSemaphore } from '../components/CreditRiskSemaphore';
 
 const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -403,40 +405,53 @@ const ClientDetail: React.FC = () => {
 
       {/* Content Area */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 min-h-[400px] p-8">
-        {activeTab === 'general' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-12">
-                 <DetailGroup icon={User} title="Identificación">
-                     <DetailRow label="Cédula" value={client.cedula} />
-                     <DetailRow label="Sexo" value={client.sex} />
-                     <DetailRow label="Ocupación" value={client.occupation} />
-                 </DetailGroup>
-                 
-                 <DetailGroup icon={Globe} title="Portal Web de Cliente">
-                     <DetailRow label="Enlace Corto" value={`${window.location.origin}/portal/${client.portalAlias || client.id}`} highlight />
-                     <DetailRow label="Alias" value={client.portalAlias || 'No configurado'} />
-                     <DetailRow label="PIN" value={client.clientPin || 'Sin PIN'} />
-                     <DetailRow label="Estado" value={client.portalActive !== false ? 'Activo' : 'Desactivado'} />
-                 </DetailGroup>
+        {activeTab === 'general' && (() => {
+            const scoreResult = CreditScoreEngine.calculateScore(client, loans);
+            return (
+              <div className="space-y-8">
+                {/* Unified Smart Risk Semaphore Card */}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Evaluación Crediticia Interna</h3>
+                  <CreditRiskSemaphore scoreResult={scoreResult} />
+                </div>
 
-                 <DetailGroup icon={Phone} title="Contacto">
-                     <DetailRow label="Celular" value={client.phone} highlight />
-                     <DetailRow label="Tel. Casa" value={client.phoneHome || '-'} />
-                     <DetailRow label="Email" value={client.email || '-'} />
-                 </DetailGroup>
-                 <DetailGroup icon={Briefcase} title="Financiero">
-                     <DetailRow label="Ingresos" value={`$${client.income.toLocaleString()}`} />
-                     <DetailRow label="Score Crediticio" value={
-                         <span className="flex items-center gap-2">
-                             <span className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                 <span className="block h-full bg-emerald-500" style={{width: `${client.creditScore}%`}}></span>
-                             </span>
-                             {client.creditScore}
-                         </span>
-                     } />
-                     <DetailRow label="Registro" value={client.joinedDate} />
-                 </DetailGroup>
-            </div>
-        )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-12 pt-2 border-t border-slate-100 dark:border-slate-700">
+                     <DetailGroup icon={User} title="Identificación">
+                         <DetailRow label="Cédula" value={client.cedula} />
+                         <DetailRow label="Sexo" value={client.sex} />
+                         <DetailRow label="Ocupación" value={client.occupation} />
+                     </DetailGroup>
+                     
+                     <DetailGroup icon={Globe} title="Portal Web de Cliente">
+                         <DetailRow label="Enlace Corto" value={`${window.location.origin}/portal/${client.portalAlias || client.id}`} highlight />
+                         <DetailRow label="Alias" value={client.portalAlias || 'No configurado'} />
+                         <DetailRow label="PIN" value={client.clientPin || 'Sin PIN'} />
+                         <DetailRow label="Estado" value={client.portalActive !== false ? 'Activo' : 'Desactivado'} />
+                     </DetailGroup>
+
+                     <DetailGroup icon={Phone} title="Contacto">
+                         <DetailRow label="Celular" value={client.phone} highlight />
+                         <DetailRow label="Tel. Casa" value={client.phoneHome || '-'} />
+                         <DetailRow label="Email" value={client.email || '-'} />
+                     </DetailGroup>
+                     <DetailGroup icon={Briefcase} title="Financiero">
+                         <DetailRow label="Ingresos" value={`$${(client.income || 0).toLocaleString()}`} />
+                         <DetailRow label="Score Crediticio" value={
+                             <div className="flex items-center gap-2">
+                                 <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-lg border text-xs font-bold ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
+                                     {scoreResult.score} / 850
+                                 </span>
+                                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                     ({scoreResult.points100} pts • Grado {scoreResult.grade})
+                                 </span>
+                             </div>
+                         } />
+                         <DetailRow label="Registro" value={client.joinedDate} />
+                     </DetailGroup>
+                </div>
+              </div>
+            );
+        })()}
 
          {activeTab === 'loans' && (
              <div className="space-y-6">

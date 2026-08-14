@@ -17,6 +17,7 @@ import { LoanEngine } from '../utils/LoanEngine';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 import { LoanContractModal } from './features/LoanContractModal';
 import { RefinanceModal } from '../components/RefinanceModal';
+import { CreditScoreEngine } from '../utils/CreditScoreEngine';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -768,11 +769,14 @@ export const LoanDetail: React.FC = () => {
                     <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-0.5 rounded-full">
                       Cliente Titular
                     </span>
-                    {client?.creditScore && (
-                      <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-0.5 rounded-full">
-                        Score: {client.creditScore} pts
-                      </span>
-                    )}
+                    {client && (() => {
+                      const scoreResult = CreditScoreEngine.calculateScore(client, loans);
+                      return (
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
+                          Score: {scoreResult.score} / 850 ({scoreResult.points100} pts) • {scoreResult.label}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <h3 className="text-xl font-black text-slate-900 dark:text-white mt-1">{loan.clientName}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">

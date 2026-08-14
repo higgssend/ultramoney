@@ -591,20 +591,44 @@ const NewClient: React.FC = () => {
               )}
 
               <div>
-                <label className={labelClass}>Score de Crédito (0–100)</label>
+                <label className={labelClass}>Score de Crédito Inicial (0–100 pts / 300–850)</label>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Puntuación inicial</span>
-                    <span className={`text-sm font-bold ${(currentClient.creditScore || 0) >= 80 ? 'text-emerald-600' : (currentClient.creditScore || 0) >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
-                      {currentClient.creditScore || 100} pts
-                    </span>
-                  </div>
-                  <input
-                    type="range" min="0" max="100" step="5"
-                    value={currentClient.creditScore || 100}
-                    onChange={e => set('creditScore', Number(e.target.value))}
-                    className="w-full accent-indigo-600"
-                  />
+                  {(() => {
+                    const pts = currentClient.creditScore ?? 100;
+                    const fico = Math.round(300 + (pts / 100) * 550);
+                    let cat = 'Platino';
+                    let col = 'text-emerald-600 dark:text-emerald-400';
+                    let bg = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200';
+                    if (pts < 60) {
+                      cat = 'Alto Riesgo';
+                      col = 'text-rose-600 dark:text-rose-400';
+                      bg = 'bg-rose-50 dark:bg-rose-950/40 border-rose-200';
+                    } else if (pts < 75) {
+                      cat = 'Regular';
+                      col = 'text-amber-600 dark:text-amber-400';
+                      bg = 'bg-amber-50 dark:bg-amber-950/40 border-amber-200';
+                    } else if (pts < 90) {
+                      cat = 'Confiable';
+                      col = 'text-indigo-600 dark:text-indigo-400';
+                      bg = 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200';
+                    }
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-500">Puntuación y Semáforo:</span>
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${bg} ${col}`}>
+                            {pts} pts • {fico} / 850 ({cat})
+                          </span>
+                        </div>
+                        <input
+                          type="range" min="0" max="100" step="5"
+                          value={pts}
+                          onChange={e => set('creditScore', Number(e.target.value))}
+                          className="w-full accent-indigo-600 cursor-pointer"
+                        />
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

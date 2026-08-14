@@ -12,6 +12,8 @@ import { maskCedula } from '../utils/masks';
 import { LoanContractModal } from './features/LoanContractModal';
 import { LoanCreatedSharingModal } from '../components/LoanCreatedSharingModal';
 import { BankAccountsModal } from '../components/BankAccountsModal';
+import { CreditScoreEngine } from '../utils/CreditScoreEngine';
+import { CreditRiskSemaphore } from '../components/CreditRiskSemaphore';
 
 export const LoanRequest: React.FC = () => {
   const { addLoanRequest, createLoan, refinanceLoan, deleteLoanRequest, loanRequests = [], loanProducts = [], loans = [] } = useLoans();
@@ -521,6 +523,13 @@ export const LoanRequest: React.FC = () => {
                             </button>
                         </div>
                         
+                        {/* Smart Credit Score & Risk Semaphore */}
+                        {selectedClient && (
+                            <div className="mt-4">
+                                <CreditRiskSemaphore scoreResult={CreditScoreEngine.calculateScore(selectedClient, loans)} />
+                            </div>
+                        )}
+
                         {selectedClientId && (
                             (() => {
                                 const activeLoansForClient = loans.filter(l => l.clientId === selectedClientId && (l.status === 'Vigente' || l.status === 'Activo' || l.status === 'Atrasado') && l.remainingBalance > 0);
@@ -1142,29 +1151,28 @@ export const LoanRequest: React.FC = () => {
                         </div>
 
                         {/* Client Row */}
-                        {selectedClient && (
-                            <div className="flex items-center gap-3 bg-white/10 rounded-2xl px-4 py-3">
-                                <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center font-black text-sm">
-                                    {selectedClient.name.charAt(0)}{selectedClient.lastName?.charAt(0) || ''}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-white text-sm truncate">{selectedClient.name} {selectedClient.lastName || ''}</p>
-                                    <p className="text-xs text-indigo-200">{selectedClient.cedula || 'Sin cédula'}</p>
-                                </div>
-                                {/* Risk indicator */}
-                                {selectedClient.income && selectedClient.income > 0 && (() => {
-                                    const ratio = (calculateInstallment() / selectedClient.income) * 100;
-                                    const color = ratio <= 30 ? 'text-emerald-300' : ratio <= 50 ? 'text-amber-300' : 'text-rose-300';
-                                    const label = ratio <= 30 ? 'Bajo' : ratio <= 50 ? 'Medio' : 'Alto';
-                                    return (
-                                        <div className="text-right">
-                                            <p className={`text-xs font-black ${color}`}>{label}</p>
-                                            <p className="text-[10px] text-indigo-200">Riesgo cuota</p>
+                        {selectedClient && (() => {
+                            const scoreResult = CreditScoreEngine.calculateScore(selectedClient, loans);
+                            return (
+                                <div className="flex items-center gap-3 bg-white/10 rounded-2xl px-4 py-3">
+                                    <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center font-black text-sm shrink-0">
+                                        {selectedClient.name.charAt(0)}{selectedClient.lastName?.charAt(0) || ''}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-white text-sm truncate">{selectedClient.name} {selectedClient.lastName || ''}</p>
+                                        <p className="text-xs text-indigo-200">{selectedClient.cedula || 'Sin cédula'}</p>
+                                    </div>
+                                    {/* Smart Score & Risk Badge */}
+                                    <div className="text-right shrink-0">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <span className={`w-2 h-2 rounded-full ${scoreResult.dotColor}`} />
+                                            <span className="text-xs font-black text-white">{scoreResult.score} / 850</span>
                                         </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
+                                        <p className="text-[10px] text-indigo-200 font-medium">{scoreResult.label} ({scoreResult.points100} pts)</p>
+                                    </div>
+                                </div>
+                            );
+                        })()}
 
                         {/* Key Figures */}
                         <div className="space-y-2.5 text-sm">

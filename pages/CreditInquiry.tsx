@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useClients, useLoans } from '../context/StoreContext';
 import { Client, LoanStatus } from '../types';
 import { CreditScoreGauge } from '../components/CreditScoreGauge';
+import { CreditScoreEngine, CreditScoreResult } from '../utils/CreditScoreEngine';
 
 export const CreditInquiry: React.FC = () => {
   const navigate = useNavigate();
@@ -70,88 +71,8 @@ export const CreditInquiry: React.FC = () => {
     setHasSearched(true);
   };
 
-  // Calculate Credit Analytics & Datacrédito Score for selected client
-  const getClientAnalytics = (client: Client) => {
-    const clientLoans = loans.filter(l => l.clientId === client.id);
-    const activeLoans = clientLoans.filter(l => l.status === LoanStatus.ACTIVE || l.status === 'Activo' || l.status === LoanStatus.OVERDUE || l.status === 'Atrasado');
-    const paidLoans = clientLoans.filter(l => l.status === LoanStatus.PAID || l.status === 'Saldado' || l.status === 'Pagado');
-    const overdueLoans = clientLoans.filter(l => l.status === LoanStatus.OVERDUE || l.status === 'Atrasado' || l.status === 'Vencido');
-
-    const totalBorrowed = clientLoans.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
-    const totalOwed = activeLoans.reduce((sum, l) => sum + (Number(l.remainingBalance) || 0), 0);
-
-    // Dynamic Score Calculation (300 to 850)
-    let score = 650;
-    
-    // Bonus for paid loans (+25 each, up to 100)
-    score += Math.min(paidLoans.length * 25, 100);
-
-    // Bonus for active clean loans (+30)
-    if (activeLoans.length > 0 && overdueLoans.length === 0) {
-      score += 30;
-    }
-
-    // Penalty for overdue loans (-60 each)
-    score -= overdueLoans.length * 60;
-
-    // Income to debt evaluation
-    const monthlyIncome = Number(client.income) || 0;
-    if (monthlyIncome > 0 && totalOwed > monthlyIncome * 4) {
-      score -= 40; // Over-leveraged
-    } else if (monthlyIncome >= 40000) {
-      score += 20; // High income
-    }
-
-    // Clamp score between 300 and 850
-    score = Math.max(300, Math.min(850, score));
-
-    // Determine Risk Level & Badge
-    let riskLevel: 'Excelente' | 'Bueno' | 'Regular' | 'Alto Riesgo';
-    let riskColor: string;
-    let riskBg: string;
-    let recommendation: string;
-
-    if (score >= 750) {
-      riskLevel = 'Excelente';
-      riskColor = 'text-emerald-600 dark:text-emerald-400';
-      riskBg = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800';
-      recommendation = 'Cliente AAA - Aprobación prioritaria para cualquier línea de crédito.';
-    } else if (score >= 650) {
-      riskLevel = 'Bueno';
-      riskColor = 'text-indigo-600 dark:text-indigo-400';
-      riskBg = 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800';
-      recommendation = 'Perfil Confiable - Aprobado según capacidad de pago mensual.';
-    } else if (score >= 550) {
-      riskLevel = 'Regular';
-      riskColor = 'text-amber-600 dark:text-amber-400';
-      riskBg = 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800';
-      recommendation = 'Aprobación Condicionada - Se recomienda solicitar garante o garantía colateral.';
-    } else {
-      riskLevel = 'Alto Riesgo';
-      riskColor = 'text-rose-600 dark:text-rose-400';
-      riskBg = 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800';
-      recommendation = 'Riesgo Elevado - Cliente posee atrasos o sobre-endeudamiento. Requiere autorización gerencial.';
-    }
-
-    const scorePercentage = Math.round(((score - 300) / (850 - 300)) * 100);
-
-    return {
-      clientLoans,
-      activeLoansCount: activeLoans.length,
-      paidLoansCount: paidLoans.length,
-      overdueLoansCount: overdueLoans.length,
-      totalBorrowed,
-      totalOwed,
-      score,
-      scorePercentage,
-      riskLevel,
-      riskColor,
-      riskBg,
-      recommendation
-    };
-  };
-
-  const analytics = selectedClient ? getClientAnalytics(selectedClient) : null;
+  const analytics = selectedClient ? CreditScoreEngine.calculateScore(selectedClient, loans) : null;
+  const clientLoans = selectedClient ? loans.filter(l => l.clientId === selectedClient.id) : [];
 
   return (
     <div className="w-full space-y-6 animate-fade-in pb-16">
@@ -314,7 +235,8 @@ export const CreditInquiry: React.FC = () => {
               <div className="lg:col-span-5 bg-slate-50/80 dark:bg-slate-800/60 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-700/60 flex flex-col items-center justify-center text-center relative shadow-sm overflow-hidden">
                 <CreditScoreGauge 
                   score={analytics.score} 
-                  riskLevel={analytics.riskLevel}
+                  points100={analytics.points100}
+                  riskLevel={analytics.label}
                 />
               </div>
 
@@ -322,10 +244,10 @@ export const CreditInquiry: React.FC = () => {
 
             {/* Recommendation & Dictamen Note */}
             <div className="p-6 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
-              <div className={`p-5 rounded-2xl border flex items-start gap-4 ${analytics.riskBg}`}>
-                <ShieldCheck className={`w-6 h-6 shrink-0 mt-0.5 ${analytics.riskColor}`} />
+              <div className={`p-5 rounded-2xl border flex items-start gap-4 ${analytics.badgeBg} ${analytics.badgeBorder}`}>
+                <ShieldCheck className={`w-6 h-6 shrink-0 mt-0.5 ${analytics.badgeColor}`} />
                 <div>
-                  <h4 className={`text-xs font-extrabold uppercase tracking-wider ${analytics.riskColor}`}>Dictamen de Evaluación Crediticia</h4>
+                  <h4 className={`text-xs font-extrabold uppercase tracking-wider ${analytics.badgeColor}`}>Dictamen de Evaluación Crediticia ({analytics.label})</h4>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1 leading-relaxed">{analytics.recommendation}</p>
                 </div>
               </div>
@@ -338,7 +260,7 @@ export const CreditInquiry: React.FC = () => {
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1">
                   <CreditCard className="w-4 h-4 text-indigo-500" /> Capital Prestado Total
                 </div>
-                <p className="text-xl font-bold text-slate-900 dark:text-white">RD$ {analytics.totalBorrowed.toLocaleString()}</p>
+                <p className="text-xl font-bold text-slate-900 dark:text-white">RD$ {analytics.metrics.totalBorrowed.toLocaleString()}</p>
                 <p className="text-xs text-slate-500 mt-1">Histórico contratado</p>
               </div>
 
@@ -346,8 +268,8 @@ export const CreditInquiry: React.FC = () => {
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1">
                   <Briefcase className="w-4 h-4 text-amber-500" /> Balance Adeudado Actual
                 </div>
-                <p className={`text-xl font-bold ${analytics.totalOwed > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  RD$ {analytics.totalOwed.toLocaleString()}
+                <p className={`text-xl font-bold ${analytics.metrics.activeDebt > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  RD$ {analytics.metrics.activeDebt.toLocaleString()}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">Capital vigente pendiente</p>
               </div>
@@ -367,10 +289,10 @@ export const CreditInquiry: React.FC = () => {
                   <Activity className="w-4 h-4 text-blue-500" /> Estado de Operaciones
                 </div>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">
-                  {analytics.activeLoansCount} Activos / {analytics.paidLoansCount} Saldados
+                  {analytics.metrics.activeLoans} Activos / {analytics.metrics.paidLoans} Saldados
                 </p>
-                {analytics.overdueLoansCount > 0 && (
-                  <p className="text-xs font-bold text-rose-500 mt-1">{analytics.overdueLoansCount} Préstamo(s) en mora</p>
+                {analytics.metrics.overdueLoans > 0 && (
+                  <p className="text-xs font-bold text-rose-500 mt-1">{analytics.metrics.overdueLoans} Préstamo(s) en mora</p>
                 )}
               </div>
 
@@ -384,7 +306,7 @@ export const CreditInquiry: React.FC = () => {
               <Clock className="w-5 h-5 text-indigo-500" /> Histórico de Préstamos del Cliente
             </h3>
 
-            {analytics.clientLoans.length === 0 ? (
+            {clientLoans.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-sm bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
                 El cliente no posee préstamos registrados previamente en el sistema.
               </div>
@@ -401,7 +323,7 @@ export const CreditInquiry: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-                    {analytics.clientLoans.map((loan) => (
+                    {clientLoans.map((loan) => (
                       <tr key={loan.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
                           RD$ {(Number(loan.amount) || 0).toLocaleString()}

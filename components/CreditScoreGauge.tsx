@@ -2,6 +2,7 @@ import React from 'react';
 
 interface CreditScoreGaugeProps {
   score: number; // 300 to 850
+  points100?: number; // 0 to 100
   minScore?: number;
   maxScore?: number;
   riskLevel?: string;
@@ -10,6 +11,7 @@ interface CreditScoreGaugeProps {
 
 export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
   score,
+  points100,
   minScore = 300,
   maxScore = 850,
   riskLevel,
@@ -17,6 +19,7 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
 }) => {
   const clampedScore = Math.max(minScore, Math.min(maxScore, score));
   const percentage = (clampedScore - minScore) / (maxScore - minScore);
+  const normalizedPoints = points100 ?? Math.round(percentage * 100);
 
   // Perfect Geometry (No Overflow)
   const width = 260;
@@ -33,15 +36,15 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
   let scoreBg = 'bg-rose-500';
   let defaultRiskText = 'Alto Riesgo';
 
-  if (clampedScore >= 740) {
+  if (clampedScore >= 750 || normalizedPoints >= 90) {
     scoreColor = '#10b981'; // Green / Excellent
     scoreBg = 'bg-emerald-500';
-    defaultRiskText = 'Excelente';
-  } else if (clampedScore >= 670) {
+    defaultRiskText = 'Platino';
+  } else if (clampedScore >= 670 || normalizedPoints >= 75) {
     scoreColor = '#6366f1'; // Indigo / Good
     scoreBg = 'bg-indigo-600';
-    defaultRiskText = 'Bueno';
-  } else if (clampedScore >= 580) {
+    defaultRiskText = 'Confiable';
+  } else if (clampedScore >= 580 || normalizedPoints >= 60) {
     scoreColor = '#f59e0b'; // Yellow / Regular
     scoreBg = 'bg-amber-500';
     defaultRiskText = 'Regular';
@@ -119,11 +122,11 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
             SCORE CREDITICIO
           </span>
-          <div className="flex items-baseline gap-1 my-0.5">
+          <div className="flex items-baseline gap-1.5 my-0.5">
             <span className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               {clampedScore}
             </span>
-            <span className="text-xs font-bold text-slate-400">/ 850</span>
+            <span className="text-xs font-bold text-slate-400">/ 850 ({normalizedPoints} pts)</span>
           </div>
           
           <span 
@@ -137,10 +140,10 @@ export const CreditScoreGauge: React.FC<CreditScoreGaugeProps> = ({
       {/* Axis Scale Labels (300 ... 850) */}
       {showLabels && (
         <div className="w-full flex justify-between px-1 text-[10px] font-bold text-slate-400 dark:text-slate-400 mt-2 border-t border-slate-100 dark:border-slate-800/60 pt-2">
-          <span className="text-rose-500 font-extrabold">300 (Alto Riesgo)</span>
+          <span className="text-rose-500 font-extrabold">300 (Riesgo)</span>
           <span className="text-amber-500 font-extrabold">580</span>
           <span className="text-indigo-500 font-extrabold">670</span>
-          <span className="text-emerald-500 font-extrabold">740 (Excelente)</span>
+          <span className="text-emerald-500 font-extrabold">750 (Platino)</span>
         </div>
       )}
     </div>

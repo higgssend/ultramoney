@@ -5,6 +5,7 @@ import { Client } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { DataExportToolbar } from '../components/DataExportToolbar';
 import { maskCedula } from '../utils/masks';
+import { CreditScoreEngine } from '../utils/CreditScoreEngine';
 
 const Clients: React.FC = () => {
   const { clients, deleteClient } = useClients();
@@ -222,7 +223,7 @@ const Clients: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {filteredClients.map((client) => {
                   const stats = getClientLoanStats(client.id);
-                  const grade = getCreditGrade(client.creditScore || 0);
+                  const scoreResult = CreditScoreEngine.calculateScore(client, loans);
                   const statusBadge = getStatusBadge(client.status || '');
                   return (
                     <tr
@@ -269,12 +270,14 @@ const Clients: React.FC = () => {
                       </td>
                       <td className="px-5 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border text-xs font-bold ${grade.badge}`}>{grade.grade}</span>
+                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border text-xs font-bold ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
+                            {scoreResult.grade}
+                          </span>
                           <div className="hidden sm:flex flex-col items-start gap-0.5">
-                            <div className="w-14 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                              <div className={`h-1.5 rounded-full ${grade.bg} transition-all`} style={{ width: `${Math.min(client.creditScore || 0, 100)}%` }} />
+                            <div className="w-16 bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                              <div className={`h-1.5 rounded-full ${scoreResult.dotColor} transition-all`} style={{ width: `${scoreResult.points100}%` }} />
                             </div>
-                            <span className="text-[10px] text-slate-400 font-mono">{client.creditScore || 0}</span>
+                            <span className="text-[10px] text-slate-500 font-mono font-bold">{scoreResult.score} <span className="text-slate-400 font-normal">({scoreResult.points100} pts)</span></span>
                           </div>
                         </div>
                       </td>
@@ -322,7 +325,7 @@ const Clients: React.FC = () => {
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredClients.map((client) => {
               const stats = getClientLoanStats(client.id);
-              const grade = getCreditGrade(client.creditScore || 0);
+              const scoreResult = CreditScoreEngine.calculateScore(client, loans);
               const statusBadge = getStatusBadge(client.status || '');
               return (
                 <div
@@ -354,7 +357,13 @@ const Clients: React.FC = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg border text-sm font-bold ${grade.badge}`}>{grade.grade}</span>
+                      <div className="text-right">
+                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Score</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200 font-mono">{scoreResult.score} <span className="text-[10px] text-slate-400 font-normal">({scoreResult.points100}p)</span></p>
+                      </div>
+                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg border text-sm font-bold ${scoreResult.badgeBg} ${scoreResult.badgeBorder} ${scoreResult.badgeColor}`}>
+                        {scoreResult.grade}
+                      </span>
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
                     </div>
                   </div>
