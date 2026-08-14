@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useAccounting, useLoans, useClients, useSettings } from '../context/StoreContext';
 import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
-import { PaymentMethod } from '../types';
+import { PaymentMethod, Transaction } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { CashCounterModal } from '../components/CashCounterModal';
 import { toast } from 'sonner';
