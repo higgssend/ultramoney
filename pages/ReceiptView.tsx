@@ -11,6 +11,7 @@ import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalRe
 import { EditPaymentModal } from '../components/EditPaymentModal';
 
 import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
+import { formatExactTime, formatExactDate, formatPaymentDateDisplay } from '../utils/dateUtils';
 
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
@@ -316,19 +317,8 @@ export const ReceiptView: React.FC = () => {
     const formattedLoanNo = loan ? formatLoanId(loan.id) : 'No. 000000';
 
     const rawDateStr = transaction.date;
-    const parsedDate = rawDateStr 
-        ? (rawDateStr.includes('T') 
-            ? new Date(rawDateStr) 
-            : new Date(`${rawDateStr}T${new Date().toTimeString().split(' ')[0]}`)) 
-        : new Date();
-
-    const formattedDate = parsedDate.toLocaleDateString('es-DO', {
-        year: 'numeric', month: 'long', day: 'numeric'
-    });
-
-    const formattedTime = parsedDate.toLocaleTimeString('es-DO', {
-        hour: '2-digit', minute: '2-digit', hour12: true
-    });
+    const formattedDate = formatExactDate(rawDateStr);
+    const formattedTime = formatExactTime(rawDateStr, true);
 
     const handleCopyReceiptLink = () => {
         const url = window.location.href;
@@ -340,7 +330,8 @@ export const ReceiptView: React.FC = () => {
 
     const handleShareWhatsApp = () => {
         const url = window.location.href;
-        const text = `*${companySettings.name}*\n*Recibo de Pago*: ${formattedReceiptNo}\n*Cliente*: ${clientFullName}\n*Monto Pagado*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+        const nextPayTxt = loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '';
+        const text = `*${companySettings.name}*\n*Recibo de Pago*: ${formattedReceiptNo}\n*Fecha*: ${formattedDate}\n*Hora*: ${formattedTime}\n*Cliente*: ${clientFullName}\n*Monto Pagado*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
@@ -635,6 +626,15 @@ export const ReceiptView: React.FC = () => {
                         <div className="flex justify-between text-slate-900 font-black pt-2 border-t border-slate-300 text-sm bg-indigo-50/70 p-3 rounded-xl border border-indigo-100">
                             <span>(=) Balance Restante a la Fecha:</span>
                             <span className="text-indigo-700 font-black text-base font-mono">RD$ {currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center bg-emerald-50 text-emerald-950 p-3 rounded-xl border border-emerald-200 mt-2">
+                            <span className="font-bold text-xs flex items-center gap-1.5">
+                                <Calendar className="w-4 h-4 text-emerald-600" /> Próxima Fecha de Pago:
+                            </span>
+                            <span className="font-black text-sm font-mono text-emerald-700">
+                                {loan?.nextPaymentDate ? formatPaymentDateDisplay(loan.nextPaymentDate) : 'Al Día / Sin Deuda Pendiente'}
+                            </span>
                         </div>
 
                         {isOpenLoan && (

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../context/StoreContext';
 import { formatLoanId, formatReceiptId, PaymentMethod } from '../types';
+import { formatExactTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
@@ -100,6 +101,8 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
   }, [data.loanType]);
 
   const cleanLoanId = data.loanId ? data.loanId.replace(/^(#|No\.\s*)+/i, '') : '';
+  const displayTime = data.time && data.time.trim() !== '' ? data.time : formatExactTime(null, true);
+  const displayNextDate = data.nextPaymentDate ? formatPaymentDateDisplay(data.nextPaymentDate) : undefined;
 
   if (!isOpen) return null;
 
@@ -184,7 +187,8 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
       sep,
       'COMPROBANTE OFICIAL DE PAGO',
       `RECIBO: #${data.receiptNo}`,
-      `FECHA:  ${data.date} ${data.time || ''}`,
+      `FECHA:  ${data.date}`,
+      `HORA:   ${displayTime}`,
       `CAJERO: ${data.cashierName}`,
       sep,
       `CLIENTE:  ${data.clientName}`,
@@ -217,7 +221,7 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
         ? `CAPITAL ACTIVO: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`
         : `BAL. ANTERIOR:  RD$ ${data.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`,
       `SALDO PENDIENTE:RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}`,
-      data.nextPaymentDate ? `PROXIMO PAGO:   ${data.nextPaymentDate}` : '',
+      displayNextDate ? `PROXIMO PAGO:   ${displayNextDate}` : '',
       sep,
       isOpenLoan ? '* Modalidad Pagare Abierto: El pago cubre intereses. El capital permanece activo.' : '',
       'Verificar recibo en linea:',
@@ -240,7 +244,8 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
 
   const handleShareWhatsApp = () => {
     const url = verificationUrl;
-    const text = `*${companySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Cobro*: #${data.receiptNo}\n*Cliente*: ${data.clientName}\n*Total Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver su comprobante digital oficial aquí:\n${url}`;
+    const nextPayTxt = displayNextDate ? `\n*Próximo Pago*: ${displayNextDate}` : '';
+    const text = `*${companySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Cobro*: #${data.receiptNo}\n*Fecha*: ${data.date}\n*Hora*: ${displayTime}\n*Cliente*: ${data.clientName}\n*Total Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver su comprobante digital oficial aquí:\n${url}`;
     const targetPhone = data.clientPhone ? data.clientPhone.replace(/[^0-9]/g, '') : '';
     const waUrl = targetPhone 
       ? `https://wa.me/${targetPhone.length === 10 ? '1' + targetPhone : targetPhone}?text=${encodeURIComponent(text)}`
@@ -357,9 +362,9 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
                   COMPROBANTE OFICIAL DE PAGO
                 </p>
                 <p className="font-black text-[12px]">RECIBO: #{data.receiptNo}</p>
-                <div className="flex justify-between text-[10px] pt-1 font-semibold">
+                <div className="flex justify-between text-[10px] pt-1 font-bold">
                   <span>FECHA: {data.date}</span>
-                  <span>{data.time || new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                  <span>HORA: {displayTime}</span>
                 </div>
                 <div className="text-left text-[10px]">
                   <span>CAJERO: {data.cashierName}</span>
@@ -503,12 +508,12 @@ export const ThermalReceiptModal: React.FC<ThermalReceiptModalProps> = ({
                   </p>
                 )}
 
-                {data.nextPaymentDate && (
-                  <div className="flex justify-between pt-0.5 text-[10px]">
-                    <span>PRÓXIMO VENCIMIENTO:</span>
-                    <span className="font-bold">{data.nextPaymentDate}</span>
-                  </div>
-                )}
+                <div className="flex justify-between items-center pt-1 text-[11px] font-black border-t border-dashed border-black/40 mt-1">
+                  <span>PRÓXIMO PAGO:</span>
+                  <span className="font-mono bg-slate-100 px-1 py-0.5 rounded border border-black/20">
+                    {displayNextDate || 'Al Día / Sin Deuda'}
+                  </span>
+                </div>
               </div>
 
               {/* Scannable Real QR Code */}

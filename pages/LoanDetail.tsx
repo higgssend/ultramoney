@@ -230,10 +230,11 @@ export const LoanDetail: React.FC = () => {
     );
   }
 
-  // Combine store transactions and database transactions avoiding duplicates
+  // Combine store transactions and direct DB transactions
   const storeLoanTx = transactions.filter(t => 
-    t.referenceId === loan.id || 
-    (t.description && t.description.includes(loan.id))
+    t.referenceId === id || 
+    formatLoanId(t.referenceId || '') === id || 
+    (t.referenceId && id && formatLoanId(id) === formatLoanId(t.referenceId))
   );
 
   const combinedTransactionsMap = new Map<string, Transaction>();
@@ -247,15 +248,15 @@ export const LoanDetail: React.FC = () => {
   const totalCollectedOnLoan = allLoanTransactions.reduce((acc, t) => acc + (t.amount || 0), 0);
 
   const handleOpenThermalReceipt = (t: Transaction) => {
+    if (!loan) return;
     const formattedRecNo = formatReceiptId(t.id);
-    const parsedDate = t.date ? new Date(t.date) : new Date();
     const calculated = calculateReceiptBalances(t, loan, allLoanTransactions);
     const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan.clientName || loan.clientname || 'Cliente');
 
     const thermalData: ThermalReceiptData = {
       receiptNo: formattedRecNo,
-      date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
-      time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: formatExactDate(t.date),
+      time: formatExactTime(t.date, true),
       clientName: clientFullName,
       clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
@@ -278,6 +279,7 @@ export const LoanDetail: React.FC = () => {
       paymentMethod: t.paymentMethod || 'Efectivo',
       paymentType: t.paymentType,
       cashierName: 'Caja',
+      nextPaymentDate: loan.nextPaymentDate,
       notes: t.description,
       transactionId: t.id,
       clientId: client?.id || loan.clientId
@@ -288,17 +290,17 @@ export const LoanDetail: React.FC = () => {
   };
 
   const handleShareWhatsApp = (t: Transaction) => {
+    if (!loan) return;
     const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan.clientName || loan.clientname || 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
     const calculated = calculateReceiptBalances(t, loan, allLoanTransactions);
     const receiptWebLink = `${window.location.origin}/recibo/${t.id}`;
-    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${clientFullName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
+    const nextPayTxt = loan.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '';
+    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Fecha y Hora*: ${formatExactDateTime(t.date)}\n*Cliente*: ${clientFullName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const company = companySettings || { name: 'UltraMoney Financial', address: 'Santo Domingo, R.D.', phone: '809-000-0000', rnc: '101-00000-1' };
-  const todayStr = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
-
   // Overdue & Mora Calculation
   const nextPayDateObj = loan.nextPaymentDate ? new Date(loan.nextPaymentDate) : null;
   const todayStart = new Date();
@@ -1461,8 +1463,9 @@ export const LoanDetail: React.FC = () => {
                   </h2>
                   <div className="content space-y-4 text-justify font-sans text-xs">
                     <p>HEMOS RECIBIDO DE: <strong>{loan.clientName}</strong>, por concepto de abono al Préstamo Ref. #{formatLoanId(loan.id)}.</p>
-                    <div className="p-4 bg-slate-50 border rounded-xl">
+                    <div className="p-4 bg-slate-50 border rounded-xl space-y-1">
                       <p><strong>Balance Restante Pendiente:</strong> RD$ {(loan.remainingBalance || 0).toLocaleString()}</p>
+                      <p><strong>Próxima Fecha de Pago:</strong> {loan.nextPaymentDate ? formatPaymentDateDisplay(loan.nextPaymentDate) : 'Al Día / Sin Deuda'}</p>
                     </div>
                   </div>
                 </div>

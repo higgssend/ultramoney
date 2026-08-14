@@ -12,6 +12,7 @@ import { insforge } from '../lib/insforge';
 import { useToast } from '../context/ToastContext';
 import { useStore, useSettings, useAccounting } from '../context/StoreContext';
 import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
+import { formatExactDateTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 
 export type DocumentType = 'pagare' | 'contrato' | 'estado_cuenta' | 'carta_saldo' | 'carta_cobro' | 'recibo';
 
@@ -833,7 +834,7 @@ export const DocumentPage: React.FC = () => {
                 <div>
                   <p><strong>No. Recibo:</strong> <span className="font-mono font-bold text-indigo-700">{formatReceiptId(activeTransaction?.id)}</span></p>
                   <p><strong>Préstamo Ref:</strong> <span className="font-mono font-bold">{formatLoanId(currentLoan?.id)}</span></p>
-                  <p><strong>Fecha y Hora:</strong> {activeTransaction?.date ? new Date(activeTransaction.date).toLocaleString('es-DO') : todayStr}</p>
+                  <p><strong>Fecha y Hora:</strong> {activeTransaction?.date ? formatExactDateTime(activeTransaction.date) : todayStr}</p>
                 </div>
                 <div className="text-xl font-black bg-slate-100 px-5 py-2.5 rounded-xl border border-slate-300 text-emerald-700">
                   RD$ {activeTransaction?.amount?.toLocaleString('es-DO', { minimumFractionDigits: 2 }) || '0.00'}
@@ -878,6 +879,12 @@ export const DocumentPage: React.FC = () => {
                         {!receiptBalances.isOpenLoan && (
                           <p className="text-xs font-bold text-slate-600"><strong>Cuotas Restantes:</strong> {receiptBalances.remainingInstallmentsText}</p>
                         )}
+                      </div>
+                      <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-xs">
+                        <span className="font-bold text-slate-700">Próxima Fecha de Pago / Vencimiento:</span>
+                        <span className="font-black font-mono text-emerald-700">
+                          {currentLoan.nextPaymentDate ? formatPaymentDateDisplay(currentLoan.nextPaymentDate) : 'Al Día / Sin Deuda Pendiente'}
+                        </span>
                       </div>
                     </div>
                   );

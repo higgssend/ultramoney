@@ -213,7 +213,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         avatarUrl: data.avatarurl || undefined,
         status: data.status || 'Al Día',
         joinedDate: data.joineddate || '',
-        clientPin: data.clientpin || '',
+        clientPin: data.clientpin || undefined,
         portalAlias: data.portal_alias || undefined,
         portalActive: data.portal_active ?? true,
         guarantors: []

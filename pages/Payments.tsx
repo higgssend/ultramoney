@@ -17,7 +17,7 @@ import { maskCedula } from '../utils/masks';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
-import { formatExactDateTime, combineDateAndTimeToISO } from '../utils/dateUtils';
+import { formatExactDateTime, combineDateAndTimeToISO, formatExactTime, formatExactDate, formatPaymentDateDisplay } from '../utils/dateUtils';
 import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
 
 // Helper to calculate date strings
@@ -63,6 +63,8 @@ interface FullReceiptData {
   lateFeeAmount?: number;
   discountAmount?: number;
   date: string;
+  time?: string;
+  nextPaymentDate?: string;
   collateral: string;
   overdueAmount: number;
   overdueInstallments: number;
@@ -457,6 +459,7 @@ export const Payments: React.FC = () => {
       .map(l => ({ id: l.id, balance: l.remainingBalance }));
 
     const selectedLoanClient = clients.find(c => c.id === selectedLoan.clientId);
+    const exactPayTime = paymentTime ? `${paymentTime}:00` : formatExactTime(null, true);
     const fullReceipt: FullReceiptData = {
       loanId: formatLoanId(selectedLoan.id, selectedLoan.loanCategory, selectedLoan.loanType),
       amountPaid: effectiveTotal,
@@ -474,7 +477,9 @@ export const Payments: React.FC = () => {
       receiptNo: formattedRecNo,
       lateFeeAmount: lateVal,
       discountAmount: discVal,
-      date: new Date().toLocaleString('es-DO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: formatExactDate(paymentDate),
+      time: exactPayTime,
+      nextPaymentDate: selectedLoan.nextPaymentDate,
       collateral: selectedLoan.collateralType ? `${selectedLoan.collateralType} - ${selectedLoan.collateralDescription || ''}` : 'Sin Garantía',
       overdueAmount: 0, 
       overdueInstallments: 0,
@@ -511,13 +516,12 @@ export const Payments: React.FC = () => {
     const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? (loan.clientName || loan.clientname) : (t.description?.split('-')[1]?.trim() || 'Cliente'));
 
     const formattedRecNo = formatReceiptId(t.id);
-    const parsedDate = t.date ? new Date(t.date) : new Date();
     const calculated = calculateReceiptBalances(t, loan, transactions);
 
     const data: ThermalReceiptData = {
       receiptNo: formattedRecNo,
-      date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
-      time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: formatExactDate(t.date),
+      time: formatExactTime(t.date, true),
       clientName: clientName,
       clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
@@ -540,6 +544,7 @@ export const Payments: React.FC = () => {
       paymentMethod: t.paymentMethod || 'Efectivo',
       paymentType: t.paymentType,
       cashierName: currentUser?.name || 'Caja',
+      nextPaymentDate: loan?.nextPaymentDate,
       notes: t.description,
       transactionId: t.id,
       clientId: client?.id || loan?.clientId
@@ -557,9 +562,11 @@ export const Payments: React.FC = () => {
     const client = loan ? clients.find(c => c.id === loan.clientId) : undefined;
     const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan ? (loan.clientName || loan.clientname) : 'Cliente');
     const formattedRecNo = formatReceiptId(t.id);
+    const calculated = calculateReceiptBalances(t, loan, transactions);
     const url = `${window.location.origin}/recibo/${t.id}`;
+    const nextPayTxt = loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '';
     
-    const text = `*${companySettings.name}*\n*Recibo de Cobro*: ${formattedRecNo}\n*Cliente*: ${clientName}\n*Monto Recibido*: RD$ ${Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+    const text = `*${companySettings.name}*\n*Recibo de Cobro*: ${formattedRecNo}\n*Fecha y Hora*: ${formatExactDateTime(t.date)}\n*Cliente*: ${clientName}\n*Monto Recibido*: RD$ ${Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${Number(calculated.newBalance).toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
     
     const targetPhone = client?.phone ? client.phone.replace(/[^0-9]/g, '') : '';
     const waUrl = targetPhone 
@@ -1768,7 +1775,10 @@ const PaymentSuccessModal: React.FC<{
     });
   };
 
-  const message = `*${company.name}*\n*Recibo de Pago*: ${data.receiptNo || formatReceiptId(data.transactionId)}\n*Cliente*: ${data.clientName}\n*Monto Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}\n\nGracias por su pago.`;
+  const formattedNextPay = data.nextPaymentDate ? formatPaymentDateDisplay(data.nextPaymentDate) : undefined;
+  const exactTimeStr = data.time || formatExactTime(null, true);
+  const nextPayTxt = formattedNextPay ? `\n*Próximo Pago*: ${formattedNextPay}` : '';
+  const message = `*${company.name}*\n*Recibo de Pago*: ${data.receiptNo || formatReceiptId(data.transactionId)}\n*Fecha*: ${data.date}\n*Hora*: ${exactTimeStr}\n*Cliente*: ${data.clientName}\n*Monto Pagado*: RD$ ${data.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${data.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}\n\nGracias por su pago.`;
   const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
   const mailLink = `mailto:?subject=Recibo de Pago ${data.receiptNo || data.transactionId}&body=${encodeURIComponent(message)}`;
 
@@ -1777,6 +1787,8 @@ const PaymentSuccessModal: React.FC<{
   const thermalData: ThermalReceiptData = {
     receiptNo: data.receiptNo || formatReceiptId(data.transactionId),
     date: data.date,
+    time: exactTimeStr,
+    nextPaymentDate: data.nextPaymentDate,
     clientName: data.clientName,
     clientCedula: data.clientCedula,
     clientPhone: data.clientPhone,
@@ -1854,6 +1866,8 @@ const PaymentSuccessModal: React.FC<{
               <span className="text-right font-mono font-black text-indigo-600 dark:text-indigo-400">{data.receiptNo || formatReceiptId(data.transactionId)}</span>
               <span className="text-slate-500">Fecha:</span>
               <span className="text-right text-slate-700 dark:text-slate-300 font-medium">{data.date}</span>
+              <span className="text-slate-500">Hora:</span>
+              <span className="text-right text-slate-700 dark:text-slate-300 font-bold font-mono">{exactTimeStr}</span>
               <span className="text-slate-500">Método:</span>
               <span className="text-right font-bold text-slate-800 dark:text-slate-200">{data.paymentMethod || 'Efectivo'}</span>
               {data.totalDebt !== undefined && data.totalDebt > 0 && (
@@ -1864,6 +1878,8 @@ const PaymentSuccessModal: React.FC<{
               )}
               <span className="text-slate-500 font-bold">Balance Anterior:</span>
               <span className="text-right font-bold text-slate-800 dark:text-slate-200">RD$ {data.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</span>
+              <span className="text-slate-500 font-bold">Próximo Pago:</span>
+              <span className="text-right font-bold text-emerald-600 dark:text-emerald-400 font-mono">{formattedNextPay || 'Al Día'}</span>
             </div>
 
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/60 flex justify-between items-center">

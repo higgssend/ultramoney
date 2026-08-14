@@ -23,6 +23,7 @@ import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalRe
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
+import { formatExactDateTime, formatExactTime, formatExactDate, formatPaymentDateDisplay } from '../utils/dateUtils';
 import { insforge } from '../lib/insforge';
 
 const ClientDetail: React.FC = () => {
@@ -277,13 +278,12 @@ const ClientDetail: React.FC = () => {
     );
     const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : 'Cliente';
     const formattedRecNo = formatReceiptId(trx.id);
-    const parsedDate = trx.date ? new Date(trx.date) : new Date();
     const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
 
     const data: ThermalReceiptData = {
       receiptNo: formattedRecNo,
-      date: parsedDate.toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
-      time: parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      date: formatExactDate(trx.date),
+      time: formatExactTime(trx.date, true),
       clientName: clientFullName,
       clientCedula: client?.cedula || client?.documentId || client?.clientCode,
       clientPhone: client?.phone,
@@ -306,6 +306,7 @@ const ClientDetail: React.FC = () => {
       paymentMethod: trx.paymentMethod || 'Efectivo',
       paymentType: trx.paymentType,
       cashierName: 'Caja',
+      nextPaymentDate: matchedLoan?.nextPaymentDate,
       notes: trx.description,
       transactionId: trx.id,
       clientId: client?.id
@@ -328,7 +329,8 @@ const ClientDetail: React.FC = () => {
     const formattedRecNo = formatReceiptId(trx.id);
     const calculated = calculateReceiptBalances(trx, matchedLoan, transactions);
     const receiptWebLink = `${window.location.origin}/recibo/${trx.id}`;
-    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Cliente*: ${clientFullName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
+    const nextPayTxt = matchedLoan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(matchedLoan.nextPaymentDate)}` : '';
+    const text = `*${companySettings?.name || 'UltraMoney'}*\n*Recibo de Pago*: ${formattedRecNo}\n*Fecha y Hora*: ${formatExactDateTime(trx.date)}\n*Cliente*: ${clientFullName}\n*Monto*: RD$ ${calculated.amountPaid.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Balance Anterior*: RD$ ${calculated.previousBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${calculated.newBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${receiptWebLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 

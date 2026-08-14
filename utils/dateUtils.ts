@@ -53,7 +53,80 @@ export const formatFullDateTimeSeconds = (dateStr?: string | null): string => {
 };
 
 /**
- * Obtiene la fecha y hora local actual formateada para campos de formulario HTML.
+ * Formatea la hora de forma exacta (hh:mm:ss a o hh:mm a).
+ * Ejemplo: "03:45:12 PM" o "03:45 PM"
+ */
+export const formatExactTime = (dateStr?: string | null, includeSeconds: boolean = true): string => {
+  if (!dateStr) {
+    const now = new Date();
+    return now.toLocaleTimeString('es-DO', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: includeSeconds ? '2-digit' : undefined,
+      hour12: true
+    });
+  }
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+      const now = new Date();
+      return now.toLocaleTimeString('es-DO', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: includeSeconds ? '2-digit' : undefined,
+        hour12: true
+      });
+    }
+    return d.toLocaleTimeString('es-DO', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: includeSeconds ? '2-digit' : undefined,
+      hour12: true
+    });
+  } catch {
+    return new Date().toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+};
+
+/**
+ * Formatea una fecha de forma legible en español.
+ * Ejemplo: "14 de agosto de 2026"
+ */
+export const formatExactDate = (dateStr?: string | null): string => {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('es-DO', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+/**
+ * Formatea una fecha de pago o vencimiento en formato corto "DD/MM/YYYY" o "14 ago 2026".
+ */
+export const formatPaymentDateDisplay = (dateStr?: string | null): string => {
+  if (!dateStr) return 'No especificado';
+  try {
+    const d = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T12:00:00`);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('es-DO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
+/**
+ * Formatea una fecha y hora local actual formateada para campos de formulario HTML.
  */
 export const getCurrentLocalDateTime = (): { date: string; time: string; datetimeLocal: string } => {
   const now = new Date();

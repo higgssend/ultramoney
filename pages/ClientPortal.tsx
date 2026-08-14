@@ -5,6 +5,7 @@ import { Loan, Transaction, CompanySettings, Client, formatLoanId, formatReceipt
 import type { ClientDB, LoanDB, TransactionDB, ClientDocumentDB } from '../types.db';
 import { useParams, Link } from 'react-router-dom';
 import { insforge } from '../lib/insforge';
+import { formatExactDateTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 
 export const ClientPortal: React.FC = () => {
     const { companySettings: globalSettings } = useSettings();
@@ -609,7 +610,7 @@ export const ClientPortal: React.FC = () => {
                                             <div>
                                                 <span className="text-slate-400 block text-[10px] uppercase font-bold">Próximo Cobro</span>
                                                 <span className="font-bold text-white text-sm">
-                                                    {nextDt.toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {loan.nextPaymentDate ? formatPaymentDateDisplay(loan.nextPaymentDate) : nextDt.toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </span>
                                             </div>
                                         </div>
@@ -646,7 +647,7 @@ export const ClientPortal: React.FC = () => {
                                                         {t.paymentMethod}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-slate-400">{new Date(t.date).toLocaleDateString('es-DO')} • {t.description}</p>
+                                                <p className="text-xs text-slate-400 font-medium">{formatExactDateTime(t.date)} • {t.description}</p>
                                             </div>
                                         </div>
 
