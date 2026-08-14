@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounting, useSettings, useAuth } from '../context/StoreContext';
 import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer, Edit3 } from 'lucide-react';
-import { Transaction, Loan, Client, formatLoanId, formatReceiptId } from '../types';
+import { Transaction, Loan, Client, LoanStatus, LoanType, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
@@ -133,8 +133,8 @@ export const ReceiptView: React.FC = () => {
                                 durationWeeks: Number(loanRes.duration_weeks) || 12,
                                 frequency: (loanRes.frequency as Loan['frequency']) || 'Mensual',
                                 startDate: loanRes.start_date || '',
-                                status: (loanRes.status as Loan['status']) || 'Activo',
-                                loanType: (loanRes.loan_type as Loan['loanType']) || 'Amortizado',
+                                status: (loanRes.status as LoanStatus) || LoanStatus.ACTIVE,
+                                loanType: (loanRes.loan_type as LoanType) || 'Amortizado (Cuota Fija)',
                                 totalToPay: Number(loanRes.total_to_pay) || 0,
                                 remainingBalance: Number(loanRes.remaining_balance) || 0,
                                 nextPaymentDate: loanRes.next_payment_date || ''
@@ -215,7 +215,7 @@ export const ReceiptView: React.FC = () => {
 
     if (isCapitalPayment) {
         capitalPaid = paymentAmount;
-    } else if (transaction.paymentType === 'Interes' || transaction.paymentType === 'Interés') {
+    } else if (transaction.paymentType === 'Interes') {
         interestPaid = paymentAmount;
     } else if (transaction.description?.toLowerCase().includes('mora')) {
         lateFeePaid = paymentAmount;
