@@ -123,7 +123,8 @@ export const ClientPortal: React.FC = () => {
                     phone: foundClient.phone || '',
                     clientPin: foundClient.clientpin,
                     portalAlias: foundClient.portal_alias,
-                    portalActive: foundClient.portal_active ?? true
+                    portalActive: foundClient.portal_active ?? true,
+                    avatarUrl: foundClient.avatarurl || foundClient.avatar_url || ''
                 };
                 
                 setClient(mappedClient);
@@ -346,12 +347,20 @@ export const ClientPortal: React.FC = () => {
                 <div className="w-full max-w-sm mx-auto relative z-10 my-auto">
                     <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-2xl text-center space-y-6">
                         
-                        <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto border border-indigo-500/30">
-                            <Lock className="w-8 h-8" />
-                        </div>
+                        {client?.avatarUrl ? (
+                            <img 
+                                src={client.avatarUrl} 
+                                alt={client.name} 
+                                className="w-20 h-20 rounded-full object-cover mx-auto border-3 border-indigo-500 shadow-xl shadow-indigo-500/25 ring-4 ring-indigo-500/20" 
+                            />
+                        ) : (
+                            <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto border border-indigo-500/30">
+                                <Lock className="w-8 h-8" />
+                            </div>
+                        )}
 
                         <div>
-                            <h2 className="text-lg font-bold text-white">Hola, {client?.name.split(' ')[0]}</h2>
+                            <h2 className="text-lg font-bold text-white">Hola, {client?.name} {client?.lastName || ''}</h2>
                             <p className="text-xs text-slate-400 mt-1">Ingresa tu PIN de 4 dígitos para acceder a tus préstamos</p>
                         </div>
 
@@ -420,12 +429,20 @@ export const ClientPortal: React.FC = () => {
 
                     {/* Client Badge + Lock Exit */}
                     <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-full">
-                            <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white font-black text-xs">
-                                {client?.name.charAt(0)}{client?.lastName?.charAt(0) || ''}
-                            </div>
+                        <div className="flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-full">
+                            {client?.avatarUrl ? (
+                                <img 
+                                    src={client.avatarUrl} 
+                                    alt={client.name} 
+                                    className="w-7 h-7 rounded-full object-cover border border-indigo-400 shrink-0" 
+                                />
+                            ) : (
+                                <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center text-white font-black text-xs shrink-0">
+                                    {client?.name.charAt(0)}{client?.lastName?.charAt(0) || ''}
+                                </div>
+                            )}
                             <div className="text-left pr-1">
-                                <p className="text-xs font-bold text-white leading-tight">{client?.name}</p>
+                                <p className="text-xs font-bold text-white leading-tight">{client?.name} {client?.lastName || ''}</p>
                                 <p className="text-[10px] text-slate-400 font-mono">{client?.cedula}</p>
                             </div>
                         </div>

@@ -660,26 +660,53 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       dbPayload.reference_id = updates.referenceId || undefined;
     }
 
-    // If amount changed and transaction is linked to a loan and is an income (payment)
+    // Calculate and synchronize balance snapshot and breakdown for payment transactions
     const targetLoanId = updates.referenceId || currentTx.referenceId;
+    let computedPrevBal = updates.previousBalance ?? currentTx.previousBalance;
+    let computedNewBal = updates.newBalance ?? currentTx.newBalance;
+    let computedTotalDebt = updates.totalDebt ?? currentTx.totalDebt;
+    let computedCap = updates.capitalAmount ?? currentTx.capitalAmount;
+    let computedInt = updates.interestAmount ?? currentTx.interestAmount;
+    let computedLateFee = updates.lateFeeAmount ?? currentTx.lateFeeAmount ?? 0;
+    let computedDiscount = updates.discountAmount ?? currentTx.discountAmount ?? 0;
+
     if (adjustLoanBalance && targetLoanId && (currentTx.type === 'Ingreso' || updates.type === 'Ingreso')) {
       const oldAmount = Number(currentTx.amount) || 0;
       const newAmount = updates.amount !== undefined ? Number(updates.amount) : oldAmount;
-      const diff = newAmount - oldAmount; // positive means more paid, negative means less paid
+      const effectivePaymentType = updates.paymentType || currentTx.paymentType || 'Interes';
 
-      if (diff !== 0) {
-        const { data: loanData } = await insforge.database
-          .from('loans')
-          .select('id, remainingbalance, status, totaltopay')
-          .eq('id', targetLoanId)
-          .eq('lender_id', currentUser.id)
-          .maybeSingle();
+      const { data: loanData } = await insforge.database
+        .from('loans')
+        .select('id, amount, remainingbalance, status, totaltopay, loantype, loan_type, interestrate, interest_rate, durationweeks, installments, frequency')
+        .eq('id', targetLoanId)
+        .eq('lender_id', currentUser.id)
+        .maybeSingle();
 
-        if (loanData) {
-          const currentBal = Number(loanData.remainingbalance ?? 0);
-          const newBal = Math.max(0, currentBal - diff);
-          const newStatus = newBal === 0 ? LoanStatus.PAID : LoanStatus.ACTIVE;
+      if (loanData) {
+        const isRedito = Boolean(
+          (loanData.loantype || loanData.loan_type || '').includes('Rédito') ||
+          (loanData.loantype || loanData.loan_type || '').includes('Redito') ||
+          (loanData.loantype || loanData.loan_type || '').includes('Pagaré') ||
+          (loanData.loantype || loanData.loan_type || '').includes('Solo Interé')
+        );
 
+        const currentBal = Number(loanData.remainingbalance ?? 0);
+        let diff = 0;
+
+        if (isRedito) {
+          // In Redito, only capital payment changes loan principal
+          const oldCap = currentTx.paymentType === 'Capital' ? oldAmount : 0;
+          const newCap = effectivePaymentType === 'Capital' ? newAmount : 0;
+          diff = newCap - oldCap;
+        } else {
+          // In amortized loans, payments directly reduce the balance
+          diff = newAmount - oldAmount;
+        }
+
+        const newBal = Math.max(0, currentBal - diff);
+        const newStatus = newBal === 0 ? LoanStatus.PAID : LoanStatus.ACTIVE;
+
+        if (diff !== 0) {
           await insforge.database
             .from('loans')
             .update({ remainingbalance: newBal, status: newStatus })
@@ -690,7 +717,59 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
             updateLoan(targetLoanId, { remainingBalance: newBal, status: newStatus });
           }
         }
+
+        // Recompute breakdown and balance snapshots
+        computedTotalDebt = Number(loanData.totaltopay || loanData.amount) || 0;
+        if (effectivePaymentType === 'Capital') {
+          computedCap = newAmount;
+          computedInt = 0;
+          computedPrevBal = isRedito ? currentBal : newBal + newAmount;
+          computedNewBal = newBal;
+        } else if (effectivePaymentType === 'Interes') {
+          computedInt = newAmount;
+          computedCap = 0;
+          computedPrevBal = isRedito ? currentBal : newBal + newAmount;
+          computedNewBal = newBal;
+        } else if (effectivePaymentType === 'Mora') {
+          computedLateFee = newAmount;
+          computedCap = 0;
+          computedInt = 0;
+          computedPrevBal = currentBal;
+          computedNewBal = currentBal;
+        } else {
+          // Standard / Completo cuota
+          const loanRate = Number(loanData.interestrate || loanData.interest_rate) || 0;
+          const approxMonthlyInterest = Math.round((Number(loanData.amount) || 0) * (loanRate / 100));
+          const estInterest = Math.min(newAmount, Math.max(0, approxMonthlyInterest));
+          const estCapital = Math.max(0, newAmount - estInterest);
+          computedCap = estCapital;
+          computedInt = estInterest;
+          computedPrevBal = newBal + newAmount;
+          computedNewBal = newBal;
+        }
       }
+    }
+
+    if (computedPrevBal !== undefined) {
+      dbPayload.previous_balance = computedPrevBal;
+    }
+    if (computedNewBal !== undefined) {
+      dbPayload.new_balance = computedNewBal;
+    }
+    if (computedTotalDebt !== undefined) {
+      dbPayload.total_debt = computedTotalDebt;
+    }
+    if (computedCap !== undefined) {
+      dbPayload.capital_amount = computedCap;
+    }
+    if (computedInt !== undefined) {
+      dbPayload.interest_amount = computedInt;
+    }
+    if (computedLateFee !== undefined) {
+      dbPayload.late_fee_amount = computedLateFee;
+    }
+    if (computedDiscount !== undefined) {
+      dbPayload.discount_amount = computedDiscount;
     }
 
     const { error } = await insforge.database
@@ -702,7 +781,17 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     if (error) {
       addToast("Error al actualizar la transacción", 'error');
     } else {
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+      setTransactions(prev => prev.map(t => t.id === id ? { 
+        ...t, 
+        ...updates,
+        previousBalance: computedPrevBal,
+        newBalance: computedNewBal,
+        totalDebt: computedTotalDebt,
+        capitalAmount: computedCap,
+        interestAmount: computedInt,
+        lateFeeAmount: computedLateFee,
+        discountAmount: computedDiscount
+      } : t));
       addAuditLog('transaction_updated', `Actualizó transacción #${id} (Monto: RD$ ${updates.amount ?? currentTx.amount})`);
       addToast("Pago / Transacción actualizado correctamente", 'success');
     }
@@ -731,24 +820,35 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       if (amountToRestore > 0) {
         const { data: loanData } = await insforge.database
           .from('loans')
-          .select('id, remainingbalance, status, totaltopay')
+          .select('id, remainingbalance, status, totaltopay, loantype, loan_type')
           .eq('id', currentTx.referenceId)
           .eq('lender_id', currentUser.id)
           .maybeSingle();
 
         if (loanData) {
+          const isRedito = Boolean(
+            (loanData.loantype || loanData.loan_type || '').includes('Rédito') ||
+            (loanData.loantype || loanData.loan_type || '').includes('Redito') ||
+            (loanData.loantype || loanData.loan_type || '').includes('Pagaré') ||
+            (loanData.loantype || loanData.loan_type || '').includes('Solo Interé')
+          );
           const currentBal = Number(loanData.remainingbalance ?? 0);
-          const newBal = currentBal + amountToRestore;
+          let newBal = currentBal;
+          if (!isRedito || currentTx.paymentType === 'Capital') {
+            newBal = currentBal + amountToRestore;
+          }
           const newStatus = newBal > 0 ? LoanStatus.ACTIVE : LoanStatus.PAID;
 
-          await insforge.database
-            .from('loans')
-            .update({ remainingbalance: newBal, status: newStatus })
-            .eq('id', currentTx.referenceId)
-            .eq('lender_id', currentUser.id);
+          if (newBal !== currentBal) {
+            await insforge.database
+              .from('loans')
+              .update({ remainingbalance: newBal, status: newStatus })
+              .eq('id', currentTx.referenceId)
+              .eq('lender_id', currentUser.id);
 
-          if (updateLoan) {
-            updateLoan(currentTx.referenceId, { remainingBalance: newBal, status: newStatus });
+            if (updateLoan) {
+              updateLoan(currentTx.referenceId, { remainingBalance: newBal, status: newStatus });
+            }
           }
         }
       }

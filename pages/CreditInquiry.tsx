@@ -142,9 +142,17 @@ export const CreditInquiry: React.FC = () => {
                       className="w-full p-3 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all flex items-center justify-between group border-b border-slate-100 dark:border-slate-800 last:border-0 text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
-                          {client.name.charAt(0)}{client.lastName ? client.lastName.charAt(0) : ''}
-                        </div>
+                        {client.avatarUrl ? (
+                          <img 
+                            src={client.avatarUrl} 
+                            alt={client.name} 
+                            className="w-10 h-10 rounded-full object-cover border-2 border-indigo-200 dark:border-indigo-800 shrink-0 shadow-xs" 
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+                            {client.name.charAt(0)}{client.lastName ? client.lastName.charAt(0) : ''}
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
                             {client.name} {client.lastName}
@@ -182,13 +190,20 @@ export const CreditInquiry: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => handleSelectClient(c)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                   selectedClient?.id === c.id
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
                 }`}
               >
-                {c.name} {c.lastName}
+                {c.avatarUrl ? (
+                  <img src={c.avatarUrl} alt={c.name} className="w-4 h-4 rounded-full object-cover" />
+                ) : (
+                  <span className="w-4 h-4 rounded-full bg-indigo-200 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[9px] font-bold">
+                    {c.name.charAt(0)}
+                  </span>
+                )}
+                <span>{c.name} {c.lastName}</span>
               </button>
             ))}
           </div>
@@ -208,9 +223,17 @@ export const CreditInquiry: React.FC = () => {
               {/* Client Summary (Left Column - 7 Cols) */}
               <div className="lg:col-span-7 space-y-4 text-center lg:text-left">
                 <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
-                    {selectedClient.name.charAt(0)}{selectedClient.lastName ? selectedClient.lastName.charAt(0) : ''}
-                  </div>
+                  {selectedClient.avatarUrl ? (
+                    <img 
+                      src={selectedClient.avatarUrl} 
+                      alt={selectedClient.name} 
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-indigo-500 shadow-lg shadow-indigo-500/20 shrink-0" 
+                    />
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+                      {selectedClient.name.charAt(0)}{selectedClient.lastName ? selectedClient.lastName.charAt(0) : ''}
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 rounded-full text-[11px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 inline-block">
                       Reporte de Buró de Crédito

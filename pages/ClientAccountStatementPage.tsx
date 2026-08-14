@@ -104,7 +104,8 @@ export const ClientAccountStatementPage: React.FC = () => {
               creditScore: Number(dbClient.credit_score || dbClient.creditscore) || 850,
               status: (dbClient.status as Client['status']) || 'Activo',
               sex: (dbClient.sex as Client['sex']) || 'Masculino',
-              joinedDate: dbClient.created_at || new Date().toISOString()
+              joinedDate: dbClient.created_at || new Date().toISOString(),
+              avatarUrl: dbClient.avatarurl || dbClient.avatar_url || undefined
             };
           }
         }
@@ -467,19 +468,32 @@ export const ClientAccountStatementPage: React.FC = () => {
 
         {/* Client Complete Information Profile Banner */}
         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 text-slate-400 uppercase text-[10px] font-black tracking-wider">
               <User className="w-3.5 h-3.5 text-indigo-600" />
               <span>Información General del Titular</span>
             </div>
-            <h3 className="text-lg font-black text-slate-900">
-              {clientFullName}
-            </h3>
+            <div className="flex items-center gap-4">
+              {client.avatarUrl ? (
+                <img 
+                  src={client.avatarUrl} 
+                  alt={clientFullName} 
+                  className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-sm"
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl font-black border border-indigo-200">
+                  {client.name.charAt(0)}
+                </div>
+              )}
+              <div>
+                <h3 className="text-lg font-black text-slate-900 leading-tight">
+                  {clientFullName}
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">{client.cedula}</p>
+              </div>
+            </div>
             <div className="space-y-1 text-xs text-slate-600">
-              <p>
-                <span className="font-semibold text-slate-400">Documento / Cédula:</span>{' '}
-                <strong className="text-slate-900 font-mono">{client.cedula}</strong> ({client.documentType || 'Cédula'})
-              </p>
               <p>
                 <span className="font-semibold text-slate-400">Teléfono Celular:</span>{' '}
                 <strong className="text-slate-900">{client.phone}</strong>

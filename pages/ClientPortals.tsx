@@ -183,8 +183,23 @@ const ClientPortals: React.FC = () => {
                             {filteredClients.map(client => (
                                 <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                     <td className="px-6 py-4">
-                                        <p className="font-medium text-slate-800 dark:text-slate-200">{client.name} {client.lastName || ''}</p>
-                                        <p className="text-xs text-slate-500">{client.cedula}</p>
+                                        <div className="flex items-center gap-3">
+                                            {client.avatarUrl ? (
+                                                <img 
+                                                    src={client.avatarUrl} 
+                                                    alt={client.name} 
+                                                    className="w-10 h-10 rounded-full object-cover border border-indigo-200 dark:border-indigo-800 shadow-xs shrink-0" 
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+                                                    {client.name.charAt(0)}{client.lastName ? client.lastName.charAt(0) : ''}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="font-bold text-slate-800 dark:text-slate-200">{client.name} {client.lastName || ''}</p>
+                                                <p className="text-xs text-slate-500 font-mono">{client.cedula}</p>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex flex-col items-center gap-1.5">
@@ -265,9 +280,17 @@ const ClientPortals: React.FC = () => {
                         
                         <div className="p-6 space-y-6">
                             <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
-                                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center font-bold text-lg">
-                                    {selectedClient.name.charAt(0)}{selectedClient.lastName?.charAt(0) || ''}
-                                </div>
+                                {selectedClient.avatarUrl ? (
+                                    <img 
+                                        src={selectedClient.avatarUrl} 
+                                        alt={selectedClient.name} 
+                                        className="w-12 h-12 rounded-full object-cover border border-indigo-200 dark:border-indigo-800 shadow-sm shrink-0" 
+                                    />
+                                ) : (
+                                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center font-bold text-lg shrink-0">
+                                        {selectedClient.name.charAt(0)}{selectedClient.lastName?.charAt(0) || ''}
+                                    </div>
+                                )}
                                 <div>
                                     <h4 className="font-semibold text-slate-800 dark:text-white">{selectedClient.name} {selectedClient.lastName || ''}</h4>
                                     <p className="text-sm text-slate-500">Cédula: {selectedClient.cedula}</p>
