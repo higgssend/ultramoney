@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Collateral } from '../../types';
-import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package, Upload, X } from 'lucide-react';
+import { Shield, Type, Hash, DollarSign, User, Image as ImageIcon, Smartphone, Cpu, CheckCircle, CreditCard, Package, Upload, X, Laptop, Monitor, HardDrive, BatteryCharging } from 'lucide-react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useInventory } from '../../context/StoreContext';
 
@@ -30,12 +30,15 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
         const item = availableItems.find(i => i.id === stockId);
         if (!item) return;
 
-        const targetType = item.category === 'Teléfono / Celular' ? 'Teléfono / Celular' : 
-                           item.category === 'Vehículo' ? 'Vehículo' :
-                           item.category === 'Electrodoméstico' ? 'Electrodoméstico' : 'Otro';
+        const targetType: Collateral['type'] = 
+            item.category === 'Teléfono / Celular' ? 'Teléfono / Celular' : 
+            item.category === 'Laptops / Portátiles' ? 'Laptops / Portátiles' :
+            item.category === 'PC / Computadoras de Escritorio' ? 'PC / Computadoras de Escritorio' :
+            item.category === 'Vehículo' ? 'Vehículo' :
+            item.category === 'Electrodoméstico' ? 'Electrodoméstico' : 'Otro';
 
         onChange({
-            type: targetType as Collateral['type'],
+            type: targetType,
             description: `${item.brand || ''} ${item.model || item.name}`.trim(),
             refNumber: item.serialNumber || '',
             brand: item.brand,
@@ -51,7 +54,7 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
     const handleChange = <K extends keyof Collateral>(field: K, value: Collateral[K]) => {
         if (!collateral) return;
         
-        // Auto-update combined description for phone if brand/model change
+        // Auto-update combined description for phone, laptop, pc
         const updated = { ...collateral, [field]: value };
         if (updated.type === 'Teléfono / Celular') {
             const b = updated.brand || '';
@@ -60,6 +63,17 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
             const color = updated.color ? ` - Color: ${updated.color}` : '';
             if (b || m) {
                 updated.description = `${b} ${m}${storage}${color}`.trim();
+            }
+        } else if (updated.type === 'Laptops / Portátiles' || updated.type === 'PC / Computadoras de Escritorio') {
+            const b = updated.brand || '';
+            const m = updated.model || '';
+            const cpu = updated.processor ? ` | CPU: ${updated.processor}` : '';
+            const ram = updated.ram ? ` | RAM: ${updated.ram}` : '';
+            const storage = updated.storage || updated.storageType ? ` | Disco: ${updated.storage || updated.storageType}` : '';
+            const gpu = updated.graphicsCard ? ` | GPU: ${updated.graphicsCard}` : '';
+            const serial = updated.serialNumber || updated.refNumber ? ` (S/N: ${updated.serialNumber || updated.refNumber})` : '';
+            if (b || m) {
+                updated.description = `${b} ${m}${cpu}${ram}${storage}${gpu}${serial}`.trim();
             }
         } else if (updated.type === 'Tarjeta de Crédito / Débito') {
             const b = updated.bankName || '';
@@ -126,6 +140,8 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                         options={[
                             { value: 'Sin Garantía', label: 'Sin Garantía' },
                             { value: 'Teléfono / Celular', label: 'Teléfono / Celular / Dispositivo Móvil' },
+                            { value: 'Laptops / Portátiles', label: 'Laptops / Computadoras Portátiles' },
+                            { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio / Servidores' },
                             { value: 'Tarjeta de Crédito / Débito', label: 'Tarjeta de Crédito / Débito en Custodia' },
                             { value: 'Vehículo', label: 'Vehículo / Auto / Pasola' },
                             { value: 'Propiedad', label: 'Propiedad Inmobiliaria / Terreno' },
@@ -261,6 +277,406 @@ export const CollateralForm: React.FC<CollateralFormProps> = ({ collateral, onCh
                                         onChange={(e) => handleChange('defects', e.target.value)}
                                         placeholder="Ej. Sin cargador, Batería 84%, Tapa rayada"
                                         className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* 💻 LAPTOPS / PORTÁTILES */}
+                        {collateral.type === 'Laptops / Portátiles' && (
+                            <>
+                                <div className="md:col-span-2 bg-blue-50/70 border border-blue-200 p-3 rounded-2xl flex items-center gap-2 text-blue-950 text-xs font-semibold mb-1">
+                                    <Laptop className="w-4 h-4 text-blue-600 shrink-0" />
+                                    <span>Formulario Especializado de Laptops / Portátiles (Procesador, RAM, SSD, Gráfica, Serial y Estado)</span>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Marca de la Laptop</label>
+                                    <CustomSelect
+                                        value={collateral.brand || ''}
+                                        onChange={(val) => handleChange('brand', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Apple', label: 'Apple (MacBook Pro / Air)' },
+                                            { value: 'Dell', label: 'Dell (Latitude, XPS, Inspiron, Alienware)' },
+                                            { value: 'HP', label: 'HP (Pavilion, Victus, Omen, Envy, EliteBook)' },
+                                            { value: 'Lenovo', label: 'Lenovo (ThinkPad, Legion, IdeaPad, Yoga)' },
+                                            { value: 'Asus', label: 'Asus (ROG, TUF, ZenBook, VivoBook)' },
+                                            { value: 'Acer', label: 'Acer (Nitro, Predator, Aspire, Swift)' },
+                                            { value: 'MSI', label: 'MSI (Gaming, Stealth, Modern)' },
+                                            { value: 'Samsung', label: 'Samsung (Galaxy Book)' },
+                                            { value: 'Microsoft', label: 'Microsoft (Surface Laptop)' },
+                                            { value: 'Toshiba', label: 'Toshiba / Dynabook' },
+                                            { value: 'Otra Marca', label: 'Otra Marca de Laptop' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Modelo Específico</label>
+                                    <div className="relative">
+                                        <Type className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.model || ''}
+                                            onChange={(e) => handleChange('model', e.target.value)}
+                                            placeholder="Ej. MacBook Pro 16 M3 Max / ThinkPad T14 Gen 4"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Procesador (CPU)</label>
+                                    <div className="relative">
+                                        <Cpu className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.processor || ''}
+                                            onChange={(e) => handleChange('processor', e.target.value)}
+                                            placeholder="Ej. Intel Core i7-13700H / AMD Ryzen 7 / Apple M3"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Memoria RAM</label>
+                                    <CustomSelect
+                                        value={collateral.ram || '16 GB'}
+                                        onChange={(val) => handleChange('ram', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '8 GB', label: '8 GB RAM' },
+                                            { value: '16 GB', label: '16 GB RAM' },
+                                            { value: '24 GB', label: '24 GB RAM' },
+                                            { value: '32 GB', label: '32 GB RAM' },
+                                            { value: '64 GB', label: '64 GB RAM' },
+                                            { value: '4 GB (Básico)', label: '4 GB RAM' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Almacenamiento (Disco)</label>
+                                    <div className="relative">
+                                        <HardDrive className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.storage || collateral.storageType || ''}
+                                            onChange={(e) => {
+                                                handleChange('storage', e.target.value);
+                                                handleChange('storageType', e.target.value);
+                                            }}
+                                            placeholder="Ej. SSD NVMe 512 GB / 1 TB SSD"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tarjeta Gráfica (GPU)</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.graphicsCard || ''}
+                                        onChange={(e) => handleChange('graphicsCard', e.target.value)}
+                                        placeholder="Ej. NVIDIA RTX 4060 8GB / Intel Iris Xe"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Número de Serie / Service Tag</label>
+                                    <div className="relative">
+                                        <Hash className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.serialNumber || collateral.refNumber || ''}
+                                            onChange={(e) => {
+                                                handleChange('serialNumber', e.target.value);
+                                                handleChange('refNumber', e.target.value);
+                                            }}
+                                            placeholder="Ej. C02D1234MD6R / ST-998877"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-bold font-mono text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tamaño de Pantalla</label>
+                                    <CustomSelect
+                                        value={collateral.screenSize || '15.6"'}
+                                        onChange={(val) => handleChange('screenSize', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '13.3"', label: '13.3" (Ultraportable)' },
+                                            { value: '14.0"', label: '14.0" (Compacta / Business)' },
+                                            { value: '15.6"', label: '15.6" (Estándar)' },
+                                            { value: '16.0"', label: '16.0" (Pro / Creadores)' },
+                                            { value: '17.3"', label: '17.3" (Gamer / Pantalla Grande)' },
+                                            { value: '12.0" - 13.0"', label: '12" - 13" Mini / Tablet' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Estado / Condición</label>
+                                    <CustomSelect
+                                        value={collateral.condition || 'Excelente / Como Nuevo'}
+                                        onChange={(val) => handleChange('condition', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Nuevo Sellado en Caja', label: 'Nuevo Sellado en Caja' },
+                                            { value: 'Como Nuevo / Grado A+', label: 'Como Nuevo / Grado A+ (Sin detalles)' },
+                                            { value: 'Usado - Excelente Estado', label: 'Usado - Excelente Estado' },
+                                            { value: 'Open Box / Reacondicionado', label: 'Open Box / Reacondicionado' },
+                                            { value: 'Usado con Detalles Cosméticos', label: 'Usado con Detalles Cosméticos' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Salud de la Batería (%)</label>
+                                    <div className="relative">
+                                        <BatteryCharging className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.batteryHealth || ''}
+                                            onChange={(e) => handleChange('batteryHealth', e.target.value)}
+                                            placeholder="Ej. 100% / 94% / 350 ciclos"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Sistema Operativo</label>
+                                    <CustomSelect
+                                        value={collateral.operatingSystem || 'Windows 11 Pro'}
+                                        onChange={(val) => handleChange('operatingSystem', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Windows 11 Pro', label: 'Windows 11 Pro' },
+                                            { value: 'Windows 11 Home', label: 'Windows 11 Home' },
+                                            { value: 'macOS Sonoma / Sequoia', label: 'macOS (Apple)' },
+                                            { value: 'Windows 10 Pro', label: 'Windows 10 Pro' },
+                                            { value: 'Linux Ubuntu / Fedora', label: 'Linux' },
+                                            { value: 'Sin Sistema / FreeDOS', label: 'Sin Sistema Operativo' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Color del Equipo</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.color || ''}
+                                        onChange={(e) => handleChange('color', e.target.value)}
+                                        placeholder="Ej. Space Gray / Plata / Negro Mate"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Accesorios Incluidos y Observaciones</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.accessories || collateral.defects || ''}
+                                        onChange={(e) => {
+                                            handleChange('accessories', e.target.value);
+                                            handleChange('defects', e.target.value);
+                                        }}
+                                        placeholder="Ej. Cargador original 67W, Mouse inalámbrico, Maletín acolchado, Factura original"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* 🖥️ PC / COMPUTADORAS DE ESCRITORIO */}
+                        {collateral.type === 'PC / Computadoras de Escritorio' && (
+                            <>
+                                <div className="md:col-span-2 bg-purple-50/70 border border-purple-200 p-3 rounded-2xl flex items-center gap-2 text-purple-950 text-xs font-semibold mb-1">
+                                    <Monitor className="w-4 h-4 text-purple-600 shrink-0" />
+                                    <span>Formulario Especializado de PC de Escritorio / Torre / Servidor (Gabinete, CPU, RAM, Gráfica, Monitor y Serial)</span>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tipo de Computadora</label>
+                                    <CustomSelect
+                                        value={collateral.storageType || 'Torre Gamer / ATX'}
+                                        onChange={(val) => handleChange('storageType', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Torre Gamer / ATX', label: 'Torre Gamer / Estación Custom ATX' },
+                                            { value: 'PC de Oficina / SFF Slim', label: 'PC de Oficina / Torre SFF' },
+                                            { value: 'All-in-One (Todo en Uno)', label: 'All-in-One (Todo en Uno con Pantalla)' },
+                                            { value: 'Mini PC / Micro Torre', label: 'Mini PC / NUC / Mac Mini' },
+                                            { value: 'Workstation / Servidor', label: 'Workstation Profesional / Servidor' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Marca / Ensamblaje</label>
+                                    <CustomSelect
+                                        value={collateral.brand || ''}
+                                        onChange={(val) => handleChange('brand', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Ensamblada Custom / Clon Gamer', label: 'Ensamblada Custom / Clon Gamer' },
+                                            { value: 'Dell', label: 'Dell (OptiPlex, Precision, Alienware)' },
+                                            { value: 'HP', label: 'HP (ProDesk, EliteDesk, Omen, Pavilion)' },
+                                            { value: 'Lenovo', label: 'Lenovo (ThinkCentre, Legion)' },
+                                            { value: 'Apple', label: 'Apple (iMac, Mac Studio, Mac Mini, Mac Pro)' },
+                                            { value: 'Asus', label: 'Asus (ROG, ExpertCenter)' },
+                                            { value: 'MSI', label: 'MSI (Aegis, Infinite)' },
+                                            { value: 'Otra Marca', label: 'Otra Marca / Ensamblador' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Modelo / Gabinete Específico</label>
+                                    <div className="relative">
+                                        <Type className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.model || ''}
+                                            onChange={(e) => handleChange('model', e.target.value)}
+                                            placeholder="Ej. Clon Gamer Corsair / Dell OptiPlex 7090 / iMac 24"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Procesador (CPU)</label>
+                                    <div className="relative">
+                                        <Cpu className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.processor || ''}
+                                            onChange={(e) => handleChange('processor', e.target.value)}
+                                            placeholder="Ej. Intel Core i7-14700K / Ryzen 7 7800X3D"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Memoria RAM</label>
+                                    <CustomSelect
+                                        value={collateral.ram || '16 GB'}
+                                        onChange={(val) => handleChange('ram', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: '8 GB DDR4', label: '8 GB DDR4' },
+                                            { value: '16 GB DDR4/DDR5', label: '16 GB DDR4/DDR5' },
+                                            { value: '32 GB DDR5', label: '32 GB DDR5' },
+                                            { value: '64 GB DDR5', label: '64 GB DDR5' },
+                                            { value: '128 GB', label: '128 GB' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Almacenamiento (Discos)</label>
+                                    <div className="relative">
+                                        <HardDrive className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.storage || ''}
+                                            onChange={(e) => handleChange('storage', e.target.value)}
+                                            placeholder="Ej. 1 TB SSD NVMe M.2 + 2 TB HDD"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-medium text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Tarjeta Gráfica Dedicada (GPU)</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.graphicsCard || ''}
+                                        onChange={(e) => handleChange('graphicsCard', e.target.value)}
+                                        placeholder="Ej. NVIDIA GeForce RTX 4070 12GB / Integrada"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Monitor Incluido</label>
+                                    <CustomSelect
+                                        value={collateral.screenSize || 'Sin Monitor (Solo Torre)'}
+                                        onChange={(val) => handleChange('screenSize', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Sin Monitor (Solo Torre)', label: 'Sin Monitor (Solo Torre / Gabinete)' },
+                                            { value: 'Monitor 24" FHD (1080p)', label: 'Monitor 24" FHD (1080p)' },
+                                            { value: 'Monitor 27" 2K (1440p)', label: 'Monitor 27" 2K (1440p 144Hz-180Hz)' },
+                                            { value: 'Monitor 32" Curvo / 4K', label: 'Monitor 32" Curvo / 4K' },
+                                            { value: 'Pantalla Integrada All-in-One', label: 'Pantalla Integrada All-in-One' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Número de Serie / Service Tag</label>
+                                    <div className="relative">
+                                        <Hash className="absolute left-3 top-3 text-slate-400 w-5 h-5" />
+                                        <input 
+                                            type="text"
+                                            value={collateral.serialNumber || collateral.refNumber || ''}
+                                            onChange={(e) => {
+                                                handleChange('serialNumber', e.target.value);
+                                                handleChange('refNumber', e.target.value);
+                                            }}
+                                            placeholder="Ej. S/N PC-8837190"
+                                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 font-bold font-mono text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Estado / Condición</label>
+                                    <CustomSelect
+                                        value={collateral.condition || 'Excelente / Como Nuevo'}
+                                        onChange={(val) => handleChange('condition', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Nuevo en Caja', label: 'Nuevo en Caja' },
+                                            { value: 'Excelente / Como Nuevo', label: 'Excelente / Como Nuevo' },
+                                            { value: 'Armado Customizado / Modificado', label: 'Armado Customizado / Modificado' },
+                                            { value: 'Usado de Oficina', label: 'Usado de Oficina' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Sistema Operativo</label>
+                                    <CustomSelect
+                                        value={collateral.operatingSystem || 'Windows 11 Pro'}
+                                        onChange={(val) => handleChange('operatingSystem', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Windows 11 Pro 64-bit', label: 'Windows 11 Pro 64-bit' },
+                                            { value: 'Windows 10 Pro', label: 'Windows 10 Pro' },
+                                            { value: 'macOS Sonoma / Sequoia', label: 'macOS (Apple)' },
+                                            { value: 'Linux Ubuntu / Debian', label: 'Linux' },
+                                            { value: 'Windows Server', label: 'Windows Server' }
+                                        ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Accesorios y Periféricos</label>
+                                    <input 
+                                        type="text"
+                                        value={collateral.accessories || ''}
+                                        onChange={(e) => handleChange('accessories', e.target.value)}
+                                        placeholder="Ej. Teclado mecánico RGB, Mouse gamer, Cables de poder y HDMI/DisplayPort"
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
                                     />
                                 </div>
                             </>

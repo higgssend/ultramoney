@@ -160,6 +160,8 @@ export const InventoryPage: React.FC = () => {
             options={[
               { value: 'Todas', label: 'Todas las Categorías' },
               { value: 'Teléfono / Celular', label: 'Teléfonos / Celulares' },
+              { value: 'Laptops / Portátiles', label: 'Laptops / Portátiles' },
+              { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio' },
               { value: 'Electrodoméstico', label: 'Electrodomésticos' },
               { value: 'Vehículo', label: 'Vehículos / Pasolas' },
               { value: 'Otro', label: 'Otros Artículos' }
@@ -266,6 +268,8 @@ export const InventoryPage: React.FC = () => {
                     className="w-full text-xs"
                     options={[
                       { value: 'Teléfono / Celular', label: 'Teléfono / Celular' },
+                      { value: 'Laptops / Portátiles', label: 'Laptops / Portátiles' },
+                      { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio' },
                       { value: 'Electrodoméstico', label: 'Electrodoméstico / Equipo' },
                       { value: 'Vehículo', label: 'Vehículo / Pasola' },
                       { value: 'Otro', label: 'Otro bien' }

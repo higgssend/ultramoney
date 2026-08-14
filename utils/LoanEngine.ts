@@ -493,41 +493,55 @@ export class LoanEngine {
         closingCostMode: string = 'Descontado',
         itemPrice?: number,
         downPayment: number = 0,
-        downPaymentMode?: string
+        downPaymentMode?: string,
+        cashPrice?: number,
+        financedPrice?: number
     ) {
         let principal = amount;
-        if (loanType?.includes('Financiamiento') && itemPrice && itemPrice > 0) {
-            principal = Math.max(0, itemPrice - downPayment);
-        }
-
-        const isRedito = loanType?.includes('Rédito') || loanType?.includes('Pagaré') || loanType?.includes('Solo Interés');
-
-        if (isRedito) {
-            const interestPart = Math.round((principal * (interestRate / 100)) * 100) / 100;
-            const pDate = firstPaymentDate || startDate || new Date().toISOString().split('T')[0];
-            return {
-                installments: [{
-                    installmentNumber: 1,
-                    date: pDate,
-                    dueDate: pDate,
-                    principal: 0,
-                    interest: interestPart,
-                    total: interestPart,
-                    balance: principal
-                }],
-                summary: {
-                    principal,
-                    totalInterest: interestPart,
-                    totalToPay: principal + interestPart,
-                    installmentAmount: interestPart,
-                    netDisbursement: closingCostMode === 'Descontado' ? Math.max(0, principal - closingCost) : principal
-                }
-            };
-        }
-
+        const effectiveCashPrice = cashPrice || itemPrice || amount;
+        
+        let totalToPay = 0;
+        let totalInterest = 0;
         const count = durationWeeks > 0 ? durationWeeks : 1;
-        const totalInterest = Math.round((principal * (interestRate / 100)) * 100) / 100;
-        const totalToPay = principal + totalInterest;
+
+        if (loanType?.includes('Financiamiento')) {
+            principal = Math.max(0, effectiveCashPrice - downPayment);
+            if (financedPrice && financedPrice > 0) {
+                totalToPay = Math.max(0, financedPrice - downPayment);
+                totalInterest = Math.max(0, totalToPay - principal);
+            } else {
+                totalInterest = Math.round((principal * (interestRate / 100)) * 100) / 100;
+                totalToPay = principal + totalInterest;
+            }
+        } else {
+            const isRedito = loanType?.includes('Rédito') || loanType?.includes('Pagaré') || loanType?.includes('Solo Interés');
+            if (isRedito) {
+                const interestPart = Math.round((principal * (interestRate / 100)) * 100) / 100;
+                const pDate = firstPaymentDate || startDate || new Date().toISOString().split('T')[0];
+                return {
+                    installments: [{
+                        installmentNumber: 1,
+                        date: pDate,
+                        dueDate: pDate,
+                        principal: 0,
+                        interest: interestPart,
+                        total: interestPart,
+                        balance: principal
+                    }],
+                    summary: {
+                        principal,
+                        totalInterest: interestPart,
+                        totalToPay: principal + interestPart,
+                        installmentAmount: interestPart,
+                        netDisbursement: closingCostMode === 'Descontado' ? Math.max(0, principal - closingCost) : principal
+                    }
+                };
+            }
+
+            totalInterest = Math.round((principal * (interestRate / 100)) * 100) / 100;
+            totalToPay = principal + totalInterest;
+        }
+
         const instAmt = Math.round((totalToPay / count) * 100) / 100;
         const instPrincipal = Math.round((principal / count) * 100) / 100;
         const instInterest = Math.round((totalInterest / count) * 100) / 100;

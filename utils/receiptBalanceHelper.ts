@@ -45,17 +45,19 @@ export function calculateReceiptBalances(
   allLoanTransactions?: Transaction[]
 ): CalculatedReceiptBalances {
   const amountPaid = Number(transaction.amount) || 0;
-  const isOpen = loan ? isOpenLoanType(loan.loanType || loan.loantype) : false;
+  const loanRaw = loan as unknown as Record<string, unknown> | undefined;
+  const rawLoanType = (loan?.loanType || (loanRaw ? String(loanRaw.loantype || loanRaw.loan_type || '') : '')) as string;
+  const isOpen = loan ? isOpenLoanType(rawLoanType) : false;
   const isInstallmentLoan = !isOpen;
   
   const loanPrincipal = Number(loan?.amount || 0);
-  const loanTotalToPay = Number(loan?.totaltopay ?? loan?.totalToPay ?? loanPrincipal);
+  const loanTotalToPay = Number(loan?.totalToPay ?? (loanRaw ? Number(loanRaw.totaltopay ?? loanRaw.total_to_pay) : undefined) ?? loanPrincipal);
   const totalDebt = loan 
     ? (isOpen ? loanPrincipal : (loanTotalToPay || loanPrincipal))
     : (transaction.totalDebt !== undefined && Number(transaction.totalDebt) > 0 ? Number(transaction.totalDebt) : amountPaid);
 
   const totalInstallments = loan 
-    ? Number(loan.durationWeeks ?? loan.duration_weeks ?? loan.installments ?? 0)
+    ? Number(loan.durationWeeks ?? (loanRaw ? Number(loanRaw.duration_weeks) : undefined) ?? loan.installments ?? 0)
     : 0;
 
   // 1. Desglose del pago (Capital, Interés, Mora, Descuento)
@@ -88,15 +90,15 @@ export function calculateReceiptBalances(
       capitalPaid = 0;
     } else {
       const totalLoanInterest = Math.max(0, loanTotalToPay - loanPrincipal);
+      const rawRate = Number(loan?.interestRate ?? (loanRaw ? Number(loanRaw.interestrate ?? loanRaw.interest_rate) : 0));
       if (totalInstallments > 0 && totalLoanInterest > 0) {
         const interestPerCuota = totalLoanInterest / totalInstallments;
         interestPaid = Math.min(amountPaid, Math.round(interestPerCuota * 100) / 100);
         capitalPaid = Math.max(0, Math.round((amountPaid - interestPaid - lateFeePaid) * 100) / 100);
-      } else if (loan && (loan.interestRate || loan.interestrate)) {
-        const rate = Number(loan.interestRate || loan.interestrate || 0);
+      } else if (loan && rawRate > 0) {
         const approxInterest = totalInstallments > 0 
-          ? ((loanPrincipal * (rate / 100)) / totalInstallments)
-          : Math.round(loanPrincipal * (rate / 100));
+          ? ((loanPrincipal * (rawRate / 100)) / totalInstallments)
+          : Math.round(loanPrincipal * (rawRate / 100));
         interestPaid = Math.min(amountPaid, Math.max(0, approxInterest));
         capitalPaid = Math.max(0, amountPaid - interestPaid - lateFeePaid);
       } else {

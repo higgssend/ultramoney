@@ -39,8 +39,11 @@ const Simulator: React.FC = () => {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Equipment / Vehicle Financing Specific State
-  const [itemPrice, setItemPrice] = useState<number | string>('150000');
-  const [downPayment, setDownPayment] = useState<number | string>('30000');
+  const [cashPrice, setCashPrice] = useState<number | string>('50000');
+  const [financedPrice, setFinancedPrice] = useState<number | string>('70000');
+  const [financingCalcMode, setFinancingCalcMode] = useState<'financed_price' | 'interest_rate'>('financed_price');
+  const [itemPrice, setItemPrice] = useState<number | string>('50000');
+  const [downPayment, setDownPayment] = useState<number | string>('10000');
   const [downPaymentMode, setDownPaymentMode] = useState<'Efectivo' | 'Transferencia' | 'Financiado'>('Efectivo');
 
   // Expenses & Arrears State
@@ -56,19 +59,31 @@ const Simulator: React.FC = () => {
   // Compute effective principal amount based on loan type
   const effectivePrincipal = useMemo(() => {
     if (type === 'Financiamiento de Equipo (Con/Sin Inicial)') {
-      const price = Number(itemPrice) || 0;
+      const price = Number(cashPrice || itemPrice) || 0;
       const down = Number(downPayment) || 0;
       return Math.max(0, price - down);
     }
     return Number(amount) || 0;
-  }, [type, itemPrice, downPayment, amount]);
+  }, [type, cashPrice, itemPrice, downPayment, amount]);
+
+  // Compute effective interest rate based on calculation mode
+  const effectiveInterestRate = useMemo(() => {
+    if (type === 'Financiamiento de Equipo (Con/Sin Inicial)' && financingCalcMode === 'financed_price') {
+      const principal = effectivePrincipal;
+      const fPrice = Number(financedPrice) || 0;
+      const cPrice = Number(cashPrice || itemPrice) || 0;
+      const profit = Math.max(0, fPrice - cPrice);
+      return principal > 0 ? (profit / principal) * 100 : 0;
+    }
+    return Number(interest) || 0;
+  }, [type, financingCalcMode, effectivePrincipal, financedPrice, cashPrice, itemPrice, interest]);
 
   // Execute Simulation Logic via LoanEngine
   useEffect(() => {
     try {
       const parsedAmount = effectivePrincipal;
       const parsedWeeks = Math.max(1, Number(weeks) || 1);
-      const parsedInterest = Number(interest) || 0;
+      const parsedInterest = effectiveInterestRate;
 
       const simResult = LoanEngine.calculateSimulation({
         amount: parsedAmount,
@@ -84,7 +99,7 @@ const Simulator: React.FC = () => {
     } catch (e) {
       console.error("Simulation Calculation Error:", e);
     }
-  }, [effectivePrincipal, weeks, interest, frequency, type, expenses, startDate]);
+  }, [effectivePrincipal, effectiveInterestRate, weeks, frequency, type, expenses, startDate]);
 
   const handleNumberInput = (setter: React.Dispatch<React.SetStateAction<string | number>>, val: string) => {
     if (val.length > 1 && val.startsWith('0') && !val.includes('.')) val = val.replace(/^0+/, '');
@@ -360,36 +375,83 @@ const Simulator: React.FC = () => {
             {/* TAB: FINANCIAMIENTO DE EQUIPO */}
             {activeTab === 'equipo' && type === 'Financiamiento de Equipo (Con/Sin Inicial)' && (
               <div className="space-y-6 animate-fade-in">
-                <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 flex items-start gap-3">
-                  <DollarSign className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
-                    <p className="font-bold">Financiamiento de Equipos, Artículos o Vehículos</p>
-                    <p>Permite registrar el valor total del bien comercializado y descontar la inicial pagada por el cliente. El resto se amortiza en las cuotas pactadas.</p>
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
+                      <p className="font-bold">Financiamiento de Equipos, Artículos, Laptops o Vehículos</p>
+                      <p>Configura el precio al contado y el precio a financiar para calcular automáticamente el margen, capital e intereses.</p>
+                    </div>
+                  </div>
+                  <div className="flex bg-emerald-100 dark:bg-emerald-900/60 p-1 rounded-xl shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setFinancingCalcMode('financed_price')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${financingCalcMode === 'financed_price' ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-xs' : 'text-emerald-800 dark:text-emerald-300 opacity-70'}`}
+                    >
+                      Por Precio Financiado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFinancingCalcMode('interest_rate')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${financingCalcMode === 'interest_rate' ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-xs' : 'text-emerald-800 dark:text-emerald-300 opacity-70'}`}
+                    >
+                      Por Tasa %
+                    </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Precio Total del Artículo / Vehículo ($)</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Precio Normal / Contado ($)</label>
                     <input 
                       type="number" 
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold" 
-                      value={itemPrice} 
-                      onChange={e => handleNumberInput(setItemPrice, e.target.value)} 
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
+                      value={cashPrice} 
+                      onChange={e => {
+                        handleNumberInput(setCashPrice, e.target.value);
+                        handleNumberInput(setItemPrice, e.target.value);
+                      }} 
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">Precio comercial de venta al contado sin financiamiento.</p>
                   </div>
+
+                  {financingCalcMode === 'financed_price' ? (
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Precio Total Financiado ($)</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
+                        value={financedPrice} 
+                        onChange={e => handleNumberInput(setFinancedPrice, e.target.value)} 
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">Precio total que pagará el cliente amortizado en cuotas.</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tasa de Interés Total (%)</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
+                        value={interest} 
+                        onChange={e => handleNumberInput(setInterest, e.target.value)} 
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">Porcentaje de interés o ganancia aplicado sobre el capital neto.</p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Inicial / Enganche ($)</label>
                     <input 
                       type="number" 
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold" 
+                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
                       value={downPayment} 
                       onChange={e => handleNumberInput(setDownPayment, e.target.value)} 
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">Pago inicial al contado recibido del cliente.</p>
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Modalidad de Pago de la Inicial</label>
                     <CustomSelect 
                       className="w-full"
@@ -404,14 +466,32 @@ const Simulator: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-900 text-white rounded-2xl flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-slate-400 font-bold uppercase">Monto Total Resultante a Financiar</p>
-                    <p className="text-2xl font-bold text-emerald-400">{globalCurrency} {effectivePrincipal.toLocaleString()}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Capital Neto</p>
+                    <p className="text-lg font-bold text-slate-800 dark:text-white">{globalCurrency} {effectivePrincipal.toLocaleString()}</p>
                   </div>
-                  <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700">
-                    Precio {globalCurrency} {Number(itemPrice).toLocaleString()} - Inicial {globalCurrency} {Number(downPayment).toLocaleString()}
-                  </span>
+
+                  <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Interés / Ganancia</p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                      {globalCurrency} {Math.max(0, (financingCalcMode === 'financed_price' ? (Number(financedPrice) - Number(cashPrice)) : Math.round(effectivePrincipal * (Number(interest) / 100)))).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">% Margen</p>
+                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+                      {effectiveInterestRate.toFixed(1)}%
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-900 text-white rounded-2xl">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Total a Plazos</p>
+                    <p className="text-lg font-bold text-emerald-400">
+                      {globalCurrency} {(financingCalcMode === 'financed_price' ? Math.max(0, Number(financedPrice) - Number(downPayment)) : effectivePrincipal + Math.round(effectivePrincipal * (Number(interest) / 100))).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

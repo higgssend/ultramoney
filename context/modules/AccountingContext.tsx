@@ -138,7 +138,7 @@ const DEFAULT_PAYMENT_METHODS: CustomPaymentMethod[] = [
 const mapTransaction = (t: TransactionDB): Transaction => ({
   id: t.id,
   type: t.type as Transaction['type'],
-  category: t.category,
+  category: (t.category || 'Otro') as Transaction['category'],
   amount: t.amount,
   date: t.date,
   description: t.description,
@@ -205,7 +205,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
   const { addToast } = useToast();
   const { currentUser } = useAuth();
   const { addAuditLog } = useSettings();
-  const { updateLoan } = useLoans();
+  const { updateLoan, loans } = useLoans();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
@@ -434,7 +434,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       const closingTx: Transaction = {
         id: closingTxId,
         type: params.netIncome >= 0 ? 'Ingreso' : 'Gasto',
-        category: 'Cierre de Ejercicio Contable',
+        category: 'Cierre',
         amount: Math.abs(params.netIncome),
         date: params.endDate,
         description: `Asiento Automático de Cierre (${params.periodType} ${params.year}${params.month ? `-${params.month}` : ''}) -> Traslado a Utilidades Acumuladas / Patrimonio Neto`,
@@ -713,8 +713,9 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
             .eq('id', targetLoanId)
             .eq('lender_id', currentUser.id);
 
-          if (updateLoan) {
-            updateLoan(targetLoanId, { remainingBalance: newBal, status: newStatus });
+          const existingLoan = loans.find(l => l.id === targetLoanId);
+          if (existingLoan && updateLoan) {
+            void updateLoan({ ...existingLoan, remainingBalance: newBal, status: newStatus as LoanStatus });
           }
         }
 
@@ -846,8 +847,9 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
               .eq('id', currentTx.referenceId)
               .eq('lender_id', currentUser.id);
 
-            if (updateLoan) {
-              updateLoan(currentTx.referenceId, { remainingBalance: newBal, status: newStatus });
+            const existingLoan = currentTx.referenceId ? loans.find(l => l.id === currentTx.referenceId) : undefined;
+            if (existingLoan && updateLoan) {
+              void updateLoan({ ...existingLoan, remainingBalance: newBal, status: newStatus as LoanStatus });
             }
           }
         }

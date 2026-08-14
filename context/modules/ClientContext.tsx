@@ -87,7 +87,7 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           status: (c.status || 'Al Día') as Client['status'],
           avatarUrl: c.avatarurl || undefined,
           joinedDate: c.joineddate || c.created_at || new Date().toISOString(),
-          portalPin: c.portalpin || undefined,
+          clientPin: c.clientpin || undefined,
         })));
       }
       if (notesRes.data) {

@@ -185,7 +185,6 @@ export const ClientPortal: React.FC = () => {
 
             if (lData && lData.length > 0) {
                 const mappedLoans: Loan[] = (lData as LoanDB[]).map((l) => ({
-                    ...l,
                     id: l.id,
                     clientId: l.client_id || l.clientid || id,
                     clientName: l.client_name || l.clientname || 'Cliente',
@@ -199,9 +198,10 @@ export const ClientPortal: React.FC = () => {
                     durationWeeks: Number(l.durationweeks ?? l.duration_weeks ?? l.installments ?? 1),
                     status: (l.status || 'Activo') as LoanStatus,
                     startDate: l.startdate || l.start_date || l.created_at || new Date().toISOString().split('T')[0],
-                    nextPaymentDate: l.nextpaymentdate || l.next_payment_date,
+                    nextPaymentDate: l.nextpaymentdate || l.next_payment_date || '',
                     collateral: l.collateral as unknown as Loan['collateral'],
-                    guarantors: l.guarantors as unknown as Loan['guarantors'],
+                    guarantors: Array.isArray(l.guarantors) ? (l.guarantors as unknown as Loan['guarantors']) : undefined,
+                    currency: (l.currency === 'USD' ? 'USD' : 'DOP') as 'DOP' | 'USD',
                 }));
 
                 setClientLoans(mappedLoans);
@@ -224,7 +224,6 @@ export const ClientPortal: React.FC = () => {
 
                     if (tData) {
                         const mappedTx: Transaction[] = (tData as TransactionDB[]).map((t) => ({
-                            ...t,
                             id: t.id,
                             type: (t.type === 'Gasto' ? 'Gasto' : 'Ingreso') as 'Ingreso' | 'Gasto',
                             category: (t.category || 'Pago Préstamo') as Transaction['category'],
@@ -233,7 +232,14 @@ export const ClientPortal: React.FC = () => {
                             description: t.description || 'Pago de Préstamo',
                             paymentMethod: (t.paymentmethod || t.payment_method || 'Efectivo') as Transaction['paymentMethod'],
                             paymentType: (t.paymenttype || t.payment_type || 'Ingreso') as Transaction['paymentType'],
-                            referenceId: t.referenceid || t.reference_id
+                            referenceId: t.referenceid || t.reference_id,
+                            currency: (t.currency === 'USD' ? 'USD' : 'DOP') as 'DOP' | 'USD',
+                            previousBalance: t.previous_balance !== undefined ? Number(t.previous_balance) : undefined,
+                            newBalance: t.new_balance !== undefined ? Number(t.new_balance) : undefined,
+                            capitalAmount: t.capital_amount !== undefined ? Number(t.capital_amount) : undefined,
+                            interestAmount: t.interest_amount !== undefined ? Number(t.interest_amount) : undefined,
+                            lateFeeAmount: t.late_fee_amount !== undefined ? Number(t.late_fee_amount) : undefined,
+                            discountAmount: t.discount_amount !== undefined ? Number(t.discount_amount) : undefined,
                         }));
                         setClientTransactions(mappedTx.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                     }

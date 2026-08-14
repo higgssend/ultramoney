@@ -82,10 +82,13 @@ export const LoanRequest: React.FC = () => {
   const [paymentDay, setPaymentDay] = useState(1); // For Monthly Loans
   const [loanType, setLoanType] = useState<LoanType>('Amortizado (Cuota Fija)');
 
-  // Equipment / Item Financing State (Con/Sin Inicial)
-  const [itemPrice, setItemPrice] = useState(15000);
+  // Equipment / Item Financing State (Con/Sin Inicial & Precio Contado vs Financiado)
+  const [itemPrice, setItemPrice] = useState(30000);
+  const [cashPrice, setCashPrice] = useState(30000);
+  const [financedPrice, setFinancedPrice] = useState(42000);
+  const [financingCalcMode, setFinancingCalcMode] = useState<'financed_price' | 'interest_rate'>('financed_price');
   const [hasInitialPayment, setHasInitialPayment] = useState(true);
-  const [downPayment, setDownPayment] = useState(3000);
+  const [downPayment, setDownPayment] = useState(5000);
   const [downPaymentMode, setDownPaymentMode] = useState<'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque'>('Efectivo');
   
   // Closing Costs State
@@ -176,8 +179,9 @@ export const LoanRequest: React.FC = () => {
 
   const getPrincipalForCalculation = () => {
       let baseAmount = amount;
-      if (loanType.includes('Financiamiento') && itemPrice > 0) {
-          baseAmount = hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice;
+      if (loanType.includes('Financiamiento')) {
+          const effectiveCash = cashPrice || itemPrice || amount;
+          baseAmount = hasInitialPayment ? Math.max(0, effectiveCash - downPayment) : effectiveCash;
       }
       if (baseAmount <= 0 && amount > 0) {
           baseAmount = amount;
@@ -190,8 +194,9 @@ export const LoanRequest: React.FC = () => {
 
   const getNetDisbursement = () => {
       let baseAmount = amount;
-      if (loanType.includes('Financiamiento') && itemPrice > 0) {
-          baseAmount = hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice;
+      if (loanType.includes('Financiamiento')) {
+          const effectiveCash = cashPrice || itemPrice || amount;
+          baseAmount = hasInitialPayment ? Math.max(0, effectiveCash - downPayment) : effectiveCash;
       }
       if (baseAmount <= 0 && amount > 0) {
           baseAmount = amount;
@@ -229,10 +234,19 @@ export const LoanRequest: React.FC = () => {
 
       // Amortized or Financing
       const count = weeks > 0 ? weeks : 1;
-      const totalInterest = Math.round((principal * (interest / 100)) * 100) / 100;
-      const totalToPay = principal + totalInterest;
-      const instAmt = Math.round((totalToPay / count) * 100) / 100;
+      let totalInterest = 0;
+      let totalToPay = 0;
 
+      if (loanType.includes('Financiamiento') && financingCalcMode === 'financed_price' && financedPrice > 0) {
+          const effectiveDown = hasInitialPayment ? downPayment : 0;
+          totalToPay = Math.max(0, financedPrice - effectiveDown);
+          totalInterest = Math.max(0, totalToPay - principal);
+      } else {
+          totalInterest = Math.round((principal * (interest / 100)) * 100) / 100;
+          totalToPay = principal + totalInterest;
+      }
+
+      const instAmt = Math.round((totalToPay / count) * 100) / 100;
       const instPrincipal = Math.round((principal / count) * 100) / 100;
       const instInterest = Math.round((totalInterest / count) * 100) / 100;
 
@@ -261,7 +275,7 @@ export const LoanRequest: React.FC = () => {
       }
 
       setSchedulePreview(newSchedule);
-  }, [amount, interest, weeks, frequency, loanType, closingCost, closingCostMode, itemPrice, downPayment, hasInitialPayment, firstPaymentDate]);
+  }, [amount, interest, weeks, frequency, loanType, closingCost, closingCostMode, itemPrice, cashPrice, financedPrice, financingCalcMode, downPayment, hasInitialPayment, firstPaymentDate]);
 
   // Efecto para recalcular semanas por cuota deseada
   useEffect(() => {
@@ -390,7 +404,12 @@ export const LoanRequest: React.FC = () => {
                 durationWeeks: finalWeeks,
                 frequency: frequency as Loan['frequency'],
                 loanType,
-                itemPrice: loanType.includes('Financiamiento') ? itemPrice : undefined,
+                itemPrice: loanType.includes('Financiamiento') ? (cashPrice || itemPrice) : undefined,
+                cashPrice: loanType.includes('Financiamiento') ? cashPrice : undefined,
+                financedPrice: loanType.includes('Financiamiento') ? financedPrice : undefined,
+                financingInterestAmount: loanType.includes('Financiamiento') ? Math.max(0, financedPrice - cashPrice) : undefined,
+                financingMarginPercent: loanType.includes('Financiamiento') ? interest : undefined,
+                financingCalcMode: loanType.includes('Financiamiento') ? financingCalcMode : undefined,
                 downPayment: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPayment : 0,
                 downPaymentMode: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPaymentMode : undefined,
                 financedAmount: amount,
@@ -434,7 +453,12 @@ export const LoanRequest: React.FC = () => {
             durationWeeks: finalWeeks,
             frequency: frequency as Loan['frequency'],
             loanType,
-            itemPrice: loanType.includes('Financiamiento') ? itemPrice : undefined,
+            itemPrice: loanType.includes('Financiamiento') ? (cashPrice || itemPrice) : undefined,
+            cashPrice: loanType.includes('Financiamiento') ? cashPrice : undefined,
+            financedPrice: loanType.includes('Financiamiento') ? financedPrice : undefined,
+            financingInterestAmount: loanType.includes('Financiamiento') ? Math.max(0, financedPrice - cashPrice) : undefined,
+            financingMarginPercent: loanType.includes('Financiamiento') ? interest : undefined,
+            financingCalcMode: loanType.includes('Financiamiento') ? financingCalcMode : undefined,
             downPayment: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPayment : 0,
             downPaymentMode: (loanType.includes('Financiamiento') && hasInitialPayment) ? downPaymentMode : undefined,
             financedAmount: amount,
@@ -684,121 +708,229 @@ export const LoanRequest: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Special Controls for Financiamiento de Equipos (Con/Sin Inicial) */}
+                        {/* Special Controls for Financiamiento de Equipos (Con/Sin Inicial & Precio Contado vs Financiado) */}
                         {loanType.includes('Financiamiento') && (
-                            <div className="mb-6 bg-emerald-50/70 border border-emerald-200 p-5 rounded-2xl space-y-4 animate-fade-in">
-                                <div className="flex items-center justify-between">
-                                    <h4 className="font-bold text-emerald-900 text-sm flex items-center gap-2">
-                                        <Coins className="w-5 h-5 text-emerald-600" />
-                                        Detalles del Artículo y Pago Inicial (Enganche)
-                                    </h4>
-                                    <div className="flex bg-emerald-100 p-1 rounded-xl">
+                            <div className="mb-6 bg-emerald-50/80 border border-emerald-200 p-5 rounded-3xl space-y-4 animate-fade-in shadow-xs">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-emerald-200/80 pb-3">
+                                    <div>
+                                        <h4 className="font-extrabold text-emerald-950 text-base flex items-center gap-2">
+                                            <Coins className="w-5 h-5 text-emerald-600" />
+                                            Financiamiento Comercial: Precio Contado vs. Precio Financiado
+                                        </h4>
+                                        <p className="text-xs text-emerald-800 font-medium">Configura el precio normal del artículo y tu precio financiado. El sistema calcula automáticamente el capital, interés y margen.</p>
+                                    </div>
+                                    <div className="flex bg-emerald-100/90 p-1 rounded-2xl shrink-0 self-start md:self-auto">
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setHasInitialPayment(true);
-                                                const net = Math.max(0, itemPrice - downPayment);
-                                                setAmount(net);
-                                            }}
-                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${hasInitialPayment ? 'bg-white text-emerald-700 shadow-xs' : 'text-emerald-700 opacity-70'}`}
+                                            onClick={() => setFinancingCalcMode('financed_price')}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${financingCalcMode === 'financed_price' ? 'bg-white text-emerald-800 shadow-xs' : 'text-emerald-800 opacity-70 hover:opacity-100'}`}
                                         >
-                                            Con Inicial
+                                            Por Precio Financiado (PVP)
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setHasInitialPayment(false);
-                                                setDownPayment(0);
-                                                setAmount(itemPrice);
-                                            }}
-                                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${!hasInitialPayment ? 'bg-white text-emerald-700 shadow-xs' : 'text-emerald-700 opacity-70'}`}
+                                            onClick={() => setFinancingCalcMode('interest_rate')}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${financingCalcMode === 'interest_rate' ? 'bg-white text-emerald-800 shadow-xs' : 'text-emerald-800 opacity-70 hover:opacity-100'}`}
                                         >
-                                            Sin Inicial (0 Inicial)
+                                            Por Tasa de Interés %
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
                                     <div>
-                                        <label className="block text-xs font-bold text-emerald-900 mb-1">Precio Total del Artículo / Equipo (RD$)</label>
+                                        <label className="block text-xs font-bold text-emerald-950 mb-1">Precio Normal / Contado (RD$)</label>
                                         <div className="relative">
                                             <span className="absolute left-3 top-2.5 text-emerald-600 font-bold">$</span>
                                             <input
                                                 type="number"
-                                                value={itemPrice === 0 ? '' : itemPrice}
+                                                value={cashPrice === 0 ? '' : cashPrice}
                                                 onFocus={(e) => e.target.select()}
                                                 onChange={(e) => {
                                                     const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                                    setCashPrice(val);
                                                     setItemPrice(val);
                                                     const net = hasInitialPayment ? Math.max(0, val - downPayment) : val;
                                                     setAmount(net);
+                                                    if (financingCalcMode === 'financed_price' && net > 0) {
+                                                        const profit = Math.max(0, financedPrice - val);
+                                                        setInterest(Math.round(((profit / net) * 100) * 100) / 100);
+                                                    }
                                                 }}
                                                 placeholder="0.00"
-                                                className="w-full pl-8 pr-4 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                className="w-full pl-8 pr-4 py-2.5 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm shadow-xs"
                                             />
                                         </div>
+                                        <span className="text-[10px] text-emerald-700 font-medium">Valor comercial al contado del producto.</span>
                                     </div>
 
-                                    {hasInitialPayment ? (
+                                    {financingCalcMode === 'financed_price' ? (
                                         <div>
-                                            <label className="block text-xs font-bold text-emerald-900 mb-1">Monto de la Inicial / Enganche (RD$)</label>
+                                            <label className="block text-xs font-bold text-emerald-950 mb-1">Precio Total Financiado (RD$)</label>
                                             <div className="relative">
                                                 <span className="absolute left-3 top-2.5 text-emerald-600 font-bold">$</span>
                                                 <input
                                                     type="number"
-                                                    value={downPayment === 0 ? '' : downPayment}
+                                                    value={financedPrice === 0 ? '' : financedPrice}
                                                     onFocus={(e) => e.target.select()}
                                                     onChange={(e) => {
                                                         const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                                        setDownPayment(val);
-                                                        const net = Math.max(0, itemPrice - val);
-                                                        setAmount(net);
+                                                        setFinancedPrice(val);
+                                                        const net = hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice;
+                                                        if (net > 0) {
+                                                            const profit = Math.max(0, val - cashPrice);
+                                                            setInterest(Math.round(((profit / net) * 100) * 100) / 100);
+                                                        }
                                                     }}
                                                     placeholder="0.00"
-                                                    className="w-full pl-8 pr-4 py-2 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm"
+                                                    className="w-full pl-8 pr-4 py-2.5 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm shadow-xs"
                                                 />
                                             </div>
+                                            <span className="text-[10px] text-emerald-700 font-medium">Precio final que pagará el cliente a plazos.</span>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-center bg-emerald-100/50 rounded-xl p-3 border border-emerald-200/60">
-                                            <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
-                                                <CheckCircle className="w-4 h-4 text-emerald-600" />
-                                                Llévatelo Hoy Sin Inicial (0% Inicial)
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {hasInitialPayment && (
-                                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                                            <div>
-                                                <label className="block text-xs font-bold text-emerald-900 mb-1">Método de Pago de la Inicial</label>
-                                                <CustomSelect
-                                                    value={downPaymentMode}
-                                                    onChange={(v) => setDownPaymentMode(v as Loan['downPaymentMode'])}
-                                                    className="w-full text-xs font-medium"
-                                                    options={[
-                                                        { value: 'Efectivo', label: 'Efectivo (Cobro Inmediato)' },
-                                                        { value: 'Transferencia', label: 'Transferencia Bancaria' },
-                                                        { value: 'Tarjeta', label: 'Tarjeta de Crédito / Débito' },
-                                                        { value: 'Cheque', label: 'Cheque' }
-                                                    ]}
+                                        <div>
+                                            <label className="block text-xs font-bold text-emerald-950 mb-1">Tasa de Interés Total (%)</label>
+                                            <div className="relative">
+                                                <span className="absolute right-4 top-2.5 text-emerald-600 font-bold">%</span>
+                                                <input
+                                                    type="number"
+                                                    value={interest === 0 ? '' : interest}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onChange={(e) => {
+                                                        const rate = e.target.value === '' ? 0 : Number(e.target.value);
+                                                        setInterest(rate);
+                                                        const net = hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice;
+                                                        const profit = Math.round(net * (rate / 100));
+                                                        setFinancedPrice(cashPrice + profit);
+                                                    }}
+                                                    placeholder="0"
+                                                    className="w-full pl-4 pr-8 py-2.5 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm shadow-xs"
                                                 />
                                             </div>
-                                            <div className="bg-white p-3 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
-                                                <span className="text-slate-600">Porcentaje de Inicial:</span>
-                                                <span className="font-bold text-emerald-700 font-mono text-sm">
-                                                    {itemPrice > 0 ? `${((downPayment / itemPrice) * 100).toFixed(1)}%` : '0%'}
-                                                </span>
-                                            </div>
+                                            <span className="text-[10px] text-emerald-700 font-medium">Margen porcentual sobre el capital neto.</span>
                                         </div>
                                     )}
+
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="block text-xs font-bold text-emerald-950">Inicial / Enganche (RD$)</label>
+                                            <div className="flex gap-1 text-[10px] font-bold">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setHasInitialPayment(true);
+                                                        const net = Math.max(0, cashPrice - downPayment);
+                                                        setAmount(net);
+                                                        if (financingCalcMode === 'financed_price' && net > 0) {
+                                                            const profit = Math.max(0, financedPrice - cashPrice);
+                                                            setInterest(Math.round(((profit / net) * 100) * 100) / 100);
+                                                        }
+                                                    }}
+                                                    className={`px-1.5 py-0.5 rounded ${hasInitialPayment ? 'bg-emerald-700 text-white' : 'text-emerald-700'}`}
+                                                >
+                                                    Con Inicial
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setHasInitialPayment(false);
+                                                        setDownPayment(0);
+                                                        setAmount(cashPrice);
+                                                        if (financingCalcMode === 'financed_price' && cashPrice > 0) {
+                                                            const profit = Math.max(0, financedPrice - cashPrice);
+                                                            setInterest(Math.round(((profit / cashPrice) * 100) * 100) / 100);
+                                                        }
+                                                    }}
+                                                    className={`px-1.5 py-0.5 rounded ${!hasInitialPayment ? 'bg-emerald-700 text-white' : 'text-emerald-700'}`}
+                                                >
+                                                    0 Inicial
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2.5 text-emerald-600 font-bold">$</span>
+                                            <input
+                                                type="number"
+                                                disabled={!hasInitialPayment}
+                                                value={!hasInitialPayment ? 0 : (downPayment === 0 ? '' : downPayment)}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                                    setDownPayment(val);
+                                                    const net = Math.max(0, cashPrice - val);
+                                                    setAmount(net);
+                                                    if (financingCalcMode === 'financed_price' && net > 0) {
+                                                        const profit = Math.max(0, financedPrice - cashPrice);
+                                                        setInterest(Math.round(((profit / net) * 100) * 100) / 100);
+                                                    }
+                                                }}
+                                                placeholder="0.00"
+                                                className="w-full pl-8 pr-4 py-2.5 bg-white border border-emerald-200 rounded-xl font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 text-sm shadow-xs disabled:opacity-50"
+                                            />
+                                        </div>
+                                        <span className="text-[10px] text-emerald-700 font-medium">Pago inicial recibido al contado.</span>
+                                    </div>
                                 </div>
 
-                                <div className="bg-white p-4 rounded-xl border border-emerald-200 flex items-center justify-between text-xs md:text-sm">
-                                    <span className="font-bold text-slate-700">Monto Neto a Financiar en Cuotas (Capital):</span>
-                                    <span className="font-extrabold text-emerald-700 text-lg">
-                                        RD$ {(hasInitialPayment ? Math.max(0, itemPrice - downPayment) : itemPrice).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
-                                    </span>
+                                {hasInitialPayment && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                        <div>
+                                            <label className="block text-xs font-bold text-emerald-950 mb-1">Modalidad de Cobro de la Inicial</label>
+                                            <CustomSelect
+                                                value={downPaymentMode}
+                                                onChange={(v) => setDownPaymentMode(v as Loan['downPaymentMode'])}
+                                                className="w-full text-xs font-medium"
+                                                options={[
+                                                    { value: 'Efectivo', label: 'Efectivo en Caja (Cobro Inmediato)' },
+                                                    { value: 'Transferencia', label: 'Transferencia Bancaria Directa' },
+                                                    { value: 'Tarjeta', label: 'Tarjeta de Crédito / Débito' },
+                                                    { value: 'Cheque', label: 'Cheque' }
+                                                ]}
+                                            />
+                                        </div>
+                                        <div className="bg-white p-3 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
+                                            <span className="text-slate-600 font-medium">% Pagado en Inicial:</span>
+                                            <span className="font-bold text-emerald-700 font-mono text-sm">
+                                                {cashPrice > 0 ? `${((downPayment / cashPrice) * 100).toFixed(1)}% del valor` : '0%'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Auto Calculated KPI Cards */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                                    <div className="bg-white p-3 rounded-2xl border border-emerald-100 shadow-xs">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Capital a Financiar</span>
+                                        <span className="text-sm md:text-base font-extrabold text-slate-800">
+                                            RD$ {(hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+
+                                    <div className="bg-white p-3 rounded-2xl border border-emerald-100 shadow-xs">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Interés / Ganancia Total</span>
+                                        <span className="text-sm md:text-base font-extrabold text-emerald-600">
+                                            RD$ {Math.max(0, (financingCalcMode === 'financed_price' ? (financedPrice - cashPrice) : Math.round((hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice) * (interest / 100)))).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+
+                                    <div className="bg-white p-3 rounded-2xl border border-emerald-100 shadow-xs">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase block">% Margen de Ganancia</span>
+                                        <span className="text-sm md:text-base font-extrabold text-indigo-600 font-mono">
+                                            {(() => {
+                                                const net = hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice;
+                                                const profit = financingCalcMode === 'financed_price' ? Math.max(0, financedPrice - cashPrice) : Math.round(net * (interest / 100));
+                                                return net > 0 ? `${((profit / net) * 100).toFixed(1)}%` : `${interest}%`;
+                                            })()}
+                                        </span>
+                                    </div>
+
+                                    <div className="bg-white p-3 rounded-2xl border border-emerald-100 shadow-xs">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Total a Pagar en Cuotas</span>
+                                        <span className="text-sm md:text-base font-extrabold text-emerald-800">
+                                            RD$ {(financingCalcMode === 'financed_price' ? Math.max(0, financedPrice - (hasInitialPayment ? downPayment : 0)) : (hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice) + Math.round((hasInitialPayment ? Math.max(0, cashPrice - downPayment) : cashPrice) * (interest / 100))).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )}

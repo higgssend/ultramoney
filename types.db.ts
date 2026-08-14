@@ -46,6 +46,11 @@ export interface LoanDB {
   collateralref?: string;
   collateral?: Record<string, unknown>;
   item_price?: number;
+  cash_price?: number;
+  financed_price?: number;
+  financing_interest_amount?: number;
+  financing_margin_percent?: number;
+  financing_calc_mode?: string;
   down_payment?: number;
   down_payment_mode?: string;
   financed_amount?: number;
@@ -162,6 +167,8 @@ export interface TransactionDB {
   latefeeamount?: number;
   discount_amount?: number;
   discountamount?: number;
+  installment_number?: number;
+  installmentnumber?: number;
   lender_id?: string;
   currency?: string;
   created_at?: string;
@@ -193,6 +200,11 @@ export interface LoanRequestDB {
   request_date?: string;
   lender_id?: string;
   item_price?: number;
+  cash_price?: number;
+  financed_price?: number;
+  financing_interest_amount?: number;
+  financing_margin_percent?: number;
+  financing_calc_mode?: string;
   down_payment?: number;
   financed_amount?: number;
   down_payment_mode?: string;
@@ -301,6 +313,10 @@ export interface BankAccountDB {
   cedula_or_rnc?: string;
   show_in_payment_link?: boolean;
   bank_logo_url?: string;
+  is_default?: boolean;
+  is_active?: boolean;
+  notes?: string;
+  created_at?: string;
 }
 
 export interface CollectorVisitDB {
