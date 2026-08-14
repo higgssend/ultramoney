@@ -162,7 +162,7 @@ const AppContent: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <PageTransition>
-                <Routes location={location} key={location.pathname}>
+                <Routes location={location}>
                   {/* Public Routes */}
                   <Route path="/" element={("__TAURI__" in window || "__TAURI_INTERNALS__" in window || window.navigator.userAgent.includes('Tauri')) ? <Navigate to="/login" replace /> : <LandingPage />} />
                   <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />

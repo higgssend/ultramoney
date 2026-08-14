@@ -117,7 +117,7 @@ export function calculateCashFlowForecast(
   // 3. Project Installments from all Active & Overdue Loans
   const activeLoans = loans.filter(l => 
     l.status === LoanStatus.ACTIVE || 
-    l.status === LoanStatus.DEFAULTED ||
+    l.status === LoanStatus.OVERDUE ||
     (l.status as string) === 'Atrasado' || 
     (l.status as string) === 'Activo'
   );
@@ -126,47 +126,53 @@ export function calculateCashFlowForecast(
     const remainingBal = Number(loan.remainingBalance) || 0;
     if (remainingBal <= 0) return;
 
-    // Use LoanEngine to generate full amortization table or project next installment dates
-    const schedule = LoanEngine.generateSchedule(loan);
-    const instAmt = Number(loan.installmentAmount) || (remainingBal / (loan.installments || 1));
-    const rate = (loan.interestRate || 10) / 100;
+    // Use LoanEngine to generate full amortization table
+    const simResult = LoanEngine.calculateSimulation({
+      amount: loan.amount || remainingBal,
+      interestRate: loan.interestRate || 10,
+      installments: loan.installments || 1,
+      frequency: loan.frequency || loan.paymentFrequency || 'Mensual',
+      startDate: loan.startDate || new Date().toISOString().split('T')[0],
+      loanType: loan.loanType || 'Amortizado (Cuota Fija)'
+    });
 
-    // Estimate capital vs interest ratio per installment
     const isRedito = Boolean(loan.loanType && (
       loan.loanType.includes('Rédito') || 
       loan.loanType.includes('Redito') || 
       loan.loanType.includes('Solo Interé')
     ));
 
-    schedule.forEach(row => {
-      if (row.status === 'Pagado') return;
-      const dueDate = row.date.split('T')[0];
+    const rate = (loan.interestRate || 10) / 100;
+
+    simResult.schedule.forEach(row => {
+      const dueDate = row.date ? row.date.split('T')[0] : '';
+      if (!dueDate) return;
 
       // If due date falls within the projected horizon
       if (daysMap.has(dueDate)) {
         const dayEntry = daysMap.get(dueDate)!;
         
-        let capPart = row.capital || 0;
+        let capPart = row.principal || 0;
         let intPart = row.interest || 0;
 
         if (isRedito) {
           intPart = Math.round((remainingBal * rate) * 100) / 100;
-          capPart = Math.max(0, row.amount - intPart);
+          capPart = Math.max(0, row.total - intPart);
         } else if (!capPart && !intPart) {
-          intPart = Math.round((row.amount * (rate / (1 + rate))) * 100) / 100;
-          capPart = Math.max(0, row.amount - intPart);
+          intPart = Math.round((row.total * (rate / (1 + rate))) * 100) / 100;
+          capPart = Math.max(0, row.total - intPart);
         }
 
         dayEntry.capitalDue += capPart;
         dayEntry.interestDue += intPart;
-        dayEntry.totalInflow += row.amount;
+        dayEntry.totalInflow += row.total;
         dayEntry.installmentsCount += 1;
 
         dayEntry.clientsDue.push({
           loanId: loan.id,
           clientId: loan.clientId,
           clientName: loan.clientName || 'Cliente',
-          amountDue: row.amount,
+          amountDue: row.total,
           capitalPart: capPart,
           interestPart: intPart,
           frequency: loan.frequency || loan.paymentFrequency || 'Semanal',

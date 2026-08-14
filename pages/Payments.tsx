@@ -1149,7 +1149,12 @@ const PaymentSuccessModal: React.FC<{
 💰 *Monto Pagado*: RD$ ${data.amountPaid.toLocaleString()}
 
 Link web para descargar o imprimir su recibo:
-lto:?subject=Recibo de Pago ${data.transactionId}&body=${encodedMessage}`;
+${receiptWebLink}
+
+Gracias por su pago.`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappLink = `https://wa.me/?text=${encodedMessage}`;
+    const mailLink = `mailto:?subject=Recibo de Pago ${data.transactionId}&body=${encodedMessage}`;
 
     const [isThermalOpen, setIsThermalOpen] = useState(false);
 
