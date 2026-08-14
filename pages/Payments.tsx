@@ -4,7 +4,8 @@ import {
   CheckSquare, Filter, ChevronDown, ChevronUp, AlertCircle, Banknote, 
   Mail, X, FileText, Download, ArrowRight, Printer, ChevronLeft, 
   Image, ArrowLeftRight, TrendingUp, Sparkles, Clock, Share2, 
-  Copy, ExternalLink, ShieldAlert, Check, RefreshCw, Zap, Navigation
+  Copy, ExternalLink, ShieldAlert, Check, RefreshCw, Zap, Navigation,
+  Edit3, Trash2
 } from 'lucide-react';
 import { useClients, useAuth, useSettings, useLoans, useAccounting } from '../context/StoreContext';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -14,7 +15,9 @@ import { Loan, CompanySettings, PaymentMethod, formatLoanId, formatReceiptId, Lo
 import { CustomSelect } from '../components/CustomSelect';
 import { maskCedula } from '../utils/masks';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
+import { EditPaymentModal } from '../components/EditPaymentModal';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
+import { formatExactDateTime, combineDateAndTimeToISO } from '../utils/dateUtils';
 
 // Helper to calculate date strings
 const addDays = (dateStr: string, days: number): string => {
@@ -91,10 +94,18 @@ export const Payments: React.FC = () => {
   const [proofUrl, setProofUrl] = useState<string>('');
   const [selectedCashierId, setSelectedCashierId] = useState<string>('');
   const [capitalAmount, setCapitalAmount] = useState<string>('');
-  const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [invoiceDate, setInvoiceDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [paymentTime, setPaymentTime] = useState<string>(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
   const [lateFeeAmount, setLateFeeAmount] = useState<string>('');
   const [discountAmount, setDiscountAmount] = useState<string>('');
+
+  // Edit Payment Modal State
+  const [selectedTransactionToEdit, setSelectedTransactionToEdit] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Main Feed & History State
   const [mainFeedFilter, setMainFeedFilter] = useState<'todos' | 'hoy' | 'semana' | 'mes'>('todos');
@@ -401,12 +412,15 @@ export const Payments: React.FC = () => {
       return;
     }
 
-    // Register the payment
+    // Combine exact date and time
+    const exactPaymentDateTime = combineDateAndTimeToISO(paymentDate || new Date().toISOString().split('T')[0], paymentTime);
+
+    // Register the payment with exact date and time
     const insertedTxs = await registerPayment(
       selectedLoanId, 
       effectiveTotal, 
       payNote, 
-      paymentDate, 
+      exactPaymentDateTime, 
       invoiceDate, 
       paymentType, 
       capitalAmountVal, 
@@ -586,6 +600,16 @@ export const Payments: React.FC = () => {
           data={thermalModalData}
         />
       )}
+
+      {/* Full Edit Payment Modal */}
+      <EditPaymentModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTransactionToEdit(null);
+        }}
+        transaction={selectedTransactionToEdit}
+      />
 
       {/* Top Header & Navigation Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -1010,12 +1034,54 @@ export const Payments: React.FC = () => {
                     onChange={(val) => setPaymentMethod(val as PaymentMethod)}
                     className="w-full"
                     options={[
-                      { value: 'Efectivo', label: '💵 Efectivo en Caja' },
-                      { value: 'Transferencia', label: '🏦 Transferencia Bancaria' },
-                      { value: 'Tarjeta', label: '💳 Tarjeta de Crédito/Débito' },
-                      { value: 'Verifone / POS', label: '📟 Verifone / Terminal POS' },
-                      { value: 'Cheque', label: '🧾 Cheque' }
+                      { value: 'Efectivo', label: 'Efectivo en Caja' },
+                      { value: 'Transferencia', label: 'Transferencia Bancaria' },
+                      { value: 'Tarjeta', label: 'Tarjeta de Crédito / Débito' },
+                      { value: 'Verifone / POS', label: 'Verifone / Terminal POS' },
+                      { value: 'Cheque', label: 'Cheque' }
                     ]}
+                  />
+                </div>
+              </div>
+
+              {/* Exact Date & Time Picker */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Fecha del Cobro
+                  </label>
+                  <input 
+                    type="date"
+                    value={paymentDate}
+                    onChange={e => setPaymentDate(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" /> Hora Exacta de Cobro
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const h = String(now.getHours()).padStart(2, '0');
+                        const m = String(now.getMinutes()).padStart(2, '0');
+                        setPaymentTime(`${h}:${m}`);
+                        toast.info(`Hora fijada a las ${h}:${m}`);
+                      }}
+                      className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      Hora actual
+                    </button>
+                  </div>
+                  <input 
+                    type="time"
+                    step="1"
+                    value={paymentTime}
+                    onChange={e => setPaymentTime(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm"
                   />
                 </div>
               </div>
@@ -1182,8 +1248,8 @@ export const Payments: React.FC = () => {
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-0.5">
                                   <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {parsedDate.toLocaleDateString('es-DO', { month: 'short', day: 'numeric' })} • {parsedDate.toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                    <Clock className="w-3 h-3 text-indigo-500" />
+                                    {formatExactDateTime(t.date)}
                                   </span>
                                   <span>•</span>
                                   <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 rounded text-[10px] font-semibold">
@@ -1211,6 +1277,16 @@ export const Payments: React.FC = () => {
 
                               {/* Quick Action Icons */}
                               <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700 shadow-2xs">
+                                <button
+                                  onClick={() => {
+                                    setSelectedTransactionToEdit(t);
+                                    setIsEditModalOpen(true);
+                                  }}
+                                  className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
+                                  title="Editar Pago Completamente"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
                                 <button
                                   onClick={() => handleOpenThermalReceipt(t)}
                                   className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors"
@@ -1557,7 +1633,7 @@ export const Payments: React.FC = () => {
                             {formatReceiptId(t.id)}
                           </td>
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium text-xs">
-                            {parsedDate.toLocaleString('es-DO', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+                            {formatExactDateTime(t.date)}
                           </td>
                           <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-100">
                             {clientName}
@@ -1575,6 +1651,16 @@ export const Payments: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
+                              <button 
+                                onClick={() => {
+                                  setSelectedTransactionToEdit(t);
+                                  setIsEditModalOpen(true);
+                                }}
+                                className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
+                                title="Editar Pago Completamente"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
                               <button 
                                 onClick={() => handleOpenThermalReceipt(t)}
                                 className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors"

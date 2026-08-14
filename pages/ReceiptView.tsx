@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAccounting, useSettings } from '../context/StoreContext';
-import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer } from 'lucide-react';
+import { useAccounting, useSettings, useAuth } from '../context/StoreContext';
+import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer, Edit3 } from 'lucide-react';
 import { Transaction, Loan, Client, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
+import { EditPaymentModal } from '../components/EditPaymentModal';
 
 export const ReceiptView: React.FC = () => {
     const { transactionId } = useParams<{ transactionId: string }>();
     const { transactions } = useAccounting();
     const { companySettings } = useSettings();
+    const { currentUser } = useAuth();
     
     const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [loan, setLoan] = useState<Loan | null>(null);
@@ -19,6 +21,7 @@ export const ReceiptView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
     const [isThermalOpen, setIsThermalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const handlePrint = () => {
         window.print();
@@ -318,6 +321,16 @@ export const ReceiptView: React.FC = () => {
                         <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
                     </Link>
                     <div className="flex flex-wrap items-center gap-2">
+                        {currentUser && transaction && (
+                            <button 
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                                title="Modificar monto, fecha, hora o anular este pago"
+                            >
+                                <Edit3 className="w-4 h-4" />
+                                <span>Editar Pago</span>
+                            </button>
+                        )}
                         <button 
                             onClick={() => setIsThermalOpen(true)}
                             className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 transition-all active:scale-95"
@@ -507,6 +520,13 @@ export const ReceiptView: React.FC = () => {
                 </div>
 
             </div>
+
+            {/* Edit Payment Modal */}
+            <EditPaymentModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                transaction={transaction}
+            />
         </div>
     );
 };

@@ -3,7 +3,8 @@ import {
   Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, 
   AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, 
   PlusCircle, Eye, EyeOff, Scale, PieChart, FileText, CheckCircle2, 
-  RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, User
+  RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, User,
+  Edit3
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { useAccounting, useLoans, useClients, useSettings } from '../context/StoreContext';
@@ -12,7 +13,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { PaymentMethod, Transaction } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { CashCounterModal } from '../components/CashCounterModal';
+import { EditPaymentModal } from '../components/EditPaymentModal';
 import { DataExportToolbar } from '../components/DataExportToolbar';
+import { formatExactDateTime } from '../utils/dateUtils';
 import { toast } from 'sonner';
 
 interface AccountingProps {
@@ -37,6 +40,8 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
   const stats = getFinancialStats();
   const shiftSummary = getCashShiftSummary();
   const [isCashCounterOpen, setIsCashCounterOpen] = useState(false);
+  const [selectedTransactionToEdit, setSelectedTransactionToEdit] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Financial Totals
   const totalIncome = useMemo(() => {
@@ -807,13 +812,14 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
                   <th className="p-3">Concepto</th>
                   <th className="p-3">Medio de Pago</th>
                   <th className="p-3 text-right">Monto</th>
+                  <th className="p-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {filteredTransactions.map((t, idx) => (
                   <tr key={t.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="p-3 font-mono text-slate-500 text-[11px]">
-                      {t.date ? new Date(t.date).toLocaleDateString('es-DO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                      {formatExactDateTime(t.date)}
                     </td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-fit ${
@@ -830,6 +836,18 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
                     <td className={`p-3 text-right font-black font-mono ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {t.type === 'Ingreso' ? '+' : '-'} RD$ {Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                     </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => {
+                          setSelectedTransactionToEdit(t);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 rounded-lg transition-colors"
+                        title="Editar Transacción / Pago"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -845,6 +863,16 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
         onClose={() => setIsCashCounterOpen(false)}
         systemBalance={activeCashShift ? (shiftSummary?.expectedAmount || 0) : stats.balance}
         cashBoxName="Caja General"
+      />
+
+      {/* Edit Payment / Transaction Modal */}
+      <EditPaymentModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTransactionToEdit(null);
+        }}
+        transaction={selectedTransactionToEdit}
       />
 
     </div>

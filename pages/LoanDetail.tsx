@@ -19,6 +19,8 @@ import { LoanContractModal } from './features/LoanContractModal';
 import { RefinanceModal } from '../components/RefinanceModal';
 import { CreditScoreEngine } from '../utils/CreditScoreEngine';
 import { WhatsAppIcon } from '../components/WhatsAppIcon';
+import { EditPaymentModal } from '../components/EditPaymentModal';
+import { formatExactDateTime } from '../utils/dateUtils';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +55,10 @@ export const LoanDetail: React.FC = () => {
   const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+
+  // Edit Payment Modal State
+  const [selectedTransactionToEdit, setSelectedTransactionToEdit] = useState<Transaction | null>(null);
+  const [isEditPaymentModalOpen, setIsEditPaymentModalOpen] = useState(false);
 
   // Edit Loan Modal State - Complete Edition
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -1135,7 +1141,7 @@ export const LoanDetail: React.FC = () => {
                           {formatReceiptId(tx.id)}
                         </td>
                         <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">
-                          {new Date(tx.date).toLocaleString('es-DO')}
+                          {formatExactDateTime(tx.date)}
                         </td>
                         <td className="px-6 py-4 text-slate-800 dark:text-slate-200 font-bold">
                           {tx.description || 'Abono a Préstamo'}
@@ -1149,12 +1155,25 @@ export const LoanDetail: React.FC = () => {
                           RD$ {(tx.amount || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => navigate(`/recibo/${tx.id}`)}
-                            className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg font-bold hover:bg-indigo-100 text-[11px] inline-flex items-center gap-1"
-                          >
-                            <Eye className="w-3.5 h-3.5" /> Ver Recibo
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setSelectedTransactionToEdit(tx);
+                                setIsEditPaymentModalOpen(true);
+                              }}
+                              className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 rounded-lg font-bold hover:bg-amber-100 text-[11px] inline-flex items-center gap-1 transition-colors"
+                              title="Editar Pago Completamente"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" /> Editar
+                            </button>
+                            <button
+                              onClick={() => navigate(`/recibo/${tx.id}`)}
+                              className="px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-lg font-bold hover:bg-indigo-100 text-[11px] inline-flex items-center gap-1 transition-colors"
+                              title="Ver Recibo Oficial"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> Recibo
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1934,6 +1953,16 @@ export const LoanDetail: React.FC = () => {
           client={client}
         />
       )}
+
+      {/* Full Edit Payment Modal */}
+      <EditPaymentModal
+        isOpen={isEditPaymentModalOpen}
+        onClose={() => {
+          setIsEditPaymentModalOpen(false);
+          setSelectedTransactionToEdit(null);
+        }}
+        transaction={selectedTransactionToEdit}
+      />
 
     </div>
   );

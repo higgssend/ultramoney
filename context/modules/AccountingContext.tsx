@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod, BankDeposit, AccountingPeriod } from '../../types';
+import { Transaction, CashShift, BankAccount, CollectorVisit, CustomPaymentMethod, BankDeposit, AccountingPeriod, LoanStatus } from '../../types';
 import type { TransactionDB, CashShiftDB, BankAccountDB, CollectorVisitDB, BankDepositDB, AccountingPeriodDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
 import { useSettings } from './SettingsContext';
+import { useLoans } from './LoanContext';
 import { logger } from '../../utils/logger';
 import { uploadToBucketHelper } from '../../utils/storage';
 
@@ -43,6 +44,8 @@ interface AccountingContextType {
   closeCashShift: (finalCashCount: number, notes?: string) => void;
   getCashShiftSummary: () => { initialAmount: number; cashCollected: number; cashExpenses: number; expectedAmount: number };
   addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  updateTransaction: (id: string, updates: Partial<Transaction>, adjustLoanBalance?: boolean) => Promise<void>;
+  deleteTransaction: (id: string, restoreLoanBalance?: boolean) => Promise<void>;
   addBankAccount: (account: BankAccount) => void;
   updateBankAccount: (id: string, updates: Partial<BankAccount>) => void;
   removeBankAccount: (id: string) => void;
@@ -195,6 +198,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
   const { addToast } = useToast();
   const { currentUser } = useAuth();
   const { addAuditLog } = useSettings();
+  const { updateLoan } = useLoans();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
@@ -605,6 +609,159 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
+  const updateTransaction = async (
+    id: string, 
+    updates: Partial<Transaction>,
+    adjustLoanBalance = true
+  ) => {
+    if (!currentUser) return;
+    
+    // Check if date is in locked period
+    if (updates.date) {
+      const lockCheck = isDateInLockedPeriod(updates.date);
+      if (lockCheck.isLocked) {
+        addToast(lockCheck.reason || "Período contable cerrado y auditado", 'error');
+        return;
+      }
+    }
+
+    const currentTx = transactions.find(t => t.id === id);
+    if (!currentTx) {
+      addToast("Transacción no encontrada", 'error');
+      return;
+    }
+
+    // Convert camelCase updates to database fields
+    const dbPayload: Partial<TransactionDB> = {};
+    if (updates.type !== undefined) dbPayload.type = updates.type;
+    if (updates.category !== undefined) dbPayload.category = updates.category;
+    if (updates.amount !== undefined) dbPayload.amount = Number(updates.amount);
+    if (updates.date !== undefined) dbPayload.date = updates.date;
+    if (updates.description !== undefined) dbPayload.description = updates.description;
+    if (updates.paymentType !== undefined) {
+      dbPayload.paymenttype = updates.paymentType;
+      dbPayload.payment_type = updates.paymentType;
+    }
+    if (updates.paymentMethod !== undefined) {
+      dbPayload.paymentmethod = updates.paymentMethod;
+      dbPayload.payment_method = updates.paymentMethod;
+    }
+    if (updates.bankAccountId !== undefined) dbPayload.bank_account_id = updates.bankAccountId || undefined;
+    if (updates.proofUrl !== undefined) dbPayload.proof_url = updates.proofUrl || undefined;
+    if (updates.referenceId !== undefined) {
+      dbPayload.referenceid = updates.referenceId || undefined;
+      dbPayload.reference_id = updates.referenceId || undefined;
+    }
+
+    // If amount changed and transaction is linked to a loan and is an income (payment)
+    const targetLoanId = updates.referenceId || currentTx.referenceId;
+    if (adjustLoanBalance && targetLoanId && (currentTx.type === 'Ingreso' || updates.type === 'Ingreso')) {
+      const oldAmount = Number(currentTx.amount) || 0;
+      const newAmount = updates.amount !== undefined ? Number(updates.amount) : oldAmount;
+      const diff = newAmount - oldAmount; // positive means more paid, negative means less paid
+
+      if (diff !== 0) {
+        const { data: loanData } = await insforge.database
+          .from('loans')
+          .select('id, remainingbalance, status, totaltopay')
+          .eq('id', targetLoanId)
+          .eq('lender_id', currentUser.id)
+          .maybeSingle();
+
+        if (loanData) {
+          const currentBal = Number(loanData.remainingbalance ?? 0);
+          const newBal = Math.max(0, currentBal - diff);
+          const newStatus = newBal === 0 ? LoanStatus.PAID : LoanStatus.ACTIVE;
+
+          await insforge.database
+            .from('loans')
+            .update({ remainingbalance: newBal, status: newStatus })
+            .eq('id', targetLoanId)
+            .eq('lender_id', currentUser.id);
+
+          if (updateLoan) {
+            updateLoan(targetLoanId, { remainingBalance: newBal, status: newStatus });
+          }
+        }
+      }
+    }
+
+    const { error } = await insforge.database
+      .from('transactions')
+      .update(dbPayload)
+      .eq('id', id)
+      .eq('lender_id', currentUser.id);
+
+    if (error) {
+      addToast("Error al actualizar la transacción", 'error');
+    } else {
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+      addAuditLog('transaction_updated', `Actualizó transacción #${id} (Monto: RD$ ${updates.amount ?? currentTx.amount})`);
+      addToast("Pago / Transacción actualizado correctamente", 'success');
+    }
+  };
+
+  const deleteTransaction = async (id: string, restoreLoanBalance = true) => {
+    if (!currentUser) return;
+
+    const currentTx = transactions.find(t => t.id === id);
+    if (!currentTx) {
+      addToast("Transacción no encontrada", 'error');
+      return;
+    }
+
+    if (currentTx.date) {
+      const lockCheck = isDateInLockedPeriod(currentTx.date);
+      if (lockCheck.isLocked) {
+        addToast(lockCheck.reason || "Período contable cerrado y auditado", 'error');
+        return;
+      }
+    }
+
+    // If transaction is linked to a loan and is an income (payment), restore the balance
+    if (restoreLoanBalance && currentTx.referenceId && currentTx.type === 'Ingreso') {
+      const amountToRestore = Number(currentTx.amount) || 0;
+      if (amountToRestore > 0) {
+        const { data: loanData } = await insforge.database
+          .from('loans')
+          .select('id, remainingbalance, status, totaltopay')
+          .eq('id', currentTx.referenceId)
+          .eq('lender_id', currentUser.id)
+          .maybeSingle();
+
+        if (loanData) {
+          const currentBal = Number(loanData.remainingbalance ?? 0);
+          const newBal = currentBal + amountToRestore;
+          const newStatus = newBal > 0 ? LoanStatus.ACTIVE : LoanStatus.PAID;
+
+          await insforge.database
+            .from('loans')
+            .update({ remainingbalance: newBal, status: newStatus })
+            .eq('id', currentTx.referenceId)
+            .eq('lender_id', currentUser.id);
+
+          if (updateLoan) {
+            updateLoan(currentTx.referenceId, { remainingBalance: newBal, status: newStatus });
+          }
+        }
+      }
+    }
+
+    const { error } = await insforge.database
+      .from('transactions')
+      .delete()
+      .eq('id', id)
+      .eq('lender_id', currentUser.id);
+
+    if (error) {
+      addToast("Error al eliminar transacción", 'error');
+    } else {
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      addAuditLog('transaction_deleted', `Eliminó/Anuló transacción #${id} por RD$ ${currentTx.amount}`);
+      addToast("Pago anulado y eliminado exitosamente", 'success');
+    }
+  };
+
   const addBankAccount = async (account: BankAccount) => {
     const insertPayload = {
       lender_id: currentUser?.id || null, 
@@ -973,7 +1130,7 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
       bankDeposits, isLoadingDeposits,
       accountingPeriods, lockedUntilDate, isDateInLockedPeriod, setLockedUntilDate,
       closeAccountingPeriod, reopenAccountingPeriod, refreshAccountingPeriods,
-      openCashShift, closeCashShift, getCashShiftSummary, addTransaction, addBankAccount,
+      openCashShift, closeCashShift, getCashShiftSummary, addTransaction, updateTransaction, deleteTransaction, addBankAccount,
       updateBankAccount, removeBankAccount, processBankDeposit, processBankDisbursement,
       addBankDeposit, updateBankDeposit, deleteBankDeposit, reconcileDepositWithLoan, rejectBankDeposit, refreshBankDeposits,
       addPaymentMethod, updatePaymentMethod, removePaymentMethod, togglePaymentMethodStatus,

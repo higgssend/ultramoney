@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext';
 import { useClients } from './ClientContext';
 import { useSettings } from './SettingsContext';
 import { logger } from '../../utils/logger';
+import { combineDateAndTimeToISO } from '../../utils/dateUtils';
 
 interface LoanContextType {
   loans: Loan[];
@@ -609,9 +610,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let newBalance = loan.remainingBalance;
     let newStatus = loan.status;
 
-    const nowISO = new Date().toISOString();
-    const nowTimeStr = nowISO.split('T')[1];
-    const txDate = paymentDate ? (paymentDate.includes('T') ? paymentDate : `${paymentDate}T${nowTimeStr}`) : nowISO;
+    const txDate = paymentDate ? (paymentDate.includes('T') ? paymentDate : combineDateAndTimeToISO(paymentDate)) : new Date().toISOString();
 
     const baseTx = {
       lender_id: currentUser.id, 
