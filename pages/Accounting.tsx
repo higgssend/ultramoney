@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, 
   AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, 
@@ -37,6 +37,36 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
   const stats = getFinancialStats();
   const shiftSummary = getCashShiftSummary();
   const [isCashCounterOpen, setIsCashCounterOpen] = useState(false);
+
+  // Financial Totals
+  const totalIncome = useMemo(() => {
+    return transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  }, [transactions]);
+
+  const totalExpenses = useMemo(() => {
+    return transactions.filter(t => t.type === 'Gasto').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  }, [transactions]);
+
+  // Chart Data for Cash Flow
+  const chartData = useMemo(() => {
+    const daysMap: { [key: string]: { name: string; Ingresos: number; Gastos: number } } = {};
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      const name = d.toLocaleDateString('es-DO', { weekday: 'short', day: 'numeric' });
+      daysMap[key] = { name, Ingresos: 0, Gastos: 0 };
+    }
+    transactions.forEach(t => {
+      const key = (t.date || '').split('T')[0];
+      if (daysMap[key]) {
+        if (t.type === 'Ingreso') daysMap[key].Ingresos += Number(t.amount || 0);
+        else daysMap[key].Gastos += Number(t.amount || 0);
+      }
+    });
+    return Object.values(daysMap);
+  }, [transactions]);
 
   // Expense Form State
   const [expenseCategory, setExpenseCategory] = useState<'Combustible' | 'Papelería' | 'Nómina' | 'Operativo' | 'Servicios' | 'Mantenimiento' | 'Otros'>('Operativo');
@@ -80,7 +110,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
   };
 
   const countedTotal = calculateCountedTotal();
-  const expectedCashInShift = shiftSummary ? shiftSummary.expectedCash : stats.balance;
+  const expectedCashInShift = shiftSummary ? shiftSummary.expectedAmount : stats.balance;
   const shiftDifference = countedTotal - expectedCashInShift;
 
   const handleOpenShiftSubmit = (e: React.FormEvent) => {
@@ -229,7 +259,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
         />
         <StatCard
           title="Recaudaciones Totales"
-          value={`RD$ ${stats.totalIncome.toLocaleString()}`}
+          value={`RD$ ${totalIncome.toLocaleString()}`}
           trend="Ingresos Registrados"
           trendUp={true}
           icon={TrendingUp}
@@ -238,7 +268,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
         />
         <StatCard
           title="Gastos Operativos"
-          value={`RD$ ${stats.totalExpenses.toLocaleString()}`}
+          value={`RD$ ${totalExpenses.toLocaleString()}`}
           trend="Salidas de Caja"
           trendUp={false}
           icon={TrendingDown}
@@ -247,7 +277,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
         />
         <StatCard
           title="Turno de Caja"
-          value={activeCashShift ? `RD$ ${(shiftSummary?.expectedCash || 0).toLocaleString()}` : 'Cerrado'}
+          value={activeCashShift ? `RD$ ${(shiftSummary?.expectedAmount || 0).toLocaleString()}` : 'Cerrado'}
           trend={activeCashShift ? 'Efectivo en Turno' : 'Sin turno activo'}
           trendUp={!!activeCashShift}
           icon={Lock}
@@ -271,7 +301,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
               </div>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.chartData}>
+                  <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
                     <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
@@ -346,8 +376,8 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
               </div>
 
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-                <span>Total Gastos del Mes:</span>
-                <span className="font-bold text-slate-800 dark:text-white">RD$ {stats.totalExpenses.toLocaleString()}</span>
+                <span>Total Gastos Registrados:</span>
+                <span className="font-bold text-slate-800 dark:text-white">RD$ {totalExpenses.toLocaleString()}</span>
               </div>
             </div>
 
@@ -479,11 +509,11 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800">
                     <span className="text-slate-500">Cobros en Efectivo:</span>
-                    <span className="font-bold font-mono text-emerald-600">+ RD$ {(shiftSummary?.cashIn || 0).toLocaleString()}</span>
+                    <span className="font-bold font-mono text-emerald-600">+ RD$ {(shiftSummary?.cashCollected || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800">
                     <span className="text-slate-500">Gastos en Efectivo:</span>
-                    <span className="font-bold font-mono text-rose-600">- RD$ {(shiftSummary?.cashOut || 0).toLocaleString()}</span>
+                    <span className="font-bold font-mono text-rose-600">- RD$ {(shiftSummary?.cashExpenses || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between py-2 bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900 font-bold">
                     <span className="text-indigo-900 dark:text-indigo-200">Efectivo Esperado:</span>
@@ -673,7 +703,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
                   <p className="text-xs text-slate-400">{expenseTransactions.length} registros de egresos</p>
                 </div>
                 <span className="text-sm font-black font-mono text-rose-600">
-                  Total: RD$ {expenseTransactions.reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}
+                  Total: RD$ {totalExpenses.toLocaleString()}
                 </span>
               </div>
 
@@ -813,7 +843,8 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
       <CashCounterModal
         isOpen={isCashCounterOpen}
         onClose={() => setIsCashCounterOpen(false)}
-        expectedAmount={activeCashShift ? (shiftSummary?.expectedCash || 0) : stats.balance}
+        systemBalance={activeCashShift ? (shiftSummary?.expectedAmount || 0) : stats.balance}
+        cashBoxName="Caja General"
       />
 
     </div>

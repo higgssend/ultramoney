@@ -73,17 +73,17 @@ export const DeepAccounting: React.FC = () => {
 
   // Income Breakdown
   const interestIncome = transactions
-    .filter(t => t.type === 'Ingreso' && (t.category === 'Pago Préstamo' || t.category === 'Abono Capital'))
+    .filter(t => t.type === 'Ingreso' && (t.category === 'Pago Préstamo' || t.category === 'Capital' || t.paymentType === 'Capital' || t.paymentType === 'Interes'))
     .reduce((sum, t) => sum + Number(t.amount || 0), 0) * 0.35; // Estimated 35% interest component on payments or real calculation
 
   const lateFeeIncome = transactions
-    .filter(t => t.type === 'Ingreso' && (t.category === 'Mora' || (t.description || '').toLowerCase().includes('mora')))
+    .filter(t => t.type === 'Ingreso' && (t.paymentType === 'Mora' || (t.description || '').toLowerCase().includes('mora')))
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   const closingCostIncome = loans.reduce((sum, l) => sum + (Number(l.closingCost) || 0), 0);
 
   const otherIncome = transactions
-    .filter(t => t.type === 'Ingreso' && t.category !== 'Pago Préstamo' && t.category !== 'Mora')
+    .filter(t => t.type === 'Ingreso' && t.category !== 'Pago Préstamo' && t.paymentType !== 'Mora')
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
   const totalOperatingIncome = interestIncome + lateFeeIncome + closingCostIncome + otherIncome;
@@ -184,7 +184,7 @@ export const DeepAccounting: React.FC = () => {
       const isIncome = t.type === 'Ingreso';
       const amount = Number(t.amount);
       const isInterest = (t.category === 'Pago Préstamo');
-      const isMora = (t.category === 'Mora' || (t.description || '').toLowerCase().includes('mora'));
+      const isMora = (t.paymentType === 'Mora' || (t.description || '').toLowerCase().includes('mora'));
 
       let debitAcc = '1100 - Caja General & Efectivo';
       let creditAcc = '1200 - Cartera de Préstamos Vigente';
