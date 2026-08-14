@@ -509,4 +509,54 @@ export interface LegalAgreementDB {
   created_at?: string;
 }
 
+export interface VaultCollateralDB {
+  id: string;
+  lender_id: string;
+  loan_id?: string | null;
+  client_id?: string | null;
+  client_name: string;
+  item_type: string;
+  title: string;
+  description?: string | null;
+  serial_or_ref?: string | null;
+  appraised_value: number;
+  loan_debt_balance: number;
+  vault_location: string;
+  drawer_or_shelf?: string | null;
+  seal_number?: string | null;
+  custody_status: string;
+  custodian_name?: string | null;
+  entry_date: string;
+  exit_date?: string | null;
+  has_original_documents?: boolean;
+  documents_list?: string | null;
+  has_keys?: boolean;
+  keys_count?: number;
+  adjudication_date?: string | null;
+  adjudication_notes?: string | null;
+  auction_min_price?: number;
+  liquidation_price?: number;
+  buyer_name?: string | null;
+  buyer_phone?: string | null;
+  liquidation_date?: string | null;
+  created_at?: string;
+}
+
+export interface VaultCustodyLogDB {
+  id: string;
+  lender_id: string;
+  collateral_id: string;
+  movement_type: string;
+  movement_date: string;
+  authorized_by: string;
+  received_by: string;
+  seal_number?: string | null;
+  keys_delivered?: boolean;
+  documents_delivered?: boolean;
+  reason?: string | null;
+  notes?: string | null;
+  created_at?: string;
+}
+
+
 

@@ -464,6 +464,81 @@ export interface LegalAgreement {
   createdAt: string;
 }
 
+export type VaultCustodyStatus = 
+  | 'En Bóveda / Custodia'
+  | 'Retirado Temporalmente'
+  | 'Devuelto al Cliente'
+  | 'Adjudicado'
+  | 'Rematado / Liquidado'
+  | 'Extraviado';
+
+export type VaultMovementType = 
+  | 'Ingreso a Bóveda'
+  | 'Salida Temporal'
+  | 'Reingreso a Bóveda'
+  | 'Devolución Definitiva'
+  | 'Adjudicación'
+  | 'Remate / Liquidación';
+
+export type VaultItemType = 
+  | 'Vehículo'
+  | 'Propiedad / Título Inmobiliario'
+  | 'Joyas / Oro'
+  | 'Celular / Tecnología'
+  | 'Electrodoméstico'
+  | 'Documento Legal / Matrícula / Pagaré'
+  | 'Garantía General'
+  | 'Otro';
+
+export interface VaultCollateral {
+  id: string;
+  lenderId: string;
+  loanId?: string;
+  clientId?: string;
+  clientName: string;
+  itemType: VaultItemType;
+  title: string;
+  description?: string;
+  serialOrRef?: string;
+  appraisedValue: number;
+  loanDebtBalance: number;
+  vaultLocation: string;
+  drawerOrShelf?: string;
+  sealNumber?: string;
+  custodyStatus: VaultCustodyStatus;
+  custodianName?: string;
+  entryDate: string;
+  exitDate?: string;
+  hasOriginalDocuments: boolean;
+  documentsList?: string;
+  hasKeys: boolean;
+  keysCount: number;
+  adjudicationDate?: string;
+  adjudicationNotes?: string;
+  auctionMinPrice?: number;
+  liquidationPrice?: number;
+  buyerName?: string;
+  buyerPhone?: string;
+  liquidationDate?: string;
+  createdAt: string;
+}
+
+export interface VaultCustodyLog {
+  id: string;
+  lenderId: string;
+  collateralId: string;
+  movementType: VaultMovementType;
+  movementDate: string;
+  authorizedBy: string;
+  receivedBy: string;
+  sealNumber?: string;
+  keysDelivered: boolean;
+  documentsDelivered: boolean;
+  reason?: string;
+  notes?: string;
+  createdAt: string;
+}
+
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
 export function formatLoanId(id?: string | null, _category?: string, _type?: string): string {

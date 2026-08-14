@@ -7,7 +7,7 @@ import {
   BookOpen, Smartphone, LogOut, X, FileText, Settings,
   Edit, Calculator, Moon, Sun, Database, ShieldCheck, DollarSign, Package, Landmark, Building2,
   LayoutGrid, List, ChevronUp, ChevronRight, User as UserIcon, ArrowLeftRight, LineChart,
-  Store, MapPin, Scale
+  Store, MapPin, Scale, Lock
 } from 'lucide-react';
 import { useAuth, useSettings, useAccounting } from '../context/StoreContext';
 
@@ -68,6 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Comercios & POS', path: '/comercios', icon: Store },
     { name: 'Préstamos', path: '/prestamos', icon: Banknote },
     { name: 'Inventario / Stock', path: '/inventario', icon: Package },
+    { name: 'Bóveda & Garantías', path: '/boveda', icon: Lock },
     { name: 'Pagos', path: '/pagos', icon: CalendarClock },
     { name: 'Atrasos', path: '/atrasos', icon: AlertTriangle },
     { name: 'Cobranza Legal', path: '/legal', icon: Scale },
