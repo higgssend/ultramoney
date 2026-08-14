@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, Menu, X, Check, CheckCircle2, User, FileText, Banknote, ShieldAlert, Landmark } from 'lucide-react';
 import { useClients, useLoans, useSettings } from '../context/StoreContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { BankAccountsModal } from './BankAccountsModal';
 
 interface TopHeaderProps {
@@ -13,6 +13,39 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
   const { clients } = useClients();
   const { loans } = useLoans();
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname.toLowerCase();
+
+  // Pages that feature their own dedicated search bar (mobile will hide the header search bar on these)
+  const pagesWithInternalSearch = [
+    '/clientes',
+    '/prestamos',
+    '/pagos',
+    '/atrasados',
+    '/cobros',
+    '/empleados',
+    '/comerciantes',
+    '/cobros-legales',
+    '/legal',
+    '/boveda',
+    '/portales-clientes',
+    '/facturas',
+    '/inventario',
+    '/consulta-buro',
+    '/buro-credito-export',
+    '/clasificacion-riesgo',
+    '/bitacora',
+    '/conciliacion',
+    '/radar-fraude',
+    '/alerta-temprana',
+    '/cuentas-bancarias',
+    '/cartera',
+    '/rutas'
+  ];
+
+  const hasInternalSearch = pagesWithInternalSearch.some(path => 
+    currentPath === path || (path !== '/' && currentPath.startsWith(path + '/'))
+  );
   
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -232,8 +265,8 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onMenuClick }) => {
           </div>
         </div>
 
-        {/* Global Search Bar (Full Width on Mobile Row 2, Middle on Desktop) */}
-        <div className="w-full flex-1 max-w-2xl mx-auto" ref={searchRef}>
+        {/* Global Search Bar (Full Width on Mobile Row 2 only if page has NO internal search; always visible on Desktop lg) */}
+        <div className={`w-full flex-1 max-w-2xl mx-auto ${hasInternalSearch ? 'hidden lg:block' : 'block'}`} ref={searchRef}>
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
               <Search className="w-4 h-4" />

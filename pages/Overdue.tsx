@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Phone, AlertTriangle, Clock, ChevronLeft, FileText, Send, Users, ShieldAlert, Scale, Gavel } from 'lucide-react';
+import { Phone, AlertTriangle, Clock, ChevronLeft, FileText, Send, Users, ShieldAlert, Scale, Gavel, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { DocumentGenerator } from '../components/DocumentGenerator';
@@ -14,9 +14,20 @@ const Overdue: React.FC = () => {
   const { clients } = useClients();
   const { companySettings } = useSettings();
   const [selectedNoticeLoan, setSelectedNoticeLoan] = useState<{ loan: Loan; client: Client } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const overdueList = loans.filter(l => l.status === 'Atrasado' || (l.status === 'Activo' && new Date(l.nextPaymentDate) < new Date()));
   const totalOverdueAmount = overdueList.reduce((sum, l) => sum + l.remainingBalance, 0);
+
+  const filteredOverdueList = overdueList.filter(l => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    const client = clients.find(c => c.id === loan.clientId);
+    const clientName = (client ? `${client.name} ${client.lastName || ''}` : l.clientName || '').toLowerCase();
+    const cedula = (client?.cedula || '').toLowerCase();
+    const loanId = (l.id || '').toLowerCase();
+    return clientName.includes(term) || cedula.includes(term) || loanId.includes(term);
+  });
 
   const handleWhatsAppNotice = (loan: Loan) => {
     const client = clients.find(c => c.id === loan.clientId);
@@ -36,7 +47,7 @@ const Overdue: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-10">
+    <div className="space-y-6 animate-fade-in pb-10">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-3">
             <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
@@ -61,17 +72,46 @@ const Overdue: React.FC = () => {
         </div>
       </div>
 
-      {overdueList.length === 0 ? (
+      {/* Top Search Bar */}
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por cliente, cédula o ID de préstamo atrasado..."
+            className="w-full pl-9 pr-8 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 dark:text-white transition-all"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-xl">
+          {filteredOverdueList.length} en mora
+        </span>
+      </div>
+
+      {filteredOverdueList.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl text-center border border-slate-100 dark:border-slate-800 shadow-sm space-y-3">
           <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
             <Clock className="w-8 h-8" />
           </div>
-          <h3 className="font-bold text-lg text-slate-800 dark:text-white">¡Excelente! No hay préstamos atrasados</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">Toda la cartera de cobros se encuentra al día.</p>
+          <h3 className="font-bold text-lg text-slate-800 dark:text-white">
+            {searchTerm ? 'No se encontraron atrasos coincidentes' : '¡Excelente! No hay préstamos atrasados'}
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            {searchTerm ? `Ningún préstamo en mora coincide con "${searchTerm}"` : 'Toda la cartera de cobros se encuentra al día.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {overdueList.map((loan) => {
+          {filteredOverdueList.map((loan) => {
               const client = clients.find(c => c.id === loan.clientId);
               const clientFullName = client ? `${client.name} ${client.lastName || ''}`.trim() : loan.clientName;
               const daysLate = Math.max(1, Math.floor((new Date().getTime() - new Date(loan.nextPaymentDate).getTime()) / (1000 * 3600 * 24)));

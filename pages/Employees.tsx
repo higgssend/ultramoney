@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, MapPin, TrendingUp, Award, Plus, X, ChevronDown, Phone, Briefcase, Trash2, ChevronLeft, Calendar, CheckCircle2, Clock, Crosshair, AlertCircle } from 'lucide-react';
+import { User, MapPin, TrendingUp, Award, Plus, X, ChevronDown, Phone, Briefcase, Trash2, ChevronLeft, Calendar, CheckCircle2, Clock, Crosshair, AlertCircle, Search } from 'lucide-react';
 import { useClients, useAuth, useAccounting, useLoans } from '../context/StoreContext';
 import { Employee, CollectorVisit } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,32 @@ const Employees: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+
+  const filteredEmployees = employees.filter(emp => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    const cargoName = (cargos.find(c => c.id === emp.cargoId)?.name || '').toLowerCase();
+    return (
+      emp.name.toLowerCase().includes(term) ||
+      (emp.phone && emp.phone.toLowerCase().includes(term)) ||
+      (emp.assignedRoute && emp.assignedRoute.toLowerCase().includes(term)) ||
+      (emp.username && emp.username.toLowerCase().includes(term)) ||
+      cargoName.includes(term)
+    );
+  });
+
+  const filteredVisits = collectorVisits.filter(v => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      v.clientName.toLowerCase().includes(term) ||
+      v.collectorName.toLowerCase().includes(term) ||
+      v.status.toLowerCase().includes(term) ||
+      (v.notes && v.notes.toLowerCase().includes(term))
+    );
+  });
   
   // Form State Employee
   const [newEmp, setNewEmp] = useState<{name: string, cargoId: string, phone: string, assignedRoute: string, username: string, employeePin: string}>({
@@ -158,15 +183,40 @@ const Employees: React.FC = () => {
         </div>
       </div>
 
+      {/* Top Search Bar */}
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={activeTab === 'employees' ? "Buscar por nombre, cargo, zona o teléfono de personal..." : "Buscar por cliente, cobrador o estado de visita..."}
+            className="w-full pl-9 pr-8 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-xl">
+          {activeTab === 'employees' ? `${filteredEmployees.length} miembros` : `${filteredVisits.length} visitas`}
+        </span>
+      </div>
+
       {activeTab === 'employees' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {employees.length === 0 ? (
-              <div className="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+          {filteredEmployees.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-slate-400 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                   <User className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p>No hay empleados registrados.</p>
+                  <p>{searchTerm ? `No se encontraron empleados con "${searchTerm}"` : 'No hay empleados registrados.'}</p>
               </div>
           ) : (
-              employees.map((emp) => (
+              filteredEmployees.map((emp) => (
                   <div key={emp.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative group overflow-hidden hover:shadow-md transition-all">
                       <button 
                           onClick={() => deleteEmployee(emp.id)}
@@ -223,24 +273,26 @@ const Employees: React.FC = () => {
         /* Visits Tab */
         <div className="space-y-6">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 overflow-x-auto">
-            <h3 className="font-bold text-slate-800 mb-4">Historial de Visitas de Campo</h3>
-            {collectorVisits.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">No hay visitas registradas aún.</p>
+            {filteredVisits.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">
+                <Calendar className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p>{searchTerm ? `No se encontraron visitas con "${searchTerm}"` : 'No hay visitas registradas aún.'}</p>
+              </div>
             ) : (
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                  <tr className="border-b border-slate-100 text-slate-400 text-xs uppercase">
                     <th className="p-3">Fecha</th>
                     <th className="p-3">Cobrador</th>
                     <th className="p-3">Cliente</th>
-                    <th className="p-3">Estatus</th>
-                    <th className="p-3">Monto / Promesa</th>
-                    <th className="p-3">Ubicación GPS</th>
+                    <th className="p-3">Estado</th>
+                    <th className="p-3">Resultado</th>
+                    <th className="p-3">Ubicación</th>
                     <th className="p-3">Notas</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {collectorVisits.map((v) => (
+                <tbody className="divide-y divide-slate-100">
+                  {filteredVisits.map((v) => (
                     <tr key={v.id} className="hover:bg-slate-50">
                       <td className="p-3 font-mono text-xs">{v.date}</td>
                       <td className="p-3 font-bold text-slate-700">{v.collectorName}</td>

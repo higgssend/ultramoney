@@ -190,6 +190,53 @@ const Loans: React.FC = () => {
          </div>
       </div>
 
+      {/* Advanced Filter & View Toggle Bar (Top of module) */}
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col lg:flex-row gap-4 items-center justify-between sticky top-0 z-10">
+          <div className="relative w-full lg:w-1/3">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input 
+                    type="text" 
+                    value={filterTerm}
+                    onChange={(e) => setFilterTerm(e.target.value)}
+                    placeholder="Buscar por cliente o ID de préstamo..." 
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 dark:bg-slate-900/50 dark:text-white transition-all"
+                />
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl overflow-x-auto w-full sm:w-auto">
+                  {(['TODOS', 'A tiempo', 'Atrasado', 'Vencido', 'Pagado'] as const).map(status => (
+                      <button 
+                          key={status}
+                          onClick={() => setStatusFilter(status)}
+                          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${statusFilter === status ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      >
+                          {status}
+                      </button>
+                  ))}
+              </div>
+              
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden lg:block mx-2"></div>
+              
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+                    title="Vista Cuadrícula"
+                  >
+                      <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('table')}
+                    className={`p-2 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-400 hover:text-slate-600'}`}
+                    title="Vista Tabla"
+                  >
+                      <List className="w-4 h-4" />
+                  </button>
+              </div>
+          </div>
+      </div>
+
       {/* Stats Summary - Advanced Design */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-center relative overflow-hidden group">
@@ -207,53 +254,6 @@ const Loans: React.FC = () => {
                   <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">RD$ {totalCollectedGlobal.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
               </div>
               <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 relative z-10 backdrop-blur-sm"><CheckCircle className="w-7 h-7"/></div>
-          </div>
-      </div>
-
-      {/* Advanced Filter & View Toggle Bar */}
-      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col lg:flex-row gap-4 items-center justify-between sticky top-0 z-10">
-          <div className="relative w-full lg:w-1/3">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input 
-                    type="text" 
-                    value={filterTerm}
-                    onChange={(e) => setFilterTerm(e.target.value)}
-                    placeholder="Buscar por cliente o ID de préstamo..." 
-                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 dark:bg-slate-900/50 dark:text-white transition-all"
-                />
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-              <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                  {(['TODOS', 'A tiempo', 'Atrasado', 'Vencido', 'Pagado'] as const).map(status => (
-                      <button 
-                          key={status}
-                          onClick={() => setStatusFilter(status)}
-                          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${statusFilter === status ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                      >
-                          {status}
-                      </button>
-                  ))}
-              </div>
-              
-              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden lg:block mx-2"></div>
-              
-              <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                  <button 
-                      onClick={() => setViewMode('grid')}
-                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                      title="Vista de Cuadrícula"
-                  >
-                      <LayoutGrid className="w-5 h-5" />
-                  </button>
-                  <button 
-                      onClick={() => setViewMode('table')}
-                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-800 text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                      title="Vista de Tabla"
-                  >
-                      <List className="w-5 h-5" />
-                  </button>
-              </div>
           </div>
       </div>
 
