@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { Briefcase, TrendingUp, Users, ChevronLeft } from 'lucide-react';
+import { Briefcase, TrendingUp, Users, ChevronLeft, Activity, ShieldAlert, MapPin } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useLoans, useSettings } from '../context/StoreContext';
@@ -40,13 +40,36 @@ const Portfolio: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in pb-10">
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
-        </button>
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </button>
+          <div>
             <h2 className="text-2xl font-bold font-secondary text-slate-800 dark:text-white">Análisis de Cartera</h2>
-            <p className="text-slate-500">Visión general del rendimiento de tu capital.</p>
+            <p className="text-slate-500">Visión general del rendimiento y salud de tu capital.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => navigate('/alerta-temprana')}
+            className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 dark:text-indigo-300 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all border border-indigo-200 dark:border-indigo-800"
+          >
+            <Activity className="w-3.5 h-3.5" /> Alerta Temprana & Tramos
+          </button>
+          <button
+            onClick={() => navigate('/antifraude')}
+            className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 dark:text-rose-300 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all border border-rose-200 dark:border-rose-800"
+          >
+            <ShieldAlert className="w-3.5 h-3.5" /> Radar Antifraude
+          </button>
+          <button
+            onClick={() => navigate('/rutas')}
+            className="px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 dark:text-sky-300 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all border border-sky-200 dark:border-sky-800"
+          >
+            <MapPin className="w-3.5 h-3.5" /> Mapa de Rutas
+          </button>
         </div>
       </div>
 

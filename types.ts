@@ -539,6 +539,54 @@ export interface VaultCustodyLog {
   createdAt: string;
 }
 
+export type RelationshipType = 
+  | 'Garante'
+  | 'Familiar / Pariente'
+  | 'Cónyuge / Pareja'
+  | 'Socio Comercial'
+  | 'Compañero de Trabajo'
+  | 'Vecino'
+  | 'Otro';
+
+export interface ClientRelationship {
+  id: string;
+  lenderId: string;
+  clientIdA: string;
+  clientNameA: string;
+  clientIdB: string;
+  clientNameB: string;
+  relationshipType: RelationshipType;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface AgingBucketSummary {
+  bucketId: 'current' | 'early' | 'medium' | 'critical' | 'severe' | 'legal_castigada';
+  bucketName: string;
+  dayRange: string;
+  loansCount: number;
+  totalBalance: number;
+  totalOriginalAmount: number;
+  percentageOfPortfolio: number;
+  provisionRate: number;
+  suggestedProvision: number;
+  color: string;
+}
+
+export type PaymentVelocityTrend = 'Puntual / Sólido' | 'Retraso Recurrente' | 'Deterioro Progresivo' | 'Riesgo Inminente de Default';
+
+export interface EarlyWarningClientMetric {
+  client: Client;
+  loan: Loan;
+  overdueDays: number;
+  trend: PaymentVelocityTrend;
+  averageDelayDays: number;
+  paymentCapacityScore: number; // 0 - 100
+  recentPartialPaymentsCount: number;
+  chronicDelayRatio: number; // 0 - 100%
+  recommendedAction: string;
+}
+
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta' | 'Cheque';
 
 export function formatLoanId(id?: string | null, _category?: string, _type?: string): string {

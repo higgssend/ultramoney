@@ -55,6 +55,8 @@ const MerchantPosPortal = React.lazy(() => import('./pages/MerchantPosPortal'));
 const MerchantsPage = React.lazy(() => import('./pages/MerchantsPage'));
 const LegalCollectionPage = React.lazy(() => import('./pages/LegalCollectionPage'));
 const VaultCustodyPage = React.lazy(() => import('./pages/VaultCustodyPage'));
+const EarlyWarningRiskPage = React.lazy(() => import('./pages/EarlyWarningRiskPage'));
+const FraudRadarPage = React.lazy(() => import('./pages/FraudRadarPage'));
 
 // Feature Pages Dynamic Imports
 const CreditFeature = React.lazy(() => import('./pages/features/CreditFeature'));
@@ -216,6 +218,10 @@ const AppContent: React.FC = () => {
                   <Route path="/prestamos/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
                   <Route path="/pagos" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                   <Route path="/atrasos" element={<ProtectedRoute><Overdue /></ProtectedRoute>} />
+                  <Route path="/alerta-temprana" element={<ProtectedRoute><EarlyWarningRiskPage /></ProtectedRoute>} />
+                  <Route path="/tramos-mora" element={<ProtectedRoute><EarlyWarningRiskPage /></ProtectedRoute>} />
+                  <Route path="/antifraude" element={<ProtectedRoute><FraudRadarPage /></ProtectedRoute>} />
+                  <Route path="/radar" element={<ProtectedRoute><FraudRadarPage /></ProtectedRoute>} />
                   <Route path="/legal" element={<ProtectedRoute><LegalCollectionPage /></ProtectedRoute>} />
                   <Route path="/cobranza-legal" element={<ProtectedRoute><LegalCollectionPage /></ProtectedRoute>} />
                   <Route path="/boveda" element={<ProtectedRoute><VaultCustodyPage /></ProtectedRoute>} />

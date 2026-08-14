@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Client, ClientNote, ClientDocument, Route } from '../../types';
-import type { ClientDB, ClientNoteDB, ClientDocumentDB, RouteDB } from '../../types.db';
+import { Client, ClientNote, ClientDocument, Route, ClientRelationship, RelationshipType } from '../../types';
+import type { ClientDB, ClientNoteDB, ClientDocumentDB, RouteDB, ClientRelationshipDB } from '../../types.db';
 import { insforge } from '../../lib/insforge';
 import { useToast } from '../ToastContext';
 import { useAuth } from './AuthContext';
@@ -25,6 +25,10 @@ interface ClientContextType {
   addRoute: (route: Omit<Route, 'id' | 'createdAt'>) => Promise<void>;
   updateRoute: (id: string, updates: Partial<Route>) => Promise<void>;
   deleteRoute: (id: string) => Promise<void>;
+  clientRelationships: ClientRelationship[];
+  addClientRelationship: (rel: Omit<ClientRelationship, 'id' | 'lenderId' | 'createdAt'>) => Promise<ClientRelationship | void>;
+  updateClientRelationship: (id: string, updates: Partial<ClientRelationship>) => Promise<void>;
+  deleteClientRelationship: (id: string) => Promise<void>;
   refreshClients: () => Promise<void>;
 }
 
@@ -39,11 +43,12 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [clientNotes, setClientNotes] = useState<ClientNote[]>([]);
   const [clientDocuments, setClientDocuments] = useState<ClientDocument[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [clientRelationships, setClientRelationships] = useState<ClientRelationship[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshClients = useCallback(async () => {
     if (!currentUser) {
-      setClients([]); setClientNotes([]); setClientDocuments([]); setRoutes([]);
+      setClients([]); setClientNotes([]); setClientDocuments([]); setRoutes([]); setClientRelationships([]);
       return;
     }
     setIsLoading(true);
@@ -58,34 +63,31 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setClients((clientsRes.data as ClientDB[]).map((c) => ({
           id: c.id,
           name: c.name,
-          lastName: c.lastname || '',
-          cedula: c.cedula || '',
-          documentType: (c.documenttype || 'Cedula') as Client['documentType'],
-          email: c.email || '',
-          phone: c.phone || '',
-          whatsapp: c.whatsapp || '',
-          phoneHome: c.phonehome || '',
-          address: c.address || '',
-          province: c.province || '',
-          municipality: c.municipality || '',
-          sector: c.sector || '',
-          referenceAddress: c.referenceaddress || '',
-          companyName: c.companyname || '',
-          jobPosition: c.jobposition || '',
-          coordinates: c.coordinates || undefined,
-          routeId: c.routeid || '',
+          lastName: c.lastname || undefined,
+          cedula: c.cedula,
+          documentType: c.documenttype as Client['documentType'],
+          email: c.email || undefined,
+          phone: c.phone,
+          whatsapp: c.whatsapp || undefined,
+          phoneHome: c.phonehome || undefined,
+          address: c.address,
+          province: c.province || undefined,
+          municipality: c.municipality || undefined,
+          sector: c.sector || undefined,
+          referenceAddress: c.referenceaddress || undefined,
+          companyName: c.companyname || undefined,
+          jobPosition: c.jobposition || undefined,
+          coordinates: c.coordinates as { lat: number; lng: number } | undefined,
+          routeId: c.routeid || undefined,
           routeSequence: c.routesequence || 0,
-          occupation: c.occupation || '',
+          occupation: c.occupation || undefined,
           sex: (c.sex || 'Otro') as Client['sex'],
-          income: Number(c.income) || 0,
-          creditScore: c.creditscore ? (Number(c.creditscore) <= 100 ? Math.round(300 + (Number(c.creditscore) / 100) * 550) : Number(c.creditscore)) : 650,
-          avatarUrl: c.avatarurl || undefined,
+          income: c.income || 0,
+          creditScore: c.creditscore || 650,
           status: (c.status || 'Al Día') as Client['status'],
-          joinedDate: c.joineddate || '',
-          clientPin: c.clientpin || '1234',
-          portalAlias: c.portal_alias || undefined,
-          portalActive: c.portal_active !== false,
-          guarantors: [],
+          avatarUrl: c.avatarurl || undefined,
+          joinedDate: c.joineddate || c.created_at || new Date().toISOString(),
+          portalPin: c.portalpin || undefined,
         })));
       }
       if (notesRes.data) {
@@ -110,12 +112,31 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       } catch (err) {
         logger.error("Error loading routes:", err);
       }
+
+      try {
+        const relsRes = await insforge.database.from('client_relationships').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false });
+        if (relsRes.data) {
+          setClientRelationships((relsRes.data as ClientRelationshipDB[]).map((rel) => ({
+            id: rel.id,
+            lenderId: rel.lender_id,
+            clientIdA: rel.client_id_a,
+            clientNameA: rel.client_name_a,
+            clientIdB: rel.client_id_b,
+            clientNameB: rel.client_name_b,
+            relationshipType: rel.relationship_type as RelationshipType,
+            notes: rel.notes || undefined,
+            createdAt: rel.created_at || new Date().toISOString()
+          })));
+        }
+      } catch (err) {
+        logger.error("Error loading client relationships:", err);
+      }
     } catch (error) {
       logger.error("Error fetching clients:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser]);;
 
   useEffect(() => {
     refreshClients();
@@ -424,11 +445,76 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } else addToast("Error al eliminar ruta", "error");
   };
 
+  const addClientRelationship = async (rel: Omit<ClientRelationship, 'id' | 'lenderId' | 'createdAt'>): Promise<ClientRelationship | void> => {
+    if (!currentUser) return;
+    const newId = `rel-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const now = new Date().toISOString();
+
+    const { error } = await insforge.database.from('client_relationships').insert([{
+      id: newId,
+      lender_id: currentUser.id,
+      client_id_a: rel.clientIdA,
+      client_name_a: rel.clientNameA,
+      client_id_b: rel.clientIdB,
+      client_name_b: rel.clientNameB,
+      relationship_type: rel.relationshipType,
+      notes: rel.notes || null,
+      created_at: now
+    }]);
+
+    if (!error) {
+      const createdRel: ClientRelationship = {
+        id: newId,
+        lenderId: currentUser.id,
+        clientIdA: rel.clientIdA,
+        clientNameA: rel.clientNameA,
+        clientIdB: rel.clientIdB,
+        clientNameB: rel.clientNameB,
+        relationshipType: rel.relationshipType,
+        notes: rel.notes,
+        createdAt: now
+      };
+      setClientRelationships(prev => [createdRel, ...prev]);
+      addToast("Vínculo registrado exitosamente", "success");
+      return createdRel;
+    } else {
+      addToast("Error al registrar vínculo", "error");
+    }
+  };
+
+  const updateClientRelationship = async (id: string, updates: Partial<ClientRelationship>) => {
+    if (!currentUser) return;
+    const dbUpdates: Partial<ClientRelationshipDB> = {};
+    if (updates.relationshipType !== undefined) dbUpdates.relationship_type = updates.relationshipType;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.clientNameA !== undefined) dbUpdates.client_name_a = updates.clientNameA;
+    if (updates.clientNameB !== undefined) dbUpdates.client_name_b = updates.clientNameB;
+
+    const { error } = await insforge.database.from('client_relationships').update(dbUpdates).eq('id', id).eq('lender_id', currentUser.id);
+    if (!error) {
+      setClientRelationships(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+      addToast("Vínculo actualizado exitosamente", "success");
+    } else {
+      addToast("Error al actualizar vínculo", "error");
+    }
+  };
+
+  const deleteClientRelationship = async (id: string) => {
+    if (!currentUser) return;
+    const { error } = await insforge.database.from('client_relationships').delete().eq('id', id).eq('lender_id', currentUser.id);
+    if (!error) {
+      setClientRelationships(prev => prev.filter(r => r.id !== id));
+      addToast("Vínculo eliminado exitosamente", "success");
+    } else {
+      addToast("Error al eliminar vínculo", "error");
+    }
+  };
+
   return (
     <ClientContext.Provider value={{
-      clients, clientNotes, clientDocuments, routes,
+      clients, clientNotes, clientDocuments, routes, clientRelationships,
       addClient, updateClient, deleteClient, addClientNote, addClientDocument, updateClientDocument, removeClientDocument, generateClientPin,
-      addRoute, updateRoute, deleteRoute, refreshClients
+      addRoute, updateRoute, deleteRoute, addClientRelationship, updateClientRelationship, deleteClientRelationship, refreshClients
     }}>
       {children}
     </ClientContext.Provider>

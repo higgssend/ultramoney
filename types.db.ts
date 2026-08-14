@@ -558,5 +558,18 @@ export interface VaultCustodyLogDB {
   created_at?: string;
 }
 
+export interface ClientRelationshipDB {
+  id: string;
+  lender_id: string;
+  client_id_a: string;
+  client_name_a: string;
+  client_id_b: string;
+  client_name_b: string;
+  relationship_type: string;
+  notes?: string | null;
+  created_at?: string;
+}
+
+
 
 
