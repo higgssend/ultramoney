@@ -1,54 +1,41 @@
 import React, { useState } from 'react';
-import { Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, PlusCircle, Eye, EyeOff, BookOpen, Scale, PieChart, FileText, CheckCircle2, RefreshCw } from 'lucide-react';
+import { 
+  Download, TrendingUp, TrendingDown, DollarSign, Lock, Calculator, 
+  AlertTriangle, Save, Wallet, ChevronLeft, Play, StopCircle, Clock, 
+  PlusCircle, Eye, EyeOff, Scale, PieChart, FileText, CheckCircle2, 
+  RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, User
+} from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { useAccounting, useLoans, useClients, useSettings } from '../context/StoreContext';
 import StatCard from '../components/StatCard';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PaymentMethod, Transaction } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
 import { CashCounterModal } from '../components/CashCounterModal';
+import { DataExportToolbar } from '../components/DataExportToolbar';
 import { toast } from 'sonner';
 
-// Chart of Accounts Structure
-interface Account {
-  code: string;
-  name: string;
-  type: 'Activo' | 'Pasivo' | 'Patrimonio' | 'Ingreso' | 'Gasto';
-  category: string;
-  balance: number;
+interface AccountingProps {
+  initialTab?: 'overview' | 'shift' | 'expenses' | 'history';
 }
 
-const defaultChartOfAccounts: Account[] = [
-  { code: '1100', name: 'Caja General & Efectivo', type: 'Activo', category: 'Activo Circulante', balance: 0 },
-  { code: '1110', name: 'Bancos & Cuentas Corrientes', type: 'Activo', category: 'Activo Circulante', balance: 0 },
-  { code: '1200', name: 'Cartera de Préstamos por Cobrar', type: 'Activo', category: 'Activo Financiero', balance: 0 },
-  { code: '1210', name: 'Intereses por Cobrar Acumulados', type: 'Activo', category: 'Activo Financiero', balance: 0 },
-  { code: '2100', name: 'Cuentas por Pagar Inversionistas', type: 'Pasivo', category: 'Pasivo Corriente', balance: 0 },
-  { code: '2200', name: 'Impuestos & Retenciones por Pagar', type: 'Pasivo', category: 'Pasivo Corriente', balance: 0 },
-  { code: '3100', name: 'Capital Social Aportado', type: 'Patrimonio', category: 'Patrimonio Neto', balance: 0 },
-  { code: '3200', name: 'Utilidades Retenidas / Acumuladas', type: 'Patrimonio', category: 'Patrimonio Neto', balance: 0 },
-  { code: '4100', name: 'Ingresos por Intereses Financieros', type: 'Ingreso', category: 'Ingresos Operativos', balance: 0 },
-  { code: '4200', name: 'Ingresos por Moras y Recargos', type: 'Ingreso', category: 'Ingresos Operativos', balance: 0 },
-  { code: '4300', name: 'Ingresos por Gastos de Cierre & Legal', type: 'Ingreso', category: 'Ingresos Operativos', balance: 0 },
-  { code: '5100', name: 'Gastos de Nómina y Comisiones', type: 'Gasto', category: 'Gastos Operativos', balance: 0 },
-  { code: '5200', name: 'Gastos Operativos y Papelería', type: 'Gasto', category: 'Gastos Operativos', balance: 0 },
-  { code: '5300', name: 'Condonaciones & Pérdidas Morosas', type: 'Gasto', category: 'Gastos Financieros', balance: 0 }
-];
+export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-const Accounting: React.FC = () => {
+  // Determine initial tab from prop or URL pathname
+  const defaultTab = initialTab || (location.pathname === '/gastos' ? 'expenses' : 'overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'shift' | 'expenses' | 'history'>(defaultTab);
+  
   const { 
     transactions, bankAccounts, getFinancialStats, activeCashShift, openCashShift, 
     closeCashShift, getCashShiftSummary, addTransaction, processBankDisbursement 
   } = useAccounting();
   const { loans } = useLoans();
-  const { clients } = useClients();
   const { addAuditLog } = useSettings();
-  const navigate = useNavigate();
-  
+
   const stats = getFinancialStats();
   const shiftSummary = getCashShiftSummary();
-  
-  const [activeTab, setActiveTab] = useState<'overview' | 'shift' | 'chart' | 'journal' | 'trial' | 'financials'>('overview');
   const [isCashCounterOpen, setIsCashCounterOpen] = useState(false);
 
   // Expense Form State
@@ -57,12 +44,6 @@ const Accounting: React.FC = () => {
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseMethod, setExpenseMethod] = useState<PaymentMethod>('Efectivo');
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>('');
-
-  // Manual Journal Entry Form State
-  const [manualDebitCode, setManualDebitCode] = useState('1100');
-  const [manualCreditCode, setManualCreditCode] = useState('4100');
-  const [manualEntryAmount, setManualEntryAmount] = useState('');
-  const [manualEntryConcept, setManualEntryConcept] = useState('');
 
   // Open Shift Form State
   const [initialCashAmount, setInitialCashAmount] = useState('5000');
@@ -80,13 +61,10 @@ const Accounting: React.FC = () => {
     notes: ''
   });
 
-  // Calculate live portfolio balance from loans
-  const totalPortfolioValue = loans.reduce((sum, l) => sum + (Number(l.remainingBalance) || 0), 0);
-  
-  // Calculate total income and expenses
-  const totalIncome = transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
-  const totalExpense = transactions.filter(t => t.type === 'Gasto').reduce((sum, t) => sum + Number(t.amount), 0);
-  const netProfit = totalIncome - totalExpense;
+  // History Search & Filter State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<'ALL' | 'Ingreso' | 'Gasto'>('ALL');
+  const [selectedMethodFilter, setSelectedMethodFilter] = useState<string>('ALL');
 
   // Billete Total Count
   const calculateCountedTotal = () => {
@@ -102,37 +80,8 @@ const Accounting: React.FC = () => {
   };
 
   const countedTotal = calculateCountedTotal();
-
-  // Dynamic Chart of Accounts balances calculation
-  const accounts: Account[] = defaultChartOfAccounts.map(acc => {
-    let bal = 0;
-    if (acc.code === '1100') bal = stats.balance; // Cash balance
-    else if (acc.code === '1200') bal = totalPortfolioValue; // Loans portfolio
-    else if (acc.code === '4100') bal = transactions.filter(t => t.type === 'Ingreso' && t.category === 'Pago Préstamo').reduce((sum, t) => sum + Number(t.amount), 0);
-    else if (acc.code === '4200') bal = transactions.filter(t => t.type === 'Ingreso' && (t.description || '').toLowerCase().includes('mora')).reduce((sum, t) => sum + Number(t.amount), 0);
-    else if (acc.code === '4300') bal = loans.reduce((sum, l) => sum + (Number(l.closingCost) || 0), 0);
-    else if (acc.code === '5100') bal = transactions.filter(t => t.type === 'Gasto' && t.category === 'Nómina').reduce((sum, t) => sum + Number(t.amount), 0);
-    else if (acc.code === '5200') bal = transactions.filter(t => t.type === 'Gasto' && t.category !== 'Nómina').reduce((sum, t) => sum + Number(t.amount), 0);
-    else if (acc.code === '3100') bal = 500000; // Initial Equity
-    else if (acc.code === '3200') bal = netProfit;
-    return { ...acc, balance: Math.max(0, bal) };
-  });
-
-  // Double Entry Journal Entries generated from Transactions
-  const journalEntries = transactions.map((t, idx) => {
-    const isIncome = t.type === 'Ingreso';
-    const amount = Number(t.amount);
-    return {
-      id: `ASIENTO-${String(idx + 1001)}`,
-      date: t.date ? t.date.split('T')[0] : new Date().toISOString().split('T')[0],
-      concept: t.description || (isIncome ? 'Ingreso registrado en caja' : 'Gasto operativo'),
-      debitAccount: isIncome ? '1100 - Caja General & Efectivo' : '5200 - Gastos Operativos',
-      creditAccount: isIncome ? '4100 - Ingresos por Intereses' : '1100 - Caja General & Efectivo',
-      debitAmount: amount,
-      creditAmount: amount,
-      status: 'Cuadrado'
-    };
-  });
+  const expectedCashInShift = shiftSummary ? shiftSummary.expectedCash : stats.balance;
+  const shiftDifference = countedTotal - expectedCashInShift;
 
   const handleOpenShiftSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,32 +119,26 @@ const Accounting: React.FC = () => {
     }
     
     addAuditLog('expense_registered', `Registró gasto por RD$ ${amount} (${expenseCategory})`);
-    toast.success("Gasto registrado y contabilizado");
+    toast.success("Gasto registrado exitosamente en caja");
     setExpenseAmount('');
     setExpenseDescription('');
     setSelectedBankAccountId('');
-    setActiveTab('overview');
   };
 
-  const handleManualJournalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const amount = Number(manualEntryAmount);
-    if (isNaN(amount) || amount <= 0) return;
+  // Filtered transactions for History Tab
+  const filteredTransactions = transactions.filter(t => {
+    if (selectedTypeFilter !== 'ALL' && t.type !== selectedTypeFilter) return false;
+    if (selectedMethodFilter !== 'ALL' && t.paymentMethod !== selectedMethodFilter) return false;
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      const desc = (t.description || '').toLowerCase();
+      const cat = (t.category || '').toLowerCase();
+      return desc.includes(term) || cat.includes(term);
+    }
+    return true;
+  });
 
-    addTransaction({
-      date: new Date().toISOString(),
-      type: 'Gasto',
-      category: 'Otro',
-      description: `[Asiento Manual] ${manualEntryConcept} (Débito: ${manualDebitCode} / Crédito: ${manualCreditCode})`,
-      amount: amount,
-      paymentMethod: 'Efectivo',
-    });
-
-    addAuditLog('journal_entry_created', `Creó asiento contable manual por RD$ ${amount}`);
-    toast.success("Asiento contable en partida doble registrado");
-    setManualEntryAmount('');
-    setManualEntryConcept('');
-  };
+  const expenseTransactions = transactions.filter(t => t.type === 'Gasto');
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
@@ -203,494 +146,260 @@ const Accounting: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-indigo-600" />
-              Contabilidad Profunda 2.0
-            </h2>
-            <p className="text-slate-500 text-sm">Partida doble, catálogo de cuentas, libro diario, balances y arqueo de caja.</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Wallet className="w-6 h-6 text-indigo-600" />
+                Gestión de Caja & Gastos
+              </h1>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeCashShift 
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' 
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+              }`}>
+                {activeCashShift ? 'Turno Abierto' : 'Turno Cerrado'}
+              </span>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              Control diario de tesorería, arqueos de efectivo, aperturas/cierres de turno y registro de gastos.
+            </p>
           </div>
         </div>
 
-        {/* Accounting Module Navigation Tabs & Quick Tools */}
+        {/* Action Tabs & Quick Tools */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button 
-            onClick={() => setIsCashCounterOpen(true)}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-2xl font-black text-xs flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all border border-emerald-500"
-            title="Abrir calculadora rápida de billetes (Opcional - sin necesidad de abrir turno)"
-          >
-            <Calculator className="w-4 h-4" /> Cuadre Rápido
-          </button>
-
-          <div className="flex bg-white dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto text-xs font-bold">
+          <div className="flex bg-white dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-x-auto text-xs font-bold">
             <button 
               onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'overview' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+              className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'overview' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+              }`}
             >
-              <PieChart className="w-4 h-4" /> Resumen & Caja
+              <Wallet className="w-3.5 h-3.5" /> Flujo de Caja
             </button>
             <button 
               onClick={() => setActiveTab('shift')}
-              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'shift' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+              className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'shift' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+              }`}
             >
-              <Wallet className="w-4 h-4" /> {activeCashShift ? 'Arqueo de Turno' : 'Apertura de Caja'}
+              <Lock className="w-3.5 h-3.5" /> Arqueo y Turnos
             </button>
             <button 
-              onClick={() => setActiveTab('chart')}
-              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'chart' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+              onClick={() => setActiveTab('expenses')}
+              className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'expenses' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+              }`}
             >
-              <BookOpen className="w-4 h-4" /> Catálogo de Cuentas
+              <TrendingDown className="w-3.5 h-3.5" /> Control de Gastos
             </button>
             <button 
-              onClick={() => setActiveTab('journal')}
-              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'journal' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
+              onClick={() => setActiveTab('history')}
+              className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'history' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+              }`}
             >
-              <FileText className="w-4 h-4" /> Libro Diario
-            </button>
-            <button 
-              onClick={() => setActiveTab('trial')}
-              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'trial' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-            >
-              <Scale className="w-4 h-4" /> Balanza Comprobación
-            </button>
-            <button 
-              onClick={() => setActiveTab('financials')}
-              className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'financials' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:text-indigo-600'}`}
-            >
-              <TrendingUp className="w-4 h-4" /> Estado de Resultados (P&L)
+              <FileText className="w-3.5 h-3.5" /> Movimientos
             </button>
           </div>
+
+          <button 
+            onClick={() => setIsCashCounterOpen(true)}
+            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            Contador de Billetes
+          </button>
         </div>
       </div>
 
-      {/* ─── TAB 1: EXECUTIVE OVERVIEW & CASH SHIFT ─── */}
+      {/* 4 Cards Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Saldo en Caja de Efectivo"
+          value={`RD$ ${stats.balance.toLocaleString()}`}
+          trend="Disponible en Caja"
+          trendUp={true}
+          icon={DollarSign}
+          gradient="bg-gradient-to-br from-emerald-500 to-teal-700"
+          glowColor="shadow-emerald-500/20"
+        />
+        <StatCard
+          title="Recaudaciones Totales"
+          value={`RD$ ${stats.totalIncome.toLocaleString()}`}
+          trend="Ingresos Registrados"
+          trendUp={true}
+          icon={TrendingUp}
+          gradient="bg-gradient-to-br from-indigo-600 to-purple-700"
+          glowColor="shadow-indigo-500/20"
+        />
+        <StatCard
+          title="Gastos Operativos"
+          value={`RD$ ${stats.totalExpenses.toLocaleString()}`}
+          trend="Salidas de Caja"
+          trendUp={false}
+          icon={TrendingDown}
+          gradient="bg-gradient-to-br from-rose-500 to-pink-600"
+          glowColor="shadow-rose-500/20"
+        />
+        <StatCard
+          title="Turno de Caja"
+          value={activeCashShift ? `RD$ ${(shiftSummary?.expectedCash || 0).toLocaleString()}` : 'Cerrado'}
+          trend={activeCashShift ? 'Efectivo en Turno' : 'Sin turno activo'}
+          trendUp={!!activeCashShift}
+          icon={Lock}
+          gradient="bg-gradient-to-br from-blue-600 to-cyan-600"
+          glowColor="shadow-blue-500/20"
+        />
+      </div>
+
+      {/* ─── TAB 1: FLUJO DE CAJA (OVERVIEW) ─── */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Active Shift Banner */}
-          <div className={`p-5 rounded-2xl border flex flex-wrap justify-between items-center gap-4 ${activeCashShift ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl ${activeCashShift ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'}`}>
-                <Wallet className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider">{activeCashShift ? 'Turno de Caja Abierto' : 'No Hay Turno de Caja Abierto'}</span>
-                <h4 className="font-bold text-base">
-                  {activeCashShift ? `Cajero: ${activeCashShift.userName} | Apertura: ${new Date(activeCashShift.openedAt).toLocaleTimeString()}` : 'Abre turno para empezar a registrar cobros presenciales con arqueo'}
-                </h4>
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveTab('shift')}
-              className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all ${activeCashShift ? 'bg-emerald-700 hover:bg-emerald-800 text-white' : 'bg-amber-700 hover:bg-amber-800 text-white'}`}
-            >
-              {activeCashShift ? 'Realizar Arqueo / Cierre' : 'Abrir Caja Ahora'}
-            </button>
-          </div>
-
-          {/* 4 Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StatCard
-              title="Balance en Caja General"
-              value={`RD$ ${stats.balance.toLocaleString()}`}
-              trend="Fondo disponible"
-              trendUp={true}
-              icon={Wallet}
-              gradient="bg-gradient-to-br from-emerald-500 to-teal-700"
-              glowColor="shadow-emerald-500/20"
-            />
-            <StatCard
-              title="Cartera Activa por Cobrar"
-              value={`RD$ ${totalPortfolioValue.toLocaleString()}`}
-              trend="Activo Financiero"
-              trendUp={true}
-              icon={DollarSign}
-              gradient="bg-gradient-to-br from-indigo-600 to-purple-700"
-              glowColor="shadow-indigo-500/20"
-            />
-            <StatCard
-              title="Ingresos Totales"
-              value={`RD$ ${totalIncome.toLocaleString()}`}
-              trend="Intereses + Cierres"
-              trendUp={true}
-              icon={TrendingUp}
-              gradient="bg-gradient-to-br from-blue-600 to-cyan-600"
-              glowColor="shadow-blue-500/20"
-            />
-            <StatCard
-              title="Utilidad Neta (Ganancia)"
-              value={`RD$ ${netProfit.toLocaleString()}`}
-              trend="Ingresos - Gastos"
-              trendUp={netProfit >= 0}
-              icon={Calculator}
-              gradient="bg-gradient-to-br from-amber-500 to-rose-600"
-              glowColor="shadow-amber-500/20"
-            />
-          </div>
-
-          {/* Quick Expense Form & Recent Movements */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Quick Expense Entry */}
-            <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-rose-500" />
-                Registrar Gasto u Operación
-              </h3>
-              
-              <form onSubmit={handleExpenseSubmit} className="space-y-3 text-xs">
+            {/* Chart */}
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Categoría del Gasto</label>
-                  <CustomSelect
-                    value={expenseCategory}
-                    onChange={(val: string) => setExpenseCategory(val as typeof expenseCategory)}
-                    options={[
-                      { value: 'Operativo', label: 'Operativo / General' },
-                      { value: 'Nómina', label: 'Nómina & Comisiones' },
-                      { value: 'Combustible', label: 'Combustible & Cobranza' },
-                      { value: 'Papelería', label: 'Papelería e Impresiones' },
-                      { value: 'Servicios', label: 'Servicios Básicos' },
-                      { value: 'Mantenimiento', label: 'Mantenimiento' },
-                      { value: 'Otros', label: 'Otros Gastos' }
-                    ]}
-                  />
+                  <h3 className="font-bold text-slate-800 dark:text-white text-base">Flujo de Entradas vs Salidas</h3>
+                  <p className="text-xs text-slate-400">Comparativa de ingresos recaudados y egresos registrados en caja.</p>
                 </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Monto del Gasto (RD$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={expenseAmount === '0' || expenseAmount === '0.00' ? '' : expenseAmount}
-                    onFocus={(e) => e.target.select()}
-                    onChange={e => setExpenseAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 font-bold"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Descripción / Concepto</label>
-                  <input
-                    type="text"
-                    value={expenseDescription}
-                    onChange={e => setExpenseDescription(e.target.value)}
-                    placeholder="Ej. Pago de combustible cobrador ruta 1"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Cuenta o Método Pagador (Opcional)</label>
-                  <select
-                    value={selectedBankAccountId}
-                    onChange={(e) => setSelectedBankAccountId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-xl dark:bg-slate-800 text-xs font-bold"
-                  >
-                    <option value="">-- Sin cuenta específica (Caja General) --</option>
-                    {bankAccounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.bankName} - {acc.accountName || acc.holderName} (RD$ {(acc.balance || 0).toLocaleString()})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md transition-all"
-                >
-                  Registrar & Contabilizar Gasto
-                </button>
-              </form>
+              </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <Tooltip 
+                      formatter={(value: number) => [`RD$ ${value.toLocaleString()}`, '']}
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
+                    />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                    <Bar dataKey="Ingresos" fill="#10b981" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Gastos" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            {/* Transactions List */}
-            <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+            {/* Quick Expense Card */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-slate-800 text-base">Últimos Movimientos Contables</h3>
-                  <span className="text-xs text-slate-400 font-bold">{transactions.length} registros</span>
-                </div>
+                <h3 className="font-bold text-slate-800 dark:text-white text-base mb-1">Registrar Gasto Rápido</h3>
+                <p className="text-xs text-slate-400 mb-4">Salida directa de caja chica para pagos operativos menores.</p>
 
-                <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto pr-1">
-                  {transactions.slice(0, 8).map(t => (
-                    <div key={t.id} className="py-2.5 flex items-center justify-between text-xs hover:bg-slate-50 px-2 rounded-lg">
-                      <div>
-                        <p className="font-bold text-slate-800">{t.description}</p>
-                        <p className="text-[10px] text-slate-400">{t.date ? t.date.split('T')[0] : ''} · {t.paymentMethod || 'Efectivo'}</p>
-                      </div>
-                      <span className={`font-black text-sm ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {t.type === 'Ingreso' ? '+' : '-'}RD$ {Number(t.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+                <form onSubmit={handleExpenseSubmit} className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Categoría</label>
+                    <select
+                      value={expenseCategory}
+                      onChange={(e) => setExpenseCategory(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white"
+                    >
+                      <option value="Operativo">Operativo / Varios</option>
+                      <option value="Combustible">Combustible</option>
+                      <option value="Papelería">Papelería y Suministros</option>
+                      <option value="Servicios">Servicios (Luz, Agua, Internet)</option>
+                      <option value="Nómina">Nómina / Comisiones</option>
+                      <option value="Mantenimiento">Mantenimiento</option>
+                      <option value="Otros">Otros</option>
+                    </select>
+                  </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB 2: CASH SHIFT & ARQUEO DE BILLETES ─── */}
-      {activeTab === 'shift' && (
-        <div className="w-full space-y-6">
-          {!activeCashShift ? (
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl space-y-6">
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
-                  <Wallet className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-800">Apertura de Turno de Caja</h3>
-                  <p className="text-xs text-slate-500">Ingresa el fondo inicial en efectivo para iniciar la jornada.</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleOpenShiftSubmit} className="space-y-4 text-xs">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Monto Inicial en Caja (RD$)</label>
-                  <input
-                    type="number"
-                    value={initialCashAmount}
-                    onChange={e => setInitialCashAmount(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl font-black text-xl text-indigo-700 focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Observaciones de Apertura</label>
-                  <textarea
-                    value={openShiftNotes}
-                    onChange={e => setOpenShiftNotes(e.target.value)}
-                    placeholder="Ej. Caja chica entregada por gerencia sin novedades"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 h-24"
-                  />
-                </div>
-
-                <button type="submit" className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 text-sm">
-                  Abrir Turno de Caja
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl space-y-6">
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                    TURNO ACTIVO
-                  </span>
-                  <h3 className="text-xl font-black text-slate-800 mt-2">Arqueo y Cierre de Caja</h3>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-400">Esperado en Caja</p>
-                  <p className="text-2xl font-black text-indigo-700">RD$ {shiftSummary.expectedAmount.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Billete Counter Grid */}
-              <div className="space-y-4">
-                <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider">Conteo de Billetes y Monedas</h4>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  {[
-                    { label: 'RD$ 2,000', key: 'twoThousands', mult: 2000 },
-                    { label: 'RD$ 1,000', key: 'thousands', mult: 1000 },
-                    { label: 'RD$ 500', key: 'fiveHundreds', mult: 500 },
-                    { label: 'RD$ 200', key: 'twoHundreds', mult: 200 },
-                    { label: 'RD$ 100', key: 'hundreds', mult: 100 },
-                    { label: 'RD$ 50', key: 'fifties', mult: 50 },
-                  ].map(b => (
-                    <div key={b.key} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                      <label className="font-bold text-slate-600 block mb-1">{b.label}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={closingData[b.key as keyof typeof closingData] || 0}
-                        onChange={e => setClosingData({ ...closingData, [b.key]: Math.max(0, Number(e.target.value)) })}
-                        className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-center font-bold"
-                      />
-                      <span className="text-[10px] text-slate-400 block text-right mt-1 font-mono">
-                        RD$ {((Number(closingData[b.key as keyof typeof closingData]) || 0) * b.mult).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-
-                  <div className="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <label className="font-bold text-slate-600 block mb-1">Monedas & Menudos (RD$)</label>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Monto (RD$)</label>
                     <input
                       type="number"
-                      min="0"
-                      value={closingData.coins}
-                      onChange={e => setClosingData({ ...closingData, coins: Math.max(0, Number(e.target.value)) })}
-                      className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-center font-bold"
+                      placeholder="0.00"
+                      value={expenseAmount}
+                      onChange={(e) => setExpenseAmount(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-white"
+                      required
                     />
                   </div>
-                </div>
 
-                <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 flex justify-between items-center text-sm font-bold">
-                  <span>Total Contado en Caja:</span>
-                  <span className="text-xl font-black text-indigo-700">RD$ {countedTotal.toLocaleString()}</span>
-                </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Concepto</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Pago de gasolina ruta norte"
+                      value={expenseDescription}
+                      onChange={(e) => setExpenseDescription(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-white"
+                      required
+                    />
+                  </div>
 
-                <button
-                  onClick={handleCloseShiftSubmit}
-                  className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg transition-all text-sm"
-                >
-                  Cerrar y Cuadrar Caja
-                </button>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/20"
+                  >
+                    <TrendingDown className="w-3.5 h-3.5" />
+                    Registrar Salida de Caja
+                  </button>
+                </form>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                <span>Total Gastos del Mes:</span>
+                <span className="font-bold text-slate-800 dark:text-white">RD$ {stats.totalExpenses.toLocaleString()}</span>
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* ─── TAB 3: CATÁLOGO DE CUENTAS ─── */}
-      {activeTab === 'chart' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="font-black text-slate-800 text-lg">Catálogo de Cuentas Contables</h3>
-              <p className="text-xs text-slate-500">Estructura oficial de cuentas contables agrupadas por tipo.</p>
+          </div>
+
+          {/* Recent Cash Transactions */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="font-bold text-slate-800 dark:text-white text-base">Últimos Movimientos de Caja</h3>
+                <p className="text-xs text-slate-400">Entradas y salidas registradas en el libro de caja.</p>
+              </div>
+              <button 
+                onClick={() => setActiveTab('history')}
+                className="text-xs font-bold text-indigo-600 hover:underline"
+              >
+                Ver todos los movimientos
+              </button>
             </div>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-              14 Cuentas Activas
-            </span>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
-                  <th className="p-3">Código</th>
-                  <th className="p-3">Nombre de la Cuenta</th>
-                  <th className="p-3">Tipo</th>
-                  <th className="p-3">Clasificación</th>
-                  <th className="p-3 text-right">Balance Acumulado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {accounts.map(acc => (
-                  <tr key={acc.code} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-3 font-mono font-bold text-indigo-600">{acc.code}</td>
-                    <td className="p-3 font-bold text-slate-800">{acc.name}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        acc.type === 'Activo' ? 'bg-emerald-100 text-emerald-700' :
-                        acc.type === 'Pasivo' ? 'bg-rose-100 text-rose-700' :
-                        acc.type === 'Ingreso' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {acc.type}
-                      </span>
-                    </td>
-                    <td className="p-3 text-slate-500">{acc.category}</td>
-                    <td className="p-3 text-right font-black text-slate-900">
-                      RD$ {acc.balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB 4: LIBRO DIARIO (PARTIDA DOBLE) ─── */}
-      {activeTab === 'journal' && (
-        <div className="space-y-6">
-          
-          {/* Manual Entry Form */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-indigo-600" />
-              Crear Asiento Contable Manual (Partida Doble)
-            </h3>
-
-            <form onSubmit={handleManualJournalSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Cuenta Débito (Debe)</label>
-                <CustomSelect
-                  value={manualDebitCode}
-                  onChange={(val: string) => setManualDebitCode(val)}
-                  options={accounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Cuenta Crédito (Haber)</label>
-                <CustomSelect
-                  value={manualCreditCode}
-                  onChange={(val: string) => setManualCreditCode(val)}
-                  options={accounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Monto (RD$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={manualEntryAmount}
-                  onChange={e => setManualEntryAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Concepto / Glosa</label>
-                <input
-                  type="text"
-                  value={manualEntryConcept}
-                  onChange={e => setManualEntryConcept(e.target.value)}
-                  placeholder="Ej. Ajuste de caja chica"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-4 pt-2">
-                <button type="submit" className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition-all">
-                  Registrar Asiento Cuadrado
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Journal Entries List */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <h3 className="font-black text-slate-800 text-base">Libro Diario General</h3>
-            
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
-                    <th className="p-3">Asiento #</th>
-                    <th className="p-3">Fecha</th>
+                  <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase font-bold border-b border-slate-200 dark:border-slate-700">
+                    <th className="p-3">Fecha / Hora</th>
+                    <th className="p-3">Tipo</th>
                     <th className="p-3">Concepto</th>
-                    <th className="p-3">Cuenta Débito</th>
-                    <th className="p-3">Cuenta Crédito</th>
-                    <th className="p-3 text-right">Débito (Debe)</th>
-                    <th className="p-3 text-right">Crédito (Haber)</th>
+                    <th className="p-3">Medio de Pago</th>
+                    <th className="p-3 text-right">Monto</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
-                  {journalEntries.map(j => (
-                    <tr key={j.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3 font-mono font-bold text-indigo-600">{j.id}</td>
-                      <td className="p-3 text-slate-500">{j.date}</td>
-                      <td className="p-3 font-bold text-slate-800">{j.concept}</td>
-                      <td className="p-3 text-emerald-700 font-bold">{j.debitAccount}</td>
-                      <td className="p-3 text-indigo-700 font-bold">{j.creditAccount}</td>
-                      <td className="p-3 text-right font-black text-slate-900">RD$ {j.debitAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      <td className="p-3 text-right font-black text-slate-900">RD$ {j.creditAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                  {transactions.slice(0, 8).map((t, idx) => (
+                    <tr key={t.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="p-3 font-mono text-slate-500 text-[11px]">
+                        {t.date ? new Date(t.date).toLocaleDateString('es-DO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-fit ${
+                          t.type === 'Ingreso' 
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' 
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                        }`}>
+                          {t.type === 'Ingreso' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                          {t.type}
+                        </span>
+                      </td>
+                      <td className="p-3 font-bold text-slate-800 dark:text-white">{t.description}</td>
+                      <td className="p-3 text-slate-500">{t.paymentMethod || 'Efectivo'}</td>
+                      <td className={`p-3 text-right font-black font-mono ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {t.type === 'Ingreso' ? '+' : '-'} RD$ {Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -701,116 +410,410 @@ const Accounting: React.FC = () => {
         </div>
       )}
 
-      {/* ─── TAB 5: BALANZA DE COMPROBACIÓN ─── */}
-      {activeTab === 'trial' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                <Scale className="w-5 h-5 text-indigo-600" /> Balanza de Comprobación
-              </h3>
-              <p className="text-xs text-slate-500">Verificación de igualdad entre sumas de Débitos (Debe) y Créditos (Haber).</p>
+      {/* ─── TAB 2: ARQUEO Y CIERRE DE TURNO (SHIFT) ─── */}
+      {activeTab === 'shift' && (
+        <div className="space-y-6">
+          
+          {!activeCashShift ? (
+            /* Open Shift Box */
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-8 max-w-xl mx-auto text-center space-y-6">
+              <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-200 dark:border-indigo-800">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Abrir Nuevo Turno de Caja</h3>
+                <p className="text-xs text-slate-500 mt-1">Ingrese el fondo inicial de caja para habilitar operaciones de cobro y desembolso.</p>
+              </div>
+
+              <form onSubmit={handleOpenShiftSubmit} className="space-y-4 text-left">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Monto Base Inicial (RD$)</label>
+                  <input
+                    type="number"
+                    value={initialCashAmount}
+                    onChange={(e) => setInitialCashAmount(e.target.value)}
+                    placeholder="5000"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-lg font-black text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">Notas de Apertura (Opcional)</label>
+                  <input
+                    type="text"
+                    value={openShiftNotes}
+                    onChange={(e) => setOpenShiftNotes(e.target.value)}
+                    placeholder="Turno matutino cajero 1"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  Abrir Turno de Caja
+                </button>
+              </form>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-xl border border-emerald-200 text-xs font-bold">
-              <CheckCircle2 className="w-4 h-4" /> Partida Doble Cuadrada
+          ) : (
+            /* Active Shift Management & Billete Closing */
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Summary of Active Shift */}
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">Turno en Curso</h3>
+                    <p className="text-xs text-slate-400">Abierto el {new Date(activeCashShift.openedAt).toLocaleTimeString('es-DO')}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-black uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    Activo
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800">
+                    <span className="text-slate-500">Monto Inicial Apertura:</span>
+                    <span className="font-bold font-mono text-slate-900 dark:text-white">RD$ {Number(activeCashShift.initialAmount).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800">
+                    <span className="text-slate-500">Cobros en Efectivo:</span>
+                    <span className="font-bold font-mono text-emerald-600">+ RD$ {(shiftSummary?.cashIn || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800">
+                    <span className="text-slate-500">Gastos en Efectivo:</span>
+                    <span className="font-bold font-mono text-rose-600">- RD$ {(shiftSummary?.cashOut || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-2 bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900 font-bold">
+                    <span className="text-indigo-900 dark:text-indigo-200">Efectivo Esperado:</span>
+                    <span className="font-mono text-base text-indigo-700 dark:text-indigo-300">RD$ {expectedCashInShift.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Status Box */}
+                <div className={`p-4 rounded-2xl border text-xs ${
+                  shiftDifference === 0 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 text-emerald-800 dark:text-emerald-300' 
+                    : shiftDifference > 0 
+                      ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 text-blue-800 dark:text-blue-300' 
+                      : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 text-rose-800 dark:text-rose-300'
+                }`}>
+                  <div className="font-bold uppercase tracking-wider text-[10px] mb-1">Resultado del Arqueo</div>
+                  <div className="text-sm font-black">
+                    {shiftDifference === 0 ? 'Caja Cuadrada Perfecta' : shiftDifference > 0 ? `Sobrante: +RD$ ${shiftDifference.toLocaleString()}` : `Faltante: -RD$ ${Math.abs(shiftDifference).toLocaleString()}`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Billete Counter / Physical Count Form */}
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">Arqueo Físico de Billetes y Monedas</h3>
+                    <p className="text-xs text-slate-400">Contabilice la cantidad de billetes en gaveta para cuadrar el cierre.</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Total Contado</span>
+                    <span className="text-lg font-black font-mono text-emerald-600">RD$ {countedTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                  {[
+                    { label: 'RD$ 2,000', key: 'twoThousands', val: 2000 },
+                    { label: 'RD$ 1,000', key: 'thousands', val: 1000 },
+                    { label: 'RD$ 500', key: 'fiveHundreds', val: 500 },
+                    { label: 'RD$ 200', key: 'twoHundreds', val: 200 },
+                    { label: 'RD$ 100', key: 'hundreds', val: 100 },
+                    { label: 'RD$ 50', key: 'fifties', val: 50 },
+                  ].map((denom) => (
+                    <div key={denom.key} className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <div className="flex justify-between font-bold text-slate-600 dark:text-slate-300 mb-1">
+                        <span>{denom.label}</span>
+                        <span className="font-mono text-slate-400">x {(closingData as any)[denom.key]}</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={(closingData as any)[denom.key] || ''}
+                        onChange={(e) => setClosingData({ ...closingData, [denom.key]: Number(e.target.value) || 0 })}
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-black font-mono text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Monedas Sueltas (RD$ Total)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={closingData.coins || ''}
+                      onChange={(e) => setClosingData({ ...closingData, coins: Number(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Observaciones del Cierre</label>
+                    <input
+                      type="text"
+                      placeholder="Todo cuadrado sin novedades"
+                      value={closingData.notes}
+                      onChange={(e) => setClosingData({ ...closingData, notes: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCloseShiftSubmit}
+                  className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-rose-600/30 transition-all flex items-center justify-center gap-2 mt-4"
+                >
+                  <StopCircle className="w-4 h-4" />
+                  Confirmar y Cerrar Turno de Caja
+                </button>
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ─── TAB 3: CONTROL DE GASTOS (EXPENSES) ─── */}
+      {activeTab === 'expenses' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Expense Form */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Registrar Nuevo Gasto</h3>
+                <p className="text-xs text-slate-400">Contabilice compras operativas, nóminas o pagos de servicios.</p>
+              </div>
+
+              <form onSubmit={handleExpenseSubmit} className="space-y-3.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Categoría del Gasto</label>
+                  <select
+                    value={expenseCategory}
+                    onChange={(e) => setExpenseCategory(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white"
+                  >
+                    <option value="Combustible">Combustible</option>
+                    <option value="Papelería">Papelería y Útiles</option>
+                    <option value="Nómina">Nómina y Comisiones</option>
+                    <option value="Operativo">Operativo General</option>
+                    <option value="Servicios">Servicios Públicos (Luz / Agua / Internet)</option>
+                    <option value="Mantenimiento">Mantenimiento de Vehículos / Oficina</option>
+                    <option value="Otros">Otros Egresos</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Monto (RD$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={expenseAmount}
+                    onChange={(e) => setExpenseAmount(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-black text-slate-900 dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Origen del Pago</label>
+                  <select
+                    value={selectedBankAccountId}
+                    onChange={(e) => setSelectedBankAccountId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white"
+                  >
+                    <option value="">Caja Chica (Efectivo)</option>
+                    {bankAccounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.bankName} - {acc.accountNumber} (Disp: RD$ {Number(acc.balance).toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Descripción / Proveedor</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Detalle del gasto o nombre del suplidor..."
+                    value={expenseDescription}
+                    onChange={(e) => setExpenseDescription(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-white resize-none"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md shadow-rose-600/20 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Guardar y Descontar Gasto
+                </button>
+              </form>
+            </div>
+
+            {/* Expenses History Table */}
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">Historial de Gastos Registrados</h3>
+                  <p className="text-xs text-slate-400">{expenseTransactions.length} registros de egresos</p>
+                </div>
+                <span className="text-sm font-black font-mono text-rose-600">
+                  Total: RD$ {expenseTransactions.reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase font-bold border-b border-slate-200 dark:border-slate-700">
+                      <th className="p-3">Fecha</th>
+                      <th className="p-3">Categoría</th>
+                      <th className="p-3">Descripción</th>
+                      <th className="p-3">Medio</th>
+                      <th className="p-3 text-right">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                    {expenseTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-6 text-center text-slate-400 font-semibold">
+                          No hay gastos registrados en el sistema.
+                        </td>
+                      </tr>
+                    ) : (
+                      expenseTransactions.map((t, idx) => (
+                        <tr key={t.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <td className="p-3 font-mono text-slate-500 text-[11px]">
+                            {t.date ? new Date(t.date).toLocaleDateString('es-DO') : '-'}
+                          </td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                              {t.category || 'Operativo'}
+                            </span>
+                          </td>
+                          <td className="p-3 font-bold text-slate-800 dark:text-white">{t.description}</td>
+                          <td className="p-3 text-slate-500">{t.paymentMethod}</td>
+                          <td className="p-3 text-right font-black font-mono text-rose-600">
+                            RD$ {Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 4: HISTORIAL DE MOVIMIENTOS (HISTORY) ─── */}
+      {activeTab === 'history' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6 space-y-4">
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Libro Cronológico de Movimientos de Caja</h3>
+              <p className="text-xs text-slate-400">Registro histórico completo de cobros, desembolsos y egresos.</p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+              <input
+                type="text"
+                placeholder="Buscar por concepto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+              />
+              <select
+                value={selectedTypeFilter}
+                onChange={(e) => setSelectedTypeFilter(e.target.value as any)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold"
+              >
+                <option value="ALL">Todos los Tipos</option>
+                <option value="Ingreso">Ingresos (+)</option>
+                <option value="Gasto">Gastos (-)</option>
+              </select>
+              <DataExportToolbar
+                data={filteredTransactions}
+                filename="movimientos_caja"
+                title="Movimientos de Caja General"
+                columns={[
+                  { header: 'ID', key: 'id' },
+                  { header: 'Fecha', key: 'date' },
+                  { header: 'Tipo', key: 'type' },
+                  { header: 'Categoría', key: 'category' },
+                  { header: 'Descripción', key: 'description' },
+                  { header: 'Método', key: 'paymentMethod' },
+                  { header: 'Monto', key: 'amount', format: (v) => `RD$ ${Number(v || 0).toLocaleString()}` }
+                ]}
+              />
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
-                  <th className="p-3">Código</th>
-                  <th className="p-3">Nombre de la Cuenta</th>
-                  <th className="p-3 text-right">Débitos (Debe)</th>
-                  <th className="p-3 text-right">Créditos (Haber)</th>
-                  <th className="p-3 text-right">Saldo Deudor / Acreedor</th>
+                <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase font-bold border-b border-slate-200 dark:border-slate-700">
+                  <th className="p-3">Fecha / Hora</th>
+                  <th className="p-3">Tipo</th>
+                  <th className="p-3">Categoría</th>
+                  <th className="p-3">Concepto</th>
+                  <th className="p-3">Medio de Pago</th>
+                  <th className="p-3 text-right">Monto</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {accounts.map(acc => {
-                  const isDeb = acc.type === 'Activo' || acc.type === 'Gasto';
-                  return (
-                    <tr key={acc.code} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3 font-mono font-bold text-indigo-600">{acc.code}</td>
-                      <td className="p-3 font-bold text-slate-800">{acc.name}</td>
-                      <td className="p-3 text-right font-mono font-bold text-emerald-600">
-                        {isDeb ? `RD$ ${acc.balance.toLocaleString(undefined, {minimumFractionDigits: 2})}` : 'RD$ 0.00'}
-                      </td>
-                      <td className="p-3 text-right font-mono font-bold text-indigo-600">
-                        {!isDeb ? `RD$ ${acc.balance.toLocaleString(undefined, {minimumFractionDigits: 2})}` : 'RD$ 0.00'}
-                      </td>
-                      <td className="p-3 text-right font-black text-slate-900">
-                        RD$ {acc.balance.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                      </td>
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                {filteredTransactions.map((t, idx) => (
+                  <tr key={t.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="p-3 font-mono text-slate-500 text-[11px]">
+                      {t.date ? new Date(t.date).toLocaleDateString('es-DO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-fit ${
+                        t.type === 'Ingreso' 
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' 
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                      }`}>
+                        {t.type}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-500">{t.category || '-'}</td>
+                    <td className="p-3 font-bold text-slate-800 dark:text-white">{t.description}</td>
+                    <td className="p-3 text-slate-500">{t.paymentMethod || 'Efectivo'}</td>
+                    <td className={`p-3 text-right font-black font-mono ${t.type === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {t.type === 'Ingreso' ? '+' : '-'} RD$ {Number(t.amount).toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* ─── TAB 6: ESTADO DE RESULTADOS (P&L) & BALANCE GENERAL ─── */}
-      {activeTab === 'financials' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Income Statement (P&L) */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <h3 className="font-black text-slate-800 text-lg border-b border-slate-100 pb-3">
-              Estado de Resultados (Ganancias & Pérdidas)
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 font-bold flex justify-between text-emerald-900">
-                <span>(+) Ingresos por Intereses Financieros:</span>
-                <span>RD$ {totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="bg-rose-50 p-3 rounded-xl border border-rose-100 font-bold flex justify-between text-rose-900">
-                <span>(-) Gastos Operativos Totales:</span>
-                <span>RD$ {totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="bg-slate-900 text-white p-4 rounded-xl font-black text-sm flex justify-between">
-                <span>(=) UTILIDAD NETA DEL PERIODO:</span>
-                <span className={netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                  RD$ {netProfit.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Balance Sheet */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <h3 className="font-black text-slate-800 text-lg border-b border-slate-100 pb-3">
-              Balance General (Situación Financiera)
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 font-bold flex justify-between text-indigo-900">
-                <span>Activos Totales (Caja + Cartera):</span>
-                <span>RD$ {(stats.balance + totalPortfolioValue).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 font-bold flex justify-between text-slate-700">
-                <span>Pasivos Totales:</span>
-                <span>RD$ 0.00</span>
-              </div>
-              <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 font-bold flex justify-between text-purple-900">
-                <span>Patrimonio Neto (Capital + Utilidad):</span>
-                <span>RD$ {(500000 + netProfit).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
-              </div>
-            </div>
-          </div>
 
         </div>
       )}
 
-      {/* Optional Cash Bill Counter Modal */}
-      <CashCounterModal 
+      {/* Cash Counter Modal */}
+      <CashCounterModal
         isOpen={isCashCounterOpen}
         onClose={() => setIsCashCounterOpen(false)}
-        systemBalance={stats.balance}
-        cashBoxName="Caja General"
+        expectedAmount={activeCashShift ? (shiftSummary?.expectedCash || 0) : stats.balance}
       />
 
     </div>

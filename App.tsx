@@ -213,10 +213,10 @@ const AppContent: React.FC = () => {
                   <Route path="/rutas" element={<ProtectedRoute><RoutesPage /></ProtectedRoute>} />
                   <Route path="/empleados" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                   <Route path="/clasificacion" element={<ProtectedRoute><Classification /></ProtectedRoute>} />
-                  <Route path="/contabilidad" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                  <Route path="/contabilidad" element={<ProtectedRoute><DeepAccounting /></ProtectedRoute>} />
                   <Route path="/contabilidad-avanzada" element={<ProtectedRoute><DeepAccounting /></ProtectedRoute>} />
-                  <Route path="/caja" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
-                  <Route path="/gastos" element={<ProtectedRoute><Accounting /></ProtectedRoute>} />
+                  <Route path="/caja" element={<ProtectedRoute><Accounting initialTab="overview" /></ProtectedRoute>} />
+                  <Route path="/gastos" element={<ProtectedRoute><Accounting initialTab="expenses" /></ProtectedRoute>} />
                   <Route path="/bancos" element={<ProtectedRoute><BankAccountsPage /></ProtectedRoute>} />
                   <Route path="/conciliacion" element={<ProtectedRoute><BankReconciliation /></ProtectedRoute>} />
                   <Route path="/conciliacion-bancaria" element={<ProtectedRoute><BankReconciliation /></ProtectedRoute>} />
