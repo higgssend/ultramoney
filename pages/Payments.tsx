@@ -1142,7 +1142,8 @@ export const Payments: React.FC = () => {
                     ) : (
                       displayedMainFeedPayments.slice(0, 25).map((t) => {
                         const loan = loans.find(l => l.id === t.referenceId);
-                        const clientName = loan ? loan.clientName : (t.description?.split('-')[1]?.trim() || 'Cliente');
+                        const client = loan ? clients.find(c => c.id === loan.clientId) : (t.referenceId ? clients.find(c => c.id === t.referenceId) : undefined);
+                        const clientName = client ? `${client.name} ${client.lastName || ''}`.trim() : (loan?.clientName || (t.description?.split('-')[1]?.trim() || 'Cliente'));
                         const formattedRec = formatReceiptId(t.id);
                         const parsedDate = t.date ? new Date(t.date) : new Date();
 

@@ -42,6 +42,7 @@ const ClientPortals = React.lazy(() => import('./pages/ClientPortals'));
 const ClientPortal = React.lazy(() => import('./pages/ClientPortal').then(m => ({ default: m.ClientPortal })));
 const ReceiptView = React.lazy(() => import('./pages/ReceiptView').then(m => ({ default: m.ReceiptView })));
 const PublicDocumentView = React.lazy(() => import('./pages/PublicDocumentView').then(m => ({ default: m.PublicDocumentView })));
+const ClientAccountStatementPage = React.lazy(() => import('./pages/ClientAccountStatementPage').then(m => ({ default: m.ClientAccountStatementPage })));
 const Register = React.lazy(() => import('./pages/Register'));
 const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const Settings = React.lazy(() => import('./pages/Settings'));
@@ -135,6 +136,7 @@ const AppContent: React.FC = () => {
     location.pathname.startsWith('/login/') ||
     location.pathname.startsWith('/recibo/') ||
     location.pathname.startsWith('/documento/') ||
+    location.pathname.startsWith('/estado-cuenta/') ||
     location.pathname.startsWith('/pagar') ||
     location.pathname.startsWith('/linkpagos') ||
     location.pathname === '/ayuda' ||
@@ -171,6 +173,8 @@ const AppContent: React.FC = () => {
                   <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
                   <Route path="/portal/:clientId" element={<ClientPortal />} />
                   <Route path="/recibo/:transactionId" element={<ReceiptView />} />
+                  <Route path="/documento/estado-cliente/:clientId" element={<ClientAccountStatementPage />} />
+                  <Route path="/estado-cuenta/:clientId" element={<ClientAccountStatementPage />} />
                   <Route path="/documento/:docType/:loanId" element={<PublicDocumentView />} />
                   <Route path="/pagar" element={<PublicPaymentPortal />} />
                   <Route path="/pagar/:slug" element={<PublicPaymentPortal />} />

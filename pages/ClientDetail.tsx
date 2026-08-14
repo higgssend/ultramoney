@@ -192,15 +192,8 @@ const ClientDetail: React.FC = () => {
   }));
 
   const handleOpenAccountStatement = () => {
-    if (clientLoans.length === 0) {
-      addToast('Este cliente no posee préstamos registrados para generar estado de cuenta', 'error');
-      return;
-    }
-    if (clientLoans.length === 1) {
-      window.open(`/documento/estado/${clientLoans[0].id}`, '_blank');
-    } else {
-      setStatementLoanModalOpen(true);
-    }
+    if (!client) return;
+    window.open(`/documento/estado-cliente/${client.id}`, '_blank');
   };
 
   const handleOpenThermalReceipt = (t: Transaction) => {
