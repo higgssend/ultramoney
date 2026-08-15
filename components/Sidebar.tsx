@@ -147,7 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className={drawerLayout === 'grid' ? "grid grid-cols-4 gap-1.5 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
+          <div className={drawerLayout === 'grid' ? "grid grid-cols-3 sm:grid-cols-4 gap-2.5 md:flex md:flex-col md:space-y-1 md:gap-0" : "flex flex-col space-y-1"}>
             {menuItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -156,22 +156,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className={({ isActive }) => `
                   flex transition-all duration-200 group active:scale-95
                   ${drawerLayout === 'grid' 
-                    ? 'flex-col md:flex-row items-center justify-center md:justify-start aspect-square md:aspect-auto p-1.5 md:p-3 text-center md:text-left rounded-xl border md:border-none shadow-sm md:shadow-none' 
+                    ? 'flex-col md:flex-row items-center justify-center md:justify-start min-h-[84px] md:min-h-0 p-2.5 md:p-3 text-center md:text-left rounded-2xl md:rounded-xl border md:border-none shadow-xs md:shadow-none' 
                     : 'flex-row items-center px-3 py-3 rounded-xl border border-transparent'}
                   ${isActive 
                     ? 'bg-indigo-600 text-white border-indigo-600 md:bg-indigo-50 md:dark:bg-indigo-900/30 md:text-indigo-700 md:dark:text-indigo-400 font-bold shadow-md shadow-indigo-200 dark:shadow-none' 
-                    : 'bg-slate-50 dark:bg-slate-800/40 md:bg-transparent border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold'}
+                    : 'bg-slate-50 dark:bg-slate-800/60 md:bg-transparent border-slate-200/70 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold'}
                 `}
               >
                 {({ isActive }) => (
                   <>
-                    <div className="relative shrink-0">
-                      <item.icon className={`${drawerLayout === 'grid' ? 'w-4 h-4 mb-1 md:mb-0 md:w-5 md:h-5 md:mr-3' : 'w-5 h-5 mr-3'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                    <div className={`relative shrink-0 flex items-center justify-center ${drawerLayout === 'grid' ? 'w-10 h-10 md:w-auto md:h-auto rounded-xl md:rounded-none mb-1 md:mb-0 md:mr-3' : 'mr-3'} ${drawerLayout === 'grid' && !isActive ? 'bg-white dark:bg-slate-800 md:bg-transparent shadow-xs md:shadow-none' : ''}`}>
+                      <item.icon className={`${drawerLayout === 'grid' ? 'w-5 h-5 md:w-5 md:h-5' : 'w-5 h-5'} ${isActive ? 'text-white md:text-indigo-600 md:dark:text-indigo-400' : 'text-indigo-600 dark:text-indigo-400 md:text-slate-400 group-hover:text-indigo-500'}`} />
                       {item.badge && item.badge > 0 && drawerLayout === 'grid' ? (
-                        <span className="md:hidden absolute -top-1.5 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse ring-1 ring-white dark:ring-slate-900" />
+                        <span className="md:hidden absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse ring-2 ring-white dark:ring-slate-900" />
                       ) : null}
                     </div>
-                    <span className="text-[10px] sm:text-[11px] md:text-sm leading-tight font-bold md:font-medium tracking-tight truncate flex-1 text-left px-0.5">{item.name}</span>
+                    <span className={`text-[11px] md:text-sm leading-snug font-bold md:font-medium tracking-tight truncate w-full ${drawerLayout === 'grid' ? 'text-center' : 'text-left'}`}>
+                      {item.name}
+                    </span>
                     {item.badge && item.badge > 0 ? (
                       <span className={`hidden md:inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-extrabold rounded-full ${
                         isActive 

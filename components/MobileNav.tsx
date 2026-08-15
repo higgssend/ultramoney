@@ -91,7 +91,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
   ];
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-50 md:hidden pointer-events-auto">
+    <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-40 md:hidden pointer-events-auto">
       
       {/* Apple Floating Liquid Glass Dock Capsule */}
       <nav className="relative liquidglass flex items-center justify-between px-3.5 py-2 overflow-visible transition-all duration-300">

@@ -136,7 +136,7 @@ const Invoices: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in relative pb-16">
+    <div className="space-y-6 animate-fade-in relative pb-32 md:pb-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">

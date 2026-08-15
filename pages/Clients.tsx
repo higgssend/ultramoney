@@ -104,7 +104,7 @@ const Clients: React.FC = () => {
   const statuses = ['Todos', 'Al Día', 'Activo', 'Atrasado', 'Inactivo'];
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-32 md:pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

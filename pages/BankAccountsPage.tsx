@@ -315,7 +315,7 @@ export const BankAccountsPage: React.FC = () => {
   const totalBankBalance = bankAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
+    <div className="space-y-8 animate-fade-in pb-32 md:pb-12">
       {/* Top Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-slate-800">
         <div className="space-y-2">
@@ -804,7 +804,7 @@ export const BankAccountsPage: React.FC = () => {
 
       {/* CREATE & EDIT INSTRUMENT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
             
             {/* Modal Header */}
@@ -1152,7 +1152,7 @@ export const BankAccountsPage: React.FC = () => {
 
       {/* CONFIRM DELETE MODAL */}
       {deletingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <ShieldAlert className="w-8 h-8" />

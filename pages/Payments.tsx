@@ -695,7 +695,7 @@ export const Payments: React.FC = () => {
   }, [loans, clients]);
 
   return (
-    <div className="space-y-6 animate-fade-in relative pb-12">
+    <div className="space-y-6 animate-fade-in relative pb-32 md:pb-12">
       {/* Thermal POS Receipt Modal */}
       {thermalModalData && (
         <ThermalReceiptModal
@@ -707,7 +707,7 @@ export const Payments: React.FC = () => {
 
       {/* Quick Pay Modal for Mobile */}
       {isMobileQuickPayModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
             {/* Modal Header */}
             <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-600 via-indigo-700 to-emerald-600 text-white flex items-center justify-between">
@@ -2370,7 +2370,7 @@ const PaymentSuccessModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
       {isThermalOpen && (
         <ThermalReceiptModal
           isOpen={isThermalOpen}

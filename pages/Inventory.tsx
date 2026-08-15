@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Package, Plus, Search, Trash2, Edit, CheckCircle, Tag, DollarSign, Smartphone, Shield, X, Save } from 'lucide-react';
+import { 
+  Package, Plus, Search, Trash2, Edit, CheckCircle, Tag, DollarSign, 
+  Smartphone, Shield, X, Save, ChevronLeft, ArrowLeft, Layers, Barcode, Laptop, Car, Tv
+} from 'lucide-react';
 import { useInventory } from '../context/StoreContext';
 import { InventoryItem } from '../types';
 import { CustomSelect } from '../components/CustomSelect';
@@ -10,7 +13,7 @@ export const InventoryPage: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
@@ -39,7 +42,7 @@ export const InventoryPage: React.FC = () => {
     return matchesSearch && matchesCat;
   });
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddForm = () => {
     setEditingItem(null);
     setFormData({
       name: '',
@@ -55,13 +58,15 @@ export const InventoryPage: React.FC = () => {
       costPrice: 0,
       status: 'Disponible'
     });
-    setIsModalOpen(true);
+    setViewMode('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleOpenEditModal = (item: InventoryItem) => {
+  const handleOpenEditForm = (item: InventoryItem) => {
     setEditingItem(item);
     setFormData({ ...item });
-    setIsModalOpen(true);
+    setViewMode('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,11 +89,266 @@ export const InventoryPage: React.FC = () => {
       });
     }
 
-    setIsModalOpen(false);
+    setViewMode('list');
   };
 
+  // Dedicated Full View / Page for Creating or Editing Stock Product
+  if (viewMode === 'form') {
+    return (
+      <div className="w-full max-w-4xl mx-auto space-y-6 pb-32 md:pb-12 animate-fade-in">
+        
+        {/* Navigation & Header */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl transition-all active:scale-95"
+              title="Volver al Inventario"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                <Package className="w-6 h-6 text-emerald-600" />
+                {editingItem ? 'Editar Equipo en Stock' : 'Nuevo Equipo en Inventario'}
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {editingItem ? 'Actualiza las especificaciones, serial o precio del artículo.' : 'Registra los datos técnicos, serie, categoría y precio de venta del artículo.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-xl transition-all self-end sm:self-auto"
+          >
+            Cancelar y Volver
+          </button>
+        </div>
+
+        {/* Product Form Card */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* Section 1: General Specs */}
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-emerald-600" />
+              <h2 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-white">
+                1. Especificaciones y Características del Bien
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Categoría del Producto</label>
+                <CustomSelect
+                  value={formData.category || 'Teléfono / Celular'}
+                  onChange={(v) => setFormData({ ...formData, category: v })}
+                  className="w-full text-xs"
+                  options={[
+                    { value: 'Teléfono / Celular', label: 'Teléfono / Celular' },
+                    { value: 'Tablets / iPads', label: 'Tablets / iPads' },
+                    { value: 'Laptops / Portátiles', label: 'Laptops / Portátiles' },
+                    { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio' },
+                    { value: 'Electrodoméstico', label: 'Electrodoméstico / Equipo' },
+                    { value: 'Vehículo', label: 'Vehículo / Pasola' },
+                    { value: 'Otro', label: 'Otro bien' }
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Marca</label>
+                <input
+                  type="text"
+                  value={formData.brand || ''}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  placeholder="Ej. Apple / Samsung / Dell / Honda"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium dark:text-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Modelo / Versión</label>
+                <input
+                  type="text"
+                  value={formData.model || ''}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                  placeholder="Ej. iPhone 15 Pro Max 256GB"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium dark:text-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Estado / Condición Física</label>
+                <CustomSelect
+                  value={formData.condition || 'Excelente / Como Nuevo'}
+                  onChange={(v) => setFormData({ ...formData, condition: v })}
+                  className="w-full text-xs"
+                  options={[
+                    { value: 'Excelente / Como Nuevo', label: 'Excelente / Como Nuevo (10/10)' },
+                    { value: 'Bueno con uso normal', label: 'Bueno (Uso Normal 8-9/10)' },
+                    { value: 'Con detalles / Rayaduras', label: 'Con detalles / Rayaduras' },
+                    { value: 'Nuevo en Caja Sellada', label: 'Nuevo en Caja Sellada' }
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Almacenamiento / Capacidad</label>
+                <CustomSelect
+                  value={formData.storage || '128GB'}
+                  onChange={(v) => setFormData({ ...formData, storage: v })}
+                  className="w-full text-xs"
+                  options={[
+                    { value: '32GB', label: '32 GB' },
+                    { value: '64GB', label: '64 GB' },
+                    { value: '128GB', label: '128 GB' },
+                    { value: '256GB', label: '256 GB' },
+                    { value: '512GB', label: '512 GB' },
+                    { value: '1TB', label: '1 TB' },
+                    { value: '2TB+', label: '2 TB o superior' },
+                    { value: 'N/A', label: 'No Aplica' }
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Color del Equipo</label>
+                <input
+                  type="text"
+                  value={formData.color || ''}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  placeholder="Ej. Titanium Negro / Plata"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium dark:text-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Serial & Identifiers */}
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+              <Barcode className="w-5 h-5 text-indigo-600" />
+              <h2 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-white">
+                2. Números de Serie & Validación de Identidad
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  IMEI 1 / Número de Serie Principal <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.serialNumber || ''}
+                  onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                  placeholder="Ej. 356789012345678"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold dark:text-white focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Identificador único del dispositivo para validación en financiamientos.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  IMEI 2 / Serie Secundaria (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.imei2 || ''}
+                  onChange={(e) => setFormData({ ...formData, imei2: e.target.value })}
+                  placeholder="Ej. 356789012345679"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono dark:text-white focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Para equipos con dual SIM física o eSIM digital.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Pricing and Stock Status */}
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
+              <h2 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-white">
+                3. Precios y Disponibilidad en Stock
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Precio de Contado (RD$) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={formData.cashPrice === 0 ? '' : formData.cashPrice}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setFormData({ ...formData, cashPrice: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  placeholder="0.00"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-black text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Costo de Adquisición (RD$)
+                </label>
+                <input
+                  type="number"
+                  value={formData.costPrice === 0 ? '' : formData.costPrice}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setFormData({ ...formData, costPrice: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  placeholder="0.00"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Estado en Almacén</label>
+                <CustomSelect
+                  value={formData.status || 'Disponible'}
+                  onChange={(v) => setFormData({ ...formData, status: v as InventoryItem['status'] })}
+                  className="w-full text-xs"
+                  options={[
+                    { value: 'Disponible', label: 'Disponible en Stock' },
+                    { value: 'Financiado', label: 'Financiado' },
+                    { value: 'Vendido', label: 'Vendido / Liquidado' }
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Bar (Raised with ample mobile padding) */}
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className="w-full sm:w-auto px-6 py-3.5 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-center"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+            >
+              <Save className="w-4 h-4" />
+              {editingItem ? 'Guardar Cambios del Equipo' : 'Guardar Equipo en Stock'}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    );
+  }
+
+  // Standard Inventory List View
   return (
-    <div className="w-full space-y-6 pb-20 animate-fade-in">
+    <div className="w-full space-y-6 pb-32 md:pb-12 animate-fade-in">
       
       {/* Header Bar */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
@@ -102,7 +362,7 @@ export const InventoryPage: React.FC = () => {
           <p className="text-slate-500 text-xs mt-1">Catálogo de teléfonos, dispositivos y bienes listos para financiamiento o venta.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <DataExportToolbar
             data={filteredItems}
             title="Inventario de Equipos UltraMoney"
@@ -119,15 +379,15 @@ export const InventoryPage: React.FC = () => {
             ]}
           />
           <button
-            onClick={handleOpenAddModal}
-            className="px-5 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-xs hover:bg-emerald-700 transition-colors shadow-md flex items-center gap-2"
+            onClick={handleOpenAddForm}
+            className="flex-1 sm:flex-none px-5 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-xs hover:bg-emerald-700 transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"
           >
             <Plus className="w-4 h-4" /> Agregar Equipo al Stock
           </button>
         </div>
       </div>
 
-      {/* Filters Bar */}
+      {/* Top Search & Filter Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
@@ -138,14 +398,22 @@ export const InventoryPage: React.FC = () => {
             placeholder="Buscar por marca, modelo, IMEI..."
             className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <span className="text-xs font-bold text-slate-500">Filtrar por Categoría:</span>
+          <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Categoría:</span>
           <CustomSelect
             value={selectedCategory}
             onChange={(val) => setSelectedCategory(val)}
-            className="w-48 text-xs font-medium"
+            className="w-full md:w-48 text-xs font-medium"
             options={[
               { value: 'Todas', label: 'Todas las Categorías' },
               { value: 'Teléfono / Celular', label: 'Teléfonos / Celulares' },
@@ -164,9 +432,13 @@ export const InventoryPage: React.FC = () => {
       {filteredItems.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-3xl border border-slate-100 dark:border-slate-800 space-y-3">
           <Package className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="font-bold text-slate-700 dark:text-slate-300">No hay equipos registrados en el stock</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">Agrega tus teléfonos, vehículos o electrodomésticos para seleccionarlos al instante al financiar.</p>
-          <button onClick={handleOpenAddModal} className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs">
+          <h3 className="font-bold text-slate-700 dark:text-slate-300">
+            {searchTerm ? 'No se encontraron equipos coincidentes' : 'No hay equipos registrados en el stock'}
+          </h3>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            {searchTerm ? `Ningún artículo coincide con "${searchTerm}"` : 'Agrega tus teléfonos, vehículos o electrodomésticos para seleccionarlos al instante al financiar.'}
+          </p>
+          <button onClick={handleOpenAddForm} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-all shadow-md">
             + Agregar Primer Equipo
           </button>
         </div>
@@ -214,7 +486,7 @@ export const InventoryPage: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleOpenEditModal(item)}
+                    onClick={() => handleOpenEditForm(item)}
                     className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                     title="Editar Equipo"
                   >
@@ -234,172 +506,8 @@ export const InventoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Agregar / Editar Equipo */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
-            <div className="bg-emerald-600 p-6 flex justify-between items-center text-white shrink-0">
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                {editingItem ? 'Editar Equipo en Stock' : 'Agregar Nuevo Equipo al Inventario'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="hover:bg-emerald-700 p-1.5 rounded-xl transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
-                  <CustomSelect
-                    value={formData.category || 'Teléfono / Celular'}
-                    onChange={(v) => setFormData({ ...formData, category: v })}
-                    className="w-full text-xs"
-                    options={[
-                      { value: 'Teléfono / Celular', label: 'Teléfono / Celular' },
-                      { value: 'Tablets / iPads', label: 'Tablets / iPads' },
-                      { value: 'Laptops / Portátiles', label: 'Laptops / Portátiles' },
-                      { value: 'PC / Computadoras de Escritorio', label: 'PC / Computadoras de Escritorio' },
-                      { value: 'Electrodoméstico', label: 'Electrodoméstico / Equipo' },
-                      { value: 'Vehículo', label: 'Vehículo / Pasola' },
-                      { value: 'Otro', label: 'Otro bien' }
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Marca</label>
-                  <input
-                    type="text"
-                    value={formData.brand || ''}
-                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    placeholder="Ej. Apple / Samsung / LG"
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Modelo</label>
-                  <input
-                    type="text"
-                    value={formData.model || ''}
-                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                    placeholder="Ej. iPhone 15 Pro / S24 Ultra"
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">IMEI 1 / Número de Serie</label>
-                  <input
-                    type="text"
-                    value={formData.serialNumber || ''}
-                    onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
-                    placeholder="Ej. 356789012345678"
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">IMEI 2 (Opcional)</label>
-                  <input
-                    type="text"
-                    value={formData.imei2 || ''}
-                    onChange={(e) => setFormData({ ...formData, imei2: e.target.value })}
-                    placeholder="Ej. 356789012345679"
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estado del Equipo</label>
-                  <CustomSelect
-                    value={formData.condition || 'Excelente / Como Nuevo'}
-                    onChange={(v) => setFormData({ ...formData, condition: v })}
-                    className="w-full text-xs"
-                    options={[
-                      { value: 'Excelente / Como Nuevo', label: 'Excelente / Como Nuevo' },
-                      { value: 'Bueno con uso normal', label: 'Bueno (Uso Normal)' },
-                      { value: 'Con detalles / Rayaduras', label: 'Con detalles' }
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Almacenamiento</label>
-                  <CustomSelect
-                    value={formData.storage || '128GB'}
-                    onChange={(v) => setFormData({ ...formData, storage: v })}
-                    className="w-full text-xs"
-                    options={[
-                      { value: '64GB', label: '64 GB' },
-                      { value: '128GB', label: '128 GB' },
-                      { value: '256GB', label: '256 GB' },
-                      { value: '512GB', label: '512 GB' },
-                      { value: '1TB', label: '1 TB' }
-                    ]}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Color del Equipo</label>
-                  <input
-                    type="text"
-                    value={formData.color || ''}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    placeholder="Ej. Titanium Negro"
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Precio de Contado (RD$)</label>
-                  <input
-                    type="number"
-                    value={formData.cashPrice === 0 ? '' : formData.cashPrice}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => setFormData({ ...formData, cashPrice: e.target.value === '' ? 0 : Number(e.target.value) })}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-xl text-xs font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Estado de Stock</label>
-                  <CustomSelect
-                    value={formData.status || 'Disponible'}
-                    onChange={(v) => setFormData({ ...formData, status: v as InventoryItem['status'] })}
-                    className="w-full text-xs"
-                    options={[
-                      { value: 'Disponible', label: 'Disponible en Stock' },
-                      { value: 'Financiado', label: 'Financiado' },
-                      { value: 'Vendido', label: 'Vendido' }
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-3 justify-end border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 shadow-sm"
-                >
-                  Guardar Equipo
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 };
+
+export default InventoryPage;

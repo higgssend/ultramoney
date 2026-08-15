@@ -22,7 +22,7 @@ const Overdue: React.FC = () => {
   const filteredOverdueList = overdueList.filter(l => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
-    const client = clients.find(c => c.id === loan.clientId);
+    const client = clients.find(c => c.id === l.clientId);
     const clientName = (client ? `${client.name} ${client.lastName || ''}` : l.clientName || '').toLowerCase();
     const cedula = (client?.cedula || '').toLowerCase();
     const loanId = (l.id || '').toLowerCase();
@@ -47,7 +47,7 @@ const Overdue: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
+    <div className="space-y-6 animate-fade-in pb-32 md:pb-12">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-3">
             <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors">
