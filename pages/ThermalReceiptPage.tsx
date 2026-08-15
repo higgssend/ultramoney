@@ -548,22 +548,22 @@ export const ThermalReceiptPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white">
-        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-sm font-bold text-slate-400 tracking-wider">Cargando estación de impresión térmica...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-900">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-bold text-slate-600 tracking-wider">Cargando estación de impresión térmica...</p>
       </div>
     );
   }
 
   if (!transaction) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center">
-        <h1 className="text-2xl font-bold text-slate-200 mb-2">Comprobante no encontrado</h1>
-        <p className="text-slate-400 text-sm max-w-md mb-6">El recibo solicitado no existe o el enlace es incorrecto.</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-900 text-center">
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Comprobante no encontrado</h1>
+        <p className="text-slate-500 text-sm max-w-md mb-6">El recibo solicitado no existe o el enlace es incorrecto.</p>
         {currentUser && (
           <button
             onClick={() => navigate('/pagos')}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all"
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all"
           >
             Volver a Cobranza
           </button>
@@ -575,15 +575,15 @@ export const ThermalReceiptPage: React.FC = () => {
   const receiptWidthClass = paperWidth === '58mm' ? 'w-[360px] max-w-full' : 'w-[480px] max-w-full';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center py-6 px-3 sm:px-6 relative selection:bg-indigo-500 selection:text-white pb-32 sm:pb-16">
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col items-center py-6 px-3 sm:px-6 relative selection:bg-indigo-500 selection:text-white pb-36 md:pb-16">
       
       {/* Top Header Controls */}
-      <header className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+      <header className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200 bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
           {currentUser && (
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors shadow-2xs"
             >
               <ArrowLeft className="w-4 h-4" /> Volver
             </button>
@@ -591,20 +591,20 @@ export const ThermalReceiptPage: React.FC = () => {
 
           <Link
             to={`/recibo/${transaction.id}`}
-            className="flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 px-3 py-2 rounded-xl bg-indigo-950/40 border border-indigo-900/50 hover:border-indigo-700 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 hover:text-indigo-800 px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors shadow-2xs"
           >
             <FileText className="w-4 h-4" /> Ver Recibo Estándar A4
           </Link>
         </div>
 
         {/* Paper Width Toggle Selector */}
-        <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800 self-center">
+        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 self-center">
           <button
             onClick={() => setPaperWidth('58mm')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
               paperWidth === '58mm'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" /> Rollo 58 mm (POS)
@@ -613,8 +613,8 @@ export const ThermalReceiptPage: React.FC = () => {
             onClick={() => setPaperWidth('80mm')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
               paperWidth === '80mm'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Layers className="w-3.5 h-3.5" /> Rollo 80 mm (Grande)
@@ -627,15 +627,15 @@ export const ThermalReceiptPage: React.FC = () => {
         
         {/* Left / Center: The Thermal Receipt Paper Preview Card */}
         <div className="flex flex-col items-center">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Vista Previa Térmica 100% Fiel ({paperWidth})
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Vista Previa Térmica 100% Fiel ({paperWidth})
           </div>
 
           {/* Paper Container with Real Thermal Style */}
           <div 
             ref={receiptRef}
             id="thermal-receipt-preview-card"
-            className={`bg-white text-black p-4 sm:p-6 shadow-2xl rounded-sm border-t-8 border-b-8 border-slate-300 transition-all font-mono leading-tight ${receiptWidthClass}`}
+            className={`bg-white text-black p-4 sm:p-6 shadow-xl rounded-md border-t-8 border-b-8 border-slate-300 border-x border-slate-200 transition-all font-mono leading-tight ${receiptWidthClass}`}
             style={{
               fontFamily: "'Courier New', Courier, monospace, sans-serif"
             }}
@@ -841,12 +841,12 @@ export const ThermalReceiptPage: React.FC = () => {
 
         {/* Right Sidebar: Action Buttons Suite (Web Desktop & Mobile Sticky) */}
         <div className="w-full lg:w-80 flex flex-col gap-3">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-lg space-y-4">
             <div>
-              <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" /> Centro de Impresión y Envío
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" /> Centro de Impresión y Envío
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Genera tickets fieles, sin cortes y de alta calidad para cualquier dispositivo.
               </p>
             </div>
@@ -855,7 +855,7 @@ export const ThermalReceiptPage: React.FC = () => {
               {/* Direct Thermal Print Button */}
               <button
                 onClick={handlePrint}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-indigo-600/25 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-indigo-600/20 transition-all"
               >
                 <Printer className="w-4 h-4" /> Imprimir Ticket Térmico ({paperWidth})
               </button>
@@ -864,15 +864,15 @@ export const ThermalReceiptPage: React.FC = () => {
               <button
                 onClick={handleDownloadPNG}
                 disabled={isExportingPNG}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 font-bold text-xs rounded-2xl border border-slate-700 transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-800 font-bold text-xs rounded-2xl border border-slate-200 transition-all disabled:opacity-50"
               >
                 {isExportingPNG ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" /> Generando PNG completo...
+                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" /> Generando PNG completo...
                   </>
                 ) : (
                   <>
-                    <ImageIcon className="w-4 h-4 text-emerald-400" /> Guardar Imagen PNG (100% Completa)
+                    <ImageIcon className="w-4 h-4 text-emerald-600" /> Guardar Imagen PNG (100% Completa)
                   </>
                 )}
               </button>
@@ -881,15 +881,15 @@ export const ThermalReceiptPage: React.FC = () => {
               <button
                 onClick={handleDownloadPDF}
                 disabled={isExportingPDF}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-100 font-bold text-xs rounded-2xl border border-slate-700 transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-800 font-bold text-xs rounded-2xl border border-slate-200 transition-all disabled:opacity-50"
               >
                 {isExportingPDF ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" /> Generando PDF...
+                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" /> Generando PDF...
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 text-sky-400" /> Descargar PDF Térmico (Rollo)
+                    <Download className="w-4 h-4 text-sky-600" /> Descargar PDF Térmico (Rollo)
                   </>
                 )}
               </button>
@@ -897,7 +897,7 @@ export const ThermalReceiptPage: React.FC = () => {
               {/* Share WhatsApp */}
               <button
                 onClick={handleShareWhatsApp}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md shadow-emerald-600/20 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#25D366] hover:bg-[#20b85c] active:scale-[0.98] text-white font-bold text-xs rounded-2xl shadow-md transition-all"
               >
                 <WhatsAppIcon className="w-4 h-4" /> Enviar Ticket por WhatsApp
               </button>
@@ -905,15 +905,15 @@ export const ThermalReceiptPage: React.FC = () => {
               {/* Copy Monospace Text for Bluetooth / RawBT */}
               <button
                 onClick={handleCopyMonospaceText}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-2xl border border-slate-700 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-2xl border border-amber-200 transition-all"
               >
                 {copiedText ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400" /> ¡Texto de Ticket Copiado!
+                    <Check className="w-4 h-4 text-emerald-600" /> ¡Texto de Ticket Copiado!
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4 text-amber-400" /> Copiar Texto (Impresora Bluetooth / RawBT)
+                    <Copy className="w-4 h-4 text-amber-700" /> Copiar Texto (Impresora Bluetooth / RawBT)
                   </>
                 )}
               </button>
@@ -921,11 +921,11 @@ export const ThermalReceiptPage: React.FC = () => {
               {/* Copy Direct Web Link */}
               <button
                 onClick={handleCopyLink}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 text-slate-400 hover:text-slate-200 font-bold text-xs rounded-xl hover:bg-slate-800/60 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 text-slate-600 hover:text-slate-900 font-bold text-xs rounded-xl hover:bg-slate-100 transition-all"
               >
                 {copiedLink ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" /> Enlace copiado al portapapeles
+                    <Check className="w-3.5 h-3.5 text-emerald-600" /> Enlace copiado al portapapeles
                   </>
                 ) : (
                   <>
@@ -937,9 +937,9 @@ export const ThermalReceiptPage: React.FC = () => {
           </div>
 
           {/* Quick specs box */}
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 text-[11px] text-slate-400 space-y-1.5">
-            <div className="font-bold text-slate-300 flex items-center gap-1.5">
-              <QrIcon className="w-3.5 h-3.5 text-indigo-400" /> Características del Ticket
+          <div className="bg-white/80 border border-slate-200 rounded-2xl p-4 text-[11px] text-slate-600 space-y-1.5 shadow-xs">
+            <div className="font-bold text-slate-800 flex items-center gap-1.5">
+              <QrIcon className="w-3.5 h-3.5 text-indigo-600" /> Características del Ticket
             </div>
             <p>• Compatible con impresoras térmicas USB, WiFi, Red y Bluetooth.</p>
             <p>• El código QR incluye certificación digital del recibo en tiempo real.</p>
