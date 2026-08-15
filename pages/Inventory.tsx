@@ -83,9 +83,18 @@ export const InventoryPage: React.FC = () => {
       } as InventoryItem);
     } else {
       await addInventoryItem({
-        ...formData,
         name: itemName,
         category: formData.category || 'Teléfono / Celular',
+        brand: formData.brand || '',
+        model: formData.model || '',
+        serialNumber: formData.serialNumber || '',
+        imei2: formData.imei2 || '',
+        condition: formData.condition || 'Nuevo',
+        color: formData.color || '',
+        storage: formData.storage || '',
+        cashPrice: Number(formData.cashPrice) || 0,
+        costPrice: Number(formData.costPrice) || 0,
+        status: (formData.status || 'Disponible') as 'Disponible' | 'Financiado' | 'Vendido'
       });
     }
 
