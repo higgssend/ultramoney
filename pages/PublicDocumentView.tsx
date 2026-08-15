@@ -73,15 +73,15 @@ export const PublicDocumentView: React.FC = () => {
 
         if (settingsData) {
           setSettings({
-            companyName: settingsData.company_name || 'UltraMoney Financial',
+            name: settingsData.company_name || settingsData.name || 'UltraMoney Financial',
+            companyName: settingsData.company_name || settingsData.name || 'UltraMoney Financial',
             rnc: settingsData.rnc || '1-32-45678-9',
             phone: settingsData.phone || '(809) 555-0199',
             address: settingsData.address || 'Santo Domingo, República Dominicana',
             email: settingsData.email || 'info@ultramoney.do',
-            currency: 'RD$',
-            lateFeePercentage: 5,
-            graceDays: 3,
-            themeColor: 'indigo'
+            currency: 'DOP',
+            termsAndConditions: settingsData.terms_and_conditions || '',
+            slogan: settingsData.slogan || 'Tu socio financiero de confianza'
           });
         }
       } catch (err) {

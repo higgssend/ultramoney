@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Copy, Check, Share2, Smartphone, ChevronDown, ChevronUp, 
   ShieldCheck, CheckCircle2, Download, ArrowLeft, Building2, Landmark, Wallet, CreditCard
 } from 'lucide-react';
-import { BankAccount, PaymentLinkConfig } from '../types';
+import { BankAccount, CompanySettings, PaymentLinkConfig } from '../types';
+import type { BankAccountDB, CompanySettingsDB } from '../types.db';
+import { insforge } from '../lib/insforge';
 import { getBankLogoUrl } from '../utils/bankLogos';
 import { useSettings, useAccounting, useAuth } from '../context/StoreContext';
 import { toast } from 'sonner';
@@ -31,26 +33,107 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
   const { bankAccounts } = useAccounting();
   const { currentUser } = useAuth();
 
+  const [dbBankAccounts, setDbBankAccounts] = useState<BankAccount[]>([]);
+  const [dbCompanySettings, setDbCompanySettings] = useState<CompanySettings | null>(null);
+
+  useEffect(() => {
+    if (isLivePreview) return;
+
+    const fetchPublicPortalData = async () => {
+      try {
+        const { data: csData } = await insforge.database
+          .from('company_settings')
+          .select('*')
+          .limit(10);
+
+        let targetCs = csData && csData.length > 0 ? (csData[0] as CompanySettingsDB) : null;
+        if (routeSlug && csData && csData.length > 0) {
+          const matchSlug = (csData as (CompanySettingsDB & { custom_link?: string })[]).find(c => 
+            c.custom_link?.toLowerCase() === routeSlug.toLowerCase() ||
+            c.name?.toLowerCase().replace(/\s+/g, '') === routeSlug.toLowerCase()
+          );
+          if (matchSlug) targetCs = matchSlug;
+        }
+
+        if (targetCs) {
+          setDbCompanySettings({
+            name: targetCs.name || 'UltraMoney S.R.L.',
+            slogan: 'Tu socio financiero de confianza',
+            rnc: '131-00000-1',
+            phone: targetCs.phone || '(809) 555-0100',
+            email: 'contacto@ultramoney.com',
+            address: 'Av. 27 de Febrero #23, Santo Domingo, RD',
+            currency: (targetCs.currency === 'USD' ? 'USD' : 'DOP'),
+            termsAndConditions: 'El incumplimiento de pago generará una mora del 5% mensual.',
+            logoUrl: targetCs.logourl || targetCs.logo_url || ''
+          });
+        }
+
+        // Fetch bank accounts from DB
+        let query = insforge.database.from('bank_accounts').select('*');
+        if (targetCs?.lender_id) {
+          query = query.eq('lender_id', targetCs.lender_id);
+        }
+        const { data: baData } = await query;
+        if (baData && baData.length > 0) {
+          const mapped: BankAccount[] = (baData as BankAccountDB[]).map((b) => ({
+            id: b.id,
+            bankName: b.bank_name || b.bankname || 'Banco',
+            accountType: (b.account_type || b.accounttype || 'Cuenta de Ahorros') as BankAccount['accountType'],
+            accountNumber: b.account_number || b.accountnumber || '',
+            accountName: b.account_name || b.accountname || 'Cuenta Principal',
+            holderName: b.holder_name || b.holdername || '',
+            cedulaOrRnc: b.cedula_or_rnc || '',
+            currency: (b.currency === 'USD' ? 'USD' : 'DOP') as BankAccount['currency'],
+            balance: Number(b.balance) || 0,
+            isActive: b.is_active ?? true,
+            isDefault: b.is_default ?? false,
+            showInPaymentLink: b.show_in_payment_link ?? true,
+            createdAt: b.created_at || new Date().toISOString()
+          }));
+          setDbBankAccounts(mapped);
+        }
+      } catch (e) {
+        console.error("Error cargando datos públicos de pago:", e);
+      }
+    };
+
+    fetchPublicPortalData();
+  }, [routeSlug, isLivePreview]);
+
   // Accordion state
   const [openAccountId, setOpenAccountId] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  const activeSettings = dbCompanySettings || (companySettings.name !== 'UltraMoney' ? companySettings : {
+    name: 'UltraMoney S.R.L.',
+    phone: '(809) 555-0100',
+    rnc: '131-00000-1',
+    address: 'Av. 27 de Febrero #23, Santo Domingo, RD',
+    email: 'contacto@ultramoney.com',
+    currency: 'DOP' as const,
+    termsAndConditions: 'El incumplimiento de pago generará una mora del 5% mensual.',
+    slogan: 'Tu socio financiero de confianza'
+  });
+
   // Configuration settings
-  const whatsappPhone = previewConfig?.whatsappPhone || companySettings?.phone || '809-555-0123';
+  const whatsappPhone = previewConfig?.whatsappPhone || activeSettings?.phone || '809-555-0123';
   const showLogo = previewConfig?.showCompanyLogo ?? true;
   const showRnc = previewConfig?.showCompanyRnc ?? true;
   const customNote = previewConfig?.customNote || 'Esta información ha sido proporcionada directamente por el titular. Asegúrate de verificar los datos antes de transferir.';
 
-  const currentSlug = (previewConfig?.customSlug || routeSlug || companySettings?.customLink || 'tu-empresa').toLowerCase();
+  const currentSlug = (previewConfig?.customSlug || routeSlug || activeSettings?.customLink || 'tu-empresa').toLowerCase();
 
-  const holderName = companySettings?.name || currentUser?.name || 'Juan Pérez';
-  const usernameSlug = (companySettings?.name || currentUser?.name || 'juanperez').toLowerCase().replace(/\s+/g, '');
-  const subtitle = companySettings?.slogan || 'Servicios Financieros & Préstamos';
+  const holderName = activeSettings?.name || currentUser?.name || 'UltraMoney S.R.L.';
+  const subtitle = activeSettings?.slogan || 'Servicios Financieros & Préstamos';
 
   // Accounts list
-  const allAccounts = isLivePreview ? (previewAccounts || []) : bankAccounts;
+  const availableAccounts = isLivePreview 
+    ? (previewAccounts || []) 
+    : (bankAccounts && bankAccounts.length > 0 ? bankAccounts : dbBankAccounts);
+
   const selectedIds = previewConfig?.selectedAccountIds;
-  const accountsToDisplay = allAccounts.filter(acc => {
+  const accountsToDisplay = availableAccounts.filter(acc => {
     if (!acc.isActive) return false;
     if (acc.accountType === 'Caja Chica / Efectivo') return false;
     if (selectedIds && selectedIds.length > 0) {

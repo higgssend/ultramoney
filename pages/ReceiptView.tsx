@@ -474,15 +474,48 @@ export const ReceiptView: React.FC = () => {
         return Array.from(map.values());
     }, [transactions, dbLoanTransactions, loan?.id, transaction?.referenceId]);
 
-    const calculated = transaction ? calculateReceiptBalances(transaction, loan, combinedLoanTransactions) : null;
+    const clientFullName = useMemo(() => {
+        if (client) return `${client.name} ${client.lastName || ''}`.trim();
+        if (loan) return loan.clientName || 'Cliente';
+        return transaction?.description?.split('-')[1]?.trim() || 'Cliente';
+    }, [client, loan, transaction]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white">
+                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-sm font-bold text-slate-400 tracking-wider">Cargando comprobante oficial...</p>
+            </div>
+        );
+    }
+
+    if (!transaction) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center">
+                <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                    <AlertTriangle className="w-8 h-8" />
+                </div>
+                <h1 className="text-2xl font-bold text-slate-100 mb-2">Comprobante no encontrado</h1>
+                <p className="text-slate-400 text-sm max-w-md mb-6 mx-auto">El recibo solicitado no existe, ha sido eliminado o el enlace es incorrecto.</p>
+                <Link
+                    to="/pagos"
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all text-sm inline-flex items-center gap-2"
+                >
+                    <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
+                </Link>
+            </div>
+        );
+    }
+
+    const calculated = calculateReceiptBalances(transaction, loan, combinedLoanTransactions);
     const paymentAmount = calculated ? calculated.amountPaid : (Number(transaction.amount) || 0);
-    const previousBalance = calculated ? calculated.previousBalance : 0;
-    const currentBalance = calculated ? calculated.newBalance : 0;
-    const totalDebt = calculated ? calculated.totalDebt : 0;
-    const capitalPaid = calculated ? calculated.capitalPaid : 0;
-    const interestPaid = calculated ? calculated.interestPaid : 0;
-    const lateFeePaid = calculated ? calculated.lateFeePaid : 0;
-    const discountPaid = calculated ? calculated.discountPaid : 0;
+    const previousBalance = calculated ? calculated.previousBalance : (transaction.previousBalance || 0);
+    const currentBalance = calculated ? calculated.newBalance : (transaction.newBalance || 0);
+    const totalDebt = calculated ? calculated.totalDebt : (transaction.totalDebt || 0);
+    const capitalPaid = calculated ? calculated.capitalPaid : (transaction.capitalAmount || 0);
+    const interestPaid = calculated ? calculated.interestPaid : (transaction.interestAmount || 0);
+    const lateFeePaid = calculated ? calculated.lateFeePaid : (transaction.lateFeeAmount || 0);
+    const discountPaid = calculated ? calculated.discountPaid : (transaction.discountAmount || 0);
     const isOpenLoan = Boolean(calculated ? calculated.isOpenLoan : false);
 
     // Overdue calculation
@@ -515,12 +548,6 @@ export const ReceiptView: React.FC = () => {
     const formattedReceiptNo = formatReceiptId(transaction.id);
     const formattedLoanNo = loan ? formatLoanId(loan.id) : 'No. 000000';
 
-    const clientFullName = useMemo(() => {
-        if (client) return `${client.name} ${client.lastName || ''}`.trim();
-        if (loan) return loan.clientName || 'Cliente';
-        return transaction?.description?.split('-')[1]?.trim() || 'Cliente';
-    }, [client, loan, transaction]);
-
     const rawDateStr = transaction.date;
     const formattedDate = formatExactDate(rawDateStr);
     const formattedTime = formatExactTime(rawDateStr, true);
@@ -542,7 +569,7 @@ export const ReceiptView: React.FC = () => {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
-    const thermalData: ThermalReceiptData | null = transaction ? {
+    const thermalData: ThermalReceiptData = {
         receiptNo: formattedReceiptNo,
         date: formattedDate,
         time: formattedTime,
@@ -572,12 +599,12 @@ export const ReceiptView: React.FC = () => {
         notes: transaction.description,
         transactionId: transaction.id,
         clientId: client?.id || loan?.clientId
-    } : null;
+    };
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col py-8 sm:px-6 lg:px-8 relative overflow-hidden print:bg-white print:py-0 print:px-0">
             {/* Direct Thermal POS Modal */}
-            {isThermalOpen && thermalData && (
+            {isThermalOpen && (
                 <ThermalReceiptModal
                     isOpen={isThermalOpen}
                     onClose={() => setIsThermalOpen(false)}
