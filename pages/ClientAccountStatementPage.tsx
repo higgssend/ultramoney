@@ -119,7 +119,7 @@ export const ClientAccountStatementPage: React.FC = () => {
             const { data: dbLoans } = await insforge.database
               .from('loans')
               .select('*')
-              .or(`clientid.eq.${currentClient.id},client_id.eq.${currentClient.id}`)
+              .eq('clientid', currentClient.id)
               .order('created_at', { ascending: false });
 
             if (dbLoans && dbLoans.length > 0) {
@@ -157,7 +157,7 @@ export const ClientAccountStatementPage: React.FC = () => {
             const { data: dbTransactions } = await insforge.database
               .from('transactions')
               .select('*')
-              .or(`referenceid.in.(${loanIds.join(',')}),reference_id.in.(${loanIds.join(',')})`)
+              .in('reference_id', loanIds)
               .order('date', { ascending: false });
 
             if (dbTransactions && dbTransactions.length > 0) {

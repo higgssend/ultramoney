@@ -590,7 +590,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .select('*')
           .eq('lender_id', currentUser.id)
           .eq('type', 'Ingreso')
-          .or(`referenceid.eq.${loan.id},reference_id.eq.${loan.id}`);
+          .eq('reference_id', loan.id);
 
         const allHistLoanTxs = (histTxsRes || []).map(mapTransaction);
         const { nextPaymentDate: calculatedNextDate, fullyPaid } = calculateLoanNextPaymentDate(loan, allHistLoanTxs);
@@ -855,7 +855,7 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .select('*')
       .eq('lender_id', currentUser.id)
       .eq('type', 'Ingreso')
-      .or(`referenceid.eq.${loanId},reference_id.eq.${loanId}`);
+      .eq('reference_id', loanId);
 
     const allLoanTxs = (allCurrentTxsData || []).map(mapTransaction);
     const { nextPaymentDate: calculatedNextDate, fullyPaid } = calculateLoanNextPaymentDate(loan, allLoanTxs);

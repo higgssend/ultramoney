@@ -239,32 +239,6 @@ export const ReceiptView: React.FC = () => {
                     setTransaction(txData);
                     const refId = txData.referenceId;
 
-                    // Fetch Lender Settings from DB
-                    if (rawLenderId) {
-                        try {
-                            const { data: sData } = await insforge.database
-                                .from('company_settings')
-                                .select('*')
-                                .eq('lender_id', rawLenderId)
-                                .maybeSingle();
-                            if (sData) {
-                                setLenderSettings({
-                                    name: sData.name || 'Ultramoney',
-                                    slogan: sData.slogan || '',
-                                    rnc: sData.rnc || '',
-                                    address: sData.address || '',
-                                    phone: sData.phone || '',
-                                    email: sData.email || '',
-                                    currency: sData.currency || 'DOP',
-                                    termsAndConditions: sData.terms_and_conditions || '',
-                                    logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
-                                });
-                            }
-                        } catch (e) {
-                            console.warn("No se cargó configuración de empresa:", e);
-                        }
-                    }
-
                     // 2. Resolve Loan: find in memory store first, otherwise fetch from DB
                     let resolvedLoan: Loan | null = null;
                     if (refId) {
@@ -275,17 +249,29 @@ export const ReceiptView: React.FC = () => {
                         ) || null;
 
                         if (!resolvedLoan) {
-                            const { data: loanRes } = await insforge.database
+                            let { data: loanRes } = await insforge.database
                                 .from('loans')
                                 .select('*')
-                                .or(`id.eq.${refId},clientid.eq.${refId},client_id.eq.${refId}`)
+                                .eq('id', refId)
                                 .maybeSingle();
 
+                            if (!loanRes) {
+                                const { data: byClient } = await insforge.database
+                                    .from('loans')
+                                    .select('*')
+                                    .eq('clientid', refId)
+                                    .maybeSingle();
+                                loanRes = byClient;
+                            }
+
                             if (loanRes) {
+                                if (!rawLenderId && loanRes.lender_id) {
+                                    rawLenderId = loanRes.lender_id;
+                                }
                                 resolvedLoan = {
                                     id: loanRes.id,
-                                    clientId: loanRes.clientid || loanRes.client_id || '',
-                                    clientName: loanRes.clientname || loanRes.client_name || '',
+                                    clientId: loanRes.clientid || '',
+                                    clientName: loanRes.clientname || '',
                                     amount: Number(loanRes.amount) || 0,
                                     interestRate: Number(loanRes.interestrate ?? loanRes.interest_rate ?? 0),
                                     durationWeeks: Number(loanRes.durationweeks ?? loanRes.duration_weeks ?? loanRes.installments ?? 12),
@@ -299,34 +285,45 @@ export const ReceiptView: React.FC = () => {
                                     nextPaymentDate: loanRes.next_payment_date || loanRes.nextpaymentdate || '',
                                     collateral: loanRes.collateral || undefined
                                 };
-
-                                // If lender settings still not loaded, try loan's lender_id
-                                if (!rawLenderId && loanRes.lender_id) {
-                                    try {
-                                        const { data: sData } = await insforge.database
-                                            .from('company_settings')
-                                            .select('*')
-                                            .eq('lender_id', loanRes.lender_id)
-                                            .maybeSingle();
-                                        if (sData) {
-                                            setLenderSettings({
-                                                name: sData.name || 'Ultramoney',
-                                                slogan: sData.slogan || '',
-                                                rnc: sData.rnc || '',
-                                                address: sData.address || '',
-                                                phone: sData.phone || '',
-                                                email: sData.email || '',
-                                                currency: sData.currency || 'DOP',
-                                                termsAndConditions: sData.terms_and_conditions || '',
-                                                logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
-                                            });
-                                        }
-                                    } catch (e) {
-                                        console.warn("No se cargó configuración de empresa desde préstamo:", e);
-                                    }
-                                }
                             }
                         }
+                    }
+
+                    // Fetch Lender Settings from DB
+                    const targetLenderId = rawLenderId;
+                    try {
+                        let sData = null;
+                        if (targetLenderId) {
+                            const { data } = await insforge.database
+                                .from('company_settings')
+                                .select('*')
+                                .eq('lender_id', targetLenderId)
+                                .maybeSingle();
+                            sData = data;
+                        }
+                        if (!sData) {
+                            const { data: defData } = await insforge.database
+                                .from('company_settings')
+                                .select('*')
+                                .limit(1)
+                                .maybeSingle();
+                            sData = defData;
+                        }
+                        if (sData) {
+                            setLenderSettings({
+                                name: sData.name || 'Ultramoney',
+                                slogan: sData.slogan || '',
+                                rnc: sData.rnc || '',
+                                address: sData.address || '',
+                                phone: sData.phone || '',
+                                email: sData.email || '',
+                                currency: sData.currency || 'DOP',
+                                termsAndConditions: sData.terms_and_conditions || '',
+                                logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                            });
+                        }
+                    } catch (e) {
+                        console.warn("No se cargó configuración de empresa:", e);
                     }
 
                     if (resolvedLoan) {
@@ -336,7 +333,7 @@ export const ReceiptView: React.FC = () => {
                         const { data: loanTxsData } = await insforge.database
                             .from('transactions')
                             .select('*')
-                            .or(`referenceid.eq.${resolvedLoan.id},reference_id.eq.${resolvedLoan.id}`);
+                            .eq('reference_id', resolvedLoan.id);
 
                         if (loanTxsData && loanTxsData.length > 0) {
                             setDbLoanTransactions(loanTxsData.map(t => ({

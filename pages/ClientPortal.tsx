@@ -200,18 +200,10 @@ export const ClientPortal: React.FC = () => {
     const fetchClientDetails = async (id: string) => {
         try {
             // 1. Fetch Loans for this client
-            let { data: lData } = await insforge.database
+            const { data: lData } = await insforge.database
                 .from('loans')
                 .select('*')
                 .eq('clientid', id);
-
-            if (!lData || lData.length === 0) {
-                const { data: lData2 } = await insforge.database
-                    .from('loans')
-                    .select('*')
-                    .eq('client_id', id);
-                if (lData2) lData = lData2;
-            }
 
             if (lData && lData.length > 0) {
                 const mappedLoans: Loan[] = (lData as LoanDB[]).map((l) => ({
