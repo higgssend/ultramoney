@@ -91,7 +91,7 @@ const NewClient: React.FC = () => {
   const handleGenerateAliasFromName = () => {
     const fullName = `${currentClient.name || ''} ${currentClient.lastName || ''}`.trim();
     if (!fullName) {
-      addToast('Ingresa el nombre del cliente primero para generar el enlace', 'warning');
+      addToast('Ingresa el nombre del cliente primero para generar el enlace', 'info');
       return;
     }
     const baseSlug = fullName
@@ -126,6 +126,7 @@ const NewClient: React.FC = () => {
       address: currentClient.address?.trim() || '',
       cedula: currentClient.cedula?.trim() || '',
       documentType: currentClient.documentType || 'Cedula',
+      joinedDate: currentClient.joinedDate || new Date().toISOString(),
     };
 
     try {
@@ -133,7 +134,7 @@ const NewClient: React.FC = () => {
         await updateClient(finalClient as Client);
         navigate('/clientes');
       } else {
-        const newClient = await addClient(finalClient as Omit<Client, 'id' | 'joinedDate'>);
+        const newClient = await addClient(finalClient as Omit<Client, 'id'>);
         if (newClient) {
           if (docFile && currentClient.documentType) {
             await addClientDocument({
@@ -283,7 +284,7 @@ const NewClient: React.FC = () => {
                     <CustomSelect
                       className="w-full"
                       value={currentClient.documentType || 'Cedula'}
-                      onChange={v => set('documentType', v)}
+                      onChange={v => set('documentType', v as Client['documentType'])}
                       options={[
                         { value: 'Cedula', label: 'Cédula' },
                         { value: 'Pasaporte', label: 'Pasaporte' },
@@ -308,7 +309,7 @@ const NewClient: React.FC = () => {
                 <CustomSelect
                   className="w-full"
                   value={currentClient.sex || 'Masculino'}
-                  onChange={v => set('sex', v)}
+                  onChange={v => set('sex', v as Client['sex'])}
                   options={[
                     { value: 'Masculino', label: 'Masculino' },
                     { value: 'Femenino', label: 'Femenino' },

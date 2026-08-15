@@ -40,6 +40,8 @@ export const ThermalReceiptPage: React.FC = () => {
   const receiptRef = useRef<HTMLDivElement>(null);
   const printableRef = useRef<HTMLDivElement>(null);
 
+  const [lenderSettings, setLenderSettings] = useState<CompanySettings | null>(null);
+
   // Fetch or resolve Transaction, Loan and Client
   useEffect(() => {
     const fetchDetails = async () => {
@@ -47,28 +49,38 @@ export const ThermalReceiptPage: React.FC = () => {
       try {
         if (!transactionId) return;
 
+        const cleanId = (transactionId || '').trim();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanId);
+
         // 1. Resolve Transaction
         let resolvedTx = transactions.find(t => 
-          t.id === transactionId || 
-          formatReceiptId(t.id) === transactionId ||
-          t.id.endsWith(transactionId)
+          t.id === cleanId || 
+          formatReceiptId(t.id) === cleanId ||
+          formatReceiptId(t.id).replace(/\s+/g, '') === cleanId.replace(/\s+/g, '') ||
+          t.id.endsWith(cleanId)
         ) || null;
 
-        if (!resolvedTx) {
+        let rawLenderId: string | undefined = undefined;
+
+        if (!resolvedTx && isUuid) {
           const { data: txRes } = await insforge.database
             .from('transactions')
             .select('*')
-            .eq('id', transactionId)
+            .eq('id', cleanId)
             .maybeSingle();
 
           if (txRes) {
+            rawLenderId = txRes.lender_id;
             resolvedTx = {
               id: txRes.id,
               type: (txRes.type || 'Ingreso') as Transaction['type'],
               category: (txRes.category || 'Pago Préstamo') as Transaction['category'],
               amount: Number(txRes.amount) || 0,
-              date: txRes.date || txRes.created_at || new Date().toISOString(),
+              date: (txRes.date && !txRes.date.includes('T00:00:00') && !txRes.date.endsWith('T00:00:00.000Z') && txRes.date.includes('T')) 
+                ? txRes.date 
+                : (txRes.created_at || txRes.date || new Date().toISOString()),
               createdAt: txRes.created_at,
+              created_at: txRes.created_at,
               description: txRes.description,
               referenceId: txRes.reference_id || txRes.referenceid,
               reference_id: txRes.reference_id || txRes.referenceid,
@@ -88,9 +100,83 @@ export const ThermalReceiptPage: React.FC = () => {
           }
         }
 
+        if (!resolvedTx) {
+          const { data: allTxs } = await insforge.database
+            .from('transactions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(500);
+
+          if (allTxs && allTxs.length > 0) {
+            const match = allTxs.find(t => 
+              t.id === cleanId || 
+              formatReceiptId(t.id) === cleanId || 
+              formatReceiptId(t.id).replace(/\s+/g, '') === cleanId.replace(/\s+/g, '') ||
+              t.id.endsWith(cleanId) ||
+              (cleanId.length >= 4 && t.id.includes(cleanId.replace(/^REC-/i, '')))
+            );
+
+            if (match) {
+              rawLenderId = match.lender_id;
+              resolvedTx = {
+                id: match.id,
+                type: (match.type || 'Ingreso') as Transaction['type'],
+                category: (match.category || 'Pago Préstamo') as Transaction['category'],
+                amount: Number(match.amount) || 0,
+                date: (match.date && !match.date.includes('T00:00:00') && !match.date.endsWith('T00:00:00.000Z') && match.date.includes('T')) 
+                  ? match.date 
+                  : (match.created_at || match.date || new Date().toISOString()),
+                createdAt: match.created_at,
+                created_at: match.created_at,
+                description: match.description,
+                referenceId: match.reference_id || match.referenceid,
+                reference_id: match.reference_id || match.referenceid,
+                paymentType: (match.payment_type || match.paymenttype || 'Interes') as Transaction['paymentType'],
+                paymentMethod: (match.payment_method || match.paymentmethod || 'Efectivo') as Transaction['paymentMethod'],
+                invoiceDate: match.invoice_date || match.invoicedate,
+                bankAccountId: match.bank_account_id,
+                proofUrl: match.proof_url,
+                previousBalance: match.previous_balance ? Number(match.previous_balance) : undefined,
+                newBalance: match.new_balance ? Number(match.new_balance) : undefined,
+                totalDebt: match.total_debt ? Number(match.total_debt) : undefined,
+                capitalAmount: match.capital_amount ? Number(match.capital_amount) : undefined,
+                interestAmount: match.interest_amount ? Number(match.interest_amount) : undefined,
+                lateFeeAmount: match.late_fee_amount ? Number(match.late_fee_amount) : undefined,
+                discountAmount: match.discount_amount ? Number(match.discount_amount) : undefined
+              };
+            }
+          }
+        }
+
         if (resolvedTx) {
           setTransaction(resolvedTx);
           const refId = resolvedTx.referenceId || resolvedTx.reference_id;
+
+          // Fetch Lender Settings from DB
+          if (rawLenderId) {
+            try {
+              const { data: sData } = await insforge.database
+                .from('company_settings')
+                .select('*')
+                .eq('lender_id', rawLenderId)
+                .maybeSingle();
+              if (sData) {
+                setLenderSettings({
+                  name: sData.name || 'Ultramoney',
+                  slogan: sData.slogan || '',
+                  rnc: sData.rnc || '',
+                  address: sData.address || '',
+                  phone: sData.phone || '',
+                  email: sData.email || '',
+                  currency: sData.currency || 'DOP',
+                  termsAndConditions: sData.terms_and_conditions || '',
+                  logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                });
+              }
+            } catch (e) {
+              console.warn("No se cargó configuración para ticket:", e);
+            }
+          }
 
           // 2. Resolve Loan
           let resolvedLoan: Loan | null = null;
@@ -127,6 +213,31 @@ export const ThermalReceiptPage: React.FC = () => {
                   nextPaymentDate: loanRes.next_payment_date || loanRes.nextpaymentdate || '',
                   collateral: loanRes.collateral || undefined
                 };
+
+                if (!rawLenderId && loanRes.lender_id) {
+                  try {
+                    const { data: sData } = await insforge.database
+                      .from('company_settings')
+                      .select('*')
+                      .eq('lender_id', loanRes.lender_id)
+                      .maybeSingle();
+                    if (sData) {
+                      setLenderSettings({
+                        name: sData.name || 'Ultramoney',
+                        slogan: sData.slogan || '',
+                        rnc: sData.rnc || '',
+                        address: sData.address || '',
+                        phone: sData.phone || '',
+                        email: sData.email || '',
+                        currency: sData.currency || 'DOP',
+                        termsAndConditions: sData.terms_and_conditions || '',
+                        logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                      });
+                    }
+                  } catch (e) {
+                    console.warn("No se cargó configuración desde préstamo:", e);
+                  }
+                }
               }
             }
           }
@@ -146,7 +257,11 @@ export const ThermalReceiptPage: React.FC = () => {
                 type: (t.type || 'Ingreso') as Transaction['type'],
                 category: (t.category || 'Pago Préstamo') as Transaction['category'],
                 amount: Number(t.amount) || 0,
-                date: t.date || t.created_at || new Date().toISOString(),
+                date: (t.date && !t.date.includes('T00:00:00') && !t.date.endsWith('T00:00:00.000Z') && t.date.includes('T')) 
+                  ? t.date 
+                  : (t.created_at || t.date || new Date().toISOString()),
+                createdAt: t.created_at,
+                created_at: t.created_at,
                 description: t.description,
                 referenceId: t.reference_id || t.referenceid,
                 paymentType: (t.payment_type || t.paymenttype || 'Interes') as Transaction['paymentType'],
@@ -192,9 +307,25 @@ export const ThermalReceiptPage: React.FC = () => {
             }
           }
 
-          if (resolvedClient) {
-            setClient(resolvedClient);
+          if (!resolvedClient) {
+            const fallbackName = resolvedLoan?.clientName || resolvedTx.description?.split('-')[1]?.trim() || 'Cliente';
+            resolvedClient = {
+              id: targetClientId || 'N/A',
+              name: fallbackName,
+              lastName: '',
+              sex: 'Otro',
+              occupation: 'Particular',
+              phone: '',
+              cedula: 'N/A',
+              address: '',
+              income: 0,
+              creditScore: 100,
+              status: 'Activo',
+              joinedDate: new Date().toISOString()
+            };
           }
+
+          setClient(resolvedClient);
         }
       } catch (err) {
         console.error('Error cargando datos para ticket térmico:', err);
@@ -314,10 +445,21 @@ export const ThermalReceiptPage: React.FC = () => {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const activeCompanySettings = lenderSettings || (companySettings.name !== 'Ultramoney S.R.L.' ? companySettings : {
+    name: 'Ultramoney S.R.L.',
+    phone: '(809) 555-0100',
+    rnc: '131-00000-1',
+    address: 'Av. 27 de Febrero #23, Santo Domingo, RD',
+    email: 'contacto@ultramoney.com',
+    currency: 'DOP',
+    termsAndConditions: 'El incumplimiento de pago generará una mora del 5% mensual.',
+    slogan: 'Tu socio financiero de confianza'
+  });
+
   const handleCopyMonospaceText = () => {
-    const compName = companySettings?.name || 'ULTRAMONEY';
-    const compRnc = companySettings?.rnc ? `RNC: ${companySettings.rnc}` : '';
-    const compPhone = companySettings?.phone ? `TEL: ${companySettings.phone}` : '';
+    const compName = activeCompanySettings?.name || 'ULTRAMONEY';
+    const compRnc = activeCompanySettings?.rnc ? `RNC: ${activeCompanySettings.rnc}` : '';
+    const compPhone = activeCompanySettings?.phone ? `TEL: ${activeCompanySettings.phone}` : '';
     const sep = paperWidth === '58mm' ? '--------------------------------' : '------------------------------------------------';
     const dsep = paperWidth === '58mm' ? '================================' : '================================================';
 
@@ -371,7 +513,7 @@ export const ThermalReceiptPage: React.FC = () => {
 
   const handleShareWhatsApp = () => {
     const nextPayTxt = displayNextDate ? `\n*Próximo Pago*: ${displayNextDate}` : '';
-    const text = `*${companySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Pago*: #${formattedReceiptNo}\n*Fecha*: ${displayDate}\n*Hora*: ${displayTime}\n*Cliente*: ${liveClientName}\n*Monto Pagado*: RD$ ${(calculated?.amountPaid || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${(calculated?.newBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver su comprobante digital oficial aquí:\n${verificationUrl}`;
+    const text = `*${activeCompanySettings?.name || 'ULTRAMONEY'}*\n*Recibo de Pago*: #${formattedReceiptNo}\n*Fecha*: ${displayDate}\n*Hora*: ${displayTime}\n*Cliente*: ${liveClientName}\n*Monto Pagado*: RD$ ${(calculated?.amountPaid || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${(calculated?.newBalance || 0).toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver su comprobante digital oficial aquí:\n${verificationUrl}`;
     const targetPhone = liveClientPhone ? liveClientPhone.replace(/[^0-9]/g, '') : '';
     const waUrl = targetPhone 
       ? `https://wa.me/${targetPhone.length === 10 ? '1' + targetPhone : targetPhone}?text=${encodeURIComponent(text)}`
@@ -472,16 +614,16 @@ export const ThermalReceiptPage: React.FC = () => {
             {/* Header / Company */}
             <div className="text-center space-y-0.5">
               <h2 className="font-extrabold text-base tracking-wider uppercase">
-                {companySettings?.name || 'ULTRAMONEY S.R.L.'}
+                {activeCompanySettings?.name || 'ULTRAMONEY S.R.L.'}
               </h2>
-              {companySettings?.rnc && (
-                <p className="text-[11px]">RNC: {companySettings.rnc}</p>
+              {activeCompanySettings?.rnc && (
+                <p className="text-[11px]">RNC: {activeCompanySettings.rnc}</p>
               )}
-              {companySettings?.phone && (
-                <p className="text-[11px]">TEL: {companySettings.phone}</p>
+              {activeCompanySettings?.phone && (
+                <p className="text-[11px]">TEL: {activeCompanySettings.phone}</p>
               )}
-              {companySettings?.address && (
-                <p className="text-[10px]">{companySettings.address}</p>
+              {activeCompanySettings?.address && (
+                <p className="text-[10px]">{activeCompanySettings.address}</p>
               )}
 
               <div className="border-t border-dashed border-black my-2.5" />
@@ -781,10 +923,10 @@ export const ThermalReceiptPage: React.FC = () => {
       <div className="hidden">
         <div ref={printableRef}>
           <div className="center">
-            <div className="bold">{companySettings?.name || 'ULTRAMONEY S.R.L.'}</div>
-            {companySettings?.rnc && <div>RNC: {companySettings.rnc}</div>}
-            {companySettings?.phone && <div>TEL: {companySettings.phone}</div>}
-            {companySettings?.address && <div>{companySettings.address}</div>}
+            <div className="bold">{activeCompanySettings?.name || 'ULTRAMONEY S.R.L.'}</div>
+            {activeCompanySettings?.rnc && <div>RNC: {activeCompanySettings.rnc}</div>}
+            {activeCompanySettings?.phone && <div>TEL: {activeCompanySettings.phone}</div>}
+            {activeCompanySettings?.address && <div>{activeCompanySettings.address}</div>}
             <div className="divider"></div>
             <div className="bold">COMPROBANTE OFICIAL DE PAGO</div>
             <div className="bold">RECIBO: #{formattedReceiptNo}</div>

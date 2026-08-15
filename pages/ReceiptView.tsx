@@ -127,6 +127,9 @@ export const ReceiptView: React.FC = () => {
         }
     }, [transactionId, transaction?.id]);
 
+    const [dbLoanTransactions, setDbLoanTransactions] = useState<Transaction[]>([]);
+    const [lenderSettings, setLenderSettings] = useState<CompanySettings | null>(null);
+
     useEffect(() => {
         const fetchReceiptDetails = async () => {
             if (!transactionId) {
@@ -135,29 +138,38 @@ export const ReceiptView: React.FC = () => {
             }
 
             try {
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(transactionId as string);
+                const cleanId = (transactionId || '').trim();
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanId);
                 
                 // 1. Fetch transaction from memory store first, otherwise fetch from DB
                 let txData: Transaction | null = transactions.find(t => 
-                    t.id === transactionId || 
-                    formatReceiptId(t.id) === transactionId ||
-                    formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, '')
+                    t.id === cleanId || 
+                    formatReceiptId(t.id) === cleanId ||
+                    formatReceiptId(t.id).replace(/\s+/g, '') === cleanId.replace(/\s+/g, '') ||
+                    t.id.endsWith(cleanId)
                 ) || null;
                 
+                let rawLenderId: string | undefined = undefined;
+
                 if (!txData && isUuid) {
                     const { data, error } = await insforge.database
                         .from('transactions')
                         .select('*')
-                        .eq('id', transactionId)
+                        .eq('id', cleanId)
                         .maybeSingle();
 
                     if (data && !error) {
+                        rawLenderId = data.lender_id;
                         txData = {
                             id: data.id,
-                            type: data.type as Transaction['type'],
-                            category: data.category as Transaction['category'],
+                            type: (data.type || 'Ingreso') as Transaction['type'],
+                            category: (data.category || 'Pago Préstamo') as Transaction['category'],
                             amount: Number(data.amount) || 0,
-                            date: data.date || data.created_at,
+                            date: (data.date && !data.date.includes('T00:00:00') && !data.date.endsWith('T00:00:00.000Z') && data.date.includes('T')) 
+                                ? data.date 
+                                : (data.created_at || data.date || new Date().toISOString()),
+                            createdAt: data.created_at,
+                            created_at: data.created_at,
                             description: data.description,
                             referenceId: data.reference_id || data.referenceid,
                             paymentType: (data.payment_type || data.paymenttype || 'Interes') as Transaction['paymentType'],
@@ -176,27 +188,34 @@ export const ReceiptView: React.FC = () => {
                     }
                 }
 
-                if (!txData && !isUuid) {
-                    // Search DB by substring / fallback receipt format match
-                    const { data } = await insforge.database
+                if (!txData) {
+                    // Search DB by ID substring / formatReceiptId match
+                    const { data: allDbTxs } = await insforge.database
                         .from('transactions')
                         .select('*')
                         .order('created_at', { ascending: false })
-                        .limit(200);
+                        .limit(500);
 
-                    if (data) {
-                        const match = data.find(t => 
-                            t.id === transactionId || 
-                            formatReceiptId(t.id) === transactionId || 
-                            formatReceiptId(t.id).replace(/\s+/g, '') === (transactionId as string).replace(/\s+/g, '')
+                    if (allDbTxs && allDbTxs.length > 0) {
+                        const match = allDbTxs.find(t => 
+                            t.id === cleanId || 
+                            formatReceiptId(t.id) === cleanId || 
+                            formatReceiptId(t.id).replace(/\s+/g, '') === cleanId.replace(/\s+/g, '') ||
+                            t.id.endsWith(cleanId) ||
+                            (cleanId.length >= 4 && t.id.includes(cleanId.replace(/^REC-/i, '')))
                         );
                         if (match) {
+                            rawLenderId = match.lender_id;
                             txData = {
                                 id: match.id,
-                                type: match.type as Transaction['type'],
-                                category: match.category as Transaction['category'],
+                                type: (match.type || 'Ingreso') as Transaction['type'],
+                                category: (match.category || 'Pago Préstamo') as Transaction['category'],
                                 amount: Number(match.amount) || 0,
-                                date: match.date || match.created_at,
+                                date: (match.date && !match.date.includes('T00:00:00') && !match.date.endsWith('T00:00:00.000Z') && match.date.includes('T')) 
+                                    ? match.date 
+                                    : (match.created_at || match.date || new Date().toISOString()),
+                                createdAt: match.created_at,
+                                created_at: match.created_at,
                                 description: match.description,
                                 referenceId: match.reference_id || match.referenceid,
                                 paymentType: (match.payment_type || match.paymenttype || 'Interes') as Transaction['paymentType'],
@@ -219,6 +238,32 @@ export const ReceiptView: React.FC = () => {
                 if (txData) {
                     setTransaction(txData);
                     const refId = txData.referenceId;
+
+                    // Fetch Lender Settings from DB
+                    if (rawLenderId) {
+                        try {
+                            const { data: sData } = await insforge.database
+                                .from('company_settings')
+                                .select('*')
+                                .eq('lender_id', rawLenderId)
+                                .maybeSingle();
+                            if (sData) {
+                                setLenderSettings({
+                                    name: sData.name || 'Ultramoney',
+                                    slogan: sData.slogan || '',
+                                    rnc: sData.rnc || '',
+                                    address: sData.address || '',
+                                    phone: sData.phone || '',
+                                    email: sData.email || '',
+                                    currency: sData.currency || 'DOP',
+                                    termsAndConditions: sData.terms_and_conditions || '',
+                                    logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                                });
+                            }
+                        } catch (e) {
+                            console.warn("No se cargó configuración de empresa:", e);
+                        }
+                    }
 
                     // 2. Resolve Loan: find in memory store first, otherwise fetch from DB
                     let resolvedLoan: Loan | null = null;
@@ -254,12 +299,68 @@ export const ReceiptView: React.FC = () => {
                                     nextPaymentDate: loanRes.next_payment_date || loanRes.nextpaymentdate || '',
                                     collateral: loanRes.collateral || undefined
                                 };
+
+                                // If lender settings still not loaded, try loan's lender_id
+                                if (!rawLenderId && loanRes.lender_id) {
+                                    try {
+                                        const { data: sData } = await insforge.database
+                                            .from('company_settings')
+                                            .select('*')
+                                            .eq('lender_id', loanRes.lender_id)
+                                            .maybeSingle();
+                                        if (sData) {
+                                            setLenderSettings({
+                                                name: sData.name || 'Ultramoney',
+                                                slogan: sData.slogan || '',
+                                                rnc: sData.rnc || '',
+                                                address: sData.address || '',
+                                                phone: sData.phone || '',
+                                                email: sData.email || '',
+                                                currency: sData.currency || 'DOP',
+                                                termsAndConditions: sData.terms_and_conditions || '',
+                                                logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                                            });
+                                        }
+                                    } catch (e) {
+                                        console.warn("No se cargó configuración de empresa desde préstamo:", e);
+                                    }
+                                }
                             }
                         }
                     }
 
                     if (resolvedLoan) {
                         setLoan(resolvedLoan);
+
+                        // Fetch all DB transactions for this loan to calculate balances
+                        const { data: loanTxsData } = await insforge.database
+                            .from('transactions')
+                            .select('*')
+                            .or(`referenceid.eq.${resolvedLoan.id},reference_id.eq.${resolvedLoan.id}`);
+
+                        if (loanTxsData && loanTxsData.length > 0) {
+                            setDbLoanTransactions(loanTxsData.map(t => ({
+                                id: t.id,
+                                type: (t.type || 'Ingreso') as Transaction['type'],
+                                category: (t.category || 'Pago Préstamo') as Transaction['category'],
+                                amount: Number(t.amount) || 0,
+                                date: (t.date && !t.date.includes('T00:00:00') && !t.date.endsWith('T00:00:00.000Z') && t.date.includes('T')) 
+                                    ? t.date 
+                                    : (t.created_at || t.date || new Date().toISOString()),
+                                createdAt: t.created_at,
+                                created_at: t.created_at,
+                                description: t.description,
+                                referenceId: t.reference_id || t.referenceid,
+                                paymentType: (t.payment_type || t.paymenttype || 'Interes') as Transaction['paymentType'],
+                                paymentMethod: (t.payment_method || t.paymentmethod || 'Efectivo') as Transaction['paymentMethod'],
+                                previousBalance: t.previous_balance ? Number(t.previous_balance) : undefined,
+                                newBalance: t.new_balance ? Number(t.new_balance) : undefined,
+                                capitalAmount: t.capital_amount ? Number(t.capital_amount) : undefined,
+                                interestAmount: t.interest_amount ? Number(t.interest_amount) : undefined,
+                                lateFeeAmount: t.late_fee_amount ? Number(t.late_fee_amount) : undefined,
+                                discountAmount: t.discount_amount ? Number(t.discount_amount) : undefined
+                            })));
+                        }
                     }
 
                     // 3. Resolve Client: find in memory store first, otherwise fetch from DB
@@ -296,9 +397,26 @@ export const ReceiptView: React.FC = () => {
                         }
                     }
 
-                    if (resolvedClient) {
-                        setClient(resolvedClient);
+                    // Fallback client if not in database
+                    if (!resolvedClient) {
+                        const fallbackName = resolvedLoan?.clientName || txData.description?.split('-')[1]?.trim() || 'Cliente';
+                        resolvedClient = {
+                            id: targetClientId || 'N/A',
+                            name: fallbackName,
+                            lastName: '',
+                            sex: 'Otro',
+                            occupation: 'Particular',
+                            phone: '',
+                            cedula: 'N/A',
+                            address: '',
+                            income: 0,
+                            creditScore: 100,
+                            status: 'Activo',
+                            joinedDate: new Date().toISOString()
+                        };
                     }
+
+                    setClient(resolvedClient);
                 }
             } catch (e) {
                 console.error("Error cargando detalles del recibo:", e);
@@ -332,37 +450,31 @@ export const ReceiptView: React.FC = () => {
         }
     }, [clients, loans, loan?.clientId, transaction?.referenceId, client?.id, loan?.id]);
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-600 font-bold">Generando recibo oficial...</p>
-            </div>
-        );
-    }
+    const activeCompanySettings = lenderSettings || (companySettings.name !== 'Ultramoney S.R.L.' ? companySettings : {
+        name: 'Ultramoney S.R.L.',
+        phone: '(809) 555-0100',
+        rnc: '131-00000-1',
+        address: 'Av. 27 de Febrero #23, Santo Domingo, RD',
+        email: 'contacto@ultramoney.com',
+        currency: 'DOP',
+        termsAndConditions: 'El incumplimiento de pago generará una mora del 5% mensual.',
+        slogan: 'Tu socio financiero de confianza'
+    });
 
-    if (!transaction) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-                <h1 className="text-2xl font-bold text-slate-800 mb-2">Recibo No Encontrado</h1>
-                <p className="text-slate-500 text-center max-w-md">El recibo consultado no existe o el enlace es incorrecto.</p>
-                <Link to="/pagos" className="mt-6 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-colors">Volver a Cobranza</Link>
-            </div>
-        );
-    }
+    // Filter relevant transactions for this loan to build chronological history
+    const combinedLoanTransactions = useMemo(() => {
+        const map = new Map<string, Transaction>();
+        transactions.forEach(t => {
+            if ((loan?.id && (t.referenceId === loan.id || t.reference_id === loan.id)) ||
+                (transaction?.referenceId && (t.referenceId === transaction.referenceId || t.reference_id === transaction.referenceId))) {
+                map.set(t.id, t);
+            }
+        });
+        dbLoanTransactions.forEach(t => map.set(t.id, t));
+        return Array.from(map.values());
+    }, [transactions, dbLoanTransactions, loan?.id, transaction?.referenceId]);
 
-    // Financial balance and breakdown calculations
-    const clientFullName = client 
-        ? `${client.name} ${client.lastName || ''}`.trim() 
-        : (loan?.clientName || loan?.clientname || 'Cliente');
-
-    // Filter relevant transactions for this loan to build chronological history if needed
-    const relevantLoanTransactions = transactions.filter(t => 
-        (loan?.id && (t.referenceId === loan.id || t.reference_id === loan.id)) ||
-        (transaction.referenceId && (t.referenceId === transaction.referenceId || t.reference_id === transaction.referenceId))
-    );
-
-    const calculated = transaction ? calculateReceiptBalances(transaction, loan, relevantLoanTransactions) : null;
+    const calculated = transaction ? calculateReceiptBalances(transaction, loan, combinedLoanTransactions) : null;
     const paymentAmount = calculated ? calculated.amountPaid : (Number(transaction.amount) || 0);
     const previousBalance = calculated ? calculated.previousBalance : 0;
     const currentBalance = calculated ? calculated.newBalance : 0;
@@ -420,7 +532,7 @@ export const ReceiptView: React.FC = () => {
         const nextPayTxt = calculated?.nextPaymentDateText
             ? `\n*Próximo Pago*: ${calculated.nextPaymentDateText}`
             : (loan?.nextPaymentDate ? `\n*Próximo Pago*: ${formatPaymentDateDisplay(loan.nextPaymentDate)}` : '');
-        const text = `*${companySettings.name}*\n*Recibo de Pago*: ${formattedReceiptNo}\n*Fecha*: ${formattedDate}\n*Hora*: ${formattedTime}\n*Cliente*: ${clientFullName}\n*Monto Pagado*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
+        const text = `*${activeCompanySettings.name}*\n*Recibo de Pago*: ${formattedReceiptNo}\n*Fecha*: ${formattedDate}\n*Hora*: ${formattedTime}\n*Cliente*: ${clientFullName}\n*Monto Pagado*: RD$ ${paymentAmount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}\n*Saldo Restante*: RD$ ${currentBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}${nextPayTxt}\n\nPuede ver y descargar su recibo oficial aquí:\n${url}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
@@ -543,17 +655,17 @@ export const ReceiptView: React.FC = () => {
                     
                     {/* Header */}
                     <div className="text-center pb-6 border-b border-dashed border-slate-300">
-                        {companySettings.logoUrl ? (
-                            <img src={companySettings.logoUrl} alt="Logo Empresa" className="mx-auto h-16 w-auto mb-3 object-contain" />
+                        {activeCompanySettings.logoUrl ? (
+                            <img src={activeCompanySettings.logoUrl} alt="Logo Empresa" className="mx-auto h-16 w-auto mb-3 object-contain" />
                         ) : (
                             <div className="mx-auto h-14 w-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-3">
                                 <Smartphone className="w-7 h-7 text-white" />
                             </div>
                         )}
-                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">{companySettings.name}</h2>
-                        {companySettings.rnc && <p className="text-xs font-semibold text-slate-500 mt-0.5">RNC: {companySettings.rnc}</p>}
-                        <p className="text-xs text-slate-500">{companySettings.address}</p>
-                        <p className="text-xs text-slate-500">Teléfono: {companySettings.phone}</p>
+                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">{activeCompanySettings.name}</h2>
+                        {activeCompanySettings.rnc && <p className="text-xs font-semibold text-slate-500 mt-0.5">RNC: {activeCompanySettings.rnc}</p>}
+                        <p className="text-xs text-slate-500">{activeCompanySettings.address}</p>
+                        <p className="text-xs text-slate-500">Teléfono: {activeCompanySettings.phone}</p>
                         
                         <div className="mt-4 inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
                             <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -786,7 +898,7 @@ export const ReceiptView: React.FC = () => {
                             </div>
                         )}
                         <p className="text-[11px] text-slate-500 font-bold">Escanee el código QR para validar la autenticidad de este recibo electrónico.</p>
-                        <p className="text-[10px] text-slate-400 mt-1 italic">© {companySettings.name} — Documento oficial emitido electrónicamente.</p>
+                        <p className="text-[10px] text-slate-400 mt-1 italic">© {activeCompanySettings.name} — Documento oficial emitido electrónicamente.</p>
                     </div>
 
                 </div>

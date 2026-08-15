@@ -142,10 +142,14 @@ const AppContent: React.FC = () => {
     location.pathname.startsWith('/portal/') ||
     location.pathname.startsWith('/login/') ||
     location.pathname.startsWith('/recibo/') ||
+    location.pathname.startsWith('/recibo-termico/') ||
+    location.pathname.startsWith('/termal/') ||
+    location.pathname.startsWith('/ticket/') ||
     location.pathname.startsWith('/documento/') ||
     location.pathname.startsWith('/estado-cuenta/') ||
     location.pathname.startsWith('/pagar') ||
     location.pathname.startsWith('/linkpagos') ||
+    location.pathname.startsWith('/pos/') ||
     location.pathname === '/ayuda' ||
     location.pathname.startsWith('/features/') || 
     location.pathname === '/';
