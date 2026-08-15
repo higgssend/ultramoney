@@ -125,6 +125,7 @@ export const PublicPaymentPortal: React.FC<PublicPaymentPortalProps> = ({
   const currentSlug = (previewConfig?.customSlug || routeSlug || activeSettings?.customLink || 'tu-empresa').toLowerCase();
 
   const holderName = activeSettings?.name || currentUser?.name || 'UltraMoney S.R.L.';
+  const usernameSlug = `@${(activeSettings?.customLink || activeSettings?.name || currentUser?.name || 'ultramoney').toLowerCase().replace(/\s+/g, '')}`;
   const subtitle = activeSettings?.slogan || 'Servicios Financieros & Préstamos';
 
   // Accounts list
@@ -160,7 +161,7 @@ Banco: ${acc.bankName}
 Tipo de Cuenta: ${acc.accountType}
 Número de Cuenta: ${acc.accountNumber}
 Titular: ${acc.holderName || acc.accountName || holderName}
-Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
+Cédula/RNC: ${acc.cedulaOrRnc || activeSettings?.rnc || 'N/A'}`;
 
     navigator.clipboard.writeText(text);
     setCopiedField(`all-${acc.id}`);
@@ -217,9 +218,9 @@ Cédula/RNC: ${acc.cedulaOrRnc || companySettings?.rnc || 'N/A'}`;
           <div className="relative inline-block mx-auto">
 
             {/* Avatar Circle */}
-            {showLogo && companySettings?.logoUrl ? (
+            {showLogo && (activeSettings?.logoUrl || companySettings?.logoUrl) ? (
               <img 
-                src={companySettings.logoUrl} 
+                src={activeSettings?.logoUrl || companySettings?.logoUrl} 
                 alt={holderName} 
                 className="w-24 h-24 rounded-full object-cover border-4 border-indigo-500/20 shadow-lg mx-auto p-1 bg-white"
               />
