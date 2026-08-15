@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAccounting, useSettings, useAuth, useLoans, useClients } from '../context/StoreContext';
 import { Download, Image, CheckCircle, Smartphone, User, CreditCard, ShieldCheck, FileText, Calendar, DollarSign, Clock, ChevronLeft, Shield, AlertTriangle, Link2, Copy, Share2, Check, Printer, Edit3 } from 'lucide-react';
-import { Transaction, Loan, Client, LoanStatus, LoanType, formatLoanId, formatReceiptId } from '../types';
+import { Transaction, Loan, Client, LoanStatus, LoanType, CompanySettings, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
@@ -514,6 +514,12 @@ export const ReceiptView: React.FC = () => {
     // Sequential IDs formatting
     const formattedReceiptNo = formatReceiptId(transaction.id);
     const formattedLoanNo = loan ? formatLoanId(loan.id) : 'No. 000000';
+
+    const clientFullName = useMemo(() => {
+        if (client) return `${client.name} ${client.lastName || ''}`.trim();
+        if (loan) return loan.clientName || 'Cliente';
+        return transaction?.description?.split('-')[1]?.trim() || 'Cliente';
+    }, [client, loan, transaction]);
 
     const rawDateStr = transaction.date;
     const formattedDate = formatExactDate(rawDateStr);
