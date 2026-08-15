@@ -494,12 +494,14 @@ export const ReceiptView: React.FC = () => {
                 </div>
                 <h1 className="text-2xl font-bold text-slate-100 mb-2">Comprobante no encontrado</h1>
                 <p className="text-slate-400 text-sm max-w-md mb-6 mx-auto">El recibo solicitado no existe, ha sido eliminado o el enlace es incorrecto.</p>
-                <Link
-                    to="/pagos"
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all text-sm inline-flex items-center gap-2"
-                >
-                    <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
-                </Link>
+                {currentUser && (
+                    <Link
+                        to="/pagos"
+                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all text-sm inline-flex items-center gap-2"
+                    >
+                        <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
+                    </Link>
+                )}
             </div>
         );
     }
@@ -617,9 +619,16 @@ export const ReceiptView: React.FC = () => {
                 
                 {/* Action Bar - Hidden on print */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
-                    <Link to="/pagos" className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors">
-                        <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
-                    </Link>
+                    {currentUser ? (
+                        <Link to="/pagos" className="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 text-xs bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors">
+                            <ChevronLeft className="w-4 h-4" /> Volver a Cobranza
+                        </Link>
+                    ) : (
+                        <div className="flex items-center gap-2 px-1">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Comprobante Oficial</span>
+                        </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                         {currentUser && transaction && (
                             <button 

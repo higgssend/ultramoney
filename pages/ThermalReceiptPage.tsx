@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { toast } from 'sonner';
-import { useAccounting, useLoans, useClients, useSettings } from '../context/StoreContext';
+import { useAccounting, useLoans, useClients, useSettings, useAuth } from '../context/StoreContext';
 import { Transaction, Loan, Client, CompanySettings, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import { formatExactDate, formatExactTime, formatExactDateTime, formatPaymentDateDisplay } from '../utils/dateUtils';
@@ -23,6 +23,7 @@ export const ThermalReceiptPage: React.FC = () => {
   const { loans } = useLoans();
   const { clients } = useClients();
   const { companySettings } = useSettings();
+  const { currentUser } = useAuth();
 
   const [paperWidth, setPaperWidth] = useState<'58mm' | '80mm'>('58mm');
   const [loading, setLoading] = useState(true);
@@ -559,12 +560,14 @@ export const ThermalReceiptPage: React.FC = () => {
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white text-center">
         <h1 className="text-2xl font-bold text-slate-200 mb-2">Comprobante no encontrado</h1>
         <p className="text-slate-400 text-sm max-w-md mb-6">El recibo solicitado no existe o el enlace es incorrecto.</p>
-        <button
-          onClick={() => navigate('/pagos')}
-          className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all"
-        >
-          Volver a Cobranza
-        </button>
+        {currentUser && (
+          <button
+            onClick={() => navigate('/pagos')}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all"
+          >
+            Volver a Cobranza
+          </button>
+        )}
       </div>
     );
   }
@@ -577,12 +580,14 @@ export const ThermalReceiptPage: React.FC = () => {
       {/* Top Header Controls */}
       <header className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Volver
-          </button>
+          {currentUser && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-white px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" /> Volver
+            </button>
+          )}
 
           <Link
             to={`/recibo/${transaction.id}`}
