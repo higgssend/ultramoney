@@ -8,7 +8,7 @@ import {
 import QRCode from 'qrcode';
 import { toast } from 'sonner';
 import { useAccounting, useLoans, useClients, useSettings } from '../context/StoreContext';
-import { Transaction, Loan, Client, formatLoanId, formatReceiptId } from '../types';
+import { Transaction, Loan, Client, CompanySettings, formatLoanId, formatReceiptId } from '../types';
 import { insforge } from '../lib/insforge';
 import { formatExactDate, formatExactTime, formatExactDateTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 import { calculateReceiptBalances, isOpenLoanType } from '../utils/receiptBalanceHelper';
