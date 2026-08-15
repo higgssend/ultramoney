@@ -20,7 +20,7 @@ DROP POLICY IF EXISTS "Lenders can manage their notifications" ON notifications;
 CREATE POLICY "Lenders can manage their notifications"
   ON notifications
   FOR ALL
-  USING (lender_id = auth.uid() OR auth.uid() IS NULL);
+  USING (lender_id = (auth.uid())::text OR auth.uid() IS NULL);
 
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_lender_read ON notifications(lender_id, read);
