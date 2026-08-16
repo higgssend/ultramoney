@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SpotlightCard, ShinyText } from './reactbits';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -556,8 +557,11 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
   const isEven = index % 2 === 0; // Even: Info Left, Demo Right. Odd: Demo Left, Info Right.
 
   return (
-    <div className="vertical-module-scene bg-white rounded-3xl lg:rounded-[2.5rem] border border-slate-200/90 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden p-6 sm:p-8 lg:p-12">
-      
+    <SpotlightCard
+      spotlightColor="rgba(99, 102, 241, 0.12)"
+      borderColor="rgba(226, 232, 240, 0.85)"
+      className="vertical-module-scene bg-white rounded-3xl lg:rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden p-6 sm:p-8 lg:p-12"
+    >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
         {/* ─── INFO COLUMN (Text, Badge, Features, KPI) ─── */}
@@ -570,7 +574,7 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
             </div>
             <div>
               <span className="text-[11px] font-black uppercase tracking-wider text-indigo-600 block">
-                MÓDULO {number} · {category}
+                <ShinyText text={`MÓDULO ${number} · ${category}`} speed={4} className="text-indigo-600" />
               </span>
               <span className="text-xs font-bold text-slate-400">Herramienta Especializada</span>
             </div>
@@ -631,7 +635,7 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
 
       </div>
 
-    </div>
+    </SpotlightCard>
   );
 };
 
