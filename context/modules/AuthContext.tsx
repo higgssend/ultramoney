@@ -53,25 +53,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const empSession = localStorage.getItem('employee_session');
         if (empSession) {
-          const empData = JSON.parse(empSession);
-          if (!unmounted) setCurrentUser(empData);
-          setIsLoadingAuth(false);
-          return;
-        }
-
-        const cachedUserSession = localStorage.getItem('um_user_session');
-        if (cachedUserSession) {
           try {
-            const cachedUser = JSON.parse(cachedUserSession);
-            if (cachedUser && cachedUser.id && !unmounted) {
-              setCurrentUser(cachedUser);
+            const empData = JSON.parse(empSession);
+            if (empData && empData.id) {
+              if (!unmounted) setCurrentUser(empData);
+              setIsLoadingAuth(false);
+              return;
             }
           } catch (e) {
-            logger.error("Failed to parse cached user session", e);
+            localStorage.removeItem('employee_session');
           }
         }
 
-        const { data: userData } = await insforge.auth.getCurrentUser();
+        const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
         type InsforgeUser = {
           id: string;
           email?: string;
@@ -79,7 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           metadata?: Record<string, unknown>;
           profile?: { name?: string; roleId?: string; roleIds?: string[] };
         };
-        const user = userData?.user as InsforgeUser | undefined;
+        const user = (!userError && userData?.user) ? (userData.user as InsforgeUser) : undefined;
         
         if (!unmounted) {
           if (user) {
@@ -95,7 +89,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             };
             setCurrentUser(activeUser);
             localStorage.setItem('um_user_session', JSON.stringify(activeUser));
-          } else if (!cachedUserSession) {
+          } else {
+            localStorage.removeItem('um_user_session');
+            localStorage.removeItem('employee_session');
             setCurrentUser(null);
           }
           setIsLoadingAuth(false);
@@ -187,17 +183,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = (_identifier: string, _password: string): boolean => false; // Supabase handles this via UI
   
   const logout = async () => {
-    await insforge.auth.signOut();
+    try {
+      await insforge.auth.signOut();
+    } catch (e) {
+      console.warn("Signout error:", e);
+    }
     localStorage.removeItem('employee_session');
     localStorage.removeItem('um_user_session');
+    localStorage.removeItem('um_notifications');
+    document.documentElement.classList.remove('dark');
     setCurrentUser(null);
     window.location.href = '/login';
   };
 
   const logoutSystem = async () => {
-    await insforge.auth.signOut();
+    try {
+      await insforge.auth.signOut();
+    } catch (e) {
+      console.warn("Signout error:", e);
+    }
     localStorage.removeItem('employee_session');
     localStorage.removeItem('um_user_session');
+    localStorage.removeItem('um_notifications');
+    document.documentElement.classList.remove('dark');
     setCurrentUser(null);
     window.location.href = '/login';
   };
@@ -340,9 +348,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     let finalUserId = currentUser?.id;
     if (currentUser?.employeeData) {
-        const { data: settings } = await insforge.database.from('company_settings').select('lender_id').limit(1).maybeSingle();
-        if (settings?.lender_id) {
-            finalUserId = settings.lender_id;
+        const empLenderId = (currentUser.employeeData as { lender_id?: string; employer_id?: string }).lender_id || (currentUser.employeeData as { lender_id?: string; employer_id?: string }).employer_id;
+        if (empLenderId) {
+            finalUserId = empLenderId;
         }
     }
 

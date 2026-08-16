@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calculator, Settings, PieChart as PieChartIcon, TrendingUp, Calendar, ChevronLeft, ArrowRight, Table, FileText, Plus, Trash2, Download, UserCheck, ShieldAlert, Sparkles, DollarSign, X } from 'lucide-react';
+import { 
+  Calculator, Settings, PieChart as PieChartIcon, TrendingUp, Calendar, 
+  ChevronLeft, ArrowRight, Table, FileText, Plus, Trash2, Download, 
+  UserCheck, ShieldAlert, Sparkles, DollarSign, X, Check, ToggleLeft, ToggleRight, CheckCircle2
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useLoans, useSettings } from '../context/StoreContext';
 import { LoanType } from '../types';
-import { LoanEngine, ExpenseConfig, ExtraordinaryPayment, SimulationResult } from '../utils/LoanEngine';
+import { LoanEngine, ExpenseConfig, SimulationResult } from '../utils/LoanEngine';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { CustomSelect } from '../components/CustomSelect';
 import jsPDF from 'jspdf';
@@ -22,6 +26,68 @@ const LOAN_TYPE_OPTIONS: { value: LoanType; label: string; description: string }
   { value: 'Rédito', label: 'Rédito Simple', description: 'Cobro periódico exclusivo de intereses.' }
 ];
 
+/**
+ * Formats a numeric string or number with real-time comma thousand separators.
+ * Preserves trailing dots and decimals during typing (e.g. 100000 -> "100,000", "12500.5" -> "12,500.5").
+ */
+const formatMoneyWithCommas = (val: string | number | undefined | null): string => {
+  if (val === undefined || val === null || val === '') return '';
+  const str = String(val).replace(/,/g, '');
+  if (str === '') return '';
+
+  const parts = str.split('.');
+  const integerPart = parts[0];
+  const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+
+  if (integerPart === '' || isNaN(Number(integerPart))) {
+    return str;
+  }
+
+  const formattedInt = Number(integerPart).toLocaleString('en-US');
+  return `${formattedInt}${decimalPart}`;
+};
+
+/**
+ * Parses user text input into a clean numeric string for calculation.
+ * Prevents leading zero lock (e.g. typing "5" into empty or "0" produces "5", not "05").
+ * Allows clearing all the way to empty "" with backspace.
+ */
+const parseCleanMoney = (inputVal: string): string => {
+  let clean = inputVal.replace(/[^\d.]/g, '');
+  const parts = clean.split('.');
+  if (parts.length > 2) {
+    clean = parts[0] + '.' + parts.slice(1).join('');
+  }
+  // Strip leading zeroes if entering integer numbers, e.g. "05" -> "5", but preserve "0."
+  if (clean.length > 1 && clean.startsWith('0') && !clean.startsWith('0.')) {
+    clean = clean.replace(/^0+/, '') || '0';
+  }
+  return clean;
+};
+
+/**
+ * Parses integer or rate percentage inputs without leading zero locks.
+ */
+const parseCleanNumber = (inputVal: string): string => {
+  let clean = inputVal.replace(/[^\d.]/g, '');
+  const parts = clean.split('.');
+  if (parts.length > 2) {
+    clean = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (clean.length > 1 && clean.startsWith('0') && !clean.startsWith('0.')) {
+    clean = clean.replace(/^0+/, '') || '0';
+  }
+  return clean;
+};
+
+const DEFAULT_PRESET_EXPENSES: ExpenseConfig[] = [
+  { id: '1', name: 'Gastos de Cierre', amount: 3000, isPercentage: false, mode: 'Descontado', enabled: false },
+  { id: '2', name: 'Seguro de Cobertura / Desgravamen', amount: 1200, isPercentage: false, mode: 'Financiado', enabled: false },
+  { id: '3', name: 'Gastos Legales y Contrato', amount: 1500, isPercentage: false, mode: 'Descontado', enabled: false },
+  { id: '4', name: 'GPS / Rastreo de Vehículo', amount: 2500, isPercentage: false, mode: 'Financiado', enabled: false },
+  { id: '5', name: 'Comisión Administrativa', amount: 1000, isPercentage: false, mode: 'Descontado', enabled: false }
+];
+
 const Simulator: React.FC = () => {
   const navigate = useNavigate();
   const { clients } = useClients();
@@ -30,53 +96,55 @@ const Simulator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'basico' | 'equipo' | 'gastos' | 'graficos'>('basico');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
 
-  // Simulation Basic State
-  const [amount, setAmount] = useState<number | string>('100000');
-  const [weeks, setWeeks] = useState<number | string>('12');
-  const [interest, setInterest] = useState<number | string>('18');
+  // Simulation Basic State (stored as clean strings to allow fluid editing without 0 lock)
+  const [amount, setAmount] = useState<string>('100000');
+  const [weeks, setWeeks] = useState<string>('12');
+  const [interest, setInterest] = useState<string>('18');
   const [frequency, setFrequency] = useState('Mensual');
   const [type, setType] = useState<LoanType>('Amortizado (Cuota Fija)');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Equipment / Vehicle Financing Specific State
-  const [cashPrice, setCashPrice] = useState<number | string>('50000');
-  const [financedPrice, setFinancedPrice] = useState<number | string>('70000');
+  const [cashPrice, setCashPrice] = useState<string>('50000');
+  const [financedPrice, setFinancedPrice] = useState<string>('70000');
   const [financingCalcMode, setFinancingCalcMode] = useState<'financed_price' | 'interest_rate'>('financed_price');
-  const [itemPrice, setItemPrice] = useState<number | string>('50000');
-  const [downPayment, setDownPayment] = useState<number | string>('10000');
+  const [itemPrice, setItemPrice] = useState<string>('50000');
+  const [downPayment, setDownPayment] = useState<string>('10000');
   const [downPaymentMode, setDownPaymentMode] = useState<'Efectivo' | 'Transferencia' | 'Financiado'>('Efectivo');
 
-  // Expenses & Arrears State
-  const [expenses, setExpenses] = useState<ExpenseConfig[]>([
-    { id: '1', name: 'Gastos de Cierre', amount: 3000, isPercentage: false, mode: 'Descontado' },
-    { id: '2', name: 'Seguro de Cobertura', amount: 1200, isPercentage: false, mode: 'Financiado' }
-  ]);
-  const [graceDays, setGraceDays] = useState(3);
-  const [lateFee, setLateFee] = useState(5);
+  // Expenses & Arrears State (Defaulted to disabled / inactive as requested)
+  const [expenses, setExpenses] = useState<ExpenseConfig[]>(DEFAULT_PRESET_EXPENSES);
+  const [graceDays, setGraceDays] = useState<string>('3');
+  const [lateFee, setLateFee] = useState<string>('5');
 
   const [result, setResult] = useState<SimulationResult | null>(null);
 
   // Compute effective principal amount based on loan type
   const effectivePrincipal = useMemo(() => {
     if (type === 'Financiamiento de Equipo (Con/Sin Inicial)') {
-      const price = Number(cashPrice || itemPrice) || 0;
-      const down = Number(downPayment) || 0;
+      const price = Number(String(cashPrice || itemPrice).replace(/,/g, '')) || 0;
+      const down = Number(String(downPayment).replace(/,/g, '')) || 0;
       return Math.max(0, price - down);
     }
-    return Number(amount) || 0;
+    return Number(String(amount).replace(/,/g, '')) || 0;
   }, [type, cashPrice, itemPrice, downPayment, amount]);
 
   // Compute effective interest rate based on calculation mode
   const effectiveInterestRate = useMemo(() => {
     if (type === 'Financiamiento de Equipo (Con/Sin Inicial)' && financingCalcMode === 'financed_price') {
       const principal = effectivePrincipal;
-      const fPrice = Number(financedPrice) || 0;
-      const cPrice = Number(cashPrice || itemPrice) || 0;
+      const fPrice = Number(String(financedPrice).replace(/,/g, '')) || 0;
+      const cPrice = Number(String(cashPrice || itemPrice).replace(/,/g, '')) || 0;
       const profit = Math.max(0, fPrice - cPrice);
       return principal > 0 ? (profit / principal) * 100 : 0;
     }
     return Number(interest) || 0;
   }, [type, financingCalcMode, effectivePrincipal, financedPrice, cashPrice, itemPrice, interest]);
+
+  // Active expenses count and total
+  const activeExpenses = useMemo(() => {
+    return expenses.filter(e => e.enabled);
+  }, [expenses]);
 
   // Execute Simulation Logic via LoanEngine
   useEffect(() => {
@@ -89,9 +157,9 @@ const Simulator: React.FC = () => {
         amount: parsedAmount,
         interestRate: parsedInterest,
         durationWeeks: parsedWeeks,
-        frequency: frequency as any,
+        frequency,
         loanType: type,
-        expenses,
+        expenses: activeExpenses,
         startDate
       });
 
@@ -99,23 +167,32 @@ const Simulator: React.FC = () => {
     } catch (e) {
       console.error("Simulation Calculation Error:", e);
     }
-  }, [effectivePrincipal, effectiveInterestRate, weeks, frequency, type, expenses, startDate]);
-
-  const handleNumberInput = (setter: React.Dispatch<React.SetStateAction<string | number>>, val: string) => {
-    if (val.length > 1 && val.startsWith('0') && !val.includes('.')) val = val.replace(/^0+/, '');
-    setter(val === '' ? '' : val);
-  };
+  }, [effectivePrincipal, effectiveInterestRate, weeks, frequency, type, activeExpenses, startDate]);
 
   const addExpense = () => {
-    setExpenses([...expenses, { id: Date.now().toString(), name: 'Nuevo Cargo', amount: 0, isPercentage: false, mode: 'Descontado' }]);
+    setExpenses(prev => [
+      ...prev, 
+      { 
+        id: Date.now().toString(), 
+        name: 'Nuevo Cargo / Seguro', 
+        amount: 1000, 
+        isPercentage: false, 
+        mode: 'Descontado',
+        enabled: true 
+      }
+    ]);
   };
   
   const removeExpense = (id: string) => {
-    setExpenses(expenses.filter(e => e.id !== id));
+    setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
   const updateExpense = <K extends keyof ExpenseConfig>(id: string, field: K, value: ExpenseConfig[K]) => {
-    setExpenses(expenses.map(e => e.id === id ? { ...e, [field]: value } : e));
+    setExpenses(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+  };
+
+  const toggleExpense = (id: string) => {
+    setExpenses(prev => prev.map(e => e.id === id ? { ...e, enabled: !e.enabled } : e));
   };
 
   // Export Amortization Schedule to PDF
@@ -193,63 +270,66 @@ const Simulator: React.FC = () => {
     return LOAN_TYPE_OPTIONS.find(o => o.value === type)?.description || '';
   }, [type]);
 
+  const activeDiscountedTotal = useMemo(() => {
+    return expenses
+      .filter(e => e.enabled && e.mode === 'Descontado')
+      .reduce((sum, e) => sum + (e.isPercentage ? effectivePrincipal * (e.amount / 100) : e.amount), 0);
+  }, [expenses, effectivePrincipal]);
+
   return (
     <div className="w-full space-y-6 animate-fade-in pb-10">
       {/* Top Bar */}
       <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
-            <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </button>
+          <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-600/30">
+            <Calculator className="w-6 h-6" />
+          </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold font-secondary text-slate-800 dark:text-white">Simulador Financiero Pro</h2>
-              <span className="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Todos los Métodos
-              </span>
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">Cálculo de amortizaciones, cargos, financiamiento de vehículos y proyecciones en tiempo real.</p>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Simulador Financiero Pro</h1>
+            <p className="text-xs text-slate-500 font-medium">Calculadora multi-esquema, financiamiento de vehículos/equipos y amortización precisa</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        {/* Client Fast Assignment (Optional) */}
+        <div className="flex items-center gap-2">
+          {selectedClientId && (
+            <button
+              onClick={() => setSelectedClientId('')}
+              className="text-xs text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-900/30 p-2 rounded-xl"
+              title="Quitar cliente asignado"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           <button 
             onClick={exportPDF} 
-            disabled={!result}
-            className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-white border border-slate-200 dark:border-slate-700 font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-all text-sm">
-            <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Exportar PDF
-          </button>
-          <button 
-            onClick={handleApproveSimulation}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none transition-all text-sm">
-            CREAR PRÉSTAMO <ArrowRight className="w-4 h-4" />
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-slate-800 transition-all active:scale-95"
+          >
+            <Download className="w-4 h-4" /> Exportar a PDF
           </button>
         </div>
       </div>
 
+      {/* Main Container: 2-Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Controls & Tabs */}
+        
+        {/* Left Column: Form Controls and Configuration Tabs */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* Client Assignment Banner */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md">
-                <UserCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Asignar a Cliente (Opcional)</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Selecciona un cliente para enviar esta simulación directo a solicitud.</p>
-              </div>
+          {/* Client Selector Banner */}
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+              <UserCheck className="w-4 h-4 text-indigo-600" />
+              <span>Cliente a Simular (Opcional):</span>
             </div>
-            <div className="min-w-[240px]">
+            <div className="flex-1 min-w-[240px]">
               <CustomSelect 
-                className="w-full bg-white dark:bg-slate-900 text-sm"
-                value={selectedClientId}
+                className="w-full text-xs font-medium"
+                value={selectedClientId} 
                 onChange={setSelectedClientId}
                 options={[
                   { value: '', label: '-- Sin cliente asignado --' },
-                  ...clients.map(c => ({ value: c.id, label: `${c.name} (${c.cedula || 'Sin cédula'})` }))
+                  ...clients.map(c => ({ value: c.id, label: `${c.name} ${c.lastName || ''} (${c.cedula || 'Sin cédula'})` }))
                 ]}
               />
             </div>
@@ -260,7 +340,7 @@ const Simulator: React.FC = () => {
             {[
               { id: 'basico', label: 'Parámetros del Préstamo', icon: <Calculator className="w-4 h-4" /> },
               ...(type === 'Financiamiento de Equipo (Con/Sin Inicial)' ? [{ id: 'equipo', label: 'Detalles del Artículo / Vehículo', icon: <DollarSign className="w-4 h-4" /> }] : []),
-              { id: 'gastos', label: 'Cargos, Seguros & Mora', icon: <Settings className="w-4 h-4" /> },
+              { id: 'gastos', label: `Cargos & Seguros (${activeExpenses.length} activos)`, icon: <Settings className="w-4 h-4" /> },
               { id: 'graficos', label: 'Distribución Visual', icon: <PieChartIcon className="w-4 h-4" /> }
             ].map(t => (
               <button
@@ -304,15 +384,17 @@ const Simulator: React.FC = () => {
                     <div className="relative">
                       <span className="absolute left-4 top-3.5 text-slate-400 font-bold">$</span>
                       <input 
-                        type="number" 
+                        type="text"
+                        inputMode="decimal"
                         disabled={type === 'Financiamiento de Equipo (Con/Sin Inicial)'}
-                        className={`w-full pl-8 pr-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl font-bold text-lg focus:ring-2 focus:ring-indigo-500 ${type === 'Financiamiento de Equipo (Con/Sin Inicial)' ? 'bg-slate-100 dark:bg-slate-900 text-slate-500 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900 dark:text-white'}`}
-                        value={type === 'Financiamiento de Equipo (Con/Sin Inicial)' ? effectivePrincipal : amount} 
-                        onChange={e => handleNumberInput(setAmount, e.target.value)} 
+                        className={`w-full pl-8 pr-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl font-bold text-lg focus:ring-2 focus:ring-indigo-500 transition-all ${type === 'Financiamiento de Equipo (Con/Sin Inicial)' ? 'bg-slate-100 dark:bg-slate-900 text-slate-500 cursor-not-allowed' : 'bg-slate-50 dark:bg-slate-900 dark:text-white'}`}
+                        value={type === 'Financiamiento de Equipo (Con/Sin Inicial)' ? formatMoneyWithCommas(effectivePrincipal) : formatMoneyWithCommas(amount)} 
+                        onChange={e => setAmount(parseCleanMoney(e.target.value))} 
+                        placeholder="0.00"
                       />
                     </div>
                     {type === 'Financiamiento de Equipo (Con/Sin Inicial)' && (
-                      <p className="text-xs text-slate-500 mt-1">Calculado automáticamente como: Precio del Artículo ({globalCurrency} {Number(itemPrice).toLocaleString()}) - Inicial ({globalCurrency} {Number(downPayment).toLocaleString()})</p>
+                      <p className="text-xs text-slate-500 mt-1">Calculado automáticamente como: Precio del Artículo ({globalCurrency} {formatMoneyWithCommas(itemPrice)}) - Inicial ({globalCurrency} {formatMoneyWithCommas(downPayment)})</p>
                     )}
                   </div>
 
@@ -321,10 +403,12 @@ const Simulator: React.FC = () => {
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tasa de Interés (%)</label>
                     <div className="relative">
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="decimal"
                         className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold" 
                         value={interest} 
-                        onChange={e => handleNumberInput(setInterest, e.target.value)} 
+                        onChange={e => setInterest(parseCleanNumber(e.target.value))} 
+                        placeholder="0"
                       />
                       <span className="absolute right-4 top-3.5 text-slate-400 text-sm font-bold">%</span>
                     </div>
@@ -334,10 +418,12 @@ const Simulator: React.FC = () => {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Cantidad de Cuotas</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="numeric"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold" 
                       value={weeks} 
-                      onChange={e => handleNumberInput(setWeeks, e.target.value)} 
+                      onChange={e => setWeeks(parseCleanNumber(e.target.value))} 
+                      placeholder="1"
                     />
                   </div>
 
@@ -405,13 +491,16 @@ const Simulator: React.FC = () => {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Precio Normal / Contado ($)</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="decimal"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
-                      value={cashPrice} 
+                      value={formatMoneyWithCommas(cashPrice)} 
                       onChange={e => {
-                        handleNumberInput(setCashPrice, e.target.value);
-                        handleNumberInput(setItemPrice, e.target.value);
+                        const raw = parseCleanMoney(e.target.value);
+                        setCashPrice(raw);
+                        setItemPrice(raw);
                       }} 
+                      placeholder="0.00"
                     />
                     <p className="text-[10px] text-slate-400 mt-1">Precio comercial de venta al contado sin financiamiento.</p>
                   </div>
@@ -420,10 +509,12 @@ const Simulator: React.FC = () => {
                     <div>
                       <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Precio Total Financiado ($)</label>
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="decimal"
                         className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
-                        value={financedPrice} 
-                        onChange={e => handleNumberInput(setFinancedPrice, e.target.value)} 
+                        value={formatMoneyWithCommas(financedPrice)} 
+                        onChange={e => setFinancedPrice(parseCleanMoney(e.target.value))} 
+                        placeholder="0.00"
                       />
                       <p className="text-[10px] text-slate-400 mt-1">Precio total que pagará el cliente amortizado en cuotas.</p>
                     </div>
@@ -431,10 +522,12 @@ const Simulator: React.FC = () => {
                     <div>
                       <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tasa de Interés Total (%)</label>
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="decimal"
                         className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
                         value={interest} 
-                        onChange={e => handleNumberInput(setInterest, e.target.value)} 
+                        onChange={e => setInterest(parseCleanNumber(e.target.value))} 
+                        placeholder="0"
                       />
                       <p className="text-[10px] text-slate-400 mt-1">Porcentaje de interés o ganancia aplicado sobre el capital neto.</p>
                     </div>
@@ -443,114 +536,166 @@ const Simulator: React.FC = () => {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Inicial / Enganche ($)</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="decimal"
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 font-bold" 
-                      value={downPayment} 
-                      onChange={e => handleNumberInput(setDownPayment, e.target.value)} 
+                      value={formatMoneyWithCommas(downPayment)} 
+                      onChange={e => setDownPayment(parseCleanMoney(e.target.value))} 
+                      placeholder="0.00"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">Pago inicial al contado recibido del cliente.</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Monto adelantado pagado por el cliente al momento de la compra.</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Modalidad de Pago de la Inicial</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Modalidad de Cobro del Inicial</label>
                     <CustomSelect 
                       className="w-full"
-                      value={downPaymentMode}
+                      value={downPaymentMode} 
                       onChange={e => setDownPaymentMode(e as typeof downPaymentMode)}
                       options={[
                         { value: 'Efectivo', label: 'Efectivo en Caja' },
-                        { value: 'Transferencia', label: 'Transferencia Bancaria Directa' },
-                        { value: 'Financiado', label: 'Financiado (Sumar a capital principal)' }
+                        { value: 'Transferencia', label: 'Transferencia Bancaria' },
+                        { value: 'Financiado', label: 'Inicial Financiada en Cuotas' }
                       ]}
                     />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Capital Neto</p>
-                    <p className="text-lg font-bold text-slate-800 dark:text-white">{globalCurrency} {effectivePrincipal.toLocaleString()}</p>
-                  </div>
-
-                  <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">Interés / Ganancia</p>
-                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                      {globalCurrency} {Math.max(0, (financingCalcMode === 'financed_price' ? (Number(financedPrice) - Number(cashPrice)) : Math.round(effectivePrincipal * (Number(interest) / 100)))).toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl">
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">% Margen</p>
-                    <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400 font-mono">
-                      {effectiveInterestRate.toFixed(1)}%
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-900 text-white rounded-2xl">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Total a Plazos</p>
-                    <p className="text-lg font-bold text-emerald-400">
-                      {globalCurrency} {(financingCalcMode === 'financed_price' ? Math.max(0, Number(financedPrice) - Number(downPayment)) : effectivePrincipal + Math.round(effectivePrincipal * (Number(interest) / 100))).toLocaleString()}
-                    </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* TAB: GASTOS Y MORA */}
+            {/* TAB: GASTOS, SEGUROS & MORA */}
             {activeTab === 'gastos' && (
               <div className="animate-fade-in space-y-6">
                 <div>
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                     <div>
-                      <h3 className="font-bold text-slate-800 dark:text-white text-base">Comisiones, Seguros & Cargos de Cierre</h3>
-                      <p className="text-xs text-slate-500">Configura gastos adicionales descontados del desembolso o financiados.</p>
+                      <h3 className="font-bold text-slate-800 dark:text-white text-base flex items-center gap-2">
+                        <span>Comisiones, Seguros & Gastos de Cierre</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-extrabold bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                          {activeExpenses.length} activo(s)
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-500">Activa o desactiva cada cargo con su interruptor. Todos vienen inactivos por defecto.</p>
                     </div>
-                    <button onClick={addExpense} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/40 px-3 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                      <Plus className="w-3.5 h-3.5"/> Agregar Cargo
+                    <button 
+                      onClick={addExpense} 
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/40 px-3 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 transition-all shadow-xs"
+                    >
+                      <Plus className="w-4 h-4"/> Agregar Nuevo Cargo
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    {expenses.map(exp => (
-                      <div key={exp.id} className="flex flex-wrap md:flex-nowrap items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
-                        <input 
-                          type="text" 
-                          value={exp.name} 
-                          onChange={e => updateExpense(exp.id, 'name', e.target.value)} 
-                          className="px-3 py-2 border rounded-xl text-sm flex-1 bg-white dark:bg-slate-800 font-medium" 
-                          placeholder="Nombre del cargo" 
-                        />
-                        <input 
-                          type="number" 
-                          value={exp.amount} 
-                          onChange={e => updateExpense(exp.id, 'amount', Number(e.target.value))} 
-                          className="w-28 px-3 py-2 border rounded-xl text-sm bg-white dark:bg-slate-800 font-bold" 
-                          placeholder="Monto" 
-                        />
-                        <CustomSelect 
-                          value={exp.isPercentage ? 'true' : 'false'} 
-                          onChange={e => updateExpense(exp.id, 'isPercentage', e === 'true')} 
-                          className="w-36"
-                          options={[
-                            { value: 'false', label: '$ Fijo' },
-                            { value: 'true', label: '% del Capital' }
-                          ]}
-                        />
-                        <CustomSelect 
-                          value={exp.mode} 
-                          onChange={e => updateExpense(exp.id, 'mode', e as ExpenseConfig['mode'])} 
-                          className="flex-1 min-w-[200px]"
-                          options={[
-                            { value: 'Descontado', label: 'Descontado (Restar del desembolso)' },
-                            { value: 'Financiado', label: 'Financiado (Sumar al saldo capital)' },
-                            { value: 'Independiente', label: 'Externo / Paga aparte' }
-                          ]}
-                        />
-                        <button onClick={() => removeExpense(exp.id)} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                    {expenses.map(exp => {
+                      const isExpActive = Boolean(exp.enabled);
+                      return (
+                        <div 
+                          key={exp.id} 
+                          className={`p-4 rounded-2xl border transition-all ${
+                            isExpActive 
+                              ? 'bg-white dark:bg-slate-900/90 border-indigo-200 dark:border-indigo-800 shadow-sm ring-1 ring-indigo-500/20' 
+                              : 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 opacity-80'
+                          }`}
+                        >
+                          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                            {/* Toggle Switch */}
+                            <button
+                              type="button"
+                              onClick={() => toggleExpense(exp.id)}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                isExpActive
+                                  ? 'bg-emerald-500 text-white shadow-sm'
+                                  : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                              }`}
+                            >
+                              {isExpActive ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  <span>Activo (Aplicar en Préstamo)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ToggleLeft className="w-4 h-4" />
+                                  <span>Inactivo (Desactivado)</span>
+                                </>
+                              )}
+                            </button>
+
+                            <div className="flex items-center gap-2 self-end md:self-auto">
+                              <span className={`text-[11px] font-bold ${isExpActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
+                                Modo: {exp.mode}
+                              </span>
+                              <button 
+                                onClick={() => removeExpense(exp.id)} 
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+                                title="Eliminar cargo"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">Nombre del Cargo</label>
+                              <input 
+                                type="text" 
+                                value={exp.name} 
+                                onChange={e => updateExpense(exp.id, 'name', e.target.value)} 
+                                className="w-full px-3 py-2 border rounded-xl text-xs bg-white dark:bg-slate-800 dark:text-white font-medium border-slate-200 dark:border-slate-700" 
+                                placeholder="Ej: Gastos de Cierre" 
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                                {exp.isPercentage ? 'Porcentaje (%)' : 'Monto Fijo ($)'}
+                              </label>
+                              <input 
+                                type="text" 
+                                inputMode="decimal"
+                                value={exp.isPercentage ? exp.amount : formatMoneyWithCommas(exp.amount)} 
+                                onChange={e => {
+                                  const raw = exp.isPercentage 
+                                    ? Number(parseCleanNumber(e.target.value)) || 0 
+                                    : Number(parseCleanMoney(e.target.value)) || 0;
+                                  updateExpense(exp.id, 'amount', raw);
+                                }} 
+                                className="w-full px-3 py-2 border rounded-xl text-xs bg-white dark:bg-slate-800 dark:text-white font-bold border-slate-200 dark:border-slate-700" 
+                                placeholder="0.00" 
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">Tipo de Cargo</label>
+                              <CustomSelect 
+                                value={exp.isPercentage ? 'true' : 'false'} 
+                                onChange={e => updateExpense(exp.id, 'isPercentage', e === 'true')} 
+                                className="w-full text-xs"
+                                options={[
+                                  { value: 'false', label: '$ Monto Fijo' },
+                                  { value: 'true', label: '% del Capital' }
+                                ]}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1">Aplicación</label>
+                              <CustomSelect 
+                                value={exp.mode} 
+                                onChange={e => updateExpense(exp.id, 'mode', e as ExpenseConfig['mode'])} 
+                                className="w-full text-xs"
+                                options={[
+                                  { value: 'Descontado', label: 'Descontado (Resta del desembolso)' },
+                                  { value: 'Financiado', label: 'Financiado (Suma al saldo capital)' },
+                                  { value: 'Independiente', label: 'Externo / Pago por separado' }
+                                ]}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                     {expenses.length === 0 && (
                       <p className="text-sm text-slate-400 p-6 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">Sin cargos adicionales configurados.</p>
                     )}
@@ -566,19 +711,23 @@ const Simulator: React.FC = () => {
                     <div>
                       <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">% Penalidad por Mora (Mensual)</label>
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="decimal"
                         value={lateFee} 
-                        onChange={e => setLateFee(Number(e.target.value))} 
-                        className="w-full px-4 py-2.5 border rounded-xl text-sm font-bold bg-white dark:bg-slate-900" 
+                        onChange={e => setLateFee(parseCleanNumber(e.target.value))} 
+                        className="w-full px-4 py-2.5 border rounded-xl text-sm font-bold bg-white dark:bg-slate-900 dark:text-white border-slate-200 dark:border-slate-700" 
+                        placeholder="0"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Días de Gracia sin Recargo</label>
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="numeric"
                         value={graceDays} 
-                        onChange={e => setGraceDays(Number(e.target.value))} 
-                        className="w-full px-4 py-2.5 border rounded-xl text-sm font-bold bg-white dark:bg-slate-900" 
+                        onChange={e => setGraceDays(parseCleanNumber(e.target.value))} 
+                        className="w-full px-4 py-2.5 border rounded-xl text-sm font-bold bg-white dark:bg-slate-900 dark:text-white border-slate-200 dark:border-slate-700" 
+                        placeholder="0"
                       />
                     </div>
                   </div>
@@ -605,7 +754,7 @@ const Simulator: React.FC = () => {
                         fill="#8884d8" 
                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
                       >
-                        {result.charts.distribution.map((entry, index) => (
+                        {result.charts.distribution.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -621,7 +770,7 @@ const Simulator: React.FC = () => {
           {/* Amortization Schedule Table */}
           {result && (
             <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-indigo-50 dark:bg-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-400">
                     <Table className="w-5 h-5" />
@@ -698,7 +847,7 @@ const Simulator: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Cargos y Seguros</span>
+                  <span className="text-slate-400">Cargos y Seguros Activos</span>
                   <span className="font-bold text-emerald-400">+{globalCurrency} {result.summary.totalExpenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
 
@@ -720,10 +869,10 @@ const Simulator: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Desembolso Neto al Cliente:</span>
                   <span className="font-bold text-emerald-400 font-mono text-sm">
-                    {globalCurrency} {(effectivePrincipal - expenses.filter(e => e.mode === 'Descontado').reduce((sum, e) => sum + (e.isPercentage ? effectivePrincipal * (e.amount/100) : e.amount), 0)).toLocaleString()}
+                    {globalCurrency} {Math.max(0, effectivePrincipal - activeDiscountedTotal).toLocaleString()}
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400">Se deduce cualquier gasto descontado del capital desembolsado.</p>
+                <p className="text-[10px] text-slate-400">Se deduce cualquier gasto descontado activo ({globalCurrency} {activeDiscountedTotal.toLocaleString()}) del capital desembolsado.</p>
               </div>
 
               {/* Key Dates */}
@@ -742,12 +891,12 @@ const Simulator: React.FC = () => {
               <div className="space-y-3 pt-2">
                 <button 
                   onClick={handleApproveSimulation}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/50 transition-all">
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/50 transition-all active:scale-95">
                   APROBAR / SOLICITAR PRÉSTAMO <ArrowRight className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={exportPDF}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs">
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs active:scale-95">
                   <Download className="w-3.5 h-3.5" /> Descargar Plan en PDF
                 </button>
               </div>

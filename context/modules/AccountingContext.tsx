@@ -313,15 +313,17 @@ export const AccountingProvider: React.FC<{ children: ReactNode }> = ({ children
 
   useEffect(() => {
     if (!currentUser) {
-      setTransactions([]); setBankAccounts(DEFAULT_BANK_ACCOUNTS); setCashShifts([]); setCollectorVisits([]); setAccountingPeriods([]); setLockedUntilDateState(null);
+      setTransactions([]); setBankAccounts(DEFAULT_BANK_ACCOUNTS); setCashShifts([]); setCollectorVisits([]); setBankDeposits([]); setAccountingPeriods([]); setLockedUntilDateState(null);
       return;
     }
+
+    setTransactions([]); setCashShifts([]); setCollectorVisits([]); setBankDeposits([]); setAccountingPeriods([]); setLockedUntilDateState(null);
 
     const fetchData = async () => {
       try {
         const [trxRes, banksRes, shiftsRes, visitsRes, depositsRes, periodsRes, settingsRes] = await Promise.all([
           insforge.database.from('transactions').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
-          insforge.database.from('bank_accounts').select('*').or(`lender_id.eq.${currentUser.id},lender_id.is.null`).order('created_at', { ascending: false }),
+          insforge.database.from('bank_accounts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('cash_shifts').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('collector_visits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),
           insforge.database.from('bank_deposits').select('*').eq('lender_id', currentUser.id).order('created_at', { ascending: false }),

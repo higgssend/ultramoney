@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Client, Loan, LoanStatus } from '../types';
@@ -113,6 +113,10 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
     if (filterType === 'current') return !info.isOverdue && !info.isDueToday && info.clientLoans.length > 0;
     return true;
   });
+
+  const clientsWithGpsCount = useMemo(() => {
+    return displayClients.filter(c => Boolean(resolveClientCoords(c))).length;
+  }, [displayClients]);
 
   // Initialize Map
   useEffect(() => {
@@ -426,9 +430,10 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
       routePolylineRef.current = polyline;
 
     } else {
-      // 2. Standard Portfolio Map View
+      // 2. Standard Portfolio Map View (Only render clients with actual GPS coordinates)
       displayClients.forEach((client, idx) => {
-        const coordsObj = resolveClientCoords(client, idx);
+        const coordsObj = resolveClientCoords(client);
+        if (!coordsObj) return; // Eliminate default/fictitious map points
         const coords: [number, number] = [coordsObj.lat, coordsObj.lng];
         bounds.push(coords);
 
@@ -737,6 +742,14 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
           </button>
         </div>
       </div>
+
+      {/* No GPS coords info badge */}
+      {!optimizedStops && clientsWithGpsCount === 0 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+          <MapPin className="w-4 h-4 text-indigo-500 shrink-0" />
+          <span>No hay clientes con coordenadas GPS registradas en esta vista</span>
+        </div>
+      )}
     </div>
   );
 };

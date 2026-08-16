@@ -24,7 +24,12 @@ export const PublicDocumentView: React.FC = () => {
       if (!loanId) return;
       try {
         const { data: loanData } = await insforge.database.from('loans').select('*').eq('id', loanId).maybeSingle();
-        const { data: settingsData } = await insforge.database.from('company_settings').select('*').limit(1).maybeSingle();
+        let settingsData = null;
+        if (loanData && (loanData.lender_id || loanData.lenderid)) {
+          const targetLender = loanData.lender_id || loanData.lenderid;
+          const { data: sData } = await insforge.database.from('company_settings').select('*').eq('lender_id', targetLender).maybeSingle();
+          settingsData = sData;
+        }
 
         if (loanData) {
           const mappedLoan: Loan = {

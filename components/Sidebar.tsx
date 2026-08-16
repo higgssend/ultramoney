@@ -24,18 +24,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const [drawerLayout, setDrawerLayout] = useState<'grid' | 'list'>('grid');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (!currentUser?.id) return false;
+    return localStorage.getItem(`theme_${currentUser.id}`) === 'dark';
   });
 
+  // Sync theme whenever currentUser changes or user toggles darkMode
   useEffect(() => {
-    if (darkMode) {
+    if (!currentUser?.id) {
+      document.documentElement.classList.remove('dark');
+      setDarkMode(false);
+      return;
+    }
+    const userTheme = localStorage.getItem(`theme_${currentUser.id}`);
+    const isDark = userTheme === 'dark';
+    setDarkMode(isDark);
+    if (isDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [darkMode]);
+  }, [currentUser?.id]);
+
+  const handleToggleDarkMode = () => {
+    if (!currentUser?.id) return;
+    const nextMode = !darkMode;
+    setDarkMode(nextMode);
+    if (nextMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem(`theme_${currentUser.id}`, 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem(`theme_${currentUser.id}`, 'light');
+    }
+  };
 
   // Prevent background body scrolling when mobile drawer is open
   useEffect(() => {
@@ -171,11 +193,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         <span className="md:hidden absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse ring-2 ring-white dark:ring-slate-900" />
                       ) : null}
                     </div>
-                    <span className={`text-[11px] md:text-sm leading-snug font-bold md:font-medium tracking-tight truncate w-full ${drawerLayout === 'grid' ? 'text-center' : 'text-left'}`}>
+                    <span className={`text-[11px] md:text-sm leading-snug font-bold md:font-medium tracking-tight truncate ${drawerLayout === 'grid' ? 'w-full text-center md:w-auto md:text-left md:flex-1' : 'w-auto text-left flex-1'}`}>
                       {item.name}
                     </span>
                     {item.badge && item.badge > 0 ? (
-                      <span className={`hidden md:inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-extrabold rounded-full ${
+                      <span className={`hidden md:inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-extrabold rounded-full shrink-0 ml-2 ${
                         isActive 
                           ? 'bg-white text-indigo-700' 
                           : 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
@@ -288,7 +310,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </button>
 
                 <button 
-                  onClick={() => setDarkMode(!darkMode)}
+                  onClick={handleToggleDarkMode}
                   className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 transition-all"
                 >
                   {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}

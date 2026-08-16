@@ -49,8 +49,10 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const refreshClients = useCallback(async () => {
     if (!currentUser) {
       setClients([]); setClientNotes([]); setClientDocuments([]); setRoutes([]); setClientRelationships([]);
+      setIsLoading(false);
       return;
     }
+    setClients([]); setClientNotes([]); setClientDocuments([]); setRoutes([]); setClientRelationships([]);
     setIsLoading(true);
     try {
       const [clientsRes, notesRes, docsRes] = await Promise.all([

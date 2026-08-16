@@ -90,36 +90,35 @@ export const calculateHaversineDistanceKm = (
 };
 
 /**
- * Deterministically resolves or generates coordinates for any client
- * Guaranteed to return valid coordinates so existing clients without GPS work seamlessly
+ * Checks if a client has actual valid GPS coordinates
  */
-export const resolveClientCoords = (client: Client, fallbackIndex: number = 0): GeoPoint => {
+export const hasValidCoords = (client: Client): boolean => {
   if (client.coordinates && typeof client.coordinates.lat === 'number' && typeof client.coordinates.lng === 'number') {
-    return { lat: client.coordinates.lat, lng: client.coordinates.lng };
+    return !isNaN(client.coordinates.lat) && !isNaN(client.coordinates.lng);
   }
-  if (client.lat && client.lng && !isNaN(Number(client.lat)) && !isNaN(Number(client.lng))) {
-    return { lat: Number(client.lat), lng: Number(client.lng) };
+  if (client.lat !== undefined && client.lng !== undefined && !isNaN(Number(client.lat)) && !isNaN(Number(client.lng))) {
+    return true;
   }
+  return false;
+};
 
-  // Check municipality / province match
-  const munKey = (client.municipality || client.province || '').toLowerCase().trim();
-  let baseCoords = DEFAULT_OFFICE_COORDS;
-  for (const [key, coords] of Object.entries(MUNICIPALITY_GEO_CENTERS)) {
-    if (munKey.includes(key)) {
-      baseCoords = coords;
-      break;
+/**
+ * Resolves genuine GPS coordinates for a client, returning null if no GPS has been captured
+ */
+export const resolveClientCoords = (client: Client): GeoPoint | null => {
+  if (client.coordinates && typeof client.coordinates.lat === 'number' && typeof client.coordinates.lng === 'number') {
+    if (!isNaN(client.coordinates.lat) && !isNaN(client.coordinates.lng)) {
+      return { lat: client.coordinates.lat, lng: client.coordinates.lng };
     }
   }
-
-  // Spread gentle pseudo-random offset based on client ID / index
-  const hash = (client.id || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + fallbackIndex * 29;
-  const angle = (hash % 360) * (Math.PI / 180);
-  const radius = 0.008 + ((hash % 80) / 80) * 0.025; // ~1-4 km dispersion
-
-  return {
-    lat: baseCoords.lat + radius * Math.cos(angle),
-    lng: baseCoords.lng + radius * Math.sin(angle)
-  };
+  if (client.lat !== undefined && client.lng !== undefined) {
+    const lat = Number(client.lat);
+    const lng = Number(client.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      return { lat, lng };
+    }
+  }
+  return null;
 };
 
 /**
@@ -160,8 +159,24 @@ export const optimizeCollectionRoute = (
   }
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const unvisited = targetClients.map((client, idx) => {
-    const coords = resolveClientCoords(client, idx);
+  const clientsWithGps = targetClients.filter(hasValidCoords);
+
+  if (clientsWithGps.length === 0) {
+    return {
+      origin,
+      originName,
+      stops: [],
+      totalDistanceKm: 0,
+      totalEstimatedTimeMins: 0,
+      totalInstallmentsToCollect: 0,
+      totalPortfolioAtRisk: 0,
+      googleMapsUrl: '',
+      wazeFirstStopUrl: ''
+    };
+  }
+
+  const unvisited = clientsWithGps.map((client) => {
+    const coords = resolveClientCoords(client)!;
     const clientLoans = loans.filter(
       l => l.clientId === client.id && l.status !== LoanStatus.PAID && l.status !== LoanStatus.REJECTED
     );
@@ -284,17 +299,19 @@ export const calculateSectorRiskZoning = (
 ): SectorRiskSummary[] => {
   const sectorMap = new Map<string, { clients: Client[]; coordsList: GeoPoint[] }>();
 
-  clients.forEach((c, idx) => {
+  clients.forEach((c) => {
     const sectorRaw = (c.sector || c.municipality || c.province || 'Sector General').trim();
     const sectorKey = sectorRaw.toLowerCase();
-    const coords = resolveClientCoords(c, idx);
+    const coords = resolveClientCoords(c);
 
     if (!sectorMap.has(sectorKey)) {
       sectorMap.set(sectorKey, { clients: [], coordsList: [] });
     }
     const entry = sectorMap.get(sectorKey)!;
     entry.clients.push(c);
-    entry.coordsList.push(coords);
+    if (coords) {
+      entry.coordsList.push(coords);
+    }
   });
 
   const summaries: SectorRiskSummary[] = [];
@@ -320,9 +337,13 @@ export const calculateSectorRiskZoning = (
     else if (overduePercentage >= 15) riskLevel = 'Alto';
     else if (overduePercentage >= 5) riskLevel = 'Medio';
 
-    // Average coordinates to get centroid
-    const avgLat = entry.coordsList.reduce((sum, p) => sum + p.lat, 0) / entry.coordsList.length;
-    const avgLng = entry.coordsList.reduce((sum, p) => sum + p.lng, 0) / entry.coordsList.length;
+    // Average coordinates to get centroid if coords exist
+    const avgLat = entry.coordsList.length > 0
+      ? entry.coordsList.reduce((sum, p) => sum + p.lat, 0) / entry.coordsList.length
+      : DEFAULT_OFFICE_COORDS.lat;
+    const avgLng = entry.coordsList.length > 0
+      ? entry.coordsList.reduce((sum, p) => sum + p.lng, 0) / entry.coordsList.length
+      : DEFAULT_OFFICE_COORDS.lng;
 
     const repClient = entry.clients[0];
     const sectorName = repClient?.sector || repClient?.municipality || 'Sector General';

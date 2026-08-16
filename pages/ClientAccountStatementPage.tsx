@@ -5,7 +5,7 @@ import {
   Calendar, DollarSign, CheckCircle2, ShieldCheck, Clock, Receipt, 
   CreditCard, AlertTriangle, FileText, Phone, MapPin, Mail, Sparkles, TrendingUp
 } from 'lucide-react';
-import { useClients, useLoans, useSettings, useAccounting } from '../context/StoreContext';
+import { useClients, useLoans, useSettings, useAccounting, useAuth } from '../context/StoreContext';
 import { Loan, Client, CompanySettings, Transaction, formatLoanId, formatReceiptId, LoanStatus } from '../types';
 import { insforge } from '../lib/insforge';
 import { LoanEngine, InstallmentPreview } from '../utils/LoanEngine';
@@ -33,6 +33,7 @@ export const ClientAccountStatementPage: React.FC = () => {
   const { loans } = useLoans();
   const { companySettings } = useSettings();
   const { transactions } = useAccounting();
+  const { currentUser } = useAuth();
 
   const [client, setClient] = useState<Client | null>(null);
   const [clientLoans, setClientLoans] = useState<Loan[]>([]);
@@ -51,29 +52,6 @@ export const ClientAccountStatementPage: React.FC = () => {
       }
 
       try {
-        // Fetch company settings from DB as robust fallback
-        try {
-          const { data: dbSettings } = await insforge.database
-            .from('company_settings')
-            .select('*')
-            .maybeSingle();
-
-          if (dbSettings) {
-            setDbCompanySettings({
-              name: dbSettings.name || 'UltraMoney Financial',
-              rnc: dbSettings.rnc || '',
-              phone: dbSettings.phone || '',
-              email: dbSettings.email || '',
-              address: dbSettings.address || '',
-              logoUrl: dbSettings.logourl || dbSettings.logo_url || dbSettings.logoUrl || '',
-              logourl: dbSettings.logourl || dbSettings.logo_url || dbSettings.logoUrl || '',
-              currency: 'DOP',
-              termsAndConditions: dbSettings.terms_and_conditions || ''
-            });
-          }
-        } catch (e) {
-          console.error("Error fetching company settings:", e);
-        }
         // Find in local memory store first
         let currentClient = clients.find(c => c.id === effectiveClientId);
         
@@ -89,24 +67,46 @@ export const ClientAccountStatementPage: React.FC = () => {
             currentClient = {
               id: dbClient.id,
               name: dbClient.name,
-              lastName: dbClient.lastname || dbClient.last_name || '',
-              cedula: dbClient.cedula || 'N/A',
-              documentType: dbClient.documenttype || 'Cédula',
+              lastName: dbClient.lastname || dbClient.lastName || '',
+              sex: dbClient.sex || 'Otro',
+              occupation: dbClient.occupation || 'Particular',
               phone: dbClient.phone || '',
-              whatsapp: dbClient.whatsapp || dbClient.phone || '',
-              email: dbClient.email || '',
+              cedula: dbClient.cedula || 'N/A',
               address: dbClient.address || '',
-              sector: dbClient.sector || '',
-              municipality: dbClient.municipality || '',
-              province: dbClient.province || '',
-              occupation: dbClient.occupation || '',
               income: Number(dbClient.income) || 0,
-              creditScore: Number(dbClient.credit_score || dbClient.creditscore) || 850,
+              creditScore: Number(dbClient.creditscore || dbClient.creditScore) || 100,
               status: (dbClient.status as Client['status']) || 'Activo',
-              sex: (dbClient.sex as Client['sex']) || 'Masculino',
               joinedDate: dbClient.created_at || new Date().toISOString(),
-              avatarUrl: dbClient.avatarurl || dbClient.avatar_url || undefined
+              avatarUrl: dbClient.avatarurl || dbClient.avatar_url || '',
+              lender_id: dbClient.lender_id
             };
+          }
+        }
+
+        // Fetch company settings from DB only if lender ID is known
+        const targetLenderId = (currentClient as (Client & { lender_id?: string }))?.lender_id || currentUser?.id;
+        if (targetLenderId) {
+          try {
+            const { data: dbSettings } = await insforge.database
+              .from('company_settings')
+              .select('*')
+              .eq('lender_id', targetLenderId)
+              .maybeSingle();
+
+            if (dbSettings) {
+              setDbCompanySettings({
+                name: dbSettings.name || 'UltraMoney Financial',
+                rnc: dbSettings.rnc || '',
+                phone: dbSettings.phone || '',
+                email: dbSettings.email || '',
+                address: dbSettings.address || '',
+                logoUrl: dbSettings.logourl || dbSettings.logo_url || dbSettings.logoUrl || '',
+                currency: dbSettings.currency || 'DOP',
+                termsAndConditions: dbSettings.terms_and_conditions || ''
+              });
+            }
+          } catch (e) {
+            console.error("Error fetching company settings:", e);
           }
         }
 

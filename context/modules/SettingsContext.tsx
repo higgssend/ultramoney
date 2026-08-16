@@ -46,18 +46,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [globalCurrency, setGlobalCurrencyState] = useState<'DOP' | 'USD'>('DOP');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [pdfQueue, setPdfQueue] = useState<PdfJob[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    const saved = localStorage.getItem('um_notifications');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { return []; }
-    }
-    return [];
-  });
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
-  // Local storage caching
+  // Local storage caching isolated per user
   useEffect(() => {
-    localStorage.setItem('um_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    if (currentUser?.id) {
+      localStorage.setItem(`um_notifications_${currentUser.id}`, JSON.stringify(notifications));
+    }
+  }, [notifications, currentUser?.id]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -66,6 +62,11 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       setNotifications([]);
       return;
     }
+
+    // Reset previous user's settings immediately to prevent stale cross-user leaks
+    setCompanySettings(initialCompanySettings);
+    setAuditLogs([]);
+    setNotifications([]);
 
     const fetchSettingsAndData = async () => {
       try {

@@ -61,7 +61,7 @@ export const ThermalReceiptPage: React.FC = () => {
           t.id.endsWith(cleanId)
         ) || null;
 
-        let rawLenderId: string | undefined = undefined;
+        let rawLenderId: string | undefined = (resolvedTx as (Transaction & { lender_id?: string }))?.lender_id || currentUser?.id;
 
         if (!resolvedTx && isUuid) {
           const { data: txRes } = await insforge.database
@@ -71,7 +71,7 @@ export const ThermalReceiptPage: React.FC = () => {
             .maybeSingle();
 
           if (txRes) {
-            rawLenderId = txRes.lender_id;
+            rawLenderId = txRes.lender_id || currentUser?.id;
             resolvedTx = {
               id: txRes.id,
               type: (txRes.type || 'Ingreso') as Transaction['type'],
@@ -231,37 +231,28 @@ export const ThermalReceiptPage: React.FC = () => {
           }
 
           // Fetch Lender Settings from DB
-          const targetLenderId = rawLenderId;
+          const targetLenderId = rawLenderId || currentUser?.id;
           try {
-            let sData = null;
             if (targetLenderId) {
-              const { data } = await insforge.database
+              const { data: sData } = await insforge.database
                 .from('company_settings')
                 .select('*')
                 .eq('lender_id', targetLenderId)
                 .maybeSingle();
-              sData = data;
-            }
-            if (!sData) {
-              const { data: defData } = await insforge.database
-                .from('company_settings')
-                .select('*')
-                .limit(1)
-                .maybeSingle();
-              sData = defData;
-            }
-            if (sData) {
-              setLenderSettings({
-                name: sData.name || 'Ultramoney',
-                slogan: sData.slogan || '',
-                rnc: sData.rnc || '',
-                address: sData.address || '',
-                phone: sData.phone || '',
-                email: sData.email || '',
-                currency: sData.currency || 'DOP',
-                termsAndConditions: sData.terms_and_conditions || '',
-                logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
-              });
+
+              if (sData) {
+                setLenderSettings({
+                  name: sData.name || 'Ultramoney',
+                  slogan: sData.slogan || '',
+                  rnc: sData.rnc || '',
+                  address: sData.address || '',
+                  phone: sData.phone || '',
+                  email: sData.email || '',
+                  currency: sData.currency || 'DOP',
+                  termsAndConditions: sData.terms_and_conditions || '',
+                  logoUrl: sData.logourl || sData.logo_url || sData.logoUrl || ''
+                });
+              }
             }
           } catch (e) {
             console.warn("No se cargó configuración de empresa:", e);
@@ -470,7 +461,7 @@ export const ThermalReceiptPage: React.FC = () => {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const activeCompanySettings = lenderSettings || (companySettings.name !== 'Ultramoney S.R.L.' ? companySettings : {
+  const activeCompanySettings = lenderSettings || (companySettings?.name ? companySettings : {
     name: 'Ultramoney S.R.L.',
     phone: '(809) 555-0100',
     rnc: '131-00000-1',

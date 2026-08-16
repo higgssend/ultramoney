@@ -7,6 +7,7 @@ export interface ExpenseConfig {
     amount: number;
     isPercentage: boolean;
     mode: 'Descontado' | 'Financiado' | 'Independiente';
+    enabled?: boolean;
 }
 
 export interface ArrearsConfig {
@@ -109,6 +110,7 @@ export class LoanEngine {
 
         if (config.expenses) {
             config.expenses.forEach(exp => {
+                if (exp.enabled === false) return;
                 const val = exp.isPercentage ? (config.amount * (exp.amount / 100)) : exp.amount;
                 totalExpenses += val;
                 if (exp.mode === 'Financiado') {

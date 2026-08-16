@@ -123,6 +123,8 @@ export const LoanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
+    setLoans([]); setLoanRequests([]);
+
     const fetchLoans = async () => {
       try {
         const [loansRes, productsRes, requestsRes, clientsRes] = await Promise.all([
