@@ -1090,6 +1090,11 @@ const LandingPage: React.FC = () => {
   // 3. Mobile Showcase Tab State
   const [activeMobileTab, setActiveMobileTab] = useState<'campo' | 'whatsapp' | 'gps' | 'offline'>('campo');
 
+  // 4. Credit & Business Explorer State
+  const [loanExplorerTab, setLoanExplorerTab] = useState<'modalidades' | 'negocios'>('modalidades');
+  const [selectedLoanIdx, setSelectedLoanIdx] = useState<number>(0);
+  const [selectedBizIdx, setSelectedBizIdx] = useState<number>(0);
+
   const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1124,17 +1129,16 @@ const LandingPage: React.FC = () => {
         .from('.hero-mockup', { y: 40, opacity: 0.3, scale: 0.98, duration: 0.9, clearProps: 'all' }, '-=0.6');
 
       // 2. Tipos de Préstamos Section Reveal
-      gsap.from('#tipos-prestamos .card-3d-wrapper', {
+      gsap.from('#tipos-prestamos .grid', {
         scrollTrigger: {
           trigger: '#tipos-prestamos',
           scroller: mainScroller,
           start: 'top 95%',
           toggleActions: 'play none none none'
         },
-        y: 30,
+        y: 25,
         opacity: 0.4,
         duration: 0.6,
-        stagger: 0.06,
         ease: 'power2.out',
         clearProps: 'all'
       });
@@ -1367,27 +1371,10 @@ const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* ─── HERO SECTION WITH REACT BITS (FULL PAGE MIN-H-SCREEN) ─── */}
+      {/* ─── HERO SECTION (FULL PAGE MIN-H-SCREEN) ─── */}
       <section id="inicio" className="min-h-screen flex flex-col justify-center pt-28 lg:pt-36 pb-20 bg-gradient-to-b from-indigo-50/70 via-slate-50 to-white overflow-hidden relative">
-        {/* React Bits Animated Canvas Backgrounds */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-60">
-          <Squares
-            direction="diagonal"
-            speed={0.35}
-            squareSize={50}
-            borderColor="rgba(99, 102, 241, 0.08)"
-            hoverFillColor="rgba(99, 102, 241, 0.15)"
-            className="w-full h-full"
-          />
-          <Particles
-            quantity={35}
-            color="#6366f1"
-            className="absolute inset-0 w-full h-full opacity-50"
-          />
-        </div>
-
         {/* Ambient Gradient Glow Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-r from-indigo-400/20 via-purple-400/20 to-blue-400/20 rounded-full blur-3xl pointer-events-none -z-10" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-r from-indigo-400/15 via-purple-400/15 to-blue-400/15 rounded-full blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -1662,178 +1649,417 @@ const LandingPage: React.FC = () => {
       {/* ─── VERTICAL INTERACTIVE DEMO SHOWCASE FOR ALL SIDEBAR MODULES ─── */}
       <VerticalModulesShowcase />
 
-      {/* ─── NEW SECTION: TIPOS DE PRÉSTAMOS Y MODELOS DE NEGOCIOS SOPORTADOS (FULL PAGE) ─── */}
+      {/* ─── MASTER-DETAIL INTERACTIVE HUB: TIPOS DE PRÉSTAMOS & MODELOS DE NEGOCIOS (FULL PAGE) ─── */}
       <section id="tipos-prestamos" className="min-h-screen flex flex-col justify-center py-24 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-t border-b border-slate-200/70 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
+        <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-12">
           
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest shadow-2xs">
               <Briefcase className="w-4 h-4 text-indigo-600" /> COBERTURA TOTAL DE MERCADO
             </span>
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
               Tipos de Préstamos y Negocios Soportados
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Ultramoney está diseñado para adaptarse a cualquier estructura crediticia y tipo de financiera en República Dominicana y Latinoamérica, desde prestamistas individuales hasta financieras constituidas.
+              Explora en tiempo real cómo opera cada modalidad de crédito y cómo se adapta a cada modelo de negocio.
             </p>
+
+            {/* Segment Tab Switcher */}
+            <div className="inline-flex items-center p-1.5 bg-slate-200/80 rounded-2xl border border-slate-300/80 shadow-inner mt-4">
+              <button
+                onClick={() => setLoanExplorerTab('modalidades')}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-300 flex items-center gap-2 ${
+                  loanExplorerTab === 'modalidades'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 scale-[1.02]'
+                    : 'text-slate-700 hover:text-slate-900'
+                }`}
+              >
+                <Banknote className="w-4 h-4" /> Modalidades de Préstamos (6)
+              </button>
+              <button
+                onClick={() => setLoanExplorerTab('negocios')}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-300 flex items-center gap-2 ${
+                  loanExplorerTab === 'negocios'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25 scale-[1.02]'
+                    : 'text-slate-700 hover:text-slate-900'
+                }`}
+              >
+                <Landmark className="w-4 h-4" /> Modelos de Negocio (6)
+              </button>
+            </div>
           </div>
 
-          {/* Part 1: Grid of 6 Specialized Loan Types (Centered Design) */}
-          <div className="space-y-8">
-            <div className="text-center max-w-xl mx-auto space-y-1 border-b border-slate-200/80 pb-4">
-              <h3 className="text-2xl font-black text-slate-900 flex items-center justify-center gap-2">
-                <DollarSign className="w-6 h-6 text-indigo-600" /> Modalidades de Préstamos Gestionables
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">Soporta amortizaciones periódicas, rédito abierto, prendas y refinanciación.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                {
-                  icon: Users,
-                  title: 'Préstamos Personales a la Firma',
-                  category: 'Amortización Regular',
-                  desc: 'Créditos de consumo con cuotas fijas (Método Francés o Cuota Constante). Cálculo automático de capital e interés por período.',
-                  features: ['Frecuencia Diaria, Semanal, Quincenal o Mensual', 'Historial de Garantes y Referencias', 'Generación instantánea de tabla de amortización'],
-                  badgeColor: 'text-indigo-600 bg-indigo-50 border-indigo-100'
-                },
-                {
-                  icon: FileText,
-                  title: 'Pagarés Notariados / Rédito Fijo',
-                  category: 'Interés Fijo + Abonos',
-                  desc: 'Préstamos de solo interés mensual (Rédito). Al abonar capital excedente, el saldo principal se reduce y los intereses futuros se recalculan automáticamente.',
-                  features: ['Re-cálculo de rédito automático tras abonos', 'Impresión de Pagaré Notarial Legal con sello', 'Opción de liquidación anticipada sin penalidad'],
-                  badgeColor: 'text-purple-600 bg-purple-50 border-purple-100'
-                },
-                {
-                  icon: Landmark,
-                  title: 'Financiamiento de Vehículos',
-                  category: 'Garantía de Matrícula',
-                  desc: 'Gestión completa de préstamos con garantía de automóviles, motocicletas o equipos pesados con vinculación de matrícula.',
-                  features: ['Registro de Chasis (VIN), Placa, Marca y Año', 'Control de Vencimiento de Póliza de Seguro', 'Contrato de Prenda sin Desposeimiento'],
-                  badgeColor: 'text-blue-600 bg-blue-50 border-blue-100'
-                },
-                {
-                  icon: Package,
-                  title: 'Préstamos con Garantía Prendaria',
-                  category: 'Custodia de Empeños',
-                  desc: 'Registro de artículos físicos entregados en custodia (laptops, celulares con IMEI, joyas, electrodomésticos) con comprobante de recepción.',
-                  features: ['Asignación de código de custodia en almacén', 'Acta de entrega y devolución de prenda', 'Sistemas de remate por incumplimiento'],
-                  badgeColor: 'text-amber-600 bg-amber-50 border-amber-100'
-                },
-                {
-                  icon: Navigation,
-                  title: 'Cobro Diario de Ruta Comercial',
-                  category: 'App Móvil de Campo',
-                  desc: 'Diseñado para cobradores de calle en comercios locales y rutas comerciales. Registro de cobros en menos de 5 segundos desde el celular.',
-                  features: ['Rutas organizadas por cercanía o sector', 'Comprobantes por WhatsApp en 1 clic', 'Cuadre diario de cobrador contra caja chica'],
-                  badgeColor: 'text-emerald-600 bg-emerald-50 border-emerald-100'
-                },
-                {
-                  icon: RefreshCw,
-                  title: 'Consolidación & Refinanciación',
-                  category: 'Reestructuración 1-Clic',
-                  desc: 'Permite absorber deudas activas anteriores en un nuevo préstamo unificado, relanzando los plazos de amortización limpiamente.',
-                  features: ['Unificación de múltiples deudas en un saldo', 'Cancelación automática de contratos previos', 'Auditoría inalterable de reestructuración'],
-                  badgeColor: 'text-rose-600 bg-rose-50 border-rose-100'
-                }
-              ].map((item, idx) => {
-                const IconC = item.icon;
-                return (
-                  <SpotlightCard
-                    key={idx}
-                    spotlightColor="rgba(99, 102, 241, 0.14)"
-                    borderColor="rgba(226, 232, 240, 0.9)"
-                    className="bg-white rounded-3xl p-7 text-center flex flex-col items-center justify-between group space-y-4 shadow-sm hover:shadow-xl transition-all duration-300"
-                  >
-                    <div className="flex flex-col items-center text-center space-y-3 w-full">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-1 group-hover:scale-110 group-hover:from-indigo-600 group-hover:to-blue-600 group-hover:text-white transition-all duration-300 shadow-xs mx-auto">
-                        <IconC className="w-8 h-8 shrink-0 aspect-square" strokeWidth={1.5} />
-                      </div>
-                      <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border mx-auto ${item.badgeColor}`}>
-                        <ShinyText text={item.category} speed={4} />
-                      </span>
-                      <h4 className="text-lg font-extrabold text-slate-900 text-center group-hover:text-indigo-600 transition-colors">{item.title}</h4>
-                      <p className="text-xs text-slate-600 leading-relaxed text-center font-normal">{item.desc}</p>
-                    </div>
-                    <div className="w-full pt-4 border-t border-slate-100/90 space-y-2.5 flex flex-col items-center text-center">
-                      {item.features.map((feat, fidx) => (
-                        <div key={fidx} className="flex items-center justify-center gap-2 text-slate-700 text-[11.5px] font-semibold text-center w-full">
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span>{feat}</span>
+          {/* ─── TAB 1: MODALIDADES DE PRÉSTAMOS (MASTER-DETAIL VIEW) ─── */}
+          {loanExplorerTab === 'modalidades' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Left Column: Interactive Selection Deck */}
+              <div className="lg:col-span-5 space-y-3">
+                {[
+                  {
+                    id: 0,
+                    icon: Users,
+                    title: 'Préstamos Personales a la Firma',
+                    category: 'Amortización Francesa',
+                    desc: 'Cuotas periódicas fijas con cálculo de capital e intereses.',
+                    badge: 'Frecuencia Variable'
+                  },
+                  {
+                    id: 1,
+                    icon: FileText,
+                    title: 'Pagarés Notariados / Rédito Fijo',
+                    category: 'Solo Interés Mensual',
+                    desc: 'Cobro de rédito a capital intacto. Abonos reducen saldo al instante.',
+                    badge: 'Pagaré Notarial'
+                  },
+                  {
+                    id: 2,
+                    icon: Landmark,
+                    title: 'Financiamiento de Vehículos',
+                    category: 'Prenda con Matrícula',
+                    desc: 'Garantía automotriz con registro de chasis VIN y póliza de seguro.',
+                    badge: 'Prenda sin Desposeimiento'
+                  },
+                  {
+                    id: 3,
+                    icon: Package,
+                    title: 'Garantía Prendaria & Empeños',
+                    category: 'Custodia Física en Bóveda',
+                    desc: 'Joyas de oro tasadas por gramo, laptops y celulares con IMEI.',
+                    badge: 'Gaveta Segura'
+                  },
+                  {
+                    id: 4,
+                    icon: Navigation,
+                    title: 'Cobro Diario de Ruta Comercial',
+                    category: 'Cobranza de Campo PWA',
+                    desc: 'Diseñado para cobradores de calle con registro en 5 segundos.',
+                    badge: 'Ruta 100% Offline'
+                  },
+                  {
+                    id: 5,
+                    icon: RefreshCw,
+                    title: 'Consolidación & Refinanciación',
+                    category: 'Reestructuración en 1-Clic',
+                    desc: 'Absorbe deudas activas anteriores en un solo contrato unificado.',
+                    badge: 'Refinanciación Total'
+                  }
+                ].map((item) => {
+                  const IconC = item.icon;
+                  const isSelected = selectedLoanIdx === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setSelectedLoanIdx(item.id)}
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all duration-300 flex items-center justify-between gap-4 group ${
+                        isSelected
+                          ? 'bg-white border-indigo-500 ring-4 ring-indigo-500/10 shadow-lg shadow-indigo-500/10 scale-[1.01]'
+                          : 'bg-white/80 hover:bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                          isSelected 
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' 
+                            : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
+                        }`}>
+                          <IconC className="w-5 h-5" strokeWidth={1.8} />
                         </div>
-                      ))}
-                    </div>
-                  </SpotlightCard>
-                );
-              })}
-            </div>
-          </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 block truncate">
+                            {item.category}
+                          </span>
+                          <h4 className={`text-sm sm:text-base font-extrabold truncate ${isSelected ? 'text-indigo-950' : 'text-slate-800'}`}>
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 truncate">{item.desc}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className={`w-5 h-5 shrink-0 transition-transform ${isSelected ? 'text-indigo-600 translate-x-1' : 'text-slate-300 group-hover:text-slate-500'}`} />
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* Part 2: Grid of 6 Supported Business Types (Centered Design) */}
-          <div className="space-y-8 pt-8 border-t border-slate-200/80">
-            <div className="text-center max-w-xl mx-auto space-y-1 border-b border-slate-200/80 pb-4">
-              <h3 className="text-2xl font-black text-slate-900 flex items-center justify-center gap-2">
-                <Landmark className="w-6 h-6 text-indigo-600" /> Tipos de Negocios y Financieras
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">Solución modular escalable para cualquier estructura u operaciones.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  title: 'Prestamistas Independientes & Privados',
-                  desc: 'Prestamistas que administran su propio capital desde su celular o laptop sin complicaciones contables excesivas.',
-                  impact: 'Elimina libretas en papel y automatiza cobros por WhatsApp.'
-                },
-                {
-                  title: 'Agencias de Cobro Diario / Ruta',
-                  desc: 'Financieras con equipos de cobradores en la calle que requieren reportes geográficos y cuadre de caja al cierre del día.',
-                  impact: 'Control de cuadre diario por cobrador y rutas optimizadas.'
-                },
-                {
-                  title: 'Dealers & Financieras de Vehículos',
-                  desc: 'Empresas de financiamiento automotriz que requieren gestión de matrículas, prendas sin desposeimiento y pólizas de seguro.',
-                  impact: 'Contratos notariales automáticos y expediente de vehículos.'
-                },
-                {
-                  title: 'Casas de Empeño & Custodia Prendaria',
-                  desc: 'Establecimientos que reciben artículos electrónicos, joyas o bienes físicos como colateral de sus préstamos.',
-                  impact: 'Control de stock de prendas y actas de recepción/devolución.'
-                },
-                {
-                  title: 'Cooperativas & Credit Unions Pymes',
-                  desc: 'Instituciones financieras comunitarias que necesitan contabilidad de doble entrada, NCF fiscal de la DGII y multiusuario RLS.',
-                  impact: 'Comprobantes fiscales NCF y contabilidad de doble entrada.'
-                },
-                {
-                  title: 'Prestamistas Comerciales a Pymes',
-                  desc: 'Financieras B2B que conceden avances de capital de trabajo a comerciantes, colmados y pequeñas empresas.',
-                  impact: 'Reportes de riesgo prudencial A/B/C/D y scoring de crédito.'
-                }
-              ].map((biz, idx) => (
+              {/* Right Column: Live Legal Contract & Specimen Simulator */}
+              <div className="lg:col-span-7">
                 <SpotlightCard
-                  key={idx}
-                  spotlightColor="rgba(99, 102, 241, 0.14)"
-                  borderColor="rgba(226, 232, 240, 0.9)"
-                  className="bg-white p-7 rounded-3xl shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-between text-center space-y-4 group"
+                  spotlightColor="rgba(99, 102, 241, 0.15)"
+                  borderColor="rgba(199, 210, 254, 0.9)"
+                  className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-indigo-100 shadow-2xl p-6 sm:p-10 space-y-6 relative overflow-hidden"
                 >
-                  <div className="flex flex-col items-center text-center space-y-3 w-full">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center shadow-md shadow-indigo-500/25 mx-auto mb-1 group-hover:scale-110 transition-transform">
-                      0{idx + 1}
-                    </div>
-                    <h4 className="font-extrabold text-base text-slate-900 text-center group-hover:text-indigo-600 transition-colors">{biz.title}</h4>
-                    <p className="text-xs text-slate-600 leading-relaxed text-center">{biz.desc}</p>
+                  {/* Decorative Legal Watermark */}
+                  <div className="absolute right-4 bottom-4 text-slate-100 font-black text-7xl select-none pointer-events-none -z-0 opacity-50">
+                    ULTRAMONEY
                   </div>
-                  <div className="w-full pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50/70 p-3 rounded-2xl border border-indigo-100/80 text-center">
-                    <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>{biz.impact}</span>
+
+                  {/* Document Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5 relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm">
+                        UM
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">ESPECIFICACIÓN CONTRACTUAL</span>
+                        <h4 className="text-base sm:text-lg font-black text-slate-900">
+                          {selectedLoanIdx === 0 && 'Contrato de Préstamo Personal a la Firma'}
+                          {selectedLoanIdx === 1 && 'Pagaré Notarial Auténtico con Garantía'}
+                          {selectedLoanIdx === 2 && 'Contrato de Prenda sin Desposeimiento'}
+                          {selectedLoanIdx === 3 && 'Acta de Custodia y Resguardo Prendario'}
+                          {selectedLoanIdx === 4 && 'Póliza de Cobranza en Ruta Comercial'}
+                          {selectedLoanIdx === 5 && 'Acuerdo de Refinanciación & Finiquito'}
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Legalmente Válido</span>
+                    </div>
+                  </div>
+
+                  {/* Contract Body Details */}
+                  <div className="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed relative z-10 bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 font-mono">
+                    {selectedLoanIdx === 0 && (
+                      <>
+                        <p><strong className="text-slate-900">CLÁUSULA 1 (AMORTIZACIÓN):</strong> El deudor se compromete a cancelar el capital de <span className="text-indigo-600 font-bold">RD$ 50,000.00</span> mediante 6 cuotas fijas periódicas de <span className="text-emerald-600 font-bold">RD$ 11,365.00</span> bajo el Sistema Francés con desglose exacto de capital e intereses.</p>
+                        <p><strong className="text-slate-900">CLÁUSULA 2 (MORA & GRACIA):</strong> Se concede un período de gracia de 3 días calendario. Vencido este plazo, se aplicará un recargo por mora del 5% mensual prorrateado.</p>
+                      </>
+                    )}
+                    {selectedLoanIdx === 1 && (
+                      <>
+                        <p><strong className="text-slate-900">CLÁUSULA 1 (RÉDITO MENSUAL):</strong> El deudor pagará únicamente el interés generado a razón del <span className="text-indigo-600 font-bold">5.0% mensual (RD$ 5,000.00)</span> permaneciendo el capital intacto hasta su amortización voluntaria.</p>
+                        <p><strong className="text-slate-900">CLÁUSULA 2 (ABONOS A CAPITAL):</strong> Cualquier abono superior al rédito reduce automáticamente el capital insoluto y recalcula los intereses futuros al instante.</p>
+                      </>
+                    )}
+                    {selectedLoanIdx === 2 && (
+                      <>
+                        <p><strong className="text-slate-900">CLÁUSULA 1 (GARANTÍA DEL BIEN):</strong> El préstamo queda respaldado por el vehículo Marca: <span className="text-indigo-600 font-bold">Honda Civic 2018</span>, Chasis VIN: <span className="text-slate-900 font-bold">1HGCR2F83JA09218</span>, Placa: <span className="text-slate-900 font-bold">A894120</span> con custodia de matrícula original.</p>
+                        <p><strong className="text-slate-900">CLÁUSULA 2 (COBERTURA LTV):</strong> El préstamo representa un ratio del 66% respecto a la tasación pericial del vehículo (RD$ 450,000.00).</p>
+                      </>
+                    )}
+                    {selectedLoanIdx === 3 && (
+                      <>
+                        <p><strong className="text-slate-900">CLÁUSULA 1 (DEPÓSITO PRENDARIO):</strong> El deudor deposita en custodia física en la <span className="text-indigo-600 font-bold">Gaveta B-12 de Bóveda</span>: Cadena de Oro 14k con peso de 22.4 gramos tasada en RD$ 88,000.00.</p>
+                        <p><strong className="text-slate-900">CLÁUSULA 2 (RESCATE Y REMATE):</strong> El deudor dispone de 60 días continuos para el rescate o prórroga mediante abono del rédito devengado.</p>
+                      </>
+                    )}
+                    {selectedLoanIdx === 4 && (
+                      <>
+                        <p><strong className="text-slate-900">CLÁUSULA 1 (RUTA DIARIA):</strong> Préstamo comercial por <span className="text-indigo-600 font-bold">RD$ 10,000.00</span> amortizable en 24 cuotas diarias de <span className="text-emerald-600 font-bold">RD$ 500.00</span> de Lunes a Sábado en el establecimiento del deudor.</p>
+                        <p><strong className="text-slate-900">CLÁUSULA 2 (APP OFFLINE):</strong> Cada cobro se registra en el celular del cobrador con comprobante por WhatsApp y coordenadas GPS.</p>
+                      </>
+                    )}
+                    {selectedLoanIdx === 5 && (
+                      <>
+                        <p><strong className="text-slate-900">CLÁUSULA 1 (CONSOLIDACIÓN):</strong> Se unifican los contratos #102, #148 y #189 en una sola obligación principal por <span className="text-indigo-600 font-bold">RD$ 125,000.00</span>, declarando saldados los pagarés anteriores.</p>
+                        <p><strong className="text-slate-900">CLÁUSULA 2 (ALIVIO DE CUOTA):</strong> La nueva cuota representa un ahorro del 35% mensual en el flujo del cliente.</p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Mathematical Formula & Capabilities Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
+                    <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600">MOTOR DE CÁLCULO ACTIVO</span>
+                      <div className="text-xs font-bold text-slate-800">
+                        {selectedLoanIdx === 0 && 'Amortización Francesa Pura (Capital + Interés)'}
+                        {selectedLoanIdx === 1 && 'Interés Mensual Progresivo con Abono Abierto'}
+                        {selectedLoanIdx === 2 && 'Loan-To-Value Automático (LTV) ≤ 80%'}
+                        {selectedLoanIdx === 3 && 'Tasación de Metales por Gramo / Pureza'}
+                        {selectedLoanIdx === 4 && 'Interés Simple Comercial de Ruta (Diario)'}
+                        {selectedLoanIdx === 5 && 'Suma de Saldos Insolutos + Condonación de Mora'}
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600">DOCUMENTO GENERADO</span>
+                      <div className="text-xs font-bold text-slate-800">
+                        {selectedLoanIdx === 0 && 'Pagaré Notarial + Tabla de Amortización'}
+                        {selectedLoanIdx === 1 && 'Pagaré Notarial Auténtico con Sello'}
+                        {selectedLoanIdx === 2 && 'Contrato de Prenda + Certificado Matrícula'}
+                        {selectedLoanIdx === 3 && 'Boleto de Empeño + Acta de Custodia'}
+                        {selectedLoanIdx === 4 && 'Ticket Térmico POS 58mm + WhatsApp'}
+                        {selectedLoanIdx === 5 && 'Acta de Finiquito y Nuevo Contrato'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Direct Action */}
+                  <div className="pt-2 flex items-center justify-between relative z-10">
+                    <span className="text-xs font-semibold text-slate-500">¿Listo para probar este tipo de préstamo?</span>
+                    <button
+                      onClick={() => navigate('/register')}
+                      className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                    >
+                      <span>Simular en el Sistema</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </SpotlightCard>
-              ))}
+              </div>
+
             </div>
-          </div>
+          )}
+
+          {/* ─── TAB 2: MODELOS DE NEGOCIO (INTERACTIVE BLUEPRINT VIEW) ─── */}
+          {loanExplorerTab === 'negocios' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Left Column: Business Selection Deck */}
+              <div className="lg:col-span-5 space-y-3">
+                {[
+                  {
+                    id: 0,
+                    title: 'Prestamistas Independientes & Privados',
+                    category: 'Capital Propio / Gestión Personal',
+                    desc: 'Control directo de préstamos desde el celular sin enredos contables.'
+                  },
+                  {
+                    id: 1,
+                    title: 'Agencias de Cobro Diario / Ruta',
+                    category: 'Cobranza de Calle con Cobradores',
+                    desc: 'Cuadre de caja al cierre del día y rutas secuenciales por mapa.'
+                  },
+                  {
+                    id: 2,
+                    title: 'Dealers & Financiamiento de Vehículos',
+                    category: 'Crédito Automotriz & Matrículas',
+                    desc: 'Contratos de prenda sin desposeimiento y alertas de seguro.'
+                  },
+                  {
+                    id: 3,
+                    title: 'Casas de Empeño & Compra-Ventas',
+                    category: 'Custodia Física & Joyas de Oro',
+                    desc: 'Control de gavetas en bóveda, tasación de oro y remates.'
+                  },
+                  {
+                    id: 4,
+                    title: 'Cooperativas & Financieras Pymes',
+                    category: 'Contabilidad Formal & DGII',
+                    desc: 'Comprobantes fiscales NCF, reportes 606/607 y doble entrada.'
+                  },
+                  {
+                    id: 5,
+                    title: 'Prestamistas Comerciales B2B',
+                    category: 'Avances de Capital de Trabajo',
+                    desc: 'Scoring predictivo y crédito a pequeños comercios y colmados.'
+                  }
+                ].map((biz) => {
+                  const isSelected = selectedBizIdx === biz.id;
+                  return (
+                    <button
+                      key={biz.id}
+                      onClick={() => setSelectedBizIdx(biz.id)}
+                      className={`w-full text-left p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all duration-300 flex items-center justify-between gap-4 group ${
+                        isSelected
+                          ? 'bg-white border-indigo-500 ring-4 ring-indigo-500/10 shadow-lg shadow-indigo-500/10 scale-[1.01]'
+                          : 'bg-white/80 hover:bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
+                          isSelected 
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' 
+                            : 'bg-slate-100 text-slate-700 group-hover:bg-indigo-50 group-hover:text-indigo-600'
+                        }`}>
+                          0{biz.id + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 block truncate">
+                            {biz.category}
+                          </span>
+                          <h4 className={`text-sm sm:text-base font-extrabold truncate ${isSelected ? 'text-indigo-950' : 'text-slate-800'}`}>
+                            {biz.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 truncate">{biz.desc}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className={`w-5 h-5 shrink-0 transition-transform ${isSelected ? 'text-indigo-600 translate-x-1' : 'text-slate-300 group-hover:text-slate-500'}`} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Right Column: Live Operational Blueprint */}
+              <div className="lg:col-span-7">
+                <SpotlightCard
+                  spotlightColor="rgba(99, 102, 241, 0.15)"
+                  borderColor="rgba(199, 210, 254, 0.9)"
+                  className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-indigo-100 shadow-2xl p-6 sm:p-10 space-y-6"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 block">FLUJO OPERATIVO OPTIMIZADO</span>
+                      <h4 className="text-lg sm:text-xl font-black text-slate-900">
+                        {selectedBizIdx === 0 && 'Suite para Prestamistas Privados'}
+                        {selectedBizIdx === 1 && 'Suite de Cobranza en Ruta & Calle'}
+                        {selectedBizIdx === 2 && 'Suite de Financiamiento Automotriz'}
+                        {selectedBizIdx === 3 && 'Suite de Casas de Empeño & Bóveda'}
+                        {selectedBizIdx === 4 && 'Suite Corporativa con DGII & Contabilidad'}
+                        {selectedBizIdx === 5 && 'Suite de Crédito Comercial a Pymes'}
+                      </h4>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-black">
+                      <Zap className="w-6 h-6 text-amber-500" />
+                    </div>
+                  </div>
+
+                  {/* Flow Stages */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                      <span className="text-[10px] font-black text-slate-400 uppercase">PASO 1 · ORIGINACIÓN</span>
+                      <h5 className="text-xs font-bold text-slate-900">Registro en 2 Minutos</h5>
+                      <p className="text-[11px] text-slate-500">Expediente digital, cédula y garante.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1.5">
+                      <span className="text-[10px] font-black text-indigo-500 uppercase">PASO 2 · COBRO RÁPIDO</span>
+                      <h5 className="text-xs font-bold text-slate-900">Recibo en 3 Segundos</h5>
+                      <p className="text-[11px] text-slate-500">Impresión térmica o WhatsApp directo.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-1.5">
+                      <span className="text-[10px] font-black text-emerald-600 uppercase">PASO 3 · CUADRE</span>
+                      <h5 className="text-xs font-bold text-slate-900">Cierre Automático</h5>
+                      <p className="text-[11px] text-slate-500">Arqueo de caja y estados contables.</p>
+                    </div>
+                  </div>
+
+                  {/* Highlighted Core Benefits */}
+                  <div className="space-y-3 pt-2">
+                    <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Impacto Directo en tu Negocio</h5>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2.5 text-xs text-slate-700 font-semibold">
+                        <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <span>
+                          {selectedBizIdx === 0 && 'Elimina las libretas de papel y el riesgo de olvidar cobros o cometer errores en el cálculo de intereses.'}
+                          {selectedBizIdx === 1 && 'Tus cobradores registran pagos sin conexión a internet y el dinero recaudado cuadra exactamente con el arqueo.'}
+                          {selectedBizIdx === 2 && 'Emisión instantánea de contratos de prenda notarial y alertas tempranas antes del vencimiento de pólizas de seguro.'}
+                          {selectedBizIdx === 3 && 'Control estricto por código de gaveta de bóveda, tasación automática por peso en oro y control serial de IMEI.'}
+                          {selectedBizIdx === 4 && 'Cumplimiento fiscal estricto con NCF para la DGII, generación de formatos 606/607 y asientos de partida doble.'}
+                          {selectedBizIdx === 5 && 'Scoring preventivo de 300 a 850 puntos para evitar otorgar créditos a clientes sobreendeudados o morosos.'}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2.5 text-xs text-slate-700 font-semibold">
+                        <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <span>Ahorra hasta 18 horas de trabajo administrativo a la semana y recupera más del 30% de cartera en atraso.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+                    <span className="text-xs font-medium text-slate-500">Comienza a operar hoy mismo sin costos ocultos.</span>
+                    <button
+                      onClick={() => navigate('/register')}
+                      className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shadow-md shadow-indigo-500/20 flex items-center gap-1.5"
+                    >
+                      <span>Crear Cuenta Gratis</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </SpotlightCard>
+              </div>
+
+            </div>
+          )}
 
         </div>
       </section>
@@ -2324,18 +2550,10 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── REACT BITS GRAND FINALE CTA SECTION (FULL PAGE MIN-H-SCREEN) ─── */}
+      {/* ─── GRAND FINALE CTA SECTION (FULL PAGE MIN-H-SCREEN) ─── */}
       <section className="min-h-screen flex flex-col justify-center py-28 bg-slate-950 text-white relative overflow-hidden border-t border-slate-800">
-        <div className="absolute inset-0 pointer-events-none opacity-40">
-          <Squares
-            direction="diagonal"
-            speed={0.25}
-            squareSize={56}
-            borderColor="rgba(255, 255, 255, 0.05)"
-            hoverFillColor="rgba(99, 102, 241, 0.2)"
-          />
-          <Particles quantity={45} color="#818cf8" className="absolute inset-0 opacity-40" />
-        </div>
+        {/* Subtle Ambient Radial Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r from-indigo-900/30 via-purple-900/20 to-blue-900/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
         <div className="max-w-5xl mx-auto px-6 relative z-10 text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-indigo-300 text-xs font-black uppercase tracking-widest backdrop-blur-md">
