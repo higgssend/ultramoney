@@ -127,17 +127,16 @@ export const VaultCustodyPage: React.FC = () => {
       
       const coll = loan.collateral;
       if (coll && typeof coll === 'object') {
-        const colObj = coll as Record<string, unknown>;
-        const desc = String(colObj.description || colObj.brand || colObj.model || '');
-        const ref = String(colObj.refNumber || colObj.imei || loan.collateralRef || '');
-        const typeStr = String(colObj.type || '');
+        const desc = coll.description || coll.brand || coll.model || '';
+        const ref = coll.refNumber || loan.collateralRef || '';
+        const typeStr = coll.type || '';
         
         if (desc) setItemTitle(desc);
         if (ref) setSerialOrRef(ref);
         if (typeStr.includes('Vehículo')) setItemType('Vehículo');
         else if (typeStr.includes('Propiedad')) setItemType('Propiedad / Título Inmobiliario');
         else if (typeStr.includes('Joya') || typeStr.includes('Oro')) setItemType('Joyas / Oro');
-        else if (typeStr.includes('Celular') || typeStr.includes('Teléfono')) setItemType('Celular / Tecnología');
+        else if (typeStr.includes('Celular') || typeStr.includes('Teléfono') || typeStr.includes('Tablets') || typeStr.includes('Portátiles') || typeStr.includes('PC')) setItemType('Celular / Tecnología');
         else if (typeStr.includes('Electrodoméstico')) setItemType('Electrodoméstico');
       } else {
         setItemTitle(`Garantía de Préstamo #${formatLoanId(loan.id)}`);
