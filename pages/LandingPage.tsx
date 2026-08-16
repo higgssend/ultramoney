@@ -1736,30 +1736,31 @@ const LandingPage: React.FC = () => {
               ].map((item, idx) => {
                 const IconC = item.icon;
                 return (
-                  <div key={idx} className="card-3d-wrapper cursor-pointer">
-                    <div className="gradient-border-glow h-full">
-                      <div className="card-3d-inner bg-white rounded-[1.35rem] p-7 h-full text-center flex flex-col items-center justify-between group space-y-4">
-                        <div className="flex flex-col items-center text-center space-y-3 w-full">
-                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-1 group-hover:scale-110 group-hover:from-indigo-600 group-hover:to-blue-600 group-hover:text-white transition-all duration-300 shadow-xs mx-auto">
-                            <IconC className="w-8 h-8 shrink-0 aspect-square" strokeWidth={1.5} />
-                          </div>
-                          <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border mx-auto ${item.badgeColor}`}>
-                            {item.category}
-                          </span>
-                          <h4 className="text-lg font-extrabold text-slate-900 text-center group-hover:text-indigo-600 transition-colors">{item.title}</h4>
-                          <p className="text-xs text-slate-600 leading-relaxed text-center font-normal">{item.desc}</p>
-                        </div>
-                        <div className="w-full pt-4 border-t border-slate-100/90 space-y-2.5 flex flex-col items-center text-center">
-                          {item.features.map((feat, fidx) => (
-                            <div key={fidx} className="flex items-center justify-center gap-2 text-slate-700 text-[11.5px] font-semibold text-center w-full">
-                              <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                              <span>{feat}</span>
-                            </div>
-                          ))}
-                        </div>
+                  <SpotlightCard
+                    key={idx}
+                    spotlightColor="rgba(99, 102, 241, 0.14)"
+                    borderColor="rgba(226, 232, 240, 0.9)"
+                    className="bg-white rounded-3xl p-7 text-center flex flex-col items-center justify-between group space-y-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="flex flex-col items-center text-center space-y-3 w-full">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mb-1 group-hover:scale-110 group-hover:from-indigo-600 group-hover:to-blue-600 group-hover:text-white transition-all duration-300 shadow-xs mx-auto">
+                        <IconC className="w-8 h-8 shrink-0 aspect-square" strokeWidth={1.5} />
                       </div>
+                      <span className={`inline-block text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border mx-auto ${item.badgeColor}`}>
+                        <ShinyText text={item.category} speed={4} />
+                      </span>
+                      <h4 className="text-lg font-extrabold text-slate-900 text-center group-hover:text-indigo-600 transition-colors">{item.title}</h4>
+                      <p className="text-xs text-slate-600 leading-relaxed text-center font-normal">{item.desc}</p>
                     </div>
-                  </div>
+                    <div className="w-full pt-4 border-t border-slate-100/90 space-y-2.5 flex flex-col items-center text-center">
+                      {item.features.map((feat, fidx) => (
+                        <div key={fidx} className="flex items-center justify-center gap-2 text-slate-700 text-[11.5px] font-semibold text-center w-full">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </SpotlightCard>
                 );
               })}
             </div>
@@ -1807,7 +1808,12 @@ const LandingPage: React.FC = () => {
                   impact: 'Reportes de riesgo prudencial A/B/C/D y scoring de crédito.'
                 }
               ].map((biz, idx) => (
-                <div key={idx} className="bg-white p-7 rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-indigo-300 transition-all duration-300 flex flex-col items-center justify-between text-center space-y-4 group">
+                <SpotlightCard
+                  key={idx}
+                  spotlightColor="rgba(99, 102, 241, 0.14)"
+                  borderColor="rgba(226, 232, 240, 0.9)"
+                  className="bg-white p-7 rounded-3xl shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-between text-center space-y-4 group"
+                >
                   <div className="flex flex-col items-center text-center space-y-3 w-full">
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center shadow-md shadow-indigo-500/25 mx-auto mb-1 group-hover:scale-110 transition-transform">
                       0{idx + 1}
@@ -1819,7 +1825,7 @@ const LandingPage: React.FC = () => {
                     <Zap className="w-4 h-4 text-amber-500 shrink-0" />
                     <span>{biz.impact}</span>
                   </div>
-                </div>
+                </SpotlightCard>
               ))}
             </div>
           </div>
@@ -2102,40 +2108,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── SECTION 4: SOLUCIONES POR TIPO DE PRESTAMISTA (LIGHT THEME) ─── */}
-      <section className="py-14 bg-slate-100 text-slate-900 border-t border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">ADAPTABILIDAD TOTAL</span>
-            <h2 className="text-3xl font-black text-slate-900">
-              Diseñado para cada tipo de modelo financiero
-            </h2>
-          </div>
-
-          {/* Use cases grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-              { id: 'personales', title: 'Préstamos Personales', icon: UserPlus, desc: 'Cobros semanales o mensuales con amortización regular e historial de garantes.' },
-              { id: 'vehiculos', title: 'Financiamiento de Vehículos', icon: Landmark, desc: 'Gestión con matrículas, números de chasis en garantía e impresiones de contratos.' },
-              { id: 'diario', title: 'Cobro Diario / Ruta', icon: Navigation, desc: 'Optimizado para cobradores de calle con listados rápidos de cobro por manzana.' },
-              { id: 'hipotecarios', title: 'Pagarés Notariados', icon: Briefcase, desc: 'Préstamos de rédito abierto a tasa fija con amortización directa al capital principal.' }
-            ].map(uc => (
-              <div 
-                key={uc.id}
-                className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs hover:border-indigo-400 hover:shadow-md transition-all space-y-3 group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <uc.icon className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-base text-slate-900">{uc.title}</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">{uc.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 5: CALCULADORA DE ROI / AHORRO (LIGHT THEME) ─── */}
+      {/* ─── SECTION 4: CALCULADORA DE ROI / AHORRO (LIGHT THEME) ─── */}
       <section className="py-14 bg-white border-t border-slate-100">
         <div className="max-w-5xl mx-auto px-6">
           <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 rounded-3xl p-8 sm:p-12 border border-indigo-100 shadow-sm text-center space-y-6">
@@ -2161,32 +2134,44 @@ const LandingPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-              <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
+              <SpotlightCard
+                spotlightColor="rgba(99, 102, 241, 0.14)"
+                borderColor="rgba(226, 232, 240, 0.9)"
+                className="bg-white p-5 rounded-2xl shadow-2xs text-center"
+              >
                 <Clock className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
                 <p className="text-2xl font-black text-slate-900">+{hoursSavedPerWeek}h</p>
                 <p className="text-xs text-slate-500 font-medium mt-1">Horas ahorradas por semana</p>
-              </div>
+              </SpotlightCard>
 
-              <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
+              <SpotlightCard
+                spotlightColor="rgba(16, 185, 129, 0.14)"
+                borderColor="rgba(226, 232, 240, 0.9)"
+                className="bg-white p-5 rounded-2xl shadow-2xs text-center"
+              >
                 <TrendingUp className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
                 <p className="text-2xl font-black text-emerald-600">+28%</p>
                 <p className="text-xs text-slate-500 font-medium mt-1">Incremento en cobranza a tiempo</p>
-              </div>
+              </SpotlightCard>
 
-              <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-2xs">
+              <SpotlightCard
+                spotlightColor="rgba(245, 158, 11, 0.14)"
+                borderColor="rgba(226, 232, 240, 0.9)"
+                className="bg-white p-5 rounded-2xl shadow-2xs text-center"
+              >
                 <DollarSign className="w-6 h-6 text-amber-600 mx-auto mb-2" />
                 <p className="text-2xl font-black text-slate-900">RD$ {moneySavedInArrears.toLocaleString()}</p>
                 <p className="text-xs text-slate-500 font-medium mt-1">Ahorro mensual estimado en moras</p>
-              </div>
+              </SpotlightCard>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── SECTION 6: TESTIMONIOS Y RESEÑAS REALES ─── */}
-      <section id="testimonios" className="py-14 bg-slate-50 border-t border-slate-200/60">
+      {/* ─── SECTION 5: TESTIMONIOS Y RESEÑAS REALES ─── */}
+      <section id="testimonios" className="py-16 bg-slate-50 border-t border-slate-200/60">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">CASOS DE ÉXITO</span>
             <h2 className="text-3xl font-black text-slate-900">
               Lo que dicen los prestamistas que ya usan Ultramoney
@@ -2217,7 +2202,12 @@ const LandingPage: React.FC = () => {
                 img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80'
               }
             ].map((t, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
+              <SpotlightCard
+                key={idx}
+                spotlightColor="rgba(245, 158, 11, 0.12)"
+                borderColor="rgba(226, 232, 240, 0.9)"
+                className="bg-white p-7 rounded-3xl shadow-sm flex flex-col justify-between space-y-4"
+              >
                 <div className="space-y-3">
                   <div className="flex text-amber-400 gap-1">
                     {[...Array(t.rating)].map((_, i) => (
@@ -2233,16 +2223,16 @@ const LandingPage: React.FC = () => {
                     <p className="text-[10px] text-slate-400">{t.role}</p>
                   </div>
                 </div>
-              </div>
+              </SpotlightCard>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── SECTION 7: SEGURIDAD Y RESPALDO POSTGRESQL ─── */}
-      <section className="py-14 bg-white border-t border-slate-100">
+      {/* ─── SECTION 6: SEGURIDAD Y RESPALDO POSTGRESQL ─── */}
+      <section className="py-16 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">PROTECCIÓN TOTAL</span>
             <h2 className="text-3xl font-black text-slate-900">
               Seguridad de grado bancario para tu cartera
@@ -2250,68 +2240,45 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="security-grid grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
+            <SpotlightCard
+              spotlightColor="rgba(99, 102, 241, 0.15)"
+              borderColor="rgba(226, 232, 240, 0.9)"
+              className="bg-slate-50 p-6 rounded-2xl text-center space-y-3"
+            >
               <ShieldCheck className="w-8 h-8 text-indigo-600 mx-auto" />
               <h3 className="font-bold text-sm text-slate-800">Aislamiento RLS en PostgreSQL</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Cada financiera cuenta con particionamiento estricto de base de datos a nivel de tabla.</p>
-            </div>
+            </SpotlightCard>
 
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
-              <Lock className="w-8 h-8 text-indigo-600 mx-auto" />
+            <SpotlightCard
+              spotlightColor="rgba(59, 130, 246, 0.15)"
+              borderColor="rgba(226, 232, 240, 0.9)"
+              className="bg-slate-50 p-6 rounded-2xl text-center space-y-3"
+            >
+              <Lock className="w-8 h-8 text-blue-600 mx-auto" />
               <h3 className="font-bold text-sm text-slate-800">Encriptación SSL 256-bit</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Todas las conexiones web y transacciones están protegidas con TLS 1.3 de grado financiero.</p>
-            </div>
+            </SpotlightCard>
 
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
-              <Database className="w-8 h-8 text-indigo-600 mx-auto" />
+            <SpotlightCard
+              spotlightColor="rgba(16, 185, 129, 0.15)"
+              borderColor="rgba(226, 232, 240, 0.9)"
+              className="bg-slate-50 p-6 rounded-2xl text-center space-y-3"
+            >
+              <Database className="w-8 h-8 text-emerald-600 mx-auto" />
               <h3 className="font-bold text-sm text-slate-800">Respaldos Diarios Automáticos</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Tus datos se respaldan continuamente en múltiples zonas de disponibilidad en la nube.</p>
-            </div>
+            </SpotlightCard>
 
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200/80 text-center space-y-3">
-              <Cpu className="w-8 h-8 text-indigo-600 mx-auto" />
+            <SpotlightCard
+              spotlightColor="rgba(168, 85, 247, 0.15)"
+              borderColor="rgba(226, 232, 240, 0.9)"
+              className="bg-slate-50 p-6 rounded-2xl text-center space-y-3"
+            >
+              <Cpu className="w-8 h-8 text-purple-600 mx-auto" />
               <h3 className="font-bold text-sm text-slate-800">Disponibilidad 99.9%</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Infraestructura sobre servidores cloud ultra rápidos sin interrupciones de servicio.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── FEATURES GRID SECTION ─── */}
-      <section id="caracteristicas" className="py-14 bg-slate-50 border-t border-slate-200/60">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-10">
-          
-          <div className="max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-black tracking-widest text-indigo-600 uppercase">CARACTERÍSTICAS CLAVE</span>
-            <h2 className="text-3xl font-black text-slate-900">
-              Todo el ciclo de vida del crédito en un solo lugar
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                <Users className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Clientes & Enmascaramiento</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">Expediente de clientes con formato seguro de cédula, garante y Scoring.</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                <DollarSign className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Motor de Préstamos y Pagarés</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">Soporte completo para francés, alemana, cobro semanal o pagaré abierto.</p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Comprobantes & PNG 1-Clic</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">Imprime tickets o descarga recibos oficial en imagen PNG directamente.</p>
-            </div>
+            </SpotlightCard>
           </div>
         </div>
       </section>

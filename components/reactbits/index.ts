@@ -10,3 +10,4 @@ export { TiltedCard } from './TiltedCard';
 export { Magnet } from './Magnet';
 export { StarBorder } from './StarBorder';
 export { Particles } from './Particles';
+export { Aurora } from './Aurora';
