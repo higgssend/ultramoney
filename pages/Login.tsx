@@ -147,6 +147,13 @@ const Login: React.FC = () => {
     setError('');
 
     try {
+      // Ensure no dead or expired bearer token interferes with login
+      try {
+        insforge.setAccessToken(null);
+      } catch {
+        // ignore
+      }
+
       const cleanInput = email.trim().toLowerCase();
       const loginEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@app.ultramoney.com`;
       const { data, error } = await insforge.auth.signInWithPassword({

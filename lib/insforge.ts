@@ -13,8 +13,8 @@ export const insforge = createClient({
 if (typeof window !== 'undefined') {
   try {
     const savedToken = localStorage.getItem('um_access_token');
-    if (savedToken) {
-      insforge.setAccessToken(savedToken);
+    if (savedToken && typeof savedToken === 'string' && savedToken.trim().length > 0) {
+      insforge.setAccessToken(savedToken.trim());
     }
   } catch (err) {
     console.warn('Unable to restore access token from localStorage:', err);

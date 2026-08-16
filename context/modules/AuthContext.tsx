@@ -93,9 +93,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        // 2. Access Token check & silent refresh if available
+        // 2. Set saved access token if present
+        const savedAccessToken = localStorage.getItem('um_access_token');
         const savedRefreshToken = localStorage.getItem('um_refresh_token');
-        if (savedRefreshToken) {
+
+        if (savedAccessToken) {
+          try {
+            insforge.setAccessToken(savedAccessToken);
+          } catch (e) {
+            console.warn("Unable to set initial access token:", e);
+          }
+        }
+
+        // 3. Current user verification from InsForge backend
+        type InsforgeUser = {
+          id: string;
+          email?: string;
+          user_metadata?: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+          profile?: { name?: string; roleId?: string; roleIds?: string[] };
+        };
+
+        let activeUser: User | null = null;
+
+        if (savedAccessToken) {
+          const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
+          if (!userError && userData?.user) {
+            const u = userData.user as InsforgeUser;
+            const meta = u.user_metadata || u.metadata || {};
+            activeUser = {
+              id: u.id,
+              email: u.email || '',
+              name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
+              roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
+              username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
+              roleIds: (meta.roleIds || []) as string[],
+              status: 'Active'
+            };
+          }
+        }
+
+        // 4. If access token was expired/invalid, attempt refresh
+        if (!activeUser && savedRefreshToken) {
           try {
             const { data: refreshData, error: refreshErr } = await insforge.auth.refreshSession({
               refreshToken: savedRefreshToken
@@ -107,10 +146,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 localStorage.setItem('um_refresh_token', refreshData.refreshToken);
               }
               if (refreshData.user) {
-                const u = refreshData.user;
-                const meta = (u.metadata || {}) as Record<string, unknown>;
+                const u = refreshData.user as InsforgeUser;
+                const meta = (u.metadata || u.user_metadata || {}) as Record<string, unknown>;
                 const profileObj = u.profile;
-                const activeUser: User = {
+                activeUser = {
                   id: u.id,
                   email: u.email || '',
                   name: (profileObj?.name || meta.name || u.email || 'Usuario') as string,
@@ -119,66 +158,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
                   status: 'Active'
                 };
-                if (!unmounted) {
-                  setCurrentUser(activeUser);
-                  localStorage.setItem('um_user_session', JSON.stringify(activeUser));
-                  setIsLoadingAuth(false);
-                }
               }
             }
           } catch (refErr) {
-            logger.warn("Token refresh check warning:", refErr);
+            logger.warn("Token refresh attempt failed:", refErr);
           }
         }
 
-        // 3. Current user verification from InsForge backend
-        const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
-        type InsforgeUser = {
-          id: string;
-          email?: string;
-          user_metadata?: Record<string, unknown>;
-          metadata?: Record<string, unknown>;
-          profile?: { name?: string; roleId?: string; roleIds?: string[] };
-        };
-        const user = (!userError && userData?.user) ? (userData.user as InsforgeUser) : undefined;
-        
+        // 5. Apply session or clear stale state
         if (!unmounted) {
-          if (user) {
-            const meta = user.user_metadata || user.metadata || {};
-            const activeUser: User = {
-              id: user.id,
-              email: user.email || '',
-              name: (user.profile?.name || meta.name || user.email || 'Usuario') as string,
-              roleId: (meta.roleId || user.profile?.roleId || 'Admin') as string,
-              username: (meta.username || user.email?.split('@')[0] || 'usuario') as string,
-              roleIds: (meta.roleIds || []) as string[],
-              status: 'Active'
-            };
+          if (activeUser) {
             setCurrentUser(activeUser);
             localStorage.setItem('um_user_session', JSON.stringify(activeUser));
           } else {
-            // Only clear credentials if there is no offline fallback session
-            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-            const hasLocalSession = !!localStorage.getItem('um_user_session');
-            if (!isOffline && !hasLocalSession && !savedRefreshToken) {
-              localStorage.removeItem('um_user_session');
-              localStorage.removeItem('employee_session');
-              localStorage.removeItem('um_access_token');
-              localStorage.removeItem('um_refresh_token');
-              setCurrentUser(null);
+            // No valid active session on backend: clear local storage to prevent ghost state
+            localStorage.removeItem('um_user_session');
+            localStorage.removeItem('um_access_token');
+            localStorage.removeItem('um_refresh_token');
+            try {
+              insforge.setAccessToken(null);
+            } catch {
+              // ignore
             }
+            setCurrentUser(null);
           }
           setIsLoadingAuth(false);
         }
 
-        // 4. Listen for auth state changes
+        // 6. Listen for auth state changes
         type AuthCallback = (event: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown>; metadata?: Record<string, unknown>; profile?: { name?: string; roleId?: string } } } | null) => void;
         const unsubscribe = (insforge.auth.onAuthStateChange as (cb: AuthCallback) => () => void)(async (event, session) => {
           if (unmounted) return;
           const u = session?.user;
           if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && u) {
             const meta = u.user_metadata || u.metadata || {};
-            const activeUser: User = {
+            const loggedInUser: User = {
               id: u.id,
               email: u.email || '',
               name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
@@ -187,14 +201,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
               status: 'Active'
             };
-            setCurrentUser(activeUser);
-            localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+            setCurrentUser(loggedInUser);
+            localStorage.setItem('um_user_session', JSON.stringify(loggedInUser));
           } else if (event === 'SIGNED_OUT') {
             setCurrentUser(null);
             localStorage.removeItem('employee_session');
             localStorage.removeItem('um_user_session');
             localStorage.removeItem('um_access_token');
             localStorage.removeItem('um_refresh_token');
+            try {
+              insforge.setAccessToken(null);
+            } catch {
+              // ignore
+            }
           }
         });
         authSub = unsubscribe;
