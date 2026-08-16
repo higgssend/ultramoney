@@ -22,7 +22,7 @@ import { WhatsAppIcon } from '../components/WhatsAppIcon';
 import { EditPaymentModal } from '../components/EditPaymentModal';
 import { ThermalReceiptModal, ThermalReceiptData } from '../components/ThermalReceiptModal';
 import { calculateReceiptBalances } from '../utils/receiptBalanceHelper';
-import { formatExactDateTime } from '../utils/dateUtils';
+import { formatExactDateTime, formatExactDate, formatExactTime, formatPaymentDateDisplay } from '../utils/dateUtils';
 
 export const LoanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -305,6 +305,7 @@ export const LoanDetail: React.FC = () => {
   const nextPayDateObj = loan.nextPaymentDate ? new Date(loan.nextPaymentDate) : null;
   const todayStart = new Date();
   todayStart.setHours(0,0,0,0);
+  const todayStr = formatExactDate(new Date().toISOString());
 
   const isDateOverdue = nextPayDateObj ? (nextPayDateObj.getTime() < todayStart.getTime()) : false;
   const isLoanOverdue = loan.status === 'Atrasado' || (loan.status === 'Activo' && isDateOverdue);
