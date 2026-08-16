@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Client, Loan, LoanStatus } from '../types';
@@ -20,7 +20,7 @@ export interface RouteGpsMapProps {
   clients: Client[];
   loans: Loan[];
   filterType?: 'all' | 'today' | 'overdue' | 'current';
-  selectedClientId?: string | null;
+  selectedClientId?: string;
   onSelectClient?: (client: Client) => void;
   optimizedStops?: RouteStop[] | null;
   originPoint?: GeoPoint;
@@ -31,20 +31,20 @@ export interface RouteGpsMapProps {
   height?: string;
 }
 
-type TileProvider = 'voyager' | 'dark' | 'satellite';
+type TileProvider = 'voyager' | 'satellite' | 'dark';
 
 const TILE_CONFIGS: Record<TileProvider, { url: string; attribution: string }> = {
   voyager: {
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
-  },
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri World Imagery'
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
   }
 };
 
@@ -79,8 +79,8 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Helper to determine loan info for a client
-  const getClientLoanInfo = (clientId: string) => {
+  // Helper to determine loan info for a client (Memoized)
+  const getClientLoanInfo = useCallback((clientId: string) => {
     const clientLoans = loans.filter(
       l => l.clientId === clientId && l.status !== LoanStatus.PAID && l.status !== LoanStatus.REJECTED
     );
@@ -103,16 +103,18 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
       overdueDays,
       nextDate: primaryLoan?.nextPaymentDate || 'Sin préstamos activos'
     };
-  };
+  }, [loans, todayStr]);
 
-  // Filter clients
-  const displayClients = clients.filter(c => {
-    const info = getClientLoanInfo(c.id);
-    if (filterType === 'today') return info.isDueToday;
-    if (filterType === 'overdue') return info.isOverdue;
-    if (filterType === 'current') return !info.isOverdue && !info.isDueToday && info.clientLoans.length > 0;
-    return true;
-  });
+  // Filter clients (Memoized to prevent unnecessary re-renders)
+  const displayClients = useMemo(() => {
+    return clients.filter(c => {
+      const info = getClientLoanInfo(c.id);
+      if (filterType === 'today') return info.isDueToday;
+      if (filterType === 'overdue') return info.isOverdue;
+      if (filterType === 'current') return !info.isOverdue && !info.isDueToday && info.clientLoans.length > 0;
+      return true;
+    });
+  }, [clients, getClientLoanInfo, filterType]);
 
   const clientsWithGpsCount = useMemo(() => {
     return displayClients.filter(c => Boolean(resolveClientCoords(c))).length;
@@ -123,6 +125,12 @@ export const RouteGpsMap: React.FC<RouteGpsMapProps> = ({
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
+      // Safety check to prevent Leaflet container re-init error during fast refresh
+      const container = mapContainerRef.current as HTMLDivElement & { _leaflet_id?: number | null };
+      if (container._leaflet_id) {
+        container._leaflet_id = null;
+      }
+
       const map = L.map(mapContainerRef.current, {
         center: [DEFAULT_OFFICE_COORDS.lat, DEFAULT_OFFICE_COORDS.lng],
         zoom: 13,
