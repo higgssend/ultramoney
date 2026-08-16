@@ -11,6 +11,8 @@
     "cli": "node cli/index.js"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.2.3",
+    "@hugeicons/react": "^1.1.9",
     "@insforge/sdk": "^1.5.1",
     "@tauri-apps/plugin-deep-link": "^2.4.9",
     "@tauri-apps/plugin-shell": "^2.3.5",

@@ -1,31 +1,29 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { HugeiconsIcon, IconSvgElement } from '@hugeicons/react';
 import { 
-  BsHouse, 
-  BsHouseFill, 
-  BsWallet2, 
-  BsCreditCard2BackFill, 
-  BsPlusLg, 
-  BsCalendar4Event, 
-  BsCalendarCheckFill, 
-  BsList
-} from 'react-icons/bs';
+  Home01Icon, 
+  Home02Icon, 
+  Wallet01Icon, 
+  CreditCardIcon, 
+  Add01Icon, 
+  Calendar01Icon, 
+  CalendarCheckIcon, 
+  Menu01Icon,
+  Menu02Icon
+} from '@hugeicons/core-free-icons';
 
 interface MobileNavProps {
   onMenuClick?: () => void;
 }
 
-type IconComponent = React.ComponentType<{ className?: string; size?: number | string }>;
-
 interface NavItem {
   key: string;
   label: string;
   path: string;
-  outlineIcon: IconComponent;
-  fillIcon: IconComponent;
+  outlineIcon: IconSvgElement;
+  activeIcon: IconSvgElement;
 }
-
-const PlusIcon = BsPlusLg as IconComponent;
 
 export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
   const location = useLocation();
@@ -63,30 +61,30 @@ export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
       key: 'dashboard', 
       label: 'Inicio', 
       path: '/dashboard', 
-      outlineIcon: BsHouse as IconComponent, 
-      fillIcon: BsHouseFill as IconComponent 
+      outlineIcon: Home01Icon, 
+      activeIcon: Home02Icon 
     },
     { 
       key: 'pagos', 
       label: 'Pagos', 
       path: '/pagos', 
-      outlineIcon: BsWallet2 as IconComponent, 
-      fillIcon: BsCreditCard2BackFill as IconComponent 
+      outlineIcon: Wallet01Icon, 
+      activeIcon: CreditCardIcon 
     },
     // Center Floating Action Button handled separately
     { 
       key: 'prestamos', 
       label: 'Préstamos', 
       path: '/prestamos', 
-      outlineIcon: BsCalendar4Event as IconComponent, 
-      fillIcon: BsCalendarCheckFill as IconComponent 
+      outlineIcon: Calendar01Icon, 
+      activeIcon: CalendarCheckIcon 
     },
     { 
       key: 'menu', 
       label: 'Menú', 
       path: '', 
-      outlineIcon: BsList as IconComponent, 
-      fillIcon: BsList as IconComponent 
+      outlineIcon: Menu01Icon, 
+      activeIcon: Menu02Icon 
     },
   ];
 
@@ -102,7 +100,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
         {/* First 2 Items (Left Side: Inicio, Pagos) */}
         {navItems.slice(0, 2).map((item) => {
           const isActive = location.pathname === item.path;
-          const Icon = isActive ? item.fillIcon : item.outlineIcon;
           const isRippling = activeRipple === item.key;
 
           return (
@@ -127,7 +124,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
 
               {/* Icon */}
               <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}>
-                <Icon className="w-5 h-5 transition-all duration-300" />
+                <HugeiconsIcon 
+                  icon={isActive ? item.activeIcon : item.outlineIcon} 
+                  size={22}
+                  strokeWidth={isActive ? 2 : 1.6}
+                  className="w-5 h-5 transition-all duration-300" 
+                />
               </div>
 
               {/* Label */}
@@ -156,14 +158,18 @@ export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
               <span className="absolute inset-0 rounded-full bg-white/60 animate-ping opacity-90 pointer-events-none" />
             )}
 
-            <PlusIcon className="w-7 h-7 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-90" />
+            <HugeiconsIcon 
+              icon={Add01Icon} 
+              size={28}
+              strokeWidth={2.4}
+              className="w-7 h-7 text-white relative z-10 drop-shadow-md transition-transform duration-300 group-hover:rotate-90" 
+            />
           </button>
         </div>
 
         {/* Last 2 Items (Right Side: Préstamos, Menú) */}
         {navItems.slice(2, 4).map((item) => {
           const isActive = location.pathname === item.path;
-          const Icon = isActive ? item.fillIcon : item.outlineIcon;
           const isRippling = activeRipple === item.key;
 
           return (
@@ -188,7 +194,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({ onMenuClick }) => {
 
               {/* Icon */}
               <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}>
-                <Icon className="w-5 h-5 transition-all duration-300" />
+                <HugeiconsIcon 
+                  icon={isActive ? item.activeIcon : item.outlineIcon} 
+                  size={22}
+                  strokeWidth={isActive ? 2 : 1.6}
+                  className="w-5 h-5 transition-all duration-300" 
+                />
               </div>
 
               {/* Label */}
