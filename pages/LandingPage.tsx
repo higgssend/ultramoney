@@ -14,7 +14,7 @@ import {
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useAuth } from '../context/StoreContext';
-import { InteractiveModuleShowcase } from '../components/InteractiveModuleShowcase';
+import { VerticalModulesShowcase } from '../components/VerticalModulesShowcase';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -1583,72 +1583,8 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ─── CHRONOLOGICAL INTERACTIVE LIVE DEMO SHOWCASE ─── */}
-      <InteractiveModuleShowcase />
-
-      {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA (LIGHT THEME WITH UNIFORM FINER GRADIENT ICONS) ─── */}
-      <section id="caracteristicas" className="py-20 bg-white text-slate-900 border-t border-b border-slate-100 relative overflow-hidden">
-        {/* SVG Definition for Uniform Purple-to-Blue Icon Gradient */}
-        <svg width="0" height="0" className="absolute w-0 h-0 overflow-hidden" aria-hidden="true">
-          <defs>
-            <linearGradient id="purple-blue-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8B5CF6" />   {/* Purple-500 */}
-              <stop offset="50%" stopColor="#6366F1" />  {/* Indigo-500 */}
-              <stop offset="100%" stopColor="#2563EB" /> {/* Blue-600 */}
-            </linearGradient>
-          </defs>
-        </svg>
-
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-widest">
-              <Layers className="w-4 h-4" stroke="url(#purple-blue-icon-gradient)" strokeWidth={1.5} /> ECOSISTEMA INTEGRAL ULTRANET 2.0
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-              Todos los Módulos del Sistema en una Sola Plataforma
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600">
-              Descubre las 22 herramientas especializadas diseñadas para automatizar el ciclo completo de tus préstamos, cobros, cartera y contabilidad.
-            </p>
-          </div>
-
-          {/* Grid of 22 Sidebar Modules (3D Perspective Hover + Travelling Animated Gradient Border) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {SYSTEM_MODULES.map((module) => {
-              const IconComp = module.IconComponent;
-              return (
-                <div 
-                  key={module.id} 
-                  className="card-3d-wrapper cursor-pointer"
-                  onClick={() => setSelectedModule(module)}
-                >
-                  <div className="gradient-border-glow h-full">
-                    <div className="card-3d-inner bg-slate-50/90 hover:bg-white rounded-[1.35rem] p-6 h-full text-center flex flex-col items-center justify-between group">
-                      <div className="flex flex-col items-center text-center w-full">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 via-slate-50 to-blue-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:from-indigo-600 group-hover:to-blue-600 group-hover:text-white transition-all duration-300 shadow-xs mx-auto">
-                          <IconComp className="w-8 h-8 shrink-0 aspect-square" strokeWidth={1.5} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 text-center mb-1">
-                          {module.category}
-                        </span>
-                        <h3 className="text-lg font-extrabold text-slate-900 mt-1 mb-2 text-center group-hover:text-indigo-600 transition-colors">{module.name}</h3>
-                        <p className="text-xs text-slate-600 leading-relaxed text-center">
-                          {module.shortDesc}
-                        </p>
-                      </div>
-                      <div className="mt-5 pt-3 border-t border-slate-100/90 w-full flex items-center justify-center text-indigo-600 group-hover:text-indigo-700 transition-all">
-                        <div className="w-9 h-9 rounded-full bg-indigo-50 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center transition-all shadow-2xs mx-auto">
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* ─── VERTICAL INTERACTIVE DEMO SHOWCASE FOR ALL SIDEBAR MODULES ─── */}
+      <VerticalModulesShowcase />
 
       {/* ─── NEW SECTION: TIPOS DE PRÉSTAMOS Y MODELOS DE NEGOCIOS SOPORTADOS ─── */}
       <section id="tipos-prestamos" className="py-20 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-t border-b border-slate-200/70 relative overflow-hidden">
