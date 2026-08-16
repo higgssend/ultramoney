@@ -558,11 +558,11 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
 
   return (
     <SpotlightCard
-      spotlightColor="rgba(99, 102, 241, 0.12)"
-      borderColor="rgba(226, 232, 240, 0.85)"
-      className="vertical-module-scene bg-white rounded-3xl lg:rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden p-6 sm:p-8 lg:p-12"
+      spotlightColor="rgba(99, 102, 241, 0.14)"
+      borderColor="rgba(226, 232, 240, 0.9)"
+      className="vertical-module-scene min-h-[70vh] flex flex-col justify-center bg-white rounded-3xl lg:rounded-[2.8rem] shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden p-6 sm:p-8 lg:p-12 border border-slate-200/90"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center w-full">
 
         {/* ─── INFO COLUMN (Text, Badge, Features, KPI) ─── */}
         <div className={`lg:col-span-5 space-y-6 ${isEven ? 'lg:order-1' : 'lg:order-2'}`}>

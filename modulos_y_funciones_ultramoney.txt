@@ -1,0 +1,446 @@
+================================================================================
+                    ULTRAMONEY 2.0 - FINTECH & CREDIT CLOUD
+              LISTA COMPLETA DE MÓDULOS, SUBMÓDULOS Y FUNCIONES
+================================================================================
+
+Versión: 2.0.0 Enterprise Cloud & PWA
+Fecha de generación: 2026-08-16
+Plataforma: Web SaaS, Mobile PWA & Offline Engine
+Base de datos: PostgreSQL con aislamiento RLS (InsForge BaaS)
+
+--------------------------------------------------------------------------------
+ÍNDICE GENERAL
+--------------------------------------------------------------------------------
+1.  Módulo 01: Dashboard Central & Monitor de KPIs
+2.  Módulo 02: Facturación Fiscal & Comprobantes NCF (DGII)
+3.  Módulo 03: Consulta Crediticia & Scoring Preventivo
+4.  Módulo 04: Solicitudes de Crédito & Aprobación
+5.  Módulo 05: Simulador de Préstamos & Amortización
+6.  Módulo 06: Directorio y Expediente de Clientes
+7.  Módulo 07: Portales de Autogestión de Clientes (PWA)
+8.  Módulo 08: Comercios Afiliados & Terminales POS (BNPL)
+9.  Módulo 09: Gestión de Préstamos & Pagarés Notariales
+10. Módulo 10: Inventario de Bienes & Equipos Financiados
+11. Módulo 11: Bóveda Digital & Custodia de Garantías Físicas
+12. Módulo 12: Pagos, Recaudación & Recibos Térmicos
+13. Módulo 13: Monitor de Atrasos & Cartera Vencida
+14. Módulo 14: Sistema de Alerta Temprana (EWS)
+15. Módulo 15: Radar Antifraude & Prevención de Riesgos
+16. Módulo 16: Cobranza Legal, Abogados & Embargos
+17. Módulo 17: Rutas Geográficas & Cuadre de Cobradores
+18. Módulo 18: Control de Caja & Arqueo Diario
+19. Módulo 19: Cuentas Bancarias & Gestión de Fondos
+20. Módulo 20: Conciliación Bancaria Inteligente
+21. Módulo 21: Análisis de Cartera & Rentabilidad
+22. Módulo 22: Control de Gastos Operativos & Egresos
+23. Módulo 23: Reporte de Ganancias & Rendimiento de Capital
+24. Módulo 24: Flujo de Caja Proyectado (Cash Flow)
+25. Módulo 25: Gestión de Empleados, Roles & Permisos
+26. Módulo 26: Clasificación de Cartera & Provisiones de Riesgo
+27. Módulo 27: Contabilidad Profunda (Partida Doble Automática)
+28. Módulo 28: Bitácora de Auditoría Inalterable (Logs)
+29. Módulo 29: Integración con Buró de Crédito
+30. Módulo 30: Centro de Migración, Backup & Exportación
+31. Motores de Cálculo Financiero Integrados
+32. Canales de Salida, Formatos e Integraciones Hardware/Software
+
+================================================================================
+DETALLE COMPLETO DE MÓDULOS Y FUNCIONES
+================================================================================
+
+--------------------------------------------------------------------------------
+1. DASHBOARD CENTRAL & MONITOR DE KPIS
+Ruta: /dashboard
+--------------------------------------------------------------------------------
+• Métricas principales en tiempo real:
+  - Capital total activo colocado en calle.
+  - Cartera en atraso / mora con semáforo de riesgo porcentual.
+  - Recaudación cobrada hoy vs. meta programada del día.
+  - Liquidez disponible en efectivo de caja y cuentas bancarias.
+• Gráficos dinámicos interactivos:
+  - Curva de desembolsos vs. recuperaciones en los últimos 6 meses.
+  - Distribución de cartera por tipo de préstamo (personal, vehículo, pagaré, prendario).
+  - Efectividad de cobro diaria proyectada a 30 días.
+• Accesos directos y widgets de acción rápida:
+  - Botón de cobro rápido de cuota en 1 clic.
+  - Acceso directo a nueva solicitud o desembolso.
+  - Lista de alertas urgentes del día (cuotas que vencen hoy, promesas de pago rotas).
+
+--------------------------------------------------------------------------------
+2. FACTURACIÓN FISCAL & COMPROBANTES NCF (DGII)
+Ruta: /facturas
+--------------------------------------------------------------------------------
+• Generación y administración de Números de Comprobante Fiscal (NCF):
+  - B01: Facturas con Valor de Crédito Fiscal.
+  - B02: Facturas para Consumidor Final.
+  - B14: Régimen Especial de Tributación.
+  - B15: Comprobantes Gubernamentales.
+• Funciones operativas:
+  - Asignación de rangos numéricos iniciales, finales y alertas de agotamiento de NCF.
+  - Cálculo automático del 18% ITBIS o cargos por servicios de intermediación crediticia.
+  - Emisión de facturas fiscales digitales con código QR normativo.
+  - Exportador directo de formatos 606 (Compras y Gastos) y 607 (Ventas e Ingresos) para la DGII.
+
+--------------------------------------------------------------------------------
+3. CONSULTA CREDITICIA & SCORING PREVENTIVO
+Ruta: /consultar
+--------------------------------------------------------------------------------
+• Motor de evaluación Scoring 300 - 850 puntos:
+  - Análisis de capacidad de endeudamiento vs. ingresos declarados.
+  - Verificación de cédula / documento de identidad con validación de dígito verificador.
+  - Historial de cumplimiento de cuotas en contratos previos dentro de la entidad.
+  - Cálculo del índice de endeudamiento (DTI - Debt-to-Income).
+• Recomendación inteligente:
+  - Semáforo automático: Verde (Aprobado), Amarillo (Requiere Garante), Rojo (Rechazado).
+  - Sugerencia de monto máximo seguro a prestar según riesgo.
+
+--------------------------------------------------------------------------------
+4. SOLICITUDES DE CRÉDITO & APROBACIÓN
+Ruta: /solicitud
+--------------------------------------------------------------------------------
+• Flujo de originación de préstamos:
+  - Creación de solicitud digital con datos del deudor, garantes y referencias.
+  - Carga de fotos de cédula frontal/trasera, comprobante de ingresos y fotos de garantía.
+  - Configuración de tipo de amortización (Francés, Alemán, Rédito, Cuota Fija, Semanal).
+  - Selección de tasa mensual o anual, plazo en meses/semanas y periodicidad.
+• Flujo de aprobación multi-nivel:
+  - Bandeja de solicitudes en estado: Pendiente, En Revisión, Aprobada, Rechazada, Desembolsada.
+  - Registro de comentarios y condiciones de aprobación antes de emitir contrato.
+
+--------------------------------------------------------------------------------
+5. SIMULADOR DE PRÉSTAMOS & AMORTIZACIÓN
+Ruta: /simulador
+--------------------------------------------------------------------------------
+• Tabla de amortización interactiva en vivo:
+  - Simulación inmediata de cuotas según monto, tasa, plazo y frecuencia de pago.
+  - Desglose por cuota: Número, Fecha de Vencimiento, Capital, Interés, Seguro, Saldo Restante.
+• Métodos soportados:
+  - Sistema Francés (Cuota fija, amortización creciente de capital).
+  - Sistema Alemán (Amortización fija de capital, cuota decreciente).
+  - Pagaré Notarial / Rédito mensual fijo (Solo pago de interés, capital amortizable al final o por abono).
+  - Interés Simple Comercial (Cobro diario / semanal de ruta).
+• Exportación:
+  - Descarga en PDF oficial con membrete de la empresa.
+  - Exportación en formato Excel / CSV.
+  - Envío de cotización simulada por WhatsApp al cliente.
+
+--------------------------------------------------------------------------------
+6. DIRECTORIO Y EXPEDIENTE DE CLIENTES
+Ruta: /clientes
+--------------------------------------------------------------------------------
+• Expediente digital 360° del cliente:
+  - Datos personales, cédula con enmascaramiento seguro, teléfonos, dirección y geolocalización.
+  - Garante principal, teléfonos de garantes y referencias personales/comerciales.
+  - Galería de documentos escaneados (cédulas, contratos firmados, pagarés, fotos de colaterales).
+• Historial crediticio unificado:
+  - Lista de préstamos activos, saldados e incobrables.
+  - Gráfico de comportamiento de pago (puntualidad, días promedio de atraso).
+  - Calificación de cliente con estrellas y notas de cobro confidenciales.
+
+--------------------------------------------------------------------------------
+7. PORTALES DE AUTOGESTIÓN DE CLIENTES (PWA)
+Ruta: /portales-clientes
+--------------------------------------------------------------------------------
+• Portal web y PWA para clientes finales:
+  - Consulta de préstamos vigentes, balance pendiente y fecha de próxima cuota.
+  - Descarga de estados de cuenta históricos en PDF.
+  - Descarga de comprobantes de pago digitales con código QR y validación de autenticidad.
+  - Solicitud de reenganche o nuevo préstamo en línea.
+  - Reporte de transferencias bancarias realizadas para validación por caja.
+
+--------------------------------------------------------------------------------
+8. COMERCIOS AFILIADOS & TERMINALES POS (BNPL)
+Ruta: /comercios
+--------------------------------------------------------------------------------
+• Ecosistema de financiamiento en punto de venta (Buy Now Pay Later):
+  - Registro de tiendas de electrodomésticos, dealers de motocicletas y comercios aliados.
+  - Asignación de comisiones por originación de préstamos a comercios.
+  - Terminal POS web para que el comercio registre una venta financiada en 2 minutos.
+  - Validación de identidad del comprador y pre-aprobación en el mostrador de la tienda.
+  - Liquidación de fondos a la cuenta bancaria del comercio.
+
+--------------------------------------------------------------------------------
+9. GESTIÓN DE PRÉSTAMOS & PAGARÉS NOTARIALES
+Ruta: /prestamos
+--------------------------------------------------------------------------------
+• Gestión integral del ciclo de vida del préstamo:
+  - Listado con filtros por estado: Al Día, En Gracia, Con Atraso, Legal, Saldado, Castigado.
+  - Búsqueda por código de contrato, nombre de cliente o número de cédula.
+• Operaciones avanzadas sobre préstamos:
+  - Aplicación de abonos extraordinarios a capital con re-cálculo automático de cuotas futuras.
+  - Condonación autorizada de intereses de mora o recargos por acuerdo de pago.
+  - Reestructuración y consolidación de deudas en 1 solo clic (absorción de préstamos activos).
+  - Emisión de Pagaré Notarial legal auténtico legalizado ante Notario Público Colegiado.
+  - Generación de Contrato de Prenda sin Desposeimiento con cláusulas de embargo legal.
+
+--------------------------------------------------------------------------------
+10. INVENTARIO DE BIENES & EQUIPOS FINANCIADOS
+Ruta: /inventario
+--------------------------------------------------------------------------------
+• Trazabilidad de bienes entregados en financiamiento:
+  - Registro de motocicletas, vehículos, teléfonos celulares, laptops y televisores.
+  - Identificación única por Número de Chasis (VIN), Número de Motor, Placa o IMEI.
+  - Vinculación directa al contrato de préstamo activo.
+  - Historial de estados del bien: En Almacén, Entregado al Cliente, Incautado, Rematado.
+
+--------------------------------------------------------------------------------
+11. BÓVEDA DIGITAL & CUSTODIA DE GARANTÍAS FÍSICAS
+Ruta: /boveda
+--------------------------------------------------------------------------------
+• Resguardo físico de colaterales y garantías prendarias:
+  - Asignación de gaveta física de seguridad (Gaveta A, B, C, etc.) y código de bóveda.
+  - Registro de prendas de oro con peso en gramos, kilataje, valor tasado y LTV (Loan-To-Value).
+  - Custodia de matrículas originales de vehículos y títulos inmobiliarios.
+  - Emisión de Acta de Entrega y Custodia con firma digital del deudor.
+  - Acta de Devolución de Garantía al saldar el préstamo.
+
+--------------------------------------------------------------------------------
+12. PAGOS, RECAUDACIÓN & RECIBOS TÉRMICOS
+Ruta: /pagos
+--------------------------------------------------------------------------------
+• Motor de cobro ultrarrápido (menos de 5 segundos por transacción):
+  - Selección de método de pago: Efectivo, Transferencia Bancaria, Tarjeta, Depósito POS.
+  - Desglose instantáneo entre: Capital, Interés Ordinario, Mora por Atraso, Seguros/Gastos.
+  - Soporte de pagos parciales o pagos anticipados de múltiples cuotas.
+• Comprobantes y salida:
+  - Impresión térmica directa por Bluetooth o USB (formatos 58mm y 80mm ESC/POS).
+  - Generación de imagen PNG de alta fidelidad del recibo de pago para envío por WhatsApp.
+  - Recibo en PDF con código QR de verificación de autenticidad.
+  - Anulación de recibos con reversión contable automática y auditoría obligatoria.
+
+--------------------------------------------------------------------------------
+13. MONITOR DE ATRASOS & CARTERA VENCIDA
+Ruta: /atrasos
+--------------------------------------------------------------------------------
+• Clasificación de cartera vencida por tramos de mora:
+  - 1 a 15 días: Tramo Preventivo.
+  - 16 a 30 días: Mora Administrativa.
+  - 31 a 60 días: Cobranza Extrajudicial Intensiva.
+  - 61 a 90 días: Pre-Legal.
+  - Más de 90 días: Cobranza Judicial / Legal.
+• Herramientas del gestor de cobros:
+  - Registro de bitácora de llamadas, visitas de campo y promesas de pago con fecha límite.
+  - Notificaciones masivas de cobro por WhatsApp con plantilla personalizada y saldo adeudado.
+  - Cálculo diario de mora (interés moratorio al 5% o tarifa plana configurable).
+
+--------------------------------------------------------------------------------
+14. SISTEMA DE ALERTA TEMPRANA (EWS)
+Ruta: /alerta-temprana
+--------------------------------------------------------------------------------
+• Detección preventiva de deterioro de cartera:
+  - Monitoreo de clientes con retrasos recurrentes aunque terminen pagando en el mes.
+  - Alerta de vencimiento próximo de pólizas de seguro de vehículos en garantía.
+  - Alerta de concentración de riesgo por sector geográfico o cobrador.
+  - Indicador de probabilidad de default crediticio (PD) antes de que caiga en mora 30+.
+
+--------------------------------------------------------------------------------
+15. RADAR ANTIFRAUDE & PREVENCIÓN DE RIESGOS
+Ruta: /antifraude
+--------------------------------------------------------------------------------
+• Motor de seguridad de origen crediticio:
+  - Detección de cédulas duplicadas o alteradas.
+  - Alerta de sobre-endeudamiento cruzado (garante que avala más de 3 préstamos morosos).
+  - Detección de colaterales duplicados (mismo número de chasis o matrícula en dos préstamos).
+  - Análisis de transacciones sospechosas y patrones de cobro fuera de horario laboral.
+
+--------------------------------------------------------------------------------
+16. COBRANZA LEGAL, ABOGADOS & EMBARGOS
+Ruta: /legal
+--------------------------------------------------------------------------------
+• Gestión de litigios y recuperación judicial:
+  - Asignación de expedientes morosos a abogados externos o bufetes jurídicos.
+  - Generación de Actos de Alguacil e Intimaciones Notariales de Pago.
+  - Registro de mandamientos de pago y solicitudes de embargo conservatorio.
+  - Registro de gastos legales cargables a la cuenta del deudor.
+  - Liquidación de honorarios de abogados sobre montos recuperados.
+
+--------------------------------------------------------------------------------
+17. RUTAS GEOGRÁFICAS & CUADRE DE COBRADORES
+Ruta: /rutas
+--------------------------------------------------------------------------------
+• Automatización de cobranza de campo (calle / ruta diaria):
+  - Organización de clientes por zonas geográficas, manzanas o sectores urbanos.
+  - Orden secuencial de visitas de cobro optimizado por proximidad.
+  - App móvil PWA para el cobrador con modo offline (sigue cobrando sin señal de internet).
+  - Cuadre de caja al cierre del día: dinero recaudado vs. recibos emitidos por cobrador.
+  - Geolocalización GPS del punto exacto donde se registró el cobro.
+
+--------------------------------------------------------------------------------
+18. CONTROL DE CAJA & ARQUEO DIARIO
+Ruta: /caja
+--------------------------------------------------------------------------------
+• Administración estricta del flujo físico de dinero:
+  - Apertura de caja con balance inicial verificado.
+  - Registro de entradas (cobros de préstamos, aportes de capital, ingresos varios).
+  - Registro de salidas (desembolsos de préstamos, gastos operativos, retiros a banco).
+  - Módulo de arqueo ciego de caja (conteo de billetes y monedas por denominación).
+  - Detección de sobrantes o faltantes con firma de responsabilidad del cajero.
+  - Cierre formal de caja con impresión del ticket de cuadre diario.
+
+--------------------------------------------------------------------------------
+19. CUENTAS BANCARIAS & GESTIÓN DE FONDOS
+Ruta: /bancos
+--------------------------------------------------------------------------------
+• Catálogo de cuentas bancarias institucionales:
+  - Cuentas corrientes y de ahorros en Pesos Dominicanos (RD$) y Dólares (USD$).
+  - Registro de depósitos, retiros, transferencias entre cuentas propias y comisiones bancarias.
+  - Saldo en libros vs. saldo disponible en tiempo real.
+
+--------------------------------------------------------------------------------
+20. CONCILIACIÓN BANCARIA INTELIGENTE
+Ruta: /conciliacion
+--------------------------------------------------------------------------------
+• Cotejo automático de extractos bancarios:
+  - Importación de extractos en formato CSV / Excel provistos por el banco.
+  - Emparejamiento automático de depósitos de clientes contra pagos pendientes.
+  - Identificación de transferencias no identificadas para asignación manual.
+  - Detección de comisiones bancarias e impuestos retenidos (ej. 0.15% bancario).
+
+--------------------------------------------------------------------------------
+21. ANÁLISIS DE CARTERA & RENTABILIDAD
+Ruta: /cartera
+--------------------------------------------------------------------------------
+• Reportes ejecutivos de salud de la cartera:
+  - Tasa de morosidad ponderada (Índice de Cartera Vencida).
+  - Tasa de rendimiento del capital prestado (ROI y TIR promedio de la cartera).
+  - Plazo promedio de colocación y rotación de capital.
+  - Concentración de cartera por cobrador, sucursal o tipo de producto.
+
+--------------------------------------------------------------------------------
+22. CONTROL DE GASTOS OPERATIVOS & EGRESOS
+Ruta: /gastos
+--------------------------------------------------------------------------------
+• Registro clasificado de gastos del negocio:
+  - Categorías: Combustible / Transporte de ruta, Salarios, Comisiones, Papelería, Alquiler, Tecnología, Legal.
+  - Asignación de comprobante fiscal NCF de gasto (B01).
+  - Adjunto de comprobante en foto o PDF para justificación contable.
+  - Impacto directo en el estado de pérdidas y ganancias del período.
+
+--------------------------------------------------------------------------------
+23. REPORTE DE GANANCIAS & RENDIMIENTO DE CAPITAL
+Ruta: /ganancias
+--------------------------------------------------------------------------------
+• Estado financiero de ingresos y utilidades netas:
+  - Desglose de ingresos por intereses ordinarios cobrados.
+  - Ingresos por recargos de mora, comisiones de cierre y gastos administrativos.
+  - Deducción de gastos operativos e incobrables castigados.
+  - Ganancia neta operativa por mes, trimestre y año.
+
+--------------------------------------------------------------------------------
+24. FLUJO DE CAJA PROYECTADO (CASH FLOW)
+Ruta: /flujo-caja
+--------------------------------------------------------------------------------
+• Planificación financiera de liquidez a 30, 60 y 90 días:
+  - Entradas proyectadas por cobranza de cuotas según calendarios de amortización.
+  - Salidas obligatorias proyectadas (desembolsos programados, gastos fijos, pagos a bancos).
+  - Saldo neto esperado de caja para anticipar necesidades de liquidez o excedentes para reinversión.
+
+--------------------------------------------------------------------------------
+25. GESTIÓN DE EMPLEADOS, ROLES & PERMISOS
+Ruta: /empleados
+--------------------------------------------------------------------------------
+• Seguridad basada en roles (RBAC):
+  - Roles predefinidos: Super Administrador, Oficial de Crédito, Cobrador de Ruta, Cajero, Abogado Legal, Contador.
+  - Permisos granulares: Ver montos, Desembolsar, Aplicar descuentos/condonaciones, Anular recibos, Exportar datos.
+  - Control de horarios de acceso al sistema y limitación por dirección IP si se requiere.
+
+--------------------------------------------------------------------------------
+26. CLASIFICACIÓN DE CARTERA & PROVISIONES DE RIESGO
+Ruta: /clasificacion
+--------------------------------------------------------------------------------
+• Matriz de provisión de pérdidas crediticias esperadas:
+  - Categoría A (Riesgo Normal - 0 días): Provisión 1%.
+  - Categoría B (Riesgo Potencial - 1 a 30 días): Provisión 5%.
+  - Categoría C (Riesgo Deficiente - 31 a 60 días): Provisión 20%.
+  - Categoría D (Riesgo Dudoso Recaudo - 61 a 90 días): Provisión 50%.
+  - Categoría E (Pérdida Irrecuperable - Más de 90 días): Provisión 100%.
+  - Generación de asientos de reserva para la contabilidad formal.
+
+--------------------------------------------------------------------------------
+27. CONTABILIDAD PROFUNDA (PARTIDA DOBLE AUTOMÁTICA)
+Ruta: /contabilidad
+--------------------------------------------------------------------------------
+• Motor contable financiero integrado en tiempo real:
+  - Catálogo de cuentas estándar codificado (Activos, Pasivos, Capital, Ingresos, Costos, Gastos).
+  - Generación automática de asientos de Débito y Crédito en cada evento financiero:
+    * Al desembolsar un préstamo (Débito a Cartera de Préstamos, Crédito a Caja/Banco).
+    * Al cobrar una cuota (Débito a Caja, Crédito a Cartera por capital y Crédito a Ingreso por intereses).
+    * Al aplicar mora (Crédito a Ingreso por Mora, Débito a Caja).
+  - Reportes contables oficiales: Balance de Comprobación, Balance General y Estado de Resultados.
+
+--------------------------------------------------------------------------------
+28. BITÁCORA DE AUDITORÍA INALTERABLE (LOGS)
+Ruta: /bitacora
+--------------------------------------------------------------------------------
+• Registro inmutable de actividad de los usuarios:
+  - Identificación del usuario, fecha, hora exacta, dirección IP y módulo afectado.
+  - Tipo de acción: Creación, Modificación, Eliminación, Condonación, Impresión, Descarga de datos.
+  - Valores anteriores vs. nuevos valores tras cada cambio sensible.
+  - Registro de auditoría protegido contra borrado o edición manual.
+
+--------------------------------------------------------------------------------
+29. INTEGRACIÓN CON BURÓ DE CRÉDITO
+Ruta: /buro-credito
+--------------------------------------------------------------------------------
+• Gestión de reportes regulatorios a centrales de riesgo:
+  - Generación de archivos planos normativos para envío mensual al Buró de Crédito.
+  - Reporte de clientes al día, saldados y en situación de mora legal.
+  - Actualización de estatus crediticio para levantar bloqueos al momento de saldar.
+
+--------------------------------------------------------------------------------
+30. CENTRO DE MIGRACIÓN, BACKUP & EXPORTACIÓN
+Ruta: /migracion
+--------------------------------------------------------------------------------
+• Herramientas de importación y respaldo de datos:
+  - Asistente de importación masiva desde Excel / CSV (Clientes, Préstamos activos, Tablas de cuotas).
+  - Validación de columnas y corrección de errores antes de insertar en la base de datos.
+  - Descarga de copias de seguridad completas en formato JSON / SQL.
+  - Exportación total de la base de datos para auditorías externas.
+
+================================================================================
+MOTORES DE CÁLCULO FINANCIERO INTEGRADOS
+================================================================================
+1. Motor Francés (Cuota Fija):
+   Fórmula: Cuota = Capital * [ (i * (1 + i)^n) / ((1 + i)^n - 1) ]
+   Donde 'i' es la tasa periódica y 'n' es el número total de cuotas.
+
+2. Motor Alemán (Amortización Constante):
+   Amortización Capital = Capital / n
+   Interés Cuota = Saldo Insoluto * i
+   Cuota Total = Amortización Capital + Interés Cuota
+
+3. Motor de Pagaré Notarial / Rédito Mensual Libre:
+   Cuota Mensual = Capital * i
+   El capital permanece intacto hasta que el cliente realice abonos directos.
+   Al realizar un abono de RD$ X: Nuevo Capital = Capital Anterior - X;
+   Nuevo Interés Mensual = Nuevo Capital * i.
+
+4. Motor de Mora Progresiva:
+   Mora = Saldo Vencido * (Tasa Mora Mensual / 30) * Días de Atraso
+   O tarifa fija por cuota vencida según política configurada.
+
+================================================================================
+CANALES DE SALIDA, FORMATOS E INTEGRACIONES
+================================================================================
+• Impresión Térmica:
+  - Protocolo ESC/POS directo por Bluetooth, USB y Red Ethernet.
+  - Tamaños estándar: 58mm (2 pulgadas) y 80mm (3 pulgadas).
+  - Incluye logotipo de la empresa, datos fiscales NCF, QR y corte de papel.
+
+• Imagen Digital PNG:
+  - Renderizado en canvas de recibos oficiales en formato imagen PNG.
+  - Listo para compartir directamente en WhatsApp Web o móvil sin necesidad de impresora física.
+
+• Documentos Legales PDF:
+  - Pagarés Notariales auténticos legalizados.
+  - Contratos de préstamo con garantías mobiliarias / prendarias.
+  - Tablas de amortización oficiales y Estados de Cuenta con membrete.
+
+• Seguridad y Persistencia:
+  - Base de datos relacional PostgreSQL en InsForge BaaS con RLS (Row-Level Security).
+  - Conexión cifrada TLS 1.3 / SSL 256 bits.
+  - PWA Offline con persistencia en IndexedDB y sincronización en segundo plano.
+
+================================================================================
+FIN DEL REPORTE TÉCNICO - ULTRAMONEY 2.0
+================================================================================
