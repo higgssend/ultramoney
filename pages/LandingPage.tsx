@@ -14,6 +14,7 @@ import {
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useAuth } from '../context/StoreContext';
+import { InteractiveModuleShowcase } from '../components/InteractiveModuleShowcase';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -1330,7 +1331,11 @@ const LandingPage: React.FC = () => {
           {/* Nav Links */}
           <nav className="hidden lg:flex items-center gap-7">
             <a href="#inicio" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Inicio</a>
-            <a href="#caracteristicas" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Características</a>
+            <a href="#demo-interactivo" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1.5 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200/80">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+              <span>Demo en Vivo</span>
+            </a>
+            <a href="#caracteristicas" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Módulos</a>
             <a href="#tipos-prestamos" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Tipos de Préstamos</a>
             <a href="#simulador" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Simulador</a>
             <a href="#comparativa" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Excel vs Ultramoney</a>
@@ -1377,6 +1382,7 @@ const LandingPage: React.FC = () => {
         <div className="fixed inset-0 z-40 bg-white pt-24 px-6 flex flex-col justify-between pb-10 animate-fade-in lg:hidden">
           <div className="space-y-4">
             <a href="#inicio" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Inicio</a>
+            <a href="#demo-interactivo" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-indigo-600">Demo Interactivo en Vivo ✨</a>
             <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Características</a>
             <a href="#tipos-prestamos" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Tipos de Préstamos & Negocios</a>
             <a href="#simulador" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Simulador de Préstamos</a>
@@ -1576,6 +1582,9 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* ─── CHRONOLOGICAL INTERACTIVE LIVE DEMO SHOWCASE ─── */}
+      <InteractiveModuleShowcase />
 
       {/* ─── SECTION: MÓDULOS Y FUNCIONALIDADES DEL SISTEMA (LIGHT THEME WITH UNIFORM FINER GRADIENT ICONS) ─── */}
       <section id="caracteristicas" className="py-20 bg-white text-slate-900 border-t border-b border-slate-100 relative overflow-hidden">
