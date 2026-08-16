@@ -254,6 +254,25 @@ const Register: React.FC = () => {
       
       // If accessToken exists, email confirmations are disabled and user is logged in.
       if (data?.accessToken) {
+        localStorage.setItem('um_access_token', data.accessToken);
+        insforge.setAccessToken(data.accessToken);
+        if (data.refreshToken) {
+          localStorage.setItem('um_refresh_token', data.refreshToken);
+        }
+        if (data.user) {
+          type RegUserShape = { id: string; email?: string; name?: string; metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> };
+          const ru = data.user as RegUserShape;
+          const meta = ru.metadata || ru.user_metadata || {};
+          const activeUser = {
+            id: ru.id,
+            email: ru.email || formData.email,
+            name: ru.name || (meta.name as string) || formData.name || 'Usuario',
+            roleId: (meta.roleId as string) || 'Admin',
+            username: (meta.username as string) || formData.email.split('@')[0],
+            roleIds: []
+          };
+          localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+        }
         navigate('/onboarding');
       } else {
         setRegisteredEmail(formData.email);

@@ -96,16 +96,31 @@ const Login: React.FC = () => {
       });
       if (loginErr) throw loginErr;
 
+      if (loginData?.accessToken) {
+        localStorage.setItem('um_access_token', loginData.accessToken);
+        insforge.setAccessToken(loginData.accessToken);
+      }
+      if (loginData?.refreshToken) {
+        localStorage.setItem('um_refresh_token', loginData.refreshToken);
+      }
+
       if (loginData?.user) {
-        const u = loginData.user;
-        const meta = u.metadata || (u as any).user_metadata || {};
+        type LoginUserShape = {
+          id: string;
+          email?: string;
+          metadata?: Record<string, unknown>;
+          user_metadata?: Record<string, unknown>;
+          profile?: { name?: string; roleId?: string; roleIds?: string[] };
+        };
+        const u = loginData.user as LoginUserShape;
+        const meta = u.metadata || u.user_metadata || {};
         const activeUser = {
           id: u.id,
-          email: u.email,
-          name: (u as any).profile?.name || meta.name || u.email,
-          roleId: meta.roleId || (u as any).profile?.roleId || 'Admin',
-          username: meta.username || u.email?.split('@')[0],
-          roleIds: meta.roleIds || []
+          email: u.email || '',
+          name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
+          roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
+          username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
+          roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[]
         };
         localStorage.setItem('um_user_session', JSON.stringify(activeUser));
       }
@@ -140,7 +155,9 @@ const Login: React.FC = () => {
       });
 
       if (error) {
-        if (error.statusCode === 403 || error.message?.includes('verify') || (error as any).nextActions?.includes('verify')) {
+        type AuthErrorWithNext = { statusCode?: number; message?: string; nextActions?: string[] };
+        const authErr = error as AuthErrorWithNext;
+        if (authErr.statusCode === 403 || authErr.message?.includes('verify') || authErr.nextActions?.includes('verify')) {
           setUnverifiedEmail(loginEmail);
           setStep('method');
           // Automatically prompt for OTP verification
@@ -150,16 +167,31 @@ const Login: React.FC = () => {
         throw error;
       }
 
+      if (data?.accessToken) {
+        localStorage.setItem('um_access_token', data.accessToken);
+        insforge.setAccessToken(data.accessToken);
+      }
+      if (data?.refreshToken) {
+        localStorage.setItem('um_refresh_token', data.refreshToken);
+      }
+
       if (data?.user) {
-        const u = data.user;
-        const meta = u.metadata || (u as any).user_metadata || {};
+        type LoginUserShape = {
+          id: string;
+          email?: string;
+          metadata?: Record<string, unknown>;
+          user_metadata?: Record<string, unknown>;
+          profile?: { name?: string; roleId?: string; roleIds?: string[] };
+        };
+        const u = data.user as LoginUserShape;
+        const meta = u.metadata || u.user_metadata || {};
         const activeUser = {
           id: u.id,
-          email: u.email,
-          name: (u as any).profile?.name || meta.name || u.email,
-          roleId: meta.roleId || (u as any).profile?.roleId || 'Admin',
-          username: meta.username || u.email?.split('@')[0],
-          roleIds: meta.roleIds || []
+          email: u.email || '',
+          name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
+          roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
+          username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
+          roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[]
         };
         localStorage.setItem('um_user_session', JSON.stringify(activeUser));
       }

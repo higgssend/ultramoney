@@ -37,8 +37,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addToast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Lazy-initialize user state directly from persistent storage to avoid auth flash / session loss on PWA or tab reopen
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const empSession = localStorage.getItem('employee_session');
+      if (empSession) {
+        const empData = JSON.parse(empSession) as User;
+        if (empData && empData.id) return empData;
+      }
+      const saved = localStorage.getItem('um_user_session');
+      if (saved) {
+        const parsed = JSON.parse(saved) as User;
+        if (parsed && parsed.id) return parsed;
+      }
+    } catch {
+      // ignore JSON parse error
+    }
+    return null;
+  });
+
+  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const hasLocalSession = !!(localStorage.getItem('employee_session') || localStorage.getItem('um_user_session'));
+    return !hasLocalSession;
+  });
+
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
@@ -51,20 +76,62 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const initAuth = async () => {
       try {
+        // 1. Employee PIN session check
         const empSession = localStorage.getItem('employee_session');
         if (empSession) {
           try {
-            const empData = JSON.parse(empSession);
+            const empData = JSON.parse(empSession) as User;
             if (empData && empData.id) {
-              if (!unmounted) setCurrentUser(empData);
-              setIsLoadingAuth(false);
+              if (!unmounted) {
+                setCurrentUser(empData);
+                setIsLoadingAuth(false);
+              }
               return;
             }
-          } catch (e) {
+          } catch {
             localStorage.removeItem('employee_session');
           }
         }
 
+        // 2. Access Token check & silent refresh if available
+        const savedRefreshToken = localStorage.getItem('um_refresh_token');
+        if (savedRefreshToken) {
+          try {
+            const { data: refreshData, error: refreshErr } = await insforge.auth.refreshSession({
+              refreshToken: savedRefreshToken
+            });
+            if (!refreshErr && refreshData?.accessToken) {
+              localStorage.setItem('um_access_token', refreshData.accessToken);
+              insforge.setAccessToken(refreshData.accessToken);
+              if (refreshData.refreshToken) {
+                localStorage.setItem('um_refresh_token', refreshData.refreshToken);
+              }
+              if (refreshData.user) {
+                const u = refreshData.user;
+                const meta = (u.user_metadata || u.metadata || {}) as Record<string, unknown>;
+                const profileObj = (u as unknown as { profile?: { name?: string; roleId?: string; roleIds?: string[] } }).profile;
+                const activeUser: User = {
+                  id: u.id,
+                  email: u.email || '',
+                  name: (profileObj?.name || meta.name || u.email || 'Usuario') as string,
+                  roleId: (meta.roleId || profileObj?.roleId || 'Admin') as string,
+                  username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
+                  roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
+                  status: 'Active'
+                };
+                if (!unmounted) {
+                  setCurrentUser(activeUser);
+                  localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+                  setIsLoadingAuth(false);
+                }
+              }
+            }
+          } catch (refErr) {
+            logger.warn("Token refresh check warning:", refErr);
+          }
+        }
+
+        // 3. Current user verification from InsForge backend
         const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
         type InsforgeUser = {
           id: string;
@@ -90,14 +157,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setCurrentUser(activeUser);
             localStorage.setItem('um_user_session', JSON.stringify(activeUser));
           } else {
-            localStorage.removeItem('um_user_session');
-            localStorage.removeItem('employee_session');
-            setCurrentUser(null);
+            // Only clear credentials if there is no offline fallback session
+            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+            const hasLocalSession = !!localStorage.getItem('um_user_session');
+            if (!isOffline && !hasLocalSession && !savedRefreshToken) {
+              localStorage.removeItem('um_user_session');
+              localStorage.removeItem('employee_session');
+              localStorage.removeItem('um_access_token');
+              localStorage.removeItem('um_refresh_token');
+              setCurrentUser(null);
+            }
           }
           setIsLoadingAuth(false);
         }
 
-        // InsForge SDK: onAuthStateChange type is not exported; cast to known callback shape
+        // 4. Listen for auth state changes
         type AuthCallback = (event: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown>; metadata?: Record<string, unknown>; profile?: { name?: string; roleId?: string } } } | null) => void;
         const unsubscribe = (insforge.auth.onAuthStateChange as (cb: AuthCallback) => () => void)(async (event, session) => {
           if (unmounted) return;
@@ -119,13 +193,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setCurrentUser(null);
             localStorage.removeItem('employee_session');
             localStorage.removeItem('um_user_session');
+            localStorage.removeItem('um_access_token');
+            localStorage.removeItem('um_refresh_token');
           }
         });
         authSub = unsubscribe;
 
       } catch (error) {
         logger.error("Auth init error:", error);
-        setIsLoadingAuth(false);
+        if (!unmounted) {
+          setIsLoadingAuth(false);
+        }
       }
     };
 
@@ -188,8 +266,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e) {
       console.warn("Signout error:", e);
     }
+    try {
+      insforge.setAccessToken(null);
+    } catch {
+      // ignore
+    }
     localStorage.removeItem('employee_session');
     localStorage.removeItem('um_user_session');
+    localStorage.removeItem('um_access_token');
+    localStorage.removeItem('um_refresh_token');
     localStorage.removeItem('um_notifications');
     document.documentElement.classList.remove('dark');
     setCurrentUser(null);
@@ -202,8 +287,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e) {
       console.warn("Signout error:", e);
     }
+    try {
+      insforge.setAccessToken(null);
+    } catch {
+      // ignore
+    }
     localStorage.removeItem('employee_session');
     localStorage.removeItem('um_user_session');
+    localStorage.removeItem('um_access_token');
+    localStorage.removeItem('um_refresh_token');
     localStorage.removeItem('um_notifications');
     document.documentElement.classList.remove('dark');
     setCurrentUser(null);

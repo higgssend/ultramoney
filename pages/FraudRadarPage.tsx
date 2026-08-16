@@ -15,8 +15,9 @@ import { toast } from 'sonner';
 
 export const FraudRadarPage: React.FC = () => {
   const navigate = useNavigate();
-  const { clients, loans, clientRelationships, addClientRelationship, updateClientRelationship, deleteClientRelationship } = useClients();
-  const { bankAccounts } = useAccounting();
+  const { clients = [], clientRelationships = [], addClientRelationship, updateClientRelationship, deleteClientRelationship } = useClients();
+  const { loans = [] } = useLoans();
+  const { bankAccounts = [] } = useAccounting();
 
   const [activeTab, setActiveTab] = useState<'cross' | 'duplicates' | 'network' | 'manage'>('cross');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,17 +35,32 @@ export const FraudRadarPage: React.FC = () => {
 
   // 1. Cross Guarantor Alerts
   const crossGuarantorAlerts: CrossGuarantorAlert[] = useMemo(() => {
-    return FraudRadarEngine.detectCrossGuarantors(clients, loans);
+    try {
+      return FraudRadarEngine.detectCrossGuarantors(clients, loans);
+    } catch (err) {
+      console.error('Error detecting cross guarantors:', err);
+      return [];
+    }
   }, [clients, loans]);
 
   // 2. Shared Duplicate Data Alerts
   const sharedDataAlerts: SharedDataAlert[] = useMemo(() => {
-    return FraudRadarEngine.detectSharedData(clients, bankAccounts);
+    try {
+      return FraudRadarEngine.detectSharedData(clients, bankAccounts);
+    } catch (err) {
+      console.error('Error detecting shared data:', err);
+      return [];
+    }
   }, [clients, bankAccounts]);
 
   // 3. Relationship Network
   const networkGraph = useMemo(() => {
-    return FraudRadarEngine.buildRelationshipGraph(clients, loans, clientRelationships);
+    try {
+      return FraudRadarEngine.buildRelationshipGraph(clients, loans, clientRelationships);
+    } catch (err) {
+      console.error('Error building relationship graph:', err);
+      return { nodes: [], edges: [] };
+    }
   }, [clients, loans, clientRelationships]);
 
   // Submit Add / Edit Relationship
