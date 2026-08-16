@@ -68,12 +68,12 @@ export const TiltedCard: React.FC<TiltedCardProps> = ({
           transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out',
           transformStyle: 'preserve-3d'
         }}
-        className="relative rounded-3xl overflow-hidden will-change-transform"
+        className="relative rounded-2xl overflow-hidden will-change-transform"
       >
         {children}
         {glareEffect && isHovered && (
           <div
-            className="pointer-events-none absolute inset-0 rounded-3xl mix-blend-overlay transition-opacity"
+            className="pointer-events-none absolute inset-0 rounded-2xl mix-blend-overlay transition-opacity"
             style={{
               background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(255,255,255,0.35) 0%, transparent 60%)`
             }}

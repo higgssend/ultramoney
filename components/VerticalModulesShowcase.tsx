@@ -558,9 +558,9 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
 
   return (
     <SpotlightCard
-      spotlightColor="rgba(99, 102, 241, 0.14)"
-      borderColor="rgba(226, 232, 240, 0.9)"
-      className="vertical-module-scene min-h-[70vh] flex flex-col justify-center bg-white rounded-3xl lg:rounded-[2.8rem] shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden p-6 sm:p-8 lg:p-12 border border-slate-200/90"
+      spotlightColor="rgba(99, 102, 241, 0.12)"
+      borderColor="rgba(226, 232, 240, 0.95)"
+      className="vertical-module-scene min-h-[70vh] flex flex-col justify-center bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden p-8 sm:p-10 lg:p-12 border border-slate-200"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center w-full">
 
@@ -569,14 +569,14 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
           
           {/* Header Tag */}
           <div className="flex items-center gap-3.5">
-            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${iconBg} text-white font-black text-sm flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0`}>
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${iconBg} text-white font-black text-sm flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0`}>
               <Icon className="w-6 h-6" strokeWidth={1.8} />
             </div>
             <div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-600 block">
-                <ShinyText text={`MÓDULO ${number} · ${category}`} speed={4} className="text-indigo-600" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700 block">
+                <ShinyText text={`MÓDULO ${number} · ${category}`} speed={4} className="text-indigo-700" />
               </span>
-              <span className="text-xs font-bold text-slate-400">Herramienta Especializada</span>
+              <span className="text-xs font-bold text-slate-500">Herramienta Especializada</span>
             </div>
           </div>
 
@@ -585,15 +585,15 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
             <h3 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
               {title}
             </h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               {desc}
             </p>
           </div>
 
           {/* Feature List */}
-          <div className="space-y-2.5 pt-1">
+          <div className="space-y-3 pt-1">
             {features.map((feat, idx) => (
-              <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-800">
+              <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm font-semibold text-slate-800">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <span className="leading-tight">{feat}</span>
               </div>
@@ -601,12 +601,12 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
           </div>
 
           {/* KPI Banner */}
-          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+          <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-4 sm:p-5 flex items-center justify-between shadow-2xs">
             <div>
-              <span className="text-[10px] text-slate-400 font-bold block">{kpi.label}</span>
-              <span className="text-lg font-black text-emerald-600 font-mono">{kpi.value}</span>
+              <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">{kpi.label}</span>
+              <span className="text-xl font-black text-emerald-600 font-mono">{kpi.value}</span>
             </div>
-            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-full">
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3.5 py-1.5 rounded-lg">
               {kpi.tag}
             </span>
           </div>
@@ -615,7 +615,7 @@ const VerticalScene: React.FC<VerticalSceneProps> = ({
 
         {/* ─── LIVE INTERACTIVE DEMO COLUMN (Expanded, tactile canvas) ─── */}
         <div className={`lg:col-span-7 ${isEven ? 'lg:order-2' : 'lg:order-1'}`}>
-          <div className="bg-gradient-to-b from-slate-50 via-slate-100/50 to-slate-50 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-inner space-y-4">
+          <div className="bg-gradient-to-b from-slate-50 via-slate-100/50 to-slate-50 p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-inner space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
               <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
                 <Play className="w-3.5 h-3.5 fill-indigo-600 text-indigo-600" />

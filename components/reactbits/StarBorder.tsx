@@ -19,7 +19,7 @@ export const StarBorder: React.FC<StarBorderProps> = ({
 }) => {
   return (
     <Component
-      className={`relative inline-block py-[1px] px-[1px] overflow-hidden rounded-[2rem] ${className}`}
+      className={`relative inline-block py-[1px] px-[1px] overflow-hidden rounded-xl ${className}`}
       {...rest}
     >
       <div
@@ -36,7 +36,7 @@ export const StarBorder: React.FC<StarBorderProps> = ({
           animationDuration: speed
         }}
       />
-      <div className="relative z-1 bg-slate-900/90 dark:bg-slate-950/90 text-white rounded-[2rem] border border-white/10 backdrop-blur-xl">
+      <div className="relative z-1 bg-slate-900/90 dark:bg-slate-950/90 text-white rounded-xl border border-white/10 backdrop-blur-xl">
         {children}
       </div>
     </Component>
