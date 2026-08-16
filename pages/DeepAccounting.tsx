@@ -424,7 +424,7 @@ export const DeepAccounting: React.FC = () => {
       </div>
 
       {/* 4 Financial Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Activos Totales"
           value={`RD$ ${totalAssets.toLocaleString('es-DO', { minimumFractionDigits: 0 })}`}

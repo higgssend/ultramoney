@@ -394,7 +394,7 @@ const Dashboard: React.FC = () => {
       <DailyMorningBriefing />
 
       {/* 4 Core Executive Metric Cards requested by user */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
         <StatCard
           title="Préstamos Activos"
           value={`${activeLoansCount} Activos`}
@@ -441,10 +441,10 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Secondary Quick Summary Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div 
           onClick={() => navigate('/prestamos')}
-          className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
+          className="bg-white dark:bg-slate-800 p-4 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
         >
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cartera Total por Cobrar</p>
@@ -459,7 +459,7 @@ const Dashboard: React.FC = () => {
 
         <div 
           onClick={() => navigate('/clientes')}
-          className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+          className="bg-white dark:bg-slate-800 p-4 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
         >
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Clientes Registrados</p>
@@ -474,7 +474,7 @@ const Dashboard: React.FC = () => {
 
         <div 
           onClick={() => navigate('/caja')}
-          className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors"
+          className="bg-white dark:bg-slate-800 p-4 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between cursor-pointer hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors"
         >
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Balance en Caja / Bancos</p>
@@ -489,14 +489,14 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Accesos Rápidos / Acciones Frecuentes</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <button 
             onClick={() => navigate('/solicitud')}
-            className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-2xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all font-bold text-sm border border-indigo-100/50 group"
+            className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all font-bold text-sm border border-indigo-100/50 group"
           >
-            <div className="p-2 bg-indigo-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+            <div className="p-2 bg-indigo-600 text-white rounded-lg group-hover:scale-110 transition-transform">
               <Plus className="w-5 h-5" />
             </div>
             <span>Nuevo Préstamo</span>
@@ -504,9 +504,9 @@ const Dashboard: React.FC = () => {
           
           <button 
             onClick={() => navigate('/pagos')}
-            className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-2xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all font-bold text-sm border border-emerald-100/50 group"
+            className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all font-bold text-sm border border-emerald-100/50 group"
           >
-            <div className="p-2 bg-emerald-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+            <div className="p-2 bg-emerald-600 text-white rounded-lg group-hover:scale-110 transition-transform">
               <Banknote className="w-5 h-5" />
             </div>
             <span>Registrar Cobro</span>
@@ -514,9 +514,9 @@ const Dashboard: React.FC = () => {
 
           <button 
             onClick={() => navigate('/clientes')}
-            className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all font-bold text-sm border border-blue-100/50 group"
+            className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all font-bold text-sm border border-blue-100/50 group"
           >
-            <div className="p-2 bg-blue-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+            <div className="p-2 bg-blue-600 text-white rounded-lg group-hover:scale-110 transition-transform">
               <Users className="w-5 h-5" />
             </div>
             <span>Gestionar Clientes</span>
@@ -524,9 +524,9 @@ const Dashboard: React.FC = () => {
 
           <button 
             onClick={() => navigate('/atrasos')}
-            className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-2xl hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all font-bold text-sm border border-rose-100/50 group"
+            className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all font-bold text-sm border border-rose-100/50 group"
           >
-            <div className="p-2 bg-rose-600 text-white rounded-xl group-hover:scale-110 transition-transform">
+            <div className="p-2 bg-rose-600 text-white rounded-lg group-hover:scale-110 transition-transform">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <span>Cobranza & Mora</span>
@@ -545,21 +545,21 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Row 1: AreaChart + Donut */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-[420px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between h-[420px]">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg flex items-center gap-2">
+                <h3 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2">
                   Flujo de Caja (Ingresos vs Gastos)
                 </h3>
                 <p className="text-xs text-slate-400">Evolución del flujo financiero en el período seleccionado</p>
               </div>
-              <div className="flex items-center gap-4 text-xs font-bold">
+              <div className="flex items-center gap-3 sm:gap-4 text-xs font-bold">
                 <span className="flex items-center gap-1.5 text-indigo-600">
-                  <span className="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span> Ingresos
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span> Ingresos
                 </span>
                 <span className="flex items-center gap-1.5 text-rose-500">
-                  <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Gastos
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Gastos
                 </span>
               </div>
             </div>
@@ -593,7 +593,7 @@ const Dashboard: React.FC = () => {
                   />
                   <Tooltip 
                     cursor={{fill: '#f8fafc', opacity: 0.8}}
-                    contentStyle={{backgroundColor: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', color: '#1e293b', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
+                    contentStyle={{backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#1e293b', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
                     formatter={(value: number, name: string) => [
                       `RD$ ${(value || 0).toLocaleString('es-DO')}`, 
                       name === 'income' ? 'Ingresos' : 'Gastos'
@@ -622,10 +622,10 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Chart 2: Donut */}
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[420px] flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-[420px] flex flex-col justify-between">
             <div className="flex justify-between items-center mb-2">
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg flex items-center gap-2">
+                <h3 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2">
                   <PieChartIcon className="w-5 h-5 text-indigo-500" />
                   Estado de Préstamos
                 </h3>
@@ -665,8 +665,8 @@ const Dashboard: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
               {loanStatusData.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-50 dark:bg-slate-700/50">
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
+                <div key={idx} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-700/50">
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
                   <div className="overflow-hidden">
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{item.name}</p>
                     <p className="text-[10px] text-slate-400 font-semibold">{item.value} préstamos</p>
@@ -678,11 +678,11 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Row 2: BarChart + Modalidades */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[380px] flex flex-col justify-between">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-[380px] flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg flex items-center gap-2">
+                <h3 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-indigo-500" />
                   Desembolsos vs Cobranzas
                 </h3>
@@ -690,10 +690,10 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 text-xs font-bold">
                 <span className="flex items-center gap-1.5 text-indigo-600">
-                  <span className="w-3 h-3 rounded-md bg-indigo-600 inline-block"></span> Prestado
+                  <span className="w-2.5 h-2.5 rounded-md bg-indigo-600 inline-block"></span> Prestado
                 </span>
                 <span className="flex items-center gap-1.5 text-emerald-500">
-                  <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span> Cobrado
+                  <span className="w-2.5 h-2.5 rounded-md bg-emerald-500 inline-block"></span> Cobrado
                 </span>
               </div>
             </div>
@@ -708,17 +708,17 @@ const Dashboard: React.FC = () => {
                     contentStyle={{backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0'}}
                     formatter={(val: number, name: string) => [`RD$ ${(val || 0).toLocaleString('es-DO')}`, name === 'desembolsado' ? 'Capital Prestado' : 'Capital Cobrado']}
                   />
-                  <Bar dataKey="desembolsado" fill="#6366f1" radius={[6, 6, 0, 0]} maxBarSize={32} />
-                  <Bar dataKey="cobrado" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="desembolsado" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="cobrado" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-[380px] flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-[380px] flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="font-bold text-slate-800 dark:text-white text-lg">
+                <h3 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg">
                   Modalidades de Crédito
                 </h3>
                 <p className="text-xs text-slate-400">Distribución de cartera por tipo de garantía / negocio</p>
@@ -735,7 +735,7 @@ const Dashboard: React.FC = () => {
                       <span className="text-slate-800 dark:text-slate-200">{item.name} ({item.cantidad} préstamos)</span>
                       <span className="text-indigo-600 dark:text-indigo-400">RD$ {(item.monto || 0).toLocaleString('es-DO')} ({percent}%)</span>
                     </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-100 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
                       <div 
                         className="h-full rounded-full transition-all duration-500" 
                         style={{ width: `${percent}%`, backgroundColor: item.color }}
@@ -758,7 +758,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity List */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-slate-800 dark:text-white text-lg">Actividad Reciente</h3>
           <button onClick={() => navigate('/pagos')} className="text-xs text-indigo-600 font-bold hover:underline">Ver Todo</button>

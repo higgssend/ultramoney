@@ -252,7 +252,7 @@ export const Accounting: React.FC<AccountingProps> = ({ initialTab }) => {
       </div>
 
       {/* 4 Cards Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Saldo en Caja de Efectivo"
           value={`RD$ ${stats.balance.toLocaleString()}`}
