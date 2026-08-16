@@ -1088,196 +1088,147 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const mainScroller = document.querySelector('main') || window;
     
+    // Attach scroll listener on scroller element to guarantee ScrollTrigger updates
+    const handleMainScroll = () => {
+      ScrollTrigger.update();
+    };
+    if (mainScroller instanceof HTMLElement) {
+      mainScroller.addEventListener('scroll', handleMainScroll);
+    }
+    window.addEventListener('scroll', handleMainScroll);
+
     const ctx = gsap.context(() => {
       // 1. Hero Section Entrance Timeline
       const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.8 } });
-      tl.from('.hero-badge', { y: 20, opacity: 0, clearProps: 'all' })
-        .from('.hero-title', { y: 30, opacity: 0, duration: 0.8, clearProps: 'all' }, '-=0.5')
-        .from('.hero-sub', { y: 25, opacity: 0, clearProps: 'all' }, '-=0.6')
-        .from('.hero-cta-btn', { y: 20, opacity: 0, stagger: 0.1, clearProps: 'all' }, '-=0.5')
-        .from('.hero-social', { y: 15, opacity: 0, clearProps: 'all' }, '-=0.4')
-        .from('.hero-mockup', { y: 40, opacity: 0, scale: 0.98, duration: 0.9, clearProps: 'all' }, '-=0.6');
+      tl.from('.hero-badge', { y: 20, opacity: 0.3, clearProps: 'all' })
+        .from('.hero-title', { y: 30, opacity: 0.3, duration: 0.8, clearProps: 'all' }, '-=0.5')
+        .from('.hero-sub', { y: 25, opacity: 0.3, clearProps: 'all' }, '-=0.6')
+        .from('.hero-cta-btn', { y: 20, opacity: 0.3, stagger: 0.1, clearProps: 'all' }, '-=0.5')
+        .from('.hero-social', { y: 15, opacity: 0.3, clearProps: 'all' }, '-=0.4')
+        .from('.hero-mockup', { y: 40, opacity: 0.3, scale: 0.98, duration: 0.9, clearProps: 'all' }, '-=0.6');
 
-      // 2. Section 22 Modules Ecosistema Grid Reveal
-      gsap.fromTo('#caracteristicas .card-3d-wrapper',
-        { opacity: 0, y: 40, scale: 0.96 },
-        {
-          scrollTrigger: {
-            trigger: '#caracteristicas',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.7,
-          stagger: 0.04,
-          ease: 'power2.out',
-          clearProps: 'all'
-        }
-      );
+      // 2. Tipos de Préstamos Section Reveal
+      gsap.from('#tipos-prestamos .card-3d-wrapper', {
+        scrollTrigger: {
+          trigger: '#tipos-prestamos',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 30,
+        opacity: 0.4,
+        duration: 0.6,
+        stagger: 0.06,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
 
-      // 3. Tipos de Préstamos Section Reveal
-      gsap.fromTo('#tipos-prestamos .card-3d-wrapper',
-        { opacity: 0, y: 40 },
-        {
-          scrollTrigger: {
-            trigger: '#tipos-prestamos',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          duration: 0.7,
-          stagger: 0.08,
-          ease: 'power2.out',
-          clearProps: 'all'
-        }
-      );
+      // 3. Simulador en Vivo Section Reveal
+      gsap.from('#simulador .bg-gradient-to-br', {
+        scrollTrigger: {
+          trigger: '#simulador',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 30,
+        opacity: 0.4,
+        duration: 0.7,
+        ease: 'power3.out',
+        clearProps: 'all'
+      });
 
-      // 4. Simulador en Vivo Section Reveal
-      gsap.fromTo('#simulador .bg-gradient-to-br',
-        { opacity: 0, y: 40, scale: 0.97 },
-        {
-          scrollTrigger: {
-            trigger: '#simulador',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          duration: 0.8,
-          ease: 'power3.out',
-          clearProps: 'all'
-        }
-      );
+      // 4. Comparativa Excel Section Reveal
+      gsap.from('#comparativa .bg-white', {
+        scrollTrigger: {
+          trigger: '#comparativa',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 30,
+        opacity: 0.4,
+        duration: 0.7,
+        ease: 'power3.out',
+        clearProps: 'all'
+      });
 
-      // 5. Comparativa Excel Section Reveal
-      gsap.fromTo('#comparativa .bg-white',
-        { opacity: 0, y: 40 },
-        {
-          scrollTrigger: {
-            trigger: '#comparativa',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          ease: 'power3.out',
-          clearProps: 'all'
-        }
-      );
+      // 5. App Móvil Section Reveal
+      gsap.from('#app-movil .lg\\:col-span-6', {
+        scrollTrigger: {
+          trigger: '#app-movil',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 30,
+        opacity: 0.4,
+        stagger: 0.15,
+        duration: 0.7,
+        ease: 'power3.out',
+        clearProps: 'all'
+      });
 
-      // 6. App Móvil Section Reveal
-      gsap.fromTo('#app-movil .lg\\:col-span-6',
-        { opacity: 0, y: 40 },
-        {
-          scrollTrigger: {
-            trigger: '#app-movil',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          stagger: 0.2,
-          duration: 0.8,
-          ease: 'power3.out',
-          clearProps: 'all'
-        }
-      );
+      // 6. Testimonios Section Reveal
+      gsap.from('#testimonios .bg-white', {
+        scrollTrigger: {
+          trigger: '#testimonios',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 25,
+        opacity: 0.4,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
 
-      // 7. Testimonios Section Reveal
-      gsap.fromTo('#testimonios .bg-white',
-        { opacity: 0, y: 35 },
-        {
-          scrollTrigger: {
-            trigger: '#testimonios',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          stagger: 0.12,
-          duration: 0.7,
-          ease: 'power2.out',
-          clearProps: 'all'
-        }
-      );
+      // 7. Seguridad Section Reveal
+      gsap.from('.security-grid > div', {
+        scrollTrigger: {
+          trigger: '.security-grid',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 25,
+        opacity: 0.4,
+        stagger: 0.08,
+        duration: 0.6,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
 
-      // 8. Seguridad Section Reveal
-      gsap.fromTo('.security-grid > div',
-        { opacity: 0, y: 30 },
-        {
-          scrollTrigger: {
-            trigger: '.security-grid',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          stagger: 0.1,
-          duration: 0.7,
-          ease: 'power2.out',
-          clearProps: 'all'
-        }
-      );
-
-      // 9. FAQ Section Reveal
-      gsap.fromTo('#faq .space-y-3 > div',
-        { opacity: 0, y: 20 },
-        {
-          scrollTrigger: {
-            trigger: '#faq',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          stagger: 0.08,
-          duration: 0.6,
-          ease: 'power2.out',
-          clearProps: 'all'
-        }
-      );
-
-      // 10. Stats Footer Bar Reveal
-      gsap.fromTo('.stats-footer .stat-item',
-        { opacity: 0, y: 20, scale: 0.9 },
-        {
-          scrollTrigger: {
-            trigger: '.stats-footer',
-            scroller: mainScroller,
-            start: 'top 95%',
-            toggleActions: 'play none none none'
-          },
-          y: 0,
-          opacity: 1,
-          scale: 1,
-          stagger: 0.1,
-          duration: 0.6,
-          ease: 'back.out(1.5)',
-          clearProps: 'all'
-        }
-      );
+      // 8. FAQ Section Reveal
+      gsap.from('#faq .space-y-3 > div', {
+        scrollTrigger: {
+          trigger: '#faq',
+          scroller: mainScroller,
+          start: 'top 95%',
+          toggleActions: 'play none none none'
+        },
+        y: 20,
+        opacity: 0.4,
+        stagger: 0.06,
+        duration: 0.5,
+        ease: 'power2.out',
+        clearProps: 'all'
+      });
 
     }, heroRef);
 
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 250);
+    }, 200);
 
     return () => {
       clearTimeout(timer);
+      if (mainScroller instanceof HTMLElement) {
+        mainScroller.removeEventListener('scroll', handleMainScroll);
+      }
+      window.removeEventListener('scroll', handleMainScroll);
       ctx.revert();
     };
   }, []);
@@ -1318,7 +1269,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 overflow-x-hidden" ref={heroRef}>
       
-      {/* ─── HEADER / NAVBAR ─── */}
+      {/* ─── HEADER / NAVBAR (EXACTLY 3 LINKS) ─── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-3 border-b border-slate-200/80' : 'bg-white py-4 border-b border-slate-100'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           
@@ -1328,19 +1279,18 @@ const LandingPage: React.FC = () => {
             <span className="text-2xl font-black tracking-tight text-indigo-950">ultramoney</span>
           </div>
 
-          {/* Nav Links */}
-          <nav className="hidden lg:flex items-center gap-7">
-            <a href="#inicio" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Inicio</a>
-            <a href="#demo-interactivo" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1.5 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200/80">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
-              <span>Demo en Vivo</span>
+          {/* Nav Links: Exactly 3 Links */}
+          <nav className="hidden lg:flex items-center gap-8">
+            <a href="#inicio" className="text-sm font-bold text-slate-700 hover:text-indigo-600 transition-colors">
+              Inicio
             </a>
-            <a href="#caracteristicas" className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition-colors">Módulos</a>
-            <a href="#tipos-prestamos" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Tipos de Préstamos</a>
-            <a href="#simulador" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Simulador</a>
-            <a href="#comparativa" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Excel vs Ultramoney</a>
-            <a href="#app-movil" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">App Móvil</a>
-            <a href="#faq" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Preguntas</a>
+            <a href="#caracteristicas" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1.5 bg-indigo-50 px-3.5 py-1.5 rounded-full border border-indigo-200/90 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+              <span>Módulos en Vivo</span>
+            </a>
+            <a href="#faq" className="text-sm font-bold text-slate-700 hover:text-indigo-600 transition-colors">
+              Preguntas Frecuentes
+            </a>
           </nav>
 
           {/* Right Action */}
@@ -1377,17 +1327,12 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* ─── MOBILE MENU OVERLAY ─── */}
+      {/* ─── MOBILE MENU OVERLAY (EXACTLY 3 LINKS) ─── */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-white pt-24 px-6 flex flex-col justify-between pb-10 animate-fade-in lg:hidden">
           <div className="space-y-4">
             <a href="#inicio" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Inicio</a>
-            <a href="#demo-interactivo" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-indigo-600">Demo Interactivo en Vivo ✨</a>
-            <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Características</a>
-            <a href="#tipos-prestamos" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Tipos de Préstamos & Negocios</a>
-            <a href="#simulador" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Simulador de Préstamos</a>
-            <a href="#comparativa" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Comparativa Excel</a>
-            <a href="#app-movil" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">App Móvil de Campo</a>
+            <a href="#caracteristicas" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-indigo-600">Módulos en Vivo ✨</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block text-lg font-bold text-slate-800">Preguntas Frecuentes</a>
           </div>
           <div className="space-y-3">

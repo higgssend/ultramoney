@@ -19,6 +19,16 @@ export const VerticalModulesShowcase: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const mainScroller = document.querySelector('main') || window;
+
+    const handleMainScroll = () => {
+      ScrollTrigger.update();
+    };
+    if (mainScroller instanceof HTMLElement) {
+      mainScroller.addEventListener('scroll', handleMainScroll);
+    }
+    window.addEventListener('scroll', handleMainScroll);
+
     // Refresh ScrollTrigger so all positions calculate precisely
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
@@ -30,12 +40,12 @@ export const VerticalModulesShowcase: React.FC = () => {
         gsap.from(card, {
           scrollTrigger: {
             trigger: card,
+            scroller: mainScroller,
             start: 'top 92%',
             toggleActions: 'play none none none'
           },
-          y: 35,
-          opacity: 0.2,
-          duration: 0.6,
+          y: 30,
+          duration: 0.5,
           ease: 'power2.out',
           clearProps: 'all' // Guarantee no stuck opacity/transform properties
         });
@@ -44,6 +54,10 @@ export const VerticalModulesShowcase: React.FC = () => {
 
     return () => {
       clearTimeout(timer);
+      if (mainScroller instanceof HTMLElement) {
+        mainScroller.removeEventListener('scroll', handleMainScroll);
+      }
+      window.removeEventListener('scroll', handleMainScroll);
       ctx.revert();
     };
   }, []);
