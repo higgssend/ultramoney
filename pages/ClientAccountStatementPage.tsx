@@ -838,3 +838,5 @@ export const ClientAccountStatementPage: React.FC = () => {
     </div>
   );
 };
+
+export default ClientAccountStatementPage;

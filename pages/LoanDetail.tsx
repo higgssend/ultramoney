@@ -2063,3 +2063,5 @@ export const LoanDetail: React.FC = () => {
     </div>
   );
 };
+
+export default LoanDetail;

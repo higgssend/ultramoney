@@ -944,3 +944,5 @@ export const ReceiptView: React.FC = () => {
         </div>
     );
 };
+
+export default ReceiptView;

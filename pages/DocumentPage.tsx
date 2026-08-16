@@ -1018,3 +1018,5 @@ export const DocumentPage: React.FC = () => {
     </div>
   );
 };
+
+export default DocumentPage;

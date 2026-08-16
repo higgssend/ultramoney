@@ -325,3 +325,5 @@ export const PublicDocumentView: React.FC = () => {
     </div>
   );
 };
+
+export default PublicDocumentView;
