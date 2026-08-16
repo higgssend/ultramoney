@@ -108,8 +108,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               }
               if (refreshData.user) {
                 const u = refreshData.user;
-                const meta = (u.user_metadata || u.metadata || {}) as Record<string, unknown>;
-                const profileObj = (u as unknown as { profile?: { name?: string; roleId?: string; roleIds?: string[] } }).profile;
+                const meta = (u.metadata || {}) as Record<string, unknown>;
+                const profileObj = u.profile;
                 const activeUser: User = {
                   id: u.id,
                   email: u.email || '',

@@ -155,9 +155,9 @@ const Login: React.FC = () => {
       });
 
       if (error) {
-        type AuthErrorWithNext = { statusCode?: number; message?: string; nextActions?: string[] };
-        const authErr = error as AuthErrorWithNext;
-        if (authErr.statusCode === 403 || authErr.message?.includes('verify') || authErr.nextActions?.includes('verify')) {
+        const msg = error.message || '';
+        const next = error.nextActions;
+        if (error.statusCode === 403 || msg.includes('verify') || (typeof next === 'string' && next.includes('verify')) || (Array.isArray(next) && next.includes('verify'))) {
           setUnverifiedEmail(loginEmail);
           setStep('method');
           // Automatically prompt for OTP verification

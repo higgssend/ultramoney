@@ -1,4 +1,4 @@
-import { Client, Loan, BankAccount, ClientRelationship } from '../types';
+import { Client, Loan, BankAccount, ClientRelationship, LoanStatus } from '../types';
 
 export interface CrossGuarantorAlert {
   clientAId: string;
