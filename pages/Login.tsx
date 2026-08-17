@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, ChevronLeft, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react';
 import { insforge } from '../lib/insforge';
+import { useAuth } from '../context/StoreContext';
 
 import { open } from '@tauri-apps/plugin-shell';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
@@ -9,6 +10,7 @@ const REMEMBER_EMAIL_KEY = 'ultramoney_remembered_email';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { setSession } = useAuth();
 
   const [step, setStep] = useState<'method' | 'email-form'>('method');
   const [email, setEmail] = useState('');
@@ -96,15 +98,7 @@ const Login: React.FC = () => {
       });
       if (loginErr) throw loginErr;
 
-      if (loginData?.accessToken) {
-        localStorage.setItem('um_access_token', loginData.accessToken);
-        insforge.setAccessToken(loginData.accessToken);
-      }
-      if (loginData?.refreshToken) {
-        localStorage.setItem('um_refresh_token', loginData.refreshToken);
-      }
-
-      if (loginData?.user) {
+      if (loginData?.user && loginData?.accessToken) {
         type LoginUserShape = {
           id: string;
           email?: string;
@@ -120,12 +114,13 @@ const Login: React.FC = () => {
           name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
           roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
           username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
-          roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[]
+          roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
+          status: 'Active' as const
         };
-        localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+        setSession(activeUser, loginData.accessToken, loginData.refreshToken);
       }
 
-      window.location.href = '/dashboard';
+      navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Código de verificación inválido o expirado.');
     } finally { setOtpLoading(false); }
@@ -174,15 +169,7 @@ const Login: React.FC = () => {
         throw error;
       }
 
-      if (data?.accessToken) {
-        localStorage.setItem('um_access_token', data.accessToken);
-        insforge.setAccessToken(data.accessToken);
-      }
-      if (data?.refreshToken) {
-        localStorage.setItem('um_refresh_token', data.refreshToken);
-      }
-
-      if (data?.user) {
+      if (data?.user && data?.accessToken) {
         type LoginUserShape = {
           id: string;
           email?: string;
@@ -198,9 +185,10 @@ const Login: React.FC = () => {
           name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
           roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
           username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
-          roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[]
+          roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
+          status: 'Active' as const
         };
-        localStorage.setItem('um_user_session', JSON.stringify(activeUser));
+        setSession(activeUser, data.accessToken, data.refreshToken);
       }
 
       // Handle remember me
@@ -210,8 +198,7 @@ const Login: React.FC = () => {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
       }
 
-      // Full reload so AuthContext picks up the session cleanly
-      window.location.href = '/dashboard';
+      navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Credenciales inválidas. Por favor verifica tu correo y contraseña.';
       setError(errorMsg);
@@ -423,6 +410,10 @@ const Login: React.FC = () => {
                         type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoComplete="username email"
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all outline-none"
                         placeholder="ej. juanperez o correo@ejemplo.com"
                         required
@@ -447,6 +438,9 @@ const Login: React.FC = () => {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                         className="block w-full pl-10 pr-10 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-indigo-500 transition-all text-sm"
                         placeholder="••••••••"
                         autoComplete="current-password"

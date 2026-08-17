@@ -16,6 +16,8 @@ interface AuthContextType {
   
   login: (identifier: string, password: string) => boolean;
   logout: () => void;
+  setSession: (user: User, accessToken: string, refreshToken?: string) => void;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
   loginEmployee: (username: string, pin: string) => Promise<boolean>;
   logoutSystem: () => void;
   registerUser: (user: User) => void;
@@ -302,7 +304,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fetchData();
   }, [currentUser]);
 
-  const login = (_identifier: string, _password: string): boolean => false; // Supabase handles this via UI
+  const login = (_identifier: string, _password: string): boolean => false; // Handled by InsForge auth
+
+  const setSession = (user: User, accessToken: string, refreshToken?: string) => {
+    try {
+      localStorage.setItem('um_access_token', accessToken);
+      insforge.setAccessToken(accessToken);
+    } catch {
+      // ignore
+    }
+    if (refreshToken) {
+      localStorage.setItem('um_refresh_token', refreshToken);
+    }
+    localStorage.setItem('um_user_session', JSON.stringify(user));
+    setCurrentUser(user);
+    setIsLoadingAuth(false);
+  };
   
   const logout = async () => {
     try {
@@ -514,7 +531,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <AuthContext.Provider value={{
       currentUser, isLoadingAuth, users, roles, cargos, employees, apiKeys,
-      login, logout, loginEmployee, logoutSystem, registerUser, updateUser,
+      login, logout, setSession, setCurrentUser, loginEmployee, logoutSystem, registerUser, updateUser,
       addRole, updateRole, deleteRole, addCargo, updateCargo, deleteCargo,
       addEmployee, deleteEmployee, generateApiKey, updateApiKey, deleteApiKey
     }}>
