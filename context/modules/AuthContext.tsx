@@ -96,6 +96,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // 2. Set saved access token if present
         const savedAccessToken = localStorage.getItem('um_access_token');
         const savedRefreshToken = localStorage.getItem('um_refresh_token');
+        
+        let cachedLocalUser: User | null = null;
+        const savedUserJson = localStorage.getItem('um_user_session');
+        if (savedUserJson) {
+          try {
+            const parsed = JSON.parse(savedUserJson) as User;
+            if (parsed && parsed.id) {
+              cachedLocalUser = parsed;
+            }
+          } catch {
+            // ignore
+          }
+        }
 
         if (savedAccessToken) {
           try {
@@ -115,6 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
 
         let activeUser: User | null = null;
+        let isDefinitiveAuthError = false;
 
         if (savedAccessToken) {
           const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
@@ -127,14 +141,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               name: (u.profile?.name || meta.name || u.email || 'Usuario') as string,
               roleId: (meta.roleId || u.profile?.roleId || 'Admin') as string,
               username: (meta.username || u.email?.split('@')[0] || 'usuario') as string,
-              roleIds: (meta.roleIds || []) as string[],
+              roleIds: (Array.isArray(meta.roleIds) ? meta.roleIds : []) as string[],
               status: 'Active'
             };
+          } else if (userError) {
+            const statusCode = (userError as { statusCode?: number; status?: number }).statusCode || (userError as { statusCode?: number; status?: number }).status;
+            const errMsg = String(userError.message || '').toLowerCase();
+            if (statusCode === 401 || errMsg.includes('invalid') || errMsg.includes('jwt') || errMsg.includes('unauthorized') || errMsg.includes('expired')) {
+              isDefinitiveAuthError = true;
+            }
           }
         }
 
         // 4. If access token was expired/invalid, attempt refresh
-        if (!activeUser && savedRefreshToken) {
+        if (!activeUser && savedRefreshToken && isDefinitiveAuthError) {
           try {
             const { data: refreshData, error: refreshErr } = await insforge.auth.refreshSession({
               refreshToken: savedRefreshToken
@@ -159,19 +179,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   status: 'Active'
                 };
               }
+              isDefinitiveAuthError = false;
             }
           } catch (refErr) {
             logger.warn("Token refresh attempt failed:", refErr);
           }
         }
 
-        // 5. Apply session or clear stale state
+        // 5. Apply session or fallback to cached session if network/offline
         if (!unmounted) {
           if (activeUser) {
             setCurrentUser(activeUser);
             localStorage.setItem('um_user_session', JSON.stringify(activeUser));
-          } else {
-            // No valid active session on backend: clear local storage to prevent ghost state
+          } else if (cachedLocalUser && !isDefinitiveAuthError) {
+            // Retain cached session during network lag, mobile wake, or transient errors
+            setCurrentUser(cachedLocalUser);
+          } else if (isDefinitiveAuthError || (!savedAccessToken && !savedRefreshToken)) {
+            // Explicitly revoked or empty session: clean up
             localStorage.removeItem('um_user_session');
             localStorage.removeItem('um_access_token');
             localStorage.removeItem('um_refresh_token');
@@ -185,12 +209,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsLoadingAuth(false);
         }
 
-        // 6. Listen for auth state changes
+        // 6. Listen for auth state changes (supporting both lowercase and uppercase events)
         type AuthCallback = (event: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown>; metadata?: Record<string, unknown>; profile?: { name?: string; roleId?: string } } } | null) => void;
         const unsubscribe = (insforge.auth.onAuthStateChange as (cb: AuthCallback) => () => void)(async (event, session) => {
           if (unmounted) return;
+          const ev = String(event).toLowerCase().replace(/_/g, '');
           const u = session?.user;
-          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && u) {
+          if ((ev === 'signedin' || ev === 'tokenrefreshed') && u) {
             const meta = u.user_metadata || u.metadata || {};
             const loggedInUser: User = {
               id: u.id,
@@ -203,7 +228,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             };
             setCurrentUser(loggedInUser);
             localStorage.setItem('um_user_session', JSON.stringify(loggedInUser));
-          } else if (event === 'SIGNED_OUT') {
+          } else if (ev === 'signedout') {
             setCurrentUser(null);
             localStorage.removeItem('employee_session');
             localStorage.removeItem('um_user_session');

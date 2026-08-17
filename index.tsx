@@ -10,25 +10,32 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Unregister any leftover Service Workers from previous PWA build
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      registration.unregister();
-    }
-  });
-  caches.keys().then((cacheNames) => {
-    cacheNames.forEach((name) => caches.delete(name));
-  });
-}
+import { registerSW } from 'virtual:pwa-register';
 
-// Global handler for Vite chunk loading errors (occurs after deployments when old chunks are deleted)
-window.addEventListener('vite:preloadError', (event) => {
-  console.warn('Vite preload error detected (posible nueva versión). Recargando página...');
-  event.preventDefault();
-  if (!sessionStorage.getItem('um_reloaded')) {
-    sessionStorage.setItem('um_reloaded', 'true');
-    window.location.reload();
+// Register and auto-update PWA Service Worker for installed mobile/desktop users
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    console.log('Nueva versión detectada. Actualizando PWA automáticamente...');
+    void updateSW(true);
+  },
+  onOfflineReady() {
+    console.log('UltraMoney listo para funcionar sin conexión.');
+  },
+  onRegisteredSW(_swUrl, registration) {
+    if (registration) {
+      // Check for updates periodically every 20 minutes
+      setInterval(() => {
+        void registration.update();
+      }, 20 * 60 * 1000);
+
+      // Check for updates when resuming/focusing the app
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          void registration.update();
+        }
+      });
+    }
   }
 });
 
