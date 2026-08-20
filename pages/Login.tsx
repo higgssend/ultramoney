@@ -161,8 +161,7 @@ const Login: React.FC = () => {
         const next = error.nextActions;
         if (error.statusCode === 403 || msg.includes('verify') || (typeof next === 'string' && next.includes('verify')) || (Array.isArray(next) && next.includes('verify'))) {
           setUnverifiedEmail(loginEmail);
-          setStep('method');
-          // Automatically prompt for OTP verification
+          setStep('email-form');
           setError('Tu correo aún no está verificado. Se ha enviado un código de 6 dígitos a tu correo para activar tu cuenta.');
           return;
         }
@@ -335,6 +334,25 @@ const Login: React.FC = () => {
                     Regístrate gratis
                   </Link>
                 </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    ['um_access_token', 'um_refresh_token', 'um_user_session', 'employee_session', 'ultramoney_remembered_email'].forEach(k => localStorage.removeItem(k));
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map(r => r.unregister()));
+                    }
+                    if ('caches' in window) {
+                      const names = await caches.keys();
+                      await Promise.all(names.map(n => caches.delete(n)));
+                    }
+                    sessionStorage.clear();
+                    window.location.reload();
+                  }}
+                  className="mt-4 text-xs text-slate-400 hover:text-rose-500 transition-colors underline underline-offset-2"
+                >
+                  ¿Problemas para entrar? Forzar actualización
+                </button>
               </div>
             </div>
           )}
@@ -496,6 +514,26 @@ const Login: React.FC = () => {
                     Regístrate gratis
                   </Link>
                 </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    // Force-clear all session data and SW caches for stuck/corrupted accounts
+                    ['um_access_token', 'um_refresh_token', 'um_user_session', 'employee_session', 'ultramoney_remembered_email'].forEach(k => localStorage.removeItem(k));
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map(r => r.unregister()));
+                    }
+                    if ('caches' in window) {
+                      const names = await caches.keys();
+                      await Promise.all(names.map(n => caches.delete(n)));
+                    }
+                    sessionStorage.clear();
+                    window.location.reload();
+                  }}
+                  className="mt-4 text-xs text-slate-400 hover:text-rose-500 transition-colors underline underline-offset-2"
+                >
+                  ¿Problemas para entrar? Forzar actualización
+                </button>
               </div>
             </div>
           )}

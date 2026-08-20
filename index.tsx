@@ -12,15 +12,46 @@ if (!rootElement) {
 
 import { registerSW } from 'virtual:pwa-register';
 
-// Register and auto-update PWA Service Worker for installed mobile/desktop users
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 1: Purge ALL old Service Workers and their caches before registering
+//         a new one. This ensures users with stale PWA installs (like accounts
+//         where the SW was serving outdated auth code) get a clean slate.
+// ─────────────────────────────────────────────────────────────────────────────
+async function purgeOldServiceWorkers(): Promise<void> {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((r) => r.unregister()));
+
+    // Also clear all PWA/workbox caches so no stale JS is served
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }
+    console.log('[UltraMoney] SW y caches anteriores eliminados.');
+  } catch (e) {
+    console.warn('[UltraMoney] Error al limpiar SW/caches:', e);
+  }
+}
+
+// Check if this is the first visit after a forced purge flag was set
+const SW_PURGE_KEY = 'um_sw_purged_v2';
+if (!sessionStorage.getItem(SW_PURGE_KEY)) {
+  sessionStorage.setItem(SW_PURGE_KEY, 'true');
+  void purgeOldServiceWorkers();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 2: Register a fresh Service Worker for PWA functionality
+// ─────────────────────────────────────────────────────────────────────────────
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    console.log('Nueva versión detectada. Actualizando PWA automáticamente...');
+    console.log('[UltraMoney] Nueva versión detectada. Actualizando PWA automáticamente...');
     void updateSW(true);
   },
   onOfflineReady() {
-    console.log('UltraMoney listo para funcionar sin conexión.');
+    console.log('[UltraMoney] UltraMoney listo para funcionar sin conexión.');
   },
   onRegisteredSW(_swUrl, registration) {
     if (registration) {
@@ -39,7 +70,9 @@ const updateSW = registerSW({
   }
 });
 
-// Fallback for Service Worker chunk load errors that might not be caught by vite:preloadError
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 3: Fallback for Service Worker chunk load errors
+// ─────────────────────────────────────────────────────────────────────────────
 window.addEventListener('unhandledrejection', (event) => {
   if (
     event.reason && 
@@ -48,17 +81,11 @@ window.addEventListener('unhandledrejection', (event) => {
      event.reason.message.includes('Ha fallado la carga del módulo') ||
      event.reason.message.includes('ServiceWorker'))
   ) {
-    console.warn('Chunk load error detected. Recargando página...');
+    console.warn('[UltraMoney] Chunk load error detected. Recargando página...');
     event.preventDefault();
     
-    // Si el ServiceWorker está corrupto, lo eliminamos a la fuerza
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
+    // Eliminar SWs corruptos a la fuerza
+    void purgeOldServiceWorkers();
 
     if (!sessionStorage.getItem('um_reloaded')) {
       sessionStorage.setItem('um_reloaded', 'true');

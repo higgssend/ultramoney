@@ -155,8 +155,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        // 4. If access token was expired/invalid, attempt refresh
-        if (!activeUser && savedRefreshToken && isDefinitiveAuthError) {
+        // 4. If no active user but we have a refresh token, always attempt refresh.
+        //    This covers silent token expiry (no explicit 401), which was causing accounts
+        //    with old tokens (like Helton Garcia's) to be kicked out silently.
+        if (!activeUser && savedRefreshToken) {
           try {
             const { data: refreshData, error: refreshErr } = await insforge.auth.refreshSession({
               refreshToken: savedRefreshToken
@@ -182,6 +184,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 };
               }
               isDefinitiveAuthError = false;
+            } else if (refreshErr) {
+              // Refresh explicitly failed — the session is fully expired
+              isDefinitiveAuthError = true;
+              logger.warn("Token refresh failed:", refreshErr);
             }
           } catch (refErr) {
             logger.warn("Token refresh attempt failed:", refErr);
@@ -217,7 +223,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (unmounted) return;
           const ev = String(event).toLowerCase().replace(/_/g, '');
           const u = session?.user;
-          if ((ev === 'signedin' || ev === 'tokenrefreshed') && u) {
+          
+          // Ignore dummy user created by SDK when manually setting token without user object
+          if ((ev === 'signedin' || ev === 'tokenrefreshed') && u && u.id) {
             const meta = u.user_metadata || u.metadata || {};
             const loggedInUser: User = {
               id: u.id,
